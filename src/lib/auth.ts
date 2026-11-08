@@ -3,8 +3,22 @@ import Discord from "next-auth/providers/discord";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
+const isVercel = process.env["VERCEL"] === "1";
+
+if (isVercel) {
+  for (const key of ["AUTH_URL", "NEXTAUTH_URL"] as const) {
+    const configuredUrl = process.env[key];
+    if (!configuredUrl) continue;
+
+    const hostname = new URL(configuredUrl).hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]") {
+      delete process.env[key];
+    }
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  trustHost: process.env.AUTH_TRUST_HOST === "true",
+  trustHost: process.env.AUTH_TRUST_HOST === "true" || isVercel,
   adapter: PrismaAdapter(prisma),
   providers: [
     Discord({

@@ -10,13 +10,15 @@ Komunitas multi-game dengan Next.js App Router, TypeScript, Tailwind CSS, Postgr
    npm install
    ```
 
-2. Salin `.env.example` menjadi `.env` lalu isi koneksi PostgreSQL, kredensial OAuth Discord, dan `DISCORD_ANNOUNCEMENT_WEBHOOK_URL` dari channel pengumuman. `AUTH_TRUST_HOST=true` disiapkan untuk pengembangan lokal; pada production aktifkan hanya bila host aplikasi dipercaya dan proxy telah dikonfigurasi dengan benar. Buat aplikasi OAuth di Discord Developer Portal dan daftarkan callback URL:
+2. Salin `.env.example` menjadi `.env` lalu isi koneksi PostgreSQL, kredensial OAuth Discord, dan `DISCORD_ANNOUNCEMENT_WEBHOOK_URL` dari channel pengumuman. `AUTH_URL` pada contoh hanya untuk pengembangan lokal. Di Vercel, biarkan `AUTH_URL` dan `NEXTAUTH_URL` tidak disetel agar Auth.js menggunakan host tepercaya dari request/proxy; aplikasi mengabaikan nilai loopback jika tertinggal dari konfigurasi lokal. Buat aplikasi OAuth di Discord Developer Portal dan daftarkan callback URL:
 
    ```text
    http://localhost:3000/api/auth/callback/discord
    ```
 
    Buat nilai `AUTH_SECRET` acak yang panjang. Jangan commit file `.env`.
+
+   Untuk production, daftarkan juga `https://<domain-production-anda>/api/auth/callback/discord` pada Discord Developer Portal. Atur kredensial OAuth dan `AUTH_SECRET` sebagai environment variables di Vercel; jangan set URL callback/base URL ke `localhost`.
 
 3. Isi `DATABASE_URL` dengan connection string aplikasi dan `DATABASE_URL_UNPOOLED` dengan connection string langsung untuk migrasi (untuk PostgreSQL lokal, keduanya boleh sama). Buat tabel database dan Prisma Client:
 
