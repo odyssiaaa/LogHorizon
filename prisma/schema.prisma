@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum Role {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+enum PostCategory {
+  GENERAL_CHAT
+  PROMOTION
+  FEEDBACK
+  MARKETPLACE
+}
+
+enum VoteType {
+  UP
+  DOWN
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+}
+
+enum TournamentStatus {
+  OPEN
+  FULL
+  COMPLETED
+  CANCELLED
+}
+
+enum LfgStatus {
+  OPEN
+  FULL
+  CLOSED
+}
+
+enum EscrowStatus {
+  IN_ESCROW
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum DonationStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+model User {
+  id             String              @id @default(cuid())
+  discordId      String?             @unique
+  username       String?
+  avatar         String?
+  role           Role                @default(MEMBER)
+  isBanned       Boolean             @default(false)
+  xp             Int                 @default(0)
+  level          Int                 @default(1)
+  badges         String[]            @default([])
+  isPremium      Boolean             @default(false)
+  joinedAt       DateTime            @default(now())
+  name           String?
+  email          String?             @unique
+  emailVerified  DateTime?
+  image          String?
+  accounts       Account[]
+  sessions       Session[]
+  posts          Post[]
+  comments       Comment[]
+  reports        Report[]
+  postVotes      PostVote[]
+  tournaments    Participant[]
+  lfgPosts       LfgPost[]
+  lfgJoins       LfgJoin[]
+  escrowAsBuyer  EscrowTransaction[] @relation("EscrowBuyer")
+  escrowAsSeller EscrowTransaction[] @relation("EscrowSeller")
+  donations      Donation[]
+}
+
+model Tournament {
+  id           String           @id @default(cuid())
+  game         String
+  maxSlots     Int
+  eventDate    DateTime
+  status       TournamentStatus @default(OPEN)
+  bracket      Json?
+  createdAt    DateTime         @default(now())
+  participants Participant[]
+
+  @@index([status, eventDate])
+}
+
+model Participant {
+  id           String     @id @default(cuid())
+  tournamentId String
+  leaderId     String
+  teamName     String
+  createdAt    DateTime   @default(now())
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  leader       User       @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, leaderId])
+  @@index([tournamentId, createdAt])
+}
+
+model LfgPost {
+  id          String    @id @default(cuid())
+  authorId    String
+  game        String
+  description String    @db.Text
+  scheduledAt DateTime
+  maxSlots    Int
+  status      LfgStatus @default(OPEN)
+  createdAt   DateTime  @default(now())
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  joins       LfgJoin[]
+
+  @@index([status, scheduledAt])
+}
+
+model LfgJoin {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      LfgPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+}
+
+model EscrowTransaction {
+  id          String       @id @default(cuid())
+  postId      String
+  buyerId     String
+  sellerId    String
+  amount      Int
+  status      EscrowStatus @default(IN_ESCROW)
+  createdAt   DateTime     @default(now())
+  completedAt DateTime?
+  post        Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  buyer       User         @relation("EscrowBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller      User         @relation("EscrowSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([postId, status])
+}
+
+model Donation {
+  id          String         @id @default(cuid())
+  userId      String
+  amount      Int
+  status      DonationStatus @default(PENDING)
+  gatewayRef  String?        @unique
+  createdAt   DateTime       @default(now())
+  completedAt DateTime?
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model Post {
+  id                 String              @id @default(cuid())
+  authorId           String
+  category           PostCategory
+  title              String
+  content            String              @db.Text
+  isPinned           Boolean             @default(false)
+  upvotes            Int                 @default(0)
+  downvotes          Int                 @default(0)
+  marketData         Json?
+  createdAt          DateTime            @default(now())
+  author             User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments           Comment[]
+  reports            Report[]
+  votes              PostVote[]
+  escrowTransactions EscrowTransaction[]
+
+  @@index([category, createdAt])
+  @@index([isPinned, createdAt])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  postId    String
+  authorId  String
+  parentId  String?
+  content   String    @db.Text
+  upvotes   Int       @default(0)
+  createdAt DateTime  @default(now())
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+
+  @@index([postId, createdAt])
+  @@index([parentId])
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  postId     String
+  reporterId String
+  reason     String       @db.Text
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  post       Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter   User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, reporterId])
+  @@index([status, createdAt])
+}
+
+model PostVote {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  value     VoteType
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([userId])
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([sessionToken])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
+}
