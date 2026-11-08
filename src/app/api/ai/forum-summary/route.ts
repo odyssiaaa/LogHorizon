@@ -1,11 +1,9 @@
+import { parseEnv } from "@neon/env";
+import OpenAI from "openai";
 import { PostCategory } from "@prisma/client";
 import { authenticatedUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-
-type GatewayResponse = {
-  choices?: { message?: { content?: unknown } }[];
-  error?: { code?: unknown; message?: unknown; unavailable_reason?: unknown };
-};
+import neonConfig from "../../../../../neon";
 
 export async function POST(request: Request) {
   const user = await authenticatedUser();
@@ -28,19 +26,20 @@ export async function POST(request: Request) {
   });
   if (!post) return jsonError("Thread tidak ditemukan.", 404);
 
-  const baseUrl = process.env.NEON_AI_GATEWAY_BASE_URL;
-  const token = process.env.NEON_AI_GATEWAY_TOKEN;
-  if (!baseUrl || !token) return jsonError("Neon AI Gateway belum dikonfigurasi.", 503);
+  if (!process.env.NEON_AI_GATEWAY_TOKEN || !process.env.NEON_AI_GATEWAY_BASE_URL) {
+    return jsonError("Neon AI Gateway belum dikonfigurasi.", 503);
+  }
 
-  let response: Response;
+  const env = parseEnv(neonConfig, ["NEON_AI_GATEWAY_TOKEN", "NEON_AI_GATEWAY_BASE_URL"]);
+  const client = new OpenAI({
+    apiKey: env.aiGateway.apiKey,
+    baseURL: `${env.aiGateway.baseUrl}/v1`,
+  });
+
+  let completion: OpenAI.Chat.Completions.ChatCompletion;
   try {
-    response = await fetch(`${baseUrl.replace(/\/+$/, "")}/v1/chat/completions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    completion = await client.chat.completions.create(
+      {
         model: "gpt-5-mini",
         messages: [
           {
@@ -50,31 +49,30 @@ export async function POST(request: Request) {
           { role: "user", content: `Judul: ${post.title}\n\nIsi:\n${post.content}` },
         ],
         max_completion_tokens: 180,
-      }),
-      signal: AbortSignal.timeout(20_000),
-    });
+      },
+      { timeout: 20_000 },
+    );
   } catch (error) {
     console.error("[ai] Neon AI Gateway request failed", error);
+
+    if (error instanceof OpenAI.APIError) {
+      const errorBody = error.error;
+      const unavailable =
+        error.code === "paid_plan_required" ||
+        (typeof errorBody === "object" &&
+          errorBody !== null &&
+          "unavailable_reason" in errorBody &&
+          errorBody.unavailable_reason === "paid_plan_required");
+      if (error.status === 403 && unavailable) {
+        return jsonError("Ringkasan AI belum tersedia. Tambahkan kredit AI Gateway pada Neon untuk mengaktifkan model.", 503);
+      }
+      return jsonError(`Neon AI Gateway menolak permintaan (HTTP ${error.status ?? "unknown"}).`, 502);
+    }
+
     return jsonError("Neon AI Gateway tidak dapat dijangkau.", 502);
   }
 
-  let result: GatewayResponse;
-  try {
-    result = (await response.json()) as GatewayResponse;
-  } catch {
-    return jsonError("Neon AI Gateway mengirim respons yang tidak valid.", 502);
-  }
-
-  if (!response.ok) {
-    const unavailable = result.error?.unavailable_reason === "paid_plan_required" || result.error?.code === "paid_plan_required";
-    if (response.status === 403 && unavailable) {
-      return jsonError("Ringkasan AI belum tersedia. Tambahkan kredit AI Gateway pada Neon untuk mengaktifkan model.", 503);
-    }
-    console.error("[ai] Neon AI Gateway returned an error", response.status);
-    return jsonError(`Neon AI Gateway menolak permintaan (HTTP ${response.status}).`, 502);
-  }
-
-  const summary = result.choices?.[0]?.message?.content;
+  const summary = completion.choices[0]?.message?.content;
   if (typeof summary !== "string" || !summary.trim()) {
     return jsonError("Neon AI Gateway tidak mengembalikan ringkasan.", 502);
   }

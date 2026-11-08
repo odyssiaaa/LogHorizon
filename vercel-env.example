@@ -1,0 +1,27 @@
+# Checklist/template only. Do not deploy these placeholder values.
+# Add each value in Vercel > Project > Settings > Environment Variables,
+# with the Production environment selected.
+
+# Required for Discord sign-in and database-backed sessions
+AUTH_SECRET=GENERATE_A_RANDOM_SECRET_LOCALLY
+AUTH_DISCORD_ID=1568878099507191808
+AUTH_DISCORD_SECRET=PASTE_NEW_ROTATED_DISCORD_SECRET
+DATABASE_URL=PASTE_NEON_POOLED_CONNECTION_STRING
+
+# Optional. Needed only for Prisma migrations/deploys run from Vercel.
+# Prefer running migrations from a trusted local environment instead.
+DATABASE_URL_UNPOOLED=PASTE_NEON_DIRECT_CONNECTION_STRING
+
+# Optional integrations. Leave unset if unused.
+DISCORD_ANNOUNCEMENT_WEBHOOK_URL=
+DISCORD_MARKETPLACE_WEBHOOK_URL=
+DISCORD_EVENTS_WEBHOOK_URL=
+DISCORD_SYNC_TOKEN=
+HF_ACCESS_TOKEN=
+NEON_REALTIME_URL=
+NEON_REALTIME_SECRET=
+NEON_AI_GATEWAY_BASE_URL=
+NEON_AI_GATEWAY_TOKEN=
+
+# Do not set AUTH_URL or NEXTAUTH_URL to localhost or a preview URL for Production.
+# Auth.js should derive the production host from the Vercel request.
