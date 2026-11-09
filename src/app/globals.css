@@ -130,6 +130,10 @@ button { cursor: pointer; }
 .forum-tab.active { color: #fff; border-bottom-color: var(--accent); background: linear-gradient(0deg, rgba(139,92,246,.1), transparent); }
 .forum-tab.active span { color: #bda2ff; }
 .forum-category-intro { display: flex; justify-content: space-between; align-items: center; padding: 18px 4px; color: #9a93a6; font-size: 11px; }
+.forum-search { width: min(460px, 100%); margin: 0 0 12px; }
+.events-search { width: min(480px, 100%); margin: 0 0 18px; }
+.market-image-preview { width: min(100%, 260px); max-height: 180px; object-fit: cover; border: 1px solid var(--line); border-radius: 8px; }
+.upload-hint { margin: -7px 0 0; color: var(--muted); font-size: 10px; }
 .forum-category-intro > div { display: grid; grid-template-columns: 9px auto; align-items: center; gap: 7px; }
 .forum-category-intro strong { color: #d3c4f6; }
 .forum-category-intro p { grid-column: 2; margin: 0; color: #858091; }
@@ -210,7 +214,7 @@ button { cursor: pointer; }
 .market-filters label { display: flex; align-items: center; flex-wrap: wrap; }
 .market-filters label > svg { color: #a69ab8; }
 .market-search { display: flex; align-items: center; gap: 8px; min-width: 0; height: 38px; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: #100e17; padding: 0 10px; color: #8c8499; }
-.market-search input { border: 0; outline: none; background: transparent; padding: 0; }
+.market-search input { min-width: 0; flex: 1; border: 0; outline: none; background: transparent; padding: 0; }
 .market-search button { border: 0; background: transparent; color: #c6adff; font-size: 11px; font-weight: 700; }
 .market-grid { display: grid; grid-template-columns: repeat(3, 1fr); align-items: start; gap: 15px; }
 .market-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }

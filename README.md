@@ -35,15 +35,21 @@ Komunitas multi-game dengan Next.js App Router, TypeScript, Tailwind CSS, Postgr
 
 Halaman utama tersedia di `/`, forum di `/forum`, detail thread di `/forum/[id]`, forum jual-beli di `/marketplace`, papan peringkat di `/leaderboard`, turnamen/LFG di `/events`, serta kas komunitas di `/donate`.
 
+Pencarian forum mencakup judul, isi thread, komentar, dan nama anggota di sub-forum aktif. Marketplace dapat dicari berdasarkan judul, deskripsi, game, atau penjual; daftar turnamen dan LFG dapat difilter berdasarkan game, party, dan anggota.
+
 ## Layanan Neon
 
-Project memakai Prisma/PostgreSQL untuk data aplikasi, Neon Realtime untuk menyegarkan daftar forum secara langsung, dan Neon AI Gateway untuk membuat ringkasan thread. Setelah menjalankan `neon deploy`, variabel `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEON_REALTIME_URL`, `NEON_REALTIME_SECRET`, `NEON_AI_GATEWAY_BASE_URL`, dan `NEON_AI_GATEWAY_TOKEN` disimpan lokal di `.env.local`.
+Project memakai Prisma/PostgreSQL untuk data aplikasi, Neon Realtime untuk menyegarkan daftar forum secara langsung, Neon AI Gateway untuk membuat ringkasan thread, dan Neon Object Storage untuk foto lapak. `neon.ts` mendeklarasikan bucket publik-baca `marketplace-images`; jalankan `neon deploy` untuk membuat bucket pada branch yang sedang terhubung.
+
+Untuk mengaktifkan upload foto secara lokal, ambil kredensial storage dengan `neon env pull --service object-storage --file .env.storage`, lalu salin variabel `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL_S3`, dan `AWS_REGION` ke environment server lokal (`.env` atau `.env.local`). Untuk Vercel, atur keempatnya sebagai environment variables server-only pada environment deployment yang digunakan; jangan gunakan prefix `NEXT_PUBLIC_` atau commit nilainya. Foto hanya menerima JPG, PNG, dan WebP hingga 4 MB.
+
+Setelah menjalankan `neon deploy`, variabel `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEON_REALTIME_URL`, `NEON_REALTIME_SECRET`, `NEON_AI_GATEWAY_BASE_URL`, dan `NEON_AI_GATEWAY_TOKEN` disimpan lokal di file env yang dipilih CLI.
 
 Jalankan migrasi Prisma dengan koneksi langsung, bukan pooler. Neon menyediakan `DATABASE_URL_UNPOOLED` untuk tujuan ini; gunakan `DATABASE_URL` pada aplikasi Next.js. Realtime hanya mengirim URL browser dan sealed query yang berumur pendek; secret Realtime dan token AI tetap berada di server. Tambahkan origin aplikasi yang digunakan ke `allowedOrigins` pada `neon.ts`, lalu jalankan `neon deploy` untuk menerapkannya.
 
 Ringkasan AI tersedia untuk anggota yang sudah login. Neon AI Gateway memerlukan kredit aktif untuk menjalankan model; jika belum tersedia, endpoint akan menjelaskan bahwa layanan belum aktif.
 
-Asisten chat `Satpam Horizon` memanggil Hugging Face Inference Providers melalui `https://router.huggingface.co/v1/chat/completions` dan tidak menggunakan Neon AI Gateway. Tambahkan `HF_ACCESS_TOKEN` sebagai secret server (bukan `NEXT_PUBLIC_*`) dengan izin Inference Providers. Model `meta-llama/Meta-Llama-3-8B-Instruct` memerlukan akses model Meta Llama yang disetujui di Hugging Face. Widget hanya tersedia bagi anggota login yang tidak dibanned; input dibatasi 200 karakter, cooldown 5 detik, dan output maksimum 150 token. Batas gratis/kuota Hugging Face bergantung pada akun dan provider, jadi jangan menganggap layanan eksternal bebas biaya tanpa batas. Untuk deploy, masukkan token tersebut sebagai environment variable server di hosting.
+Asisten chat `Satpam Horizon` memanggil Hugging Face Inference Providers melalui `https://router.huggingface.co/v1/chat/completions` dan tidak menggunakan Neon AI Gateway. Tambahkan `HF_ACCESS_TOKEN` sebagai secret server (bukan `NEXT_PUBLIC_*`) dengan izin Inference Providers. Chat menggunakan model `mistralai/Mistral-7B-Instruct-v0.1` yang tidak gated. Widget hanya tersedia bagi anggota login yang tidak dibanned; input dibatasi 200 karakter, cooldown 5 detik, dan output maksimum 150 token. Kredit/kuota inference Hugging Face bergantung pada akun dan provider; model yang dapat diakses bebas tidak berarti inferensi tanpa batas atau selalu gratis. Untuk deploy, masukkan token tersebut sebagai environment variable server di hosting.
 
 ## Catatan autentikasi dan moderasi
 

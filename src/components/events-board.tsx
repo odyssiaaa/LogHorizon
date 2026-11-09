@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
-import { CalendarDays, Plus, Users } from "lucide-react";
+import { CalendarDays, Plus, Search, Users } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 
 type Participant = { id: string; teamName: string; leader: { username: string | null } };
@@ -35,6 +35,7 @@ export function EventsBoard() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [search, setSearch] = useState("");
   const [game, setGame] = useState("");
   const [maxSlots, setMaxSlots] = useState("8");
   const [eventDate, setEventDate] = useState("");
@@ -118,6 +119,15 @@ export function EventsBoard() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Tidak dapat bergabung ke party."); }
   }
 
+  const normalizedSearch = search.trim().toLocaleLowerCase();
+  const visibleTournaments = tournaments.filter((tournament) =>
+    [tournament.game, tournament.status, ...tournament.participants.map((participant) => participant.teamName), ...tournament.participants.map((participant) => participant.leader.username ?? "")]
+      .some((value) => value.toLocaleLowerCase().includes(normalizedSearch)),
+  );
+  const visibleLfgPosts = lfgPosts.filter((post) =>
+    [post.game, post.description, post.author.username ?? "", ...post.joins.map((join) => join.username ?? "")]
+      .some((value) => value.toLocaleLowerCase().includes(normalizedSearch)),
+  );
   const isAdmin = session?.user?.role === "ADMIN";
   return (
     <main className="page-shell events-page">
@@ -128,6 +138,10 @@ export function EventsBoard() {
       </header>
       {error && <p className="inline-error" role="alert">{error}</p>}
       {notice && <p className="inline-notice" role="status">{notice}</p>}
+      <div className="market-search events-search" role="search">
+        <Search size={17} />
+        <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari game, party, atau anggota…" aria-label="Cari turnamen dan jadwal party" />
+      </div>
 
       <section className="events-section">
         <div className="events-section-heading"><div><p className="section-kicker">BRACKET / SINGLE ELIMINATION</p><h2>Turnamen</h2></div><CalendarDays size={18} /></div>
@@ -138,8 +152,8 @@ export function EventsBoard() {
           <button className="button button-primary"><Plus size={15} /> Buat turnamen</button>
         </form>}
         <div className="event-list">
-          {tournaments.length === 0 && <p className="empty-state">Belum ada turnamen terjadwal.</p>}
-          {tournaments.map((tournament) => (
+          {visibleTournaments.length === 0 && <p className="empty-state">{search ? "Tidak ada turnamen yang cocok dengan pencarian." : "Belum ada turnamen terjadwal."}</p>}
+          {visibleTournaments.map((tournament) => (
             <article className="event-card" key={tournament.id}>
               <div className="event-card-heading"><div><span className="event-game">{tournament.game}</span><p>{new Date(tournament.eventDate).toLocaleString("id-ID")}</p></div><span className="event-status">{tournament.status}</span></div>
               <p className="event-slots"><Users size={14} /> {tournament.participants.length}/{tournament.maxSlots} tim terdaftar</p>
@@ -161,8 +175,8 @@ export function EventsBoard() {
           <button className="button button-primary"><Plus size={15} /> Posting jadwal</button>
         </form>
         <div className="event-list">
-          {lfgPosts.length === 0 && <p className="empty-state">Belum ada party yang mencari anggota.</p>}
-          {lfgPosts.map((post) => {
+          {visibleLfgPosts.length === 0 && <p className="empty-state">{search ? "Tidak ada jadwal party yang cocok dengan pencarian." : "Belum ada party yang mencari anggota."}</p>}
+          {visibleLfgPosts.map((post) => {
             const occupied = post.joins.length + 1;
             return <article className="event-card lfg-card" key={post.id}>
               <div className="event-card-heading"><div><span className="event-game">{post.game}</span><p>{new Date(post.scheduledAt).toLocaleString("id-ID")}</p></div><span className="event-status">{occupied}/{post.maxSlots} · {post.status}</span></div>

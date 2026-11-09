@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { createRealtimeClient, type SealedLiveQuery } from "@neon/realtime/client";
-import { ArrowDown, ArrowUp, Flag, Pin, Plus, MessageCircle, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Flag, Pin, Plus, MessageCircle, Search, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
 
@@ -33,6 +33,8 @@ const categories: { id: Category; slug: string; label: string; description: stri
 export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [category, setCategory] = useState<Category>("GENERAL_CHAT");
   const [posts, setPosts] = useState<BoardPost[]>([]);
+  const [searchValue, setSearchValue] = useState("");
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -48,7 +50,9 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
 
   useEffect(() => {
     let active = true;
-    fetch(`/api/posts?category=${category}`)
+    const query = new URLSearchParams({ category });
+    if (search) query.set("search", search);
+    fetch(`/api/posts?${query}`)
       .then(async (response) => {
         const data = await readApiResponse<BoardPost[]>(response, "Gagal memuat thread.");
         if (active) {
@@ -59,7 +63,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
       .catch((reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : "Gagal memuat thread."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [category, refreshKey]);
+  }, [category, refreshKey, search]);
 
   useEffect(() => {
     if (!realtimeUrl) return;
@@ -147,6 +151,12 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
         <div className="forum-tabs" role="tablist" aria-label="Kategori sub-forum">
           {categories.map((item) => <button key={item.id} role="tab" aria-selected={category === item.id} className={category === item.id ? "forum-tab active" : "forum-tab"} onClick={() => { if (category !== item.id) { setLoading(true); setCategory(item.id); } }}><span>{item.slug}</span>{item.label}</button>)}
         </div>
+        <form className="market-search forum-search" role="search" onSubmit={(event) => { event.preventDefault(); setLoading(true); setSearch(searchValue.trim()); }}>
+          <Search size={17} />
+          <input maxLength={120} value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Cari judul, isi, atau nama anggota…" aria-label="Cari diskusi" />
+          <button type="submit">Cari</button>
+          {search && <button type="button" onClick={() => { setSearchValue(""); setSearch(""); setLoading(true); }}>Hapus</button>}
+        </form>
         <div className="forum-category-intro"><div><span className="category-bullet" /> <strong>{activeCategory.slug}</strong><p>{activeCategory.description}</p></div><div className="forum-feed-status"><span>{posts.length} thread</span><span className={`live-status live-${liveState}`}>{liveState === "live" ? "Live" : liveState === "connecting" ? "Menghubungkan…" : liveState === "stale" ? "Memperbarui…" : liveState === "error" ? "Live terputus" : "Live tidak aktif"}</span></div></div>
         {liveError && <div className="inline-error" role="status">{liveError}</div>}
         {message && <div className="inline-notice" role="status">{message}<button aria-label="Tutup notifikasi" onClick={() => setMessage("")}><X size={15} /></button></div>}
@@ -155,7 +165,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
           {loading ? <div className="empty-state">Memuat diskusi…</div> : posts.length ? posts.map((post) => <article className={`forum-post ${post.isPinned ? "pinned-post" : ""}`} key={post.id}>
             <div className="vote-column"><button title="Upvote" aria-label="Upvote" className={post.votes?.[0]?.value === "UP" ? "vote-button selected" : "vote-button"} onClick={() => vote(post.id, "UP")}><ArrowUp size={19} /></button><strong>{post.upvotes - post.downvotes}</strong><button title="Downvote" aria-label="Downvote" className={post.votes?.[0]?.value === "DOWN" ? "vote-button selected down" : "vote-button"} onClick={() => vote(post.id, "DOWN")}><ArrowDown size={19} /></button></div>
             <div className="post-main">{post.isPinned && <span className="pinned-label"><Pin size={13} /> PINNED</span>}<Link className="post-title" href={`/forum/${post.id}`}>{post.title}</Link><p className="post-excerpt">{post.content}</p><div className="post-meta"><span>oleh <strong>{post.author.username ?? "Gamer"}</strong></span><span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span><Link href={`/forum/${post.id}`}><MessageCircle size={14} /> Diskusi</Link><button className="report-button" onClick={() => report(post.id)}><Flag size={13} /> Report Post</button></div></div>
-          </article>) : <div className="empty-state">Belum ada thread di {activeCategory.slug}. Jadilah yang pertama memulai percakapan.</div>}
+          </article>) : <div className="empty-state">{search ? `Tidak ada diskusi di ${activeCategory.slug} yang cocok dengan pencarian.` : `Belum ada thread di ${activeCategory.slug}. Jadilah yang pertama memulai percakapan.`}</div>}
         </section>
       </div>
       {compose && <ThreadModal category={category} canPin={Boolean(user?.isPremium)} onClose={() => setCompose(false)} onCreated={() => { setCompose(false); setLoading(true); setRefreshKey((value) => value + 1); }} />}

@@ -7,6 +7,9 @@ export default defineConfig({
   },
   auth: false,
   aiGateway: true,
+  buckets: {
+    "marketplace-images": { access: "public_read" },
+  },
   // Branch policy: per-branch tuning
   branch: (branch) => {
     if (branch.isDefault) {

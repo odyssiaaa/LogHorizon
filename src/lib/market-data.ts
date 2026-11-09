@@ -6,7 +6,7 @@ export type MarketData = {
   price: number;
   contact: string;
   status: "AVAILABLE" | "IN_ESCROW" | "SOLD";
-  imageUrl: string;
+  imageUrl?: string | null;
 };
 
 export type PublicMarketData = Omit<MarketData, "contact">;
@@ -22,7 +22,7 @@ export function isMarketData(value: unknown): value is MarketData {
     data.price >= 0 &&
     typeof data.contact === "string" &&
     (data.status === "AVAILABLE" || data.status === "IN_ESCROW" || data.status === "SOLD") &&
-    typeof data.imageUrl === "string"
+    (data.imageUrl == null || typeof data.imageUrl === "string")
   );
 }
 
@@ -36,7 +36,7 @@ export function isPublicMarketData(value: unknown): value is PublicMarketData {
     Number.isInteger(data.price) &&
     typeof data.status === "string" &&
     (data.status === "AVAILABLE" || data.status === "IN_ESCROW" || data.status === "SOLD") &&
-    typeof data.imageUrl === "string"
+    (data.imageUrl == null || typeof data.imageUrl === "string")
   );
 }
 

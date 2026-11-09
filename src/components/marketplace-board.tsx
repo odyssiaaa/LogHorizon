@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { ArrowDownUp, Flag, Plus, Search, ShoppingBag, X } from "lucide-react";
 import { isPublicMarketData } from "@/lib/market-data";
@@ -135,7 +135,7 @@ export function MarketplaceBoard() {
   return <main className="community-page"><div className="page-shell">
     <div className="market-heading"><div><p className="section-kicker">MARKETPLACE KOMUNITAS</p><h1>Lapak <span>Gamer</span></h1><p className="muted-copy">Jual beli akun, item, top-up, dan jasa gaming dengan komunitas LogHorizon. Escrow saat ini hanya simulasi status, bukan penahanan uang.</p></div><div>{status === "loading" ? <span className="nav-loading" /> : <button className="button button-primary" onClick={createListing}><Plus size={17} /> Buat Lapak</button>}</div></div>
     <section className="market-filters" aria-label="Filter dan pencarian marketplace">
-      <form className="market-search" onSubmit={(event) => { event.preventDefault(); setSearch(searchValue); }}><Search size={17} /><input value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Cari lapak…" aria-label="Cari lapak" /><button type="submit">Cari</button></form>
+      <form className="market-search" onSubmit={(event) => { event.preventDefault(); setSearch(searchValue); }}><Search size={17} /><input value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Cari judul, deskripsi, game, atau penjual…" aria-label="Cari lapak" /><button type="submit">Cari</button></form>
       <label>Tipe transaksi<select value={type} onChange={(event) => setType(event.target.value)}><option value="ALL">Semua</option><option value="WTS">WTS · Dijual</option><option value="WTB">WTB · Dicari</option></select></label>
       <label>Nama game<input value={game} onChange={(event) => setGame(event.target.value)} placeholder="Semua game" /></label>
       <label><ArrowDownUp size={14} /> Urutkan harga<select value={sort} onChange={(event) => setSort(event.target.value)}><option value="newest">Terbaru</option><option value="cheapest">Termurah</option><option value="expensive">Termahal</option></select></label>
@@ -175,15 +175,28 @@ function MarketModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
   const [price, setPrice] = useState("");
   const [contact, setContact] = useState("");
   const [content, setContent] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const imagePreview = useMemo(() => imageFile ? URL.createObjectURL(imageFile) : null, [imageFile]);
+
+  useEffect(() => () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+  }, [imagePreview]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     setError("");
     try {
+      let imageUrl: string | null = null;
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("image", imageFile);
+        const uploadResponse = await fetch("/api/marketplace/image", { method: "POST", body: formData });
+        const upload = await readApiResponse<{ imageUrl: string }>(uploadResponse, "Gambar gagal diunggah.");
+        imageUrl = upload.imageUrl;
+      }
       const response = await fetch("/api/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category: "MARKETPLACE", title, content, marketData: { type, game, price: Number(price), contact, imageUrl } }) });
       await readApiResponse<unknown>(response, "Lapak gagal dibuat.");
       onCreated();
@@ -196,7 +209,19 @@ function MarketModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
     <div className="form-grid-two"><label>Tipe Transaksi<select value={type} onChange={(event) => setType(event.target.value as "WTS" | "WTB")}><option value="WTS">WTS · Saya menjual</option><option value="WTB">WTB · Saya mencari</option></select></label><label>Nama Game<input required value={game} onChange={(event) => setGame(event.target.value)} placeholder="Nama game" /></label></div>
     <div className="form-grid-two"><label>Harga (Rupiah)<input required type="number" min="0" step="1" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="250000" /></label><label>Kontak Penjual (Discord/WA)<input required value={contact} onChange={(event) => setContact(event.target.value)} placeholder="username atau nomor WA" /></label></div>
     <label>Deskripsi<textarea required maxLength={10000} rows={4} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Jelaskan detail barang dan ketentuan transaksi…" /></label>
-    <label>URL Gambar Bukti<input required type="url" pattern="https?://.+" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="https://…" /></label>
+    <label>Foto barang (opsional)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => {
+      const file = event.target.files?.[0] ?? null;
+      if (file && (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 4 * 1024 * 1024)) {
+        setError("Gunakan gambar JPG, PNG, atau WebP dengan ukuran maksimal 4 MB.");
+        event.currentTarget.value = "";
+        setImageFile(null);
+        return;
+      }
+      setError("");
+      setImageFile(file);
+    }} /></label>
+    <p className="upload-hint">Unggah foto untuk WTS atau WTB, atau biarkan kosong jika belum ada foto.</p>
+    {imagePreview && <Image className="market-image-preview" src={imagePreview} alt="Pratinjau foto lapak" width={260} height={180} unoptimized />}
     {error && <p className="form-error" role="alert">{error}</p>}<button className="button button-primary" disabled={saving}>{saving ? "Menerbitkan…" : "Terbitkan Lapak"}</button>
   </form></section></div>;
 }

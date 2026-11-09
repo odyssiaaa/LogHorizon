@@ -25,12 +25,24 @@ export async function GET(request: Request) {
   const category = categoryParam && isPostCategory(categoryParam) ? categoryParam : undefined;
   if (categoryParam && !category) return jsonError("Kategori tidak valid.", 400);
   const search = url.searchParams.get("search")?.trim();
+  if (search && search.length > 120) return jsonError("Pencarian maksimal 120 karakter.", 400);
   const game = url.searchParams.get("game")?.trim();
   const type = url.searchParams.get("type");
   const sort = url.searchParams.get("sort");
   const filters: Prisma.PostWhereInput[] = [];
   if (category) filters.push({ category });
-  if (search) filters.push({ OR: [{ title: { contains: search, mode: "insensitive" } }, { content: { contains: search, mode: "insensitive" } }] });
+  if (search) {
+    const searchFilters: Prisma.PostWhereInput[] = [
+      { title: { contains: search, mode: "insensitive" } },
+      { content: { contains: search, mode: "insensitive" } },
+      { author: { is: { username: { contains: search, mode: "insensitive" } } } },
+      { comments: { some: { content: { contains: search, mode: "insensitive" } } } },
+    ];
+    if (category === PostCategory.MARKETPLACE) {
+      searchFilters.push({ marketData: { path: ["game"], string_contains: search } });
+    }
+    filters.push({ OR: searchFilters });
+  }
   if (game) filters.push({ marketData: { path: ["game"], string_contains: game } });
   if (type === "WTS" || type === "WTB") filters.push({ marketData: { path: ["type"], equals: type } });
   const where: Prisma.PostWhereInput = filters.length ? { AND: filters } : {};
@@ -90,17 +102,16 @@ export async function POST(request: Request) {
       market.price < 0 ||
       typeof market.contact !== "string" ||
       !market.contact.trim() ||
-      typeof market.imageUrl !== "string" ||
-      !isValidUrl(market.imageUrl) ||
+      (market.imageUrl != null && (typeof market.imageUrl !== "string" || !isValidUrl(market.imageUrl))) ||
       !content
-    ) return jsonError("Semua kolom lapak wajib diisi dan URL gambar harus valid.", 400);
+    ) return jsonError("Data lapak tidak valid. Gambar bersifat opsional, tetapi URL yang diberikan harus valid.", 400);
 
     const marketData: MarketData = {
       type: market.type,
       game: market.game.trim(),
       price: market.price,
       contact: market.contact.trim(),
-      imageUrl: market.imageUrl,
+      imageUrl: typeof market.imageUrl === "string" ? market.imageUrl : null,
       status: "AVAILABLE",
     };
     const post = await prisma.post.create({
