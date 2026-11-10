@@ -26,6 +26,11 @@ export async function POST(_request: Request, { params }: RouteContext) {
     if (error instanceof Error && error.message === "OWNER_CANNOT_JOIN") return jsonError("Pembuat party sudah dihitung sebagai satu slot.", 400);
     if (error instanceof Error && error.message === "PARTY_FULL") return jsonError("Slot party sudah penuh.", 409);
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return jsonError("Kamu sudah bergabung ke party ini.", 409);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") return jsonError("Slot party berubah bersamaan. Coba lagi.", 409);
+    throw error;
+  }
+}
+
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const user = await activeUser();
   if (!user) return jsonError("Login diperlukan.", 401);
