@@ -1441,7 +1441,90 @@ body {
 .mock-qris code { color: var(--accent); font-size: 1.1rem; font-weight: 800; }
 .treasury-pay-button { width: 100%; margin-top: 15px; }
 .treasury-loading { margin-top: 12px; color: var(--muted); font-size: .83rem; text-align: center; }
-.sponsors-section { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 30px; padding-block: 55px; border-top: 1px solid var(--line); }
+/* ============================================================
+   HIERARKI PERAN & ROLE CARDS (Anti-AI Slop, Dense Tactical Grid)
+   ============================================================ */
+.role-section {
+  padding-block: 65px;
+  border-top: 1px solid var(--line);
+}
+
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.role-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 22px;
+  transition: border-color .2s ease, transform .2s ease;
+}
+
+.role-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+
+.role-card-header {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+
+.role-card-header h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--foreground);
+  margin: 0;
+  letter-spacing: -.02em;
+}
+
+.role-card-header p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.role-card-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.role-card-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.role-pill-name {
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--foreground);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.role-pill-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .role-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
 .sponsors-section h2 { margin: 8px 0; font-size: clamp(1.4rem, 3vw, 2rem); letter-spacing: -.04em; }
 .sponsors-section .muted-copy { line-height: 1.7; }
 .sponsor-placeholder { display: grid; min-height: 90px; place-items: center; border: 1px dashed var(--line); color: var(--muted); font-size: .85rem; }

@@ -20,62 +20,67 @@ function isValidUrl(value: unknown) {
 }
 
 export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const categoryParam = url.searchParams.get("category");
-  const category = categoryParam && isPostCategory(categoryParam) ? categoryParam : undefined;
-  if (categoryParam && !category) return jsonError("Kategori tidak valid.", 400);
-  const search = url.searchParams.get("search")?.trim();
-  if (search && search.length > 120) return jsonError("Pencarian maksimal 120 karakter.", 400);
-  const game = url.searchParams.get("game")?.trim();
-  const type = url.searchParams.get("type");
-  const sort = url.searchParams.get("sort");
-  const filters: Prisma.PostWhereInput[] = [];
-  if (category) filters.push({ category });
-  if (search) {
-    const searchFilters: Prisma.PostWhereInput[] = [
-      { title: { contains: search, mode: "insensitive" } },
-      { content: { contains: search, mode: "insensitive" } },
-      { author: { is: { username: { contains: search, mode: "insensitive" } } } },
-      { comments: { some: { content: { contains: search, mode: "insensitive" } } } },
-    ];
-    if (category === PostCategory.MARKETPLACE) {
-      searchFilters.push({ marketData: { path: ["game"], string_contains: search } });
+  try {
+    const url = new URL(request.url);
+    const categoryParam = url.searchParams.get("category");
+    const category = categoryParam && isPostCategory(categoryParam) ? categoryParam : undefined;
+    if (categoryParam && !category) return jsonError("Kategori tidak valid.", 400);
+    const search = url.searchParams.get("search")?.trim();
+    if (search && search.length > 120) return jsonError("Pencarian maksimal 120 karakter.", 400);
+    const game = url.searchParams.get("game")?.trim();
+    const type = url.searchParams.get("type");
+    const sort = url.searchParams.get("sort");
+    const filters: Prisma.PostWhereInput[] = [];
+    if (category) filters.push({ category });
+    if (search) {
+      const searchFilters: Prisma.PostWhereInput[] = [
+        { title: { contains: search, mode: "insensitive" } },
+        { content: { contains: search, mode: "insensitive" } },
+        { author: { is: { username: { contains: search, mode: "insensitive" } } } },
+        { comments: { some: { content: { contains: search, mode: "insensitive" } } } },
+      ];
+      if (category === PostCategory.MARKETPLACE) {
+        searchFilters.push({ marketData: { path: ["game"], string_contains: search } });
+      }
+      filters.push({ OR: searchFilters });
     }
-    filters.push({ OR: searchFilters });
-  }
-  if (game) filters.push({ marketData: { path: ["game"], string_contains: game } });
-  if (type === "WTS" || type === "WTB") filters.push({ marketData: { path: ["type"], equals: type } });
-  const where: Prisma.PostWhereInput = filters.length ? { AND: filters } : {};
-  const viewer = await authenticatedUser();
-  const priceOrder = sort === "asc" || sort === "desc";
-  const posts = await prisma.post.findMany({
-    where,
-    include: {
-      author: { select: { id: true, username: true, avatar: true, role: true, isPremium: true } },
-      votes: { where: { userId: viewer?.id ?? "" }, select: { value: true } },
-      escrowTransactions: { where: { status: "IN_ESCROW" }, select: { id: true, buyerId: true, sellerId: true, status: true } },
-    },
-    orderBy: priceOrder ? { createdAt: "desc" } : [{ isPinned: "desc" }, { createdAt: "desc" }],
-  });
+    if (game) filters.push({ marketData: { path: ["game"], string_contains: game } });
+    if (type === "WTS" || type === "WTB") filters.push({ marketData: { path: ["type"], equals: type } });
+    const where: Prisma.PostWhereInput = filters.length ? { AND: filters } : {};
+    const viewer = await authenticatedUser().catch(() => null);
+    const priceOrder = sort === "asc" || sort === "desc";
+    const posts = await prisma.post.findMany({
+      where,
+      include: {
+        author: { select: { id: true, username: true, avatar: true, role: true, isPremium: true } },
+        votes: { where: { userId: viewer?.id ?? "" }, select: { value: true } },
+        escrowTransactions: { where: { status: "IN_ESCROW" }, select: { id: true, buyerId: true, sellerId: true, status: true } },
+      },
+      orderBy: priceOrder ? { createdAt: "desc" } : [{ isPinned: "desc" }, { createdAt: "desc" }],
+    });
 
-  const publicPosts = posts.map((post) => {
-    if (post.category !== PostCategory.MARKETPLACE) return { ...post, escrowTransactions: [] };
-    const escrowTransactions = post.escrowTransactions
-      .filter((transaction) => viewer && (viewer.id === transaction.sellerId || viewer.role === "ADMIN" || viewer.role === "MODERATOR"))
-      .map(({ id, sellerId }) => ({ id, sellerId }));
-    if (!post.marketData || typeof post.marketData !== "object" || Array.isArray(post.marketData)) return { ...post, escrowTransactions };
-    const publicMarketData = { ...post.marketData } as Record<string, Prisma.JsonValue>;
-    delete publicMarketData.contact;
-    return { ...post, marketData: publicMarketData, escrowTransactions };
-  });
-  if (!priceOrder) return Response.json(publicPosts);
-  const sorted = posts.sort((a, b) => {
-    if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
-    const priceA = typeof a.marketData === "object" && a.marketData && "price" in a.marketData ? Number(a.marketData.price) : 0;
-    const priceB = typeof b.marketData === "object" && b.marketData && "price" in b.marketData ? Number(b.marketData.price) : 0;
-    return sort === "asc" ? priceA - priceB : priceB - priceA;
-  });
-  return Response.json(sorted.map((post) => publicPosts.find((publicPost) => publicPost.id === post.id)!));
+    const publicPosts = posts.map((post) => {
+      if (post.category !== PostCategory.MARKETPLACE) return { ...post, escrowTransactions: [] };
+      const escrowTransactions = post.escrowTransactions
+        .filter((transaction) => viewer && (viewer.id === transaction.sellerId || viewer.role === "ADMIN" || viewer.role === "MODERATOR"))
+        .map(({ id, sellerId }) => ({ id, sellerId }));
+      if (!post.marketData || typeof post.marketData !== "object" || Array.isArray(post.marketData)) return { ...post, escrowTransactions };
+      const publicMarketData = { ...post.marketData } as Record<string, Prisma.JsonValue>;
+      delete publicMarketData.contact;
+      return { ...post, marketData: publicMarketData, escrowTransactions };
+    });
+    if (!priceOrder) return Response.json(publicPosts);
+    const sorted = posts.sort((a, b) => {
+      if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+      const priceA = typeof a.marketData === "object" && a.marketData && "price" in a.marketData ? Number(a.marketData.price) : 0;
+      const priceB = typeof b.marketData === "object" && b.marketData && "price" in b.marketData ? Number(b.marketData.price) : 0;
+      return sort === "asc" ? priceA - priceB : priceB - priceA;
+    });
+    return Response.json(sorted.map((post) => publicPosts.find((publicPost) => publicPost.id === post.id)!));
+  } catch (error) {
+    console.error("[api/posts] Failed to load posts:", error);
+    return jsonError("Gagal memuat data postingan.", 500);
+  }
 }
 
 export async function POST(request: Request) {
