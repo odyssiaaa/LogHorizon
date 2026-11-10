@@ -169,37 +169,39 @@ async function fetchRssArticles(url: string, sourceName: string): Promise<Normal
     if (!response.ok) return [];
     const text = await response.text();
     const itemBlocks = text.split("<item>").slice(1, 15);
+    const result: NormalizedArticle[] = [];
 
-    return itemBlocks
-      .map((block, idx) => {
-        const titleMatch = block.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/i) || block.match(/<title>(.*?)<\/title>/i);
-        const linkMatch = block.match(/<link>(.*?)<\/link>/i) || block.match(/<link\s+href=["'](.*?)["']/i);
-        const descMatch = block.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/i) || block.match(/<description>(.*?)<\/description>/i);
-        const dateMatch = block.match(/<pubDate>(.*?)<\/pubDate>/i);
+    for (let idx = 0; idx < itemBlocks.length; idx++) {
+      const block = itemBlocks[idx];
+      const titleMatch = block.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/i) || block.match(/<title>(.*?)<\/title>/i);
+      const linkMatch = block.match(/<link>(.*?)<\/link>/i) || block.match(/<link\s+href=["'](.*?)["']/i);
+      const descMatch = block.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/i) || block.match(/<description>(.*?)<\/description>/i);
+      const dateMatch = block.match(/<pubDate>(.*?)<\/pubDate>/i);
 
-        const title = titleMatch ? titleMatch[1].trim() : "";
-        const link = linkMatch ? linkMatch[1].trim() : "";
-        const rawDesc = descMatch ? descMatch[1] : "";
-        const cleanDesc = rawDesc.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
-        const publishedAt = dateMatch ? new Date(dateMatch[1]).toISOString() : new Date().toISOString();
+      const title = titleMatch ? titleMatch[1].trim() : "";
+      const link = linkMatch ? linkMatch[1].trim() : "";
+      const rawDesc = descMatch ? descMatch[1] : "";
+      const cleanDesc = rawDesc.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+      const publishedAt = dateMatch ? new Date(dateMatch[1]).toISOString() : new Date().toISOString();
 
-        if (!title || !link) return null;
+      if (!title || !link) continue;
 
-        const category = assignCategory(title, cleanDesc);
-        const imageUrl = resolveImage(null, category, idx);
+      const category = assignCategory(title, cleanDesc);
+      const imageUrl = resolveImage(null, category, idx);
 
-        return {
-          id: `rss-${sourceName.toLowerCase()}-${idx}-${Date.parse(publishedAt) || idx}`,
-          title,
-          description: cleanDesc.slice(0, 240) + (cleanDesc.length > 240 ? "..." : ""),
-          url: link,
-          imageUrl,
-          publishedAt,
-          sourceName,
-          category,
-        };
-      })
-      .filter((item): item is NormalizedArticle => item !== null);
+      result.push({
+        id: `rss-${sourceName.toLowerCase()}-${idx}-${Date.parse(publishedAt) || idx}`,
+        title,
+        description: cleanDesc.slice(0, 240) + (cleanDesc.length > 240 ? "..." : ""),
+        url: link,
+        imageUrl,
+        publishedAt,
+        sourceName,
+        category,
+      });
+    }
+
+    return result;
   } catch {
     return [];
   }
