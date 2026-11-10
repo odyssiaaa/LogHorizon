@@ -36,7 +36,7 @@ button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 .page-shell, .section-shell { width: min(1120px, calc(100% - 48px)); margin-inline: auto; }
 .muted-copy { color: var(--muted); line-height: 1.7; }
-.site-header { height: 74px; border-bottom: 1px solid var(--line); background: rgba(13, 11, 20, .92); position: sticky; z-index: 20; top: 0; backdrop-filter: blur(14px); }
+.site-header { position: sticky; z-index: 50; top: 0; }
 .nav-shell { width: min(1200px, calc(100% - 48px)); height: 100%; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 30px; }
 .brand { display: inline-flex; gap: 10px; align-items: center; font-weight: 800; letter-spacing: .08em; white-space: nowrap; }
 .brand > span:last-child > span { color: var(--accent); }
