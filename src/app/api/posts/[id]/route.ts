@@ -52,3 +52,29 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   });
   return Response.json(updated);
 }
+
+export async function DELETE(_request: Request, { params }: RouteContext) {
+  try {
+    const user = await activeUser();
+    if (!user) return jsonError("Login diperlukan.", 401);
+    const { id } = await params;
+    const post = await prisma.post.findUnique({
+      where: { id },
+      select: { id: true, authorId: true, category: true },
+    });
+    if (!post) return jsonError("Postingan tidak ditemukan.", 404);
+
+    const isStaff = user.role === "ADMIN" || user.role === "MODERATOR";
+    const isAuthor = post.authorId === user.id;
+
+    if (!isAuthor && !isStaff) {
+      return jsonError("Hanya pembuat postingan, Moderator, atau Admin yang dapat menghapus postingan ini.", 403);
+    }
+
+    await prisma.post.delete({ where: { id } });
+    return Response.json({ success: true, message: "Postingan berhasil dihapus." });
+  } catch (error) {
+    console.error("[api/posts/[id]] Failed to delete post:", error);
+    return jsonError("Gagal menghapus postingan.", 500);
+  }
+}

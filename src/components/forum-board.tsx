@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { createRealtimeClient, type SealedLiveQuery } from "@neon/realtime/client";
-import { Flag, Pin, Plus, MessageCircle, Search, X } from "lucide-react";
+import { Flag, Pin, Plus, MessageCircle, Search, Trash2, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -119,6 +119,18 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
     setReportId(postId);
   }
 
+  async function deletePost(postId: string) {
+    if (!confirm("Apakah kamu yakin ingin menghapus thread ini?")) return;
+    try {
+      const response = await fetch(`/api/posts/${postId}`, { method: "DELETE" });
+      await readApiResponse<unknown>(response, "Gagal menghapus thread.");
+      setPosts((current) => current.filter((item) => item.id !== postId));
+      setMessage("Thread berhasil dihapus.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Gagal menghapus thread.");
+    }
+  }
+
   function createThread() {
     if (!user) {
       setLoginAction("membuat thread");
@@ -154,7 +166,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
         <section className="post-list" aria-live="polite">
           {loading ? <div className="empty-state">Memuat diskusi…</div> : posts.length ? posts.map((post, index) => <motion.article className={`forum-post ${post.isPinned ? "pinned-post" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
             <PostReactions postId={post.id} likes={post.likes} dislikes={post.dislikes} reaction={post.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} onChange={(result) => setPosts((current) => current.map((entry) => entry.id === post.id ? { ...entry, ...result, votes: result.reaction ? [{ value: result.reaction }] : [] } : entry))} />
-            <div className="post-main">{post.isPinned && <span className="pinned-label"><Pin size={13} /> PINNED</span>}<Link className="post-title" href={`/forum/${post.id}`}>{post.title}</Link><p className="post-excerpt">{post.content}</p><div className="post-meta"><span className="post-author"><DiscordAvatar src={post.author.avatar} username={post.author.username} /><span>oleh <strong className={post.author.isPremium ? "premium-username" : undefined}>{post.author.username ?? "Gamer"}</strong></span></span><span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span><Link href={`/forum/${post.id}`}><MessageCircle size={14} /> Diskusi</Link><button className="report-button" onClick={() => report(post.id)}><Flag size={13} /> Report Post</button></div></div>
+            <div className="post-main">{post.isPinned && <span className="pinned-label"><Pin size={13} /> PINNED</span>}<Link className="post-title" href={`/forum/${post.id}`}>{post.title}</Link><p className="post-excerpt">{post.content}</p><div className="post-meta"><span className="post-author"><DiscordAvatar src={post.author.avatar} username={post.author.username} /><span>oleh <strong className={post.author.isPremium ? "premium-username" : undefined}>{post.author.username ?? "Gamer"}</strong></span></span><span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span><Link href={`/forum/${post.id}`}><MessageCircle size={14} /> Diskusi</Link><button className="report-button" onClick={() => report(post.id)}><Flag size={13} /> Report Post</button>{user && (user.id === post.author.id || user.role === "ADMIN" || user.role === "MODERATOR") && <button className="report-button text-red-500 hover:text-red-400" onClick={() => void deletePost(post.id)} title="Hapus postingan"><Trash2 size={13} /> Hapus</button>}</div></div>
           </motion.article>) : <div className="empty-state">{search ? `Tidak ada diskusi di ${activeCategory.slug} yang cocok dengan pencarian.` : `Belum ada thread di ${activeCategory.slug}. Jadilah yang pertama memulai percakapan.`}</div>}
         </section>
       </div>

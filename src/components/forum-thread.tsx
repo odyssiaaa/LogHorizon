@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, Flag, MessageCircle, Pin, Send, Sparkles, X } from "lucide-react";
+import { ArrowLeft, Flag, MessageCircle, Pin, Send, Sparkles, Trash2, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -27,7 +27,8 @@ type ThreadRecord = {
   dislikes: number;
   votes: { value: Exclude<PostReaction, null> }[];
   createdAt: string;
-  author: { username: string | null; avatar: string | null; isPremium: boolean };
+  authorId?: string;
+  author: { id?: string; username: string | null; avatar: string | null; isPremium: boolean };
   comments: CommentRecord[];
 };
 
@@ -62,6 +63,17 @@ export function ForumThread({ id }: { id: string }) {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [id, refreshKey]);
+
+  async function deleteThread() {
+    if (!confirm("Apakah kamu yakin ingin menghapus thread ini secara permanen?")) return;
+    try {
+      const response = await fetch(`/api/posts/${id}`, { method: "DELETE" });
+      await readApiResponse<unknown>(response, "Gagal menghapus thread.");
+      window.location.href = "/forum";
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Gagal menghapus thread.");
+    }
+  }
 
   const commentsByParent = useMemo(() => {
     const groups = new Map<string | null, CommentRecord[]>();
@@ -151,7 +163,7 @@ export function ForumThread({ id }: { id: string }) {
   ));
 
   return <main className="community-page"><div className="page-shell thread-layout"><div><Link className="back-link" href="/forum"><ArrowLeft size={16} /> Kembali ke forum</Link>
-    <article className="thread-card">{thread.isPinned && <span className="pinned-label"><Pin size={13} /> PINNED</span>}<p className="section-kicker">{thread.category.toLowerCase().replaceAll("_", " ")}</p><h1>{thread.title}</h1><div className="thread-meta"><span className="post-author"><DiscordAvatar src={thread.author.avatar} username={thread.author.username} /><span>oleh <strong className={thread.author.isPremium ? "premium-username" : undefined}>{thread.author.username ?? "Gamer"}</strong></span></span> · {new Date(thread.createdAt).toLocaleString("id-ID")}</div><PostReactions postId={thread.id} likes={thread.likes} dislikes={thread.dislikes} reaction={thread.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} /><div className="thread-body">{thread.content}</div><div className="thread-actions"><button className="button button-quiet button-small" onClick={() => void summarizeThread()} disabled={summarizing}><Sparkles size={14} /> {summarizing ? "Merangkum…" : "Ringkas dengan AI"}</button><button className="report-button" onClick={reportPost}><Flag size={14} /> Report Post</button></div>{summaryError && <div className="inline-error" role="status">{summaryError}</div>}{summary && <section className="thread-summary" aria-label="Ringkasan AI"><strong><Sparkles size={14} /> Ringkasan AI</strong><p>{summary}</p></section>}</article>
+    <article className="thread-card">{thread.isPinned && <span className="pinned-label"><Pin size={13} /> PINNED</span>}<p className="section-kicker">{thread.category.toLowerCase().replaceAll("_", " ")}</p><h1>{thread.title}</h1><div className="thread-meta"><span className="post-author"><DiscordAvatar src={thread.author.avatar} username={thread.author.username} /><span>oleh <strong className={thread.author.isPremium ? "premium-username" : undefined}>{thread.author.username ?? "Gamer"}</strong></span></span> · {new Date(thread.createdAt).toLocaleString("id-ID")}</div><PostReactions postId={thread.id} likes={thread.likes} dislikes={thread.dislikes} reaction={thread.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} /><div className="thread-body">{thread.content}</div><div className="thread-actions"><button className="button button-quiet button-small" onClick={() => void summarizeThread()} disabled={summarizing}><Sparkles size={14} /> {summarizing ? "Merangkum…" : "Ringkas dengan AI"}</button><button className="report-button" onClick={reportPost}><Flag size={14} /> Report Post</button>{user && (user.role === "ADMIN" || user.role === "MODERATOR" || user.id === thread.author?.id) && <button className="report-button text-red-500 hover:text-red-400" onClick={() => void deleteThread()}><Trash2 size={14} /> Hapus Thread</button>}</div>{summaryError && <div className="inline-error" role="status">{summaryError}</div>}{summary && <section className="thread-summary" aria-label="Ringkasan AI"><strong><Sparkles size={14} /> Ringkasan AI</strong><p>{summary}</p></section>}</article>
     {error && <div className={error.startsWith("Laporan berhasil") ? "inline-notice" : "inline-error"} role="status">{error}<button onClick={() => setError("")} aria-label="Tutup"><X size={15} /></button></div>}
     <section className="comments-section"><div className="section-heading"><h2>Diskusi</h2><span>{thread.comments.length} komentar</span></div>
       {user && !user.isBanned ? <form className="comment-compose" onSubmit={(event) => { event.preventDefault(); void sendComment(null, comment); }}><textarea required maxLength={5000} rows={3} value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Bagikan pendapatmu…" /><button className="button button-primary" disabled={sending}><Send size={15} /> Kirim komentar</button></form> : user?.isBanned ? <p className="banned-note">Akun kamu sedang dibatasi dan tidak dapat berkomentar.</p> : <button className="button button-quiet" onClick={() => setLoginAction("berkomentar")}>Login untuk ikut berdiskusi</button>}

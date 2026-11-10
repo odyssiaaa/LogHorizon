@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ArrowDownUp, Flag, Plus, Search, ShoppingBag, X } from "lucide-react";
+import { ArrowDownUp, Flag, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
 import { isPublicMarketData } from "@/lib/market-data";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
@@ -226,6 +226,21 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
     }
   }
 
+  async function deleteListing(id: string) {
+    if (!confirm("Apakah kamu yakin ingin menghapus lapak ini?")) return;
+    try {
+      setEscrowLoading(id);
+      const response = await fetch(`/api/posts/${id}`, { method: "DELETE" });
+      await readApiResponse<unknown>(response, "Gagal menghapus lapak.");
+      setPosts((current) => current.filter((post) => post.id !== id));
+      setNotice("Lapak berhasil dihapus.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Gagal menghapus lapak.");
+    } finally {
+      setEscrowLoading("");
+    }
+  }
+
   return <main className="community-page"><div className="page-shell">
     <div className="market-heading"><div><p className="section-kicker">MARKETPLACE KOMUNITAS</p><h1>Lapak <span>Gamer</span></h1><p className="muted-copy">Jual beli akun, item, top-up, dan jasa gaming dengan komunitas LogHorizon. Escrow saat ini hanya simulasi status, bukan penahanan uang.</p><span className={`live-status live-${liveState}`}>{liveState === "live" ? "Live" : liveState === "connecting" ? "Menghubungkan live…" : liveState === "stale" ? "Memperbarui…" : liveState === "error" ? "Live terputus" : "Live tidak aktif"}</span></div><div>{status === "loading" ? <span className="nav-loading" /> : <button className="button button-primary" onClick={createListing}><Plus size={17} /> Buat Lapak</button>}</div></div>
     <section className="market-filters" aria-label="Filter dan pencarian marketplace">
@@ -252,6 +267,16 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               {(user?.id === post.authorId || user?.role === "ADMIN" || user?.role === "MODERATOR") && market.status !== "IN_ESCROW" && <button className="button button-quiet" disabled={escrowLoading === post.id} onClick={() => void updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD")}>{market.status === "SOLD" ? "Tandai tersedia" : "Tandai terjual"}</button>}
               {post.escrowTransactions?.filter((transaction) => transaction.sellerId === user?.id || user?.role === "ADMIN" || user?.role === "MODERATOR").map((transaction) => <button key={transaction.id} className="button button-sold" disabled={escrowLoading === post.id} onClick={() => void completeEscrow(transaction.id, post.id)}>{escrowLoading === post.id ? "Memproses…" : "Konfirmasi transaksi selesai"}</button>)}
               <button className="report-button" onClick={() => void report(post.id)}><Flag size={14} /> Report Post</button>
+              {(user?.id === post.authorId || user?.role === "ADMIN" || user?.role === "MODERATOR") && (
+                <button
+                  className="report-button text-red-500 hover:text-red-400"
+                  disabled={escrowLoading === post.id}
+                  onClick={() => void deleteListing(post.id)}
+                  title="Hapus lapak"
+                >
+                  <Trash2 size={14} /> Hapus Lapak
+                </button>
+              )}
             </div>
           </div>
         </motion.article>;
