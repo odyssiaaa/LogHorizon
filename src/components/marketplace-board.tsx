@@ -3,29 +3,18 @@
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ArrowDownUp, Flag, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
+import { ArrowDownUp, Flag, Loader2, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
 import { isPublicMarketData } from "@/lib/market-data";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { createRealtimeClient, type SealedLiveQuery } from "@neon/realtime/client";
-import { PostReactions, type PostReaction } from "@/components/post-reactions";
+import { PostReactions } from "@/components/post-reactions";
+import { SkeletonMarketCard, TacticalEmptyState } from "@/components/ui-feedback";
+import type { MarketplacePostRecord } from "@/types/community";
 import { motion } from "framer-motion";
 
-type MarketPost = {
-  id: string;
-  title: string;
-  content: string;
-  authorId: string;
-  createdAt: string;
-  isPinned: boolean;
-  likes: number;
-  dislikes: number;
-  author: { id: string; username: string | null; avatar: string | null; isPremium: boolean };
-  votes: { value: Exclude<PostReaction, null> }[];
-  marketData: unknown;
-  escrowTransactions: { id: string; buyerId: string; sellerId: string }[];
-};
+type MarketPost = MarketplacePostRecord;
 
 const money = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
@@ -41,8 +30,20 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [sort, setSort] = useState("newest");
   const [searchValue, setSearchValue] = useState("");
   const [search, setSearch] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Debounced Search: 500ms delay to prevent excessive queries to Neon
+  useEffect(() => {
+    if (searchValue === search) return;
+    setIsSearching(true);
+    const timer = setTimeout(() => {
+      setSearch(searchValue);
+      setIsSearching(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchValue, search]);
   const [compose, setCompose] = useState(false);
   const [notice, setNotice] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -269,20 +270,52 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   return <main className="community-page"><div className="page-shell">
     <div className="market-heading"><div><p className="section-kicker">MARKETPLACE KOMUNITAS</p><h1>Lapak <span>Gamer</span></h1><p className="muted-copy">Jual beli akun, item, top-up, dan jasa gaming dengan komunitas LogHorizon. Escrow saat ini hanya simulasi status, bukan penahanan uang.</p><span className={`live-status live-${liveState}`}>{liveState === "live" ? "Live" : liveState === "connecting" ? "Menghubungkan live…" : liveState === "stale" ? "Memperbarui…" : liveState === "error" ? "Live terputus" : "Live tidak aktif"}</span></div><div>{status === "loading" ? <span className="nav-loading" /> : <button className="button button-primary" onClick={createListing}><Plus size={17} /> Buat Lapak</button>}</div></div>
     <section className="market-filters" aria-label="Filter dan pencarian marketplace">
-      <form className="market-search" onSubmit={(event) => { event.preventDefault(); setSearch(searchValue); }}><Search size={17} /><input value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Cari judul, deskripsi, game, atau penjual…" aria-label="Cari lapak" /><button type="submit">Cari</button></form>
+      <div className="market-search">
+        {isSearching ? (
+          <Loader2 size={16} className="animate-spin text-[#9D4EDD] shrink-0" />
+        ) : (
+          <Search size={16} className="text-gray-400 shrink-0" />
+        )}
+        <input
+          value={searchValue}
+          onChange={(event) => setSearchValue(event.target.value)}
+          placeholder="Cari judul, game, atau penjual…"
+          aria-label="Cari lapak"
+        />
+        {searchValue && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchValue("");
+              setSearch("");
+            }}
+            aria-label="Hapus pencarian"
+            className="text-gray-400 hover:text-white"
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
       <label>Tipe transaksi<select value={type} onChange={(event) => setType(event.target.value)}><option value="ALL">Semua</option><option value="WTS">WTS · Dijual</option><option value="WTB">WTB · Dicari</option></select></label>
       <label>Nama game<input value={game} onChange={(event) => setGame(event.target.value)} placeholder="Semua game" /></label>
       <label><ArrowDownUp size={14} /> Urutkan harga<select value={sort} onChange={(event) => setSort(event.target.value)}><option value="newest">Terbaru</option><option value="cheapest">Termurah</option><option value="expensive">Termahal</option></select></label>
     </section>
     {notice && <div className="inline-notice" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Tutup notifikasi"><X size={15} /></button></div>}
     {error && <div className="inline-error" role="alert">{error}</div>}
-    {loading ? <div className="empty-state">Memuat lapak…</div> : posts.length ? <section className="market-grid">
+    {loading ? (
+      <div className="market-grid">
+        {[1, 2, 3, 4, 5, 6].map((key) => (
+          <SkeletonMarketCard key={key} />
+        ))}
+      </div>
+    ) : posts.length ? (
+      <section className="market-grid">
       {posts.map((post, index) => {
         if (!isPublicMarketData(post.marketData)) return <article className="market-card" key={post.id}><p className="inline-error">Data lapak tidak valid.</p></article>;
         const market = post.marketData;
         return <motion.article className={`market-card ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
           <div className="market-listing-labels">{post.isPinned && <span className="pinned-label">PINNED</span>}<span className={market.type === "WTS" ? "trade-badge wts" : "trade-badge wtb"}>{market.type}</span><span className="market-label-game">{market.game}</span><span className="market-label-price">{money.format(market.price)}</span><span className={`status-badge ${market.status === "AVAILABLE" ? "available" : market.status === "IN_ESCROW" ? "in-escrow" : "sold"}`}>{market.status === "IN_ESCROW" ? "IN ESCROW" : market.status}</span></div>
-          <div className="market-image">{market.imageUrl ? <Image src={market.imageUrl} alt={`Bukti lapak ${post.title}`} fill unoptimized sizes="(max-width: 700px) 100vw, 33vw" /> : <ShoppingBag size={28} />}</div>
+          <div className="market-image">{market.imageUrl ? <Image src={market.imageUrl} alt={`Bukti lapak ${post.title}`} fill unoptimized loading="lazy" sizes="(max-width: 700px) 100vw, 33vw" /> : <ShoppingBag size={28} />}</div>
           <div className="market-card-body"><h2>{post.title}</h2><p className="market-game">{market.game}</p><p className="market-price">{money.format(market.price)}</p><p className="market-description">{post.content}</p>
             <div className="market-card-meta"><span className="post-author"><DiscordAvatar src={post.author.avatar} username={post.author.username} /><span>oleh <strong className={post.author.isPremium ? "premium-username" : undefined}>{post.author.username ?? "Gamer"}</strong></span></span><span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span></div>
             <PostReactions postId={post.id} likes={post.likes} dislikes={post.dislikes} reaction={post.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} onChange={(result) => setPosts((current) => current.map((entry) => entry.id === post.id ? { ...entry, ...result, votes: result.reaction ? [{ value: result.reaction }] : [] } : entry))} />
@@ -330,7 +363,14 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
           </div>
         </motion.article>;
       })}
-    </section> : <div className="empty-state">Belum ada lapak yang cocok. Buat lapak pertama atau ubah filter.</div>}
+    </section>
+    ) : (
+      <TacticalEmptyState
+        isSearch={Boolean(search.trim() || game.trim() || type !== "ALL")}
+        title={search.trim() ? `Pencarian "${search}" Tidak Ditemukan` : undefined}
+        description={search.trim() ? "Tidak ada lapak yang cocok dengan kata kunci pencarianmu. Coba ganti kata kunci atau reset filter." : "Belum ada lapak yang dibuka di kategori ini. Buka lapak pertamamu sekarang!"}
+      />
+    )}
   </div>
     {compose && <MarketModal canPin={Boolean(user?.isPremium)} onClose={() => setCompose(false)} onCreated={() => { setCompose(false); setRefreshKey((value) => value + 1); }} />}
     <LoginPrompt open={Boolean(loginAction)} action={loginAction} onClose={() => setLoginAction("")} />

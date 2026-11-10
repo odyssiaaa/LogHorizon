@@ -191,18 +191,22 @@ export default function Home() {
           </div>
           <Link href="/leaderboard" className="text-link">Papan Peringkat Guild <ArrowUpRight size={16} /></Link>
         </div>
-        <div className="role-grid">
+        <div className="role-grid grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
           {roleGroups.map((group) => (
-            <article className="role-card" key={group.title}>
-              <div className="role-card-header">
-                <h3>{group.title}</h3>
-                <p>{group.subtitle}</p>
+            <article className="role-card rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-5 shadow-sm" key={group.title}>
+              <div className="role-card-header pb-3 mb-4 border-b border-gray-100 dark:border-[#211C2B]">
+                <h3 className="text-base font-extrabold text-gray-900 dark:text-white tracking-tight">{group.title}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{group.subtitle}</p>
               </div>
-              <ul className="role-card-list">
+              <ul className="role-card-list space-y-3">
                 {group.roles.map((role) => (
-                  <li key={role.name}>
-                    <div className="role-pill-name">{role.name}</div>
-                    <p className="role-pill-desc">{role.desc}</p>
+                  <li key={role.name} className="p-3 rounded bg-gray-50 dark:bg-[#16121F] border border-gray-100 dark:border-[#262033] transition-colors hover:border-[#9D4EDD]/40">
+                    <div className="role-pill-name font-bold text-xs tracking-wide text-purple-900 dark:text-purple-300 flex items-center gap-2">
+                      {role.name}
+                    </div>
+                    <p className="role-pill-desc text-xs text-gray-600 dark:text-gray-400 mt-1.5 leading-relaxed">
+                      {role.desc}
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -214,17 +218,17 @@ export default function Home() {
       {/* 06 / SPONSOR RESMI */}
       <section className="section-shell sponsors-section">
         <div>
-          <p className="section-kicker">OFFICIAL SPONSORS</p>
+          <p className="section-kicker">06 / SPONSOR RESMI</p>
           <h2>Dukungan yang menjaga guild terus bergerak.</h2>
           <p className="muted-copy">Mitra dan sponsor terverifikasi yang mendanai turnamen serta operasional server LogHorizon.</p>
         </div>
         <div className="sponsor-placeholder">Belum ada sponsor terverifikasi</div>
       </section>
 
-      {/* CTA BANNER */}
+      {/* 07 / CTA BANNER */}
       <section className="join-banner section-shell" id="join">
         <div>
-          <p className="section-kicker">PARTY-MU MENUNGGU</p>
+          <p className="section-kicker">07 / GABUNG GUILD</p>
           <h2>Sudah siap melampaui horizon?</h2>
         </div>
         <a className="button button-discord" href="https://discord.gg/aJvbVyTxNb" target="_blank" rel="noreferrer">

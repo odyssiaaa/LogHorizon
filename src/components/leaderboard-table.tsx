@@ -3,23 +3,11 @@
 import { useState } from "react";
 import { Award, Crown, Medal, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
+import type { LeaderboardAdventurer, LeaderboardBenefactor } from "@/types/community";
+import { TacticalEmptyState } from "@/components/ui-feedback";
 
-type LeaderboardMember = {
-  id: string;
-  username: string | null;
-  level: number;
-  xp: number;
-  role: "MEMBER" | "MODERATOR" | "ADMIN";
-  badges: string[];
-  isPremium: boolean;
-};
-
-type Benefactor = {
-  id: string;
-  username: string | null;
-  badges: string[];
-  total: number;
-};
+type LeaderboardMember = LeaderboardAdventurer;
+type Benefactor = LeaderboardBenefactor;
 
 const roleLabels: Record<LeaderboardMember["role"], string> = {
   MEMBER: "Member",
@@ -54,8 +42,38 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
       </header>
 
       <div className="leaderboard-tabs" role="tablist" aria-label="Papan peringkat">
-        <button type="button" role="tab" aria-selected={activeTab === "adventurers"} className={activeTab === "adventurers" ? "active" : ""} onClick={() => setActiveTab("adventurers")}>⚔️ Petualang Teraktif</button>
-        <button type="button" role="tab" aria-selected={activeTab === "benefactors"} className={activeTab === "benefactors" ? "active" : ""} onClick={() => setActiveTab("benefactors")}>💎 Donatur Guild</button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "adventurers"}
+          className={`relative ${activeTab === "adventurers" ? "active" : ""}`}
+          onClick={() => setActiveTab("adventurers")}
+        >
+          <span>⚔️ Petualang Teraktif</span>
+          {activeTab === "adventurers" && (
+            <motion.div
+              layoutId="activeLeaderboardIndicator"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#9D4EDD]"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          )}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "benefactors"}
+          className={`relative ${activeTab === "benefactors" ? "active" : ""}`}
+          onClick={() => setActiveTab("benefactors")}
+        >
+          <span>💎 Donatur Guild</span>
+          {activeTab === "benefactors" && (
+            <motion.div
+              layoutId="activeLeaderboardIndicator"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#9D4EDD]"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          )}
+        </button>
       </div>
 
       <motion.div key={activeTab} className="leaderboard-panel" role="tabpanel" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }}>
