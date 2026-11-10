@@ -5,21 +5,26 @@ import { prisma } from "@/lib/prisma";
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: RouteContext) {
-  const viewer = await authenticatedUser();
-  const { id } = await params;
-  const post = await prisma.post.findUnique({
-    where: { id },
-    include: {
-      author: { select: { id: true, username: true, avatar: true, role: true, isPremium: true } },
-      comments: {
-        orderBy: { createdAt: "asc" },
-        include: { author: { select: { id: true, username: true, avatar: true, isPremium: true } } },
+  try {
+    const viewer = await authenticatedUser().catch(() => null);
+    const { id } = await params;
+    const post = await prisma.post.findUnique({
+      where: { id },
+      include: {
+        author: { select: { id: true, username: true, avatar: true, role: true, isPremium: true } },
+        comments: {
+          orderBy: { createdAt: "asc" },
+          include: { author: { select: { id: true, username: true, avatar: true, isPremium: true } } },
+        },
+        votes: { where: { userId: viewer?.id ?? "" }, select: { value: true } },
       },
-      votes: { where: { userId: viewer?.id ?? "" }, select: { value: true } },
-    },
-  });
-  if (!post || post.category === "MARKETPLACE") return jsonError("Thread tidak ditemukan.", 404);
-  return Response.json(post);
+    });
+    if (!post || post.category === "MARKETPLACE") return jsonError("Thread tidak ditemukan.", 404);
+    return Response.json(post);
+  } catch (error) {
+    console.error("[api/posts/[id]] Failed to load thread:", error);
+    return jsonError("Gagal memuat thread dari database.", 500);
+  }
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
