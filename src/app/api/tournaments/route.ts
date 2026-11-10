@@ -24,7 +24,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const access = await requireStaff(["ADMIN"]);
+  const access = await requireStaff(["ADMIN", "MODERATOR"]);
   if (access.response) return access.response;
 
   const payload: unknown = await request.json();

@@ -48,29 +48,46 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [loginAction, setLoginAction] = useState("");
   const [reportId, setReportId] = useState<string | null>(null);
-  const [contacts, setContacts] = useState<Record<string, { userId: string; contact: string }>>({});
+  const [contacts, setContacts] = useState<Record<string, { userId: string; contact: string; discordId?: string | null; sellerUsername?: string | null }>>({});
   const [contactLoading, setContactLoading] = useState("");
   const [escrowLoading, setEscrowLoading] = useState("");
   const [liveState, setLiveState] = useState<LiveState>(realtimeUrl ? "connecting" : "unavailable");
 
-  async function performContactAction(id: string, value: string, preopenedWindow?: Window | null) {
+  async function performContactAction(id: string, contactData: { contact: string; discordId?: string | null; sellerUsername?: string | null }, preopenedWindow?: Window | null) {
+    const value = contactData.contact;
+    const discordId = contactData.discordId;
     const rawPhone = value.match(/^(?:https?:\/\/)?(?:www\.)?wa\.me\/([0-9]+)/i)?.[1] ?? value.replace(/[^\d]/g, "");
     const phone = rawPhone.startsWith("0") ? `62${rawPhone.slice(1)}` : rawPhone;
     const isWhatsApp = /^(?:https?:\/\/)?(?:www\.)?wa\.me\//i.test(value) || /^\+?[\d\s()-]{8,}$/.test(value);
+
     if (isWhatsApp) {
       const popup = preopenedWindow ?? window.open("about:blank", "_blank");
       if (popup) {
         popup.opener = null;
         popup.location.href = `https://wa.me/${phone}`;
+      } else {
+        setNotice("Pop-up diblokir browser. Izinkan pop-up untuk membuka WhatsApp.");
       }
-      else setNotice("Pop-up diblokir browser. Izinkan pop-up untuk membuka WhatsApp.");
       return;
     }
+
+    // Direct Discord PC / DM action
+    if (discordId) {
+      const discordUrl = `https://discord.com/users/${discordId}`;
+      const popup = preopenedWindow ?? window.open("about:blank", "_blank");
+      if (popup) {
+        popup.opener = null;
+        popup.location.href = discordUrl;
+      }
+      setNotice(`Membuka profil Discord @${contactData.sellerUsername ?? value} untuk Private Chat...`);
+      return;
+    }
+
     preopenedWindow?.close();
     const discordUsername = value.replace(/^discord\s*:\s*/i, "");
     try {
       await navigator.clipboard.writeText(discordUsername);
-      setNotice("Username Discord berhasil disalin!");
+      setNotice(`Username Discord @${discordUsername} berhasil disalin! Buka Discord untuk kirim pesan.`);
     } catch (reason) {
       console.error("[marketplace] Failed to copy Discord contact", reason);
       setContacts((current) => ({ ...current, [id]: { userId: user?.id ?? "", contact: discordUsername } }));
@@ -146,9 +163,17 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
     setError("");
     try {
       const response = await fetch(`/api/posts/${id}/contact`);
-      const data = await readApiResponse<{ contact: string }>(response, "Kontak penjual tidak dapat dimuat.");
-      setContacts((current) => ({ ...current, [id]: { userId: currentUser.id, contact: data.contact } }));
-      await performContactAction(id, data.contact, popup);
+      const data = await readApiResponse<{ contact: string; discordId?: string | null; sellerUsername?: string | null }>(response, "Kontak penjual tidak dapat dimuat.");
+      setContacts((current) => ({
+        ...current,
+        [id]: {
+          userId: currentUser.id,
+          contact: data.contact,
+          discordId: data.discordId,
+          sellerUsername: data.sellerUsername,
+        },
+      }));
+      await performContactAction(id, data, popup);
     } catch (reason) {
       popup?.close();
       setError(reason instanceof Error ? reason.message : "Kontak penjual tidak dapat dimuat.");
@@ -261,7 +286,31 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
           <div className="market-card-body"><h2>{post.title}</h2><p className="market-game">{market.game}</p><p className="market-price">{money.format(market.price)}</p><p className="market-description">{post.content}</p>
             <div className="market-card-meta"><span className="post-author"><DiscordAvatar src={post.author.avatar} username={post.author.username} /><span>oleh <strong className={post.author.isPremium ? "premium-username" : undefined}>{post.author.username ?? "Gamer"}</strong></span></span><span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span></div>
             <PostReactions postId={post.id} likes={post.likes} dislikes={post.dislikes} reaction={post.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} onChange={(result) => setPosts((current) => current.map((entry) => entry.id === post.id ? { ...entry, ...result, votes: result.reaction ? [{ value: result.reaction }] : [] } : entry))} />
-            {user && contacts[post.id]?.userId === user.id ? <div className="market-contact-revealed"><span>Kontak tersedia: <strong>{contacts[post.id].contact}</strong></span><button className="contact-button" onClick={() => void performContactAction(post.id, contacts[post.id].contact)}>Hubungi / Salin Kontak</button></div> : <button className="contact-button" disabled={contactLoading === post.id || status === "loading"} onClick={() => void revealContact(post.id)}>{contactLoading === post.id ? "Memuat kontak…" : status === "loading" ? "Memeriksa akun…" : user ? "Hubungi Penjual" : "Login untuk Lihat Kontak"}</button>}
+            {user && contacts[post.id]?.userId === user.id ? (
+              <div className="market-contact-revealed">
+                <span>Kontak: <strong>{contacts[post.id].contact}</strong></span>
+                <button
+                  className="contact-button flex items-center justify-center gap-1.5"
+                  onClick={() => void performContactAction(post.id, contacts[post.id])}
+                >
+                  {contacts[post.id].discordId ? "💬 Private Chat (PC) Discord" : "Hubungi / Salin Kontak"}
+                </button>
+              </div>
+            ) : (
+              <button
+                className="contact-button flex items-center justify-center gap-1.5"
+                disabled={contactLoading === post.id || status === "loading"}
+                onClick={() => void revealContact(post.id)}
+              >
+                {contactLoading === post.id
+                  ? "Memuat kontak…"
+                  : status === "loading"
+                    ? "Memeriksa akun…"
+                    : user
+                      ? "💬 Hubungi Penjual (PC Discord/WA)"
+                      : "Login untuk Lihat Kontak"}
+              </button>
+            )}
             <div className="market-card-actions">
               {market.status === "AVAILABLE" && market.type === "WTS" && user?.id !== post.authorId && <button className="button button-primary" disabled={escrowLoading === post.id} onClick={() => void startEscrow(post.id)}>{escrowLoading === post.id ? "Memproses…" : "Ajukan transaksi escrow"}</button>}
               {(user?.id === post.authorId || user?.role === "ADMIN" || user?.role === "MODERATOR") && market.status !== "IN_ESCROW" && <button className="button button-quiet" disabled={escrowLoading === post.id} onClick={() => void updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD")}>{market.status === "SOLD" ? "Tandai tersedia" : "Tandai terjual"}</button>}

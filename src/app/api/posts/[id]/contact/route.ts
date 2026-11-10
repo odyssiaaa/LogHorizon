@@ -11,10 +11,24 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const { id } = await params;
   const post = await prisma.post.findUnique({
     where: { id },
-    select: { category: true, marketData: true },
+    select: {
+      category: true,
+      marketData: true,
+      author: {
+        select: {
+          id: true,
+          username: true,
+          discordId: true,
+        },
+      },
+    },
   });
   if (!post || post.category !== "MARKETPLACE" || !isMarketData(post.marketData)) {
     return jsonError("Lapak tidak ditemukan.", 404);
   }
-  return Response.json({ contact: post.marketData.contact });
+  return Response.json({
+    contact: post.marketData.contact,
+    discordId: post.author.discordId,
+    sellerUsername: post.author.username,
+  });
 }

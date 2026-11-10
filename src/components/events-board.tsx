@@ -155,7 +155,7 @@ export function EventsBoard() {
     [post.game, post.description, post.author.username ?? "", ...post.joins.map((join) => join.username ?? "")]
       .some((value) => value.toLocaleLowerCase().includes(normalizedSearch)),
   );
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isAdminOrMod = session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR";
 
   return (
     <main className="page-shell events-page">
@@ -173,13 +173,45 @@ export function EventsBoard() {
 
       {/* TOURNAMENT SECTION */}
       <section className="events-section">
-        <div className="events-section-heading"><div><p className="section-kicker">BRACKET / SINGLE ELIMINATION</p><h2>Turnamen</h2></div><CalendarDays size={18} /></div>
-        {isAdmin && <form className="stack-form event-create-form" onSubmit={createTournament}>
-          <label>Nama game<input required maxLength={80} value={game} onChange={(event) => setGame(event.target.value)} placeholder="Valorant" /></label>
-          <label>Slot tim<input required type="number" min={2} max={64} value={maxSlots} onChange={(event) => setMaxSlots(event.target.value)} /></label>
-          <label>Tanggal<input required type="datetime-local" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label>
-          <button className="button button-primary"><Plus size={15} /> Buat turnamen</button>
-        </form>}
+        <div className="events-section-heading">
+          <div>
+            <p className="section-kicker">BRACKET / SINGLE ELIMINATION</p>
+            <h2>Turnamen Resmi</h2>
+          </div>
+          <CalendarDays size={18} />
+        </div>
+
+        {/* PROPOSAL & CONTACT PERSON BANNER FOR MEMBERS */}
+        <div className="mb-4 rounded-md border border-purple-500/20 bg-purple-950/20 p-4 text-xs leading-relaxed text-gray-300">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="font-bold text-sm text-purple-300 mb-1">
+                🏆 Penyelenggaraan Turnamen &amp; Hadiah (Prizepool)
+              </p>
+              <p className="text-gray-400">
+                Turnamen resmi LogHorizon hanya dapat dibuat dan divalidasi oleh <strong>Admin / Moderator</strong> untuk menjamin transparansi prizepool dan kelancaran braket. Mau bikin turnamen komunitasmu?
+              </p>
+            </div>
+            <a
+              href="https://discord.com/users/706661230835925042"
+              target="_blank"
+              rel="noreferrer"
+              className="button button-discord text-xs font-semibold whitespace-nowrap self-start sm:self-center flex items-center gap-1.5"
+              title="Hubungi Narahubung / CP .odyssia (Owner)"
+            >
+              <span>Hubungi CP Owner (.odyssia)</span> <ExternalLink size={12} />
+            </a>
+          </div>
+        </div>
+
+        {isAdminOrMod && (
+          <form className="stack-form event-create-form" onSubmit={createTournament}>
+            <label>Nama game<input required maxLength={80} value={game} onChange={(event) => setGame(event.target.value)} placeholder="Valorant" /></label>
+            <label>Slot tim<input required type="number" min={2} max={64} value={maxSlots} onChange={(event) => setMaxSlots(event.target.value)} /></label>
+            <label>Tanggal<input required type="datetime-local" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label>
+            <button className="button button-primary"><Plus size={15} /> Buat turnamen</button>
+          </form>
+        )}
         <div className="event-list">
           {visibleTournaments.length === 0 && <p className="empty-state">{search ? "Tidak ada turnamen yang cocok dengan pencarian." : "Belum ada turnamen terjadwal."}</p>}
           {visibleTournaments.map((tournament) => (
