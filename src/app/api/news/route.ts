@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-export const revalidate = 3600; // Cache 1 jam (ISR)
-
 export type NormalizedArticle = {
   id: string;
   title: string;
