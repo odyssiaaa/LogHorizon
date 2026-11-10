@@ -17,8 +17,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://loghorizon.vercel.app"),
   title: "LogHorizon — Find Your Party",
-  description: "Komunitas multi-game LogHorizon. Temukan party, forum, dan marketplace gamer.",
+  description: "Satu guild untuk semua petualang.",
+  icons: { icon: "/loghorizon-logo.png", apple: "/loghorizon-logo.png" },
+  openGraph: {
+    title: "LogHorizon — Find Your Party",
+    description: "Satu guild untuk semua petualang.",
+    images: [{ url: "/loghorizon-logo.png", width: 768, height: 768, alt: "Logo LogHorizon" }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LogHorizon — Find Your Party",
+    description: "Satu guild untuk semua petualang.",
+    images: ["/loghorizon-logo.png"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

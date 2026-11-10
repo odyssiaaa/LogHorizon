@@ -4,9 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { createRealtimeClient, type SealedLiveQuery } from "@neon/realtime/client";
-import { ArrowDown, ArrowUp, Flag, Pin, Plus, MessageCircle, Search, X } from "lucide-react";
+import { Flag, Pin, Plus, MessageCircle, Search, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
+import { DiscordAvatar } from "@/components/discord-avatar";
+import { PostReactions, type PostReaction } from "@/components/post-reactions";
+import { motion } from "framer-motion";
 
 type Category = "GENERAL_CHAT" | "PROMOTION" | "FEEDBACK";
 type BoardPost = {
@@ -15,11 +18,11 @@ type BoardPost = {
   content: string;
   category: Category;
   isPinned: boolean;
-  upvotes: number;
-  downvotes: number;
+  likes: number;
+  dislikes: number;
   createdAt: string;
-  author: { id: string; username: string | null; role: string };
-  votes: { value: "UP" | "DOWN" }[];
+  author: { id: string; username: string | null; avatar: string | null; role: string; isPremium: boolean };
+  votes: { value: Exclude<PostReaction, null> }[];
 };
 type ForumLiveRow = { id: string };
 type LiveState = "connecting" | "live" | "stale" | "error" | "closed" | "unavailable";
@@ -108,19 +111,6 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
     };
   }, [category, realtimeUrl]);
 
-  async function vote(postId: string, value: "UP" | "DOWN") {
-    if (!user) {
-      setLoginAction("memberi vote");
-      return;
-    }
-    setMessage("");
-    try {
-      const response = await fetch(`/api/posts/${postId}/vote`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value }) });
-      const data = await readApiResponse<{ upvotes: number; downvotes: number; vote: "UP" | "DOWN" | null }>(response, "Vote gagal.");
-      setPosts((current) => current.map((post) => post.id === postId ? { ...post, upvotes: data.upvotes, downvotes: data.downvotes, votes: data.vote ? [{ value: data.vote }] : [] } : post));
-    } catch (reason) { setMessage(reason instanceof Error ? reason.message : "Vote gagal."); }
-  }
-
   async function report(postId: string) {
     if (!user) {
       setLoginAction("melaporkan postingan");
@@ -162,10 +152,10 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
         {message && <div className="inline-notice" role="status">{message}<button aria-label="Tutup notifikasi" onClick={() => setMessage("")}><X size={15} /></button></div>}
         {error && <div className="inline-error" role="alert">{error}</div>}
         <section className="post-list" aria-live="polite">
-          {loading ? <div className="empty-state">Memuat diskusi…</div> : posts.length ? posts.map((post) => <article className={`forum-post ${post.isPinned ? "pinned-post" : ""}`} key={post.id}>
-            <div className="vote-column"><button title="Upvote" aria-label="Upvote" className={post.votes?.[0]?.value === "UP" ? "vote-button selected" : "vote-button"} onClick={() => vote(post.id, "UP")}><ArrowUp size={19} /></button><strong>{post.upvotes - post.downvotes}</strong><button title="Downvote" aria-label="Downvote" className={post.votes?.[0]?.value === "DOWN" ? "vote-button selected down" : "vote-button"} onClick={() => vote(post.id, "DOWN")}><ArrowDown size={19} /></button></div>
-            <div className="post-main">{post.isPinned && <span className="pinned-label"><Pin size={13} /> PINNED</span>}<Link className="post-title" href={`/forum/${post.id}`}>{post.title}</Link><p className="post-excerpt">{post.content}</p><div className="post-meta"><span>oleh <strong>{post.author.username ?? "Gamer"}</strong></span><span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span><Link href={`/forum/${post.id}`}><MessageCircle size={14} /> Diskusi</Link><button className="report-button" onClick={() => report(post.id)}><Flag size={13} /> Report Post</button></div></div>
-          </article>) : <div className="empty-state">{search ? `Tidak ada diskusi di ${activeCategory.slug} yang cocok dengan pencarian.` : `Belum ada thread di ${activeCategory.slug}. Jadilah yang pertama memulai percakapan.`}</div>}
+          {loading ? <div className="empty-state">Memuat diskusi…</div> : posts.length ? posts.map((post, index) => <motion.article className={`forum-post ${post.isPinned ? "pinned-post" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
+            <PostReactions postId={post.id} likes={post.likes} dislikes={post.dislikes} reaction={post.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} onChange={(result) => setPosts((current) => current.map((entry) => entry.id === post.id ? { ...entry, ...result, votes: result.reaction ? [{ value: result.reaction }] : [] } : entry))} />
+            <div className="post-main">{post.isPinned && <span className="pinned-label"><Pin size={13} /> PINNED</span>}<Link className="post-title" href={`/forum/${post.id}`}>{post.title}</Link><p className="post-excerpt">{post.content}</p><div className="post-meta"><span className="post-author"><DiscordAvatar src={post.author.avatar} username={post.author.username} /><span>oleh <strong className={post.author.isPremium ? "premium-username" : undefined}>{post.author.username ?? "Gamer"}</strong></span></span><span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span><Link href={`/forum/${post.id}`}><MessageCircle size={14} /> Diskusi</Link><button className="report-button" onClick={() => report(post.id)}><Flag size={13} /> Report Post</button></div></div>
+          </motion.article>) : <div className="empty-state">{search ? `Tidak ada diskusi di ${activeCategory.slug} yang cocok dengan pencarian.` : `Belum ada thread di ${activeCategory.slug}. Jadilah yang pertama memulai percakapan.`}</div>}
         </section>
       </div>
       {compose && <ThreadModal category={category} canPin={Boolean(user?.isPremium)} onClose={() => setCompose(false)} onCreated={() => { setCompose(false); setLoading(true); setRefreshKey((value) => value + 1); }} />}
@@ -195,5 +185,5 @@ function ThreadModal({ category, canPin, onClose, onCreated }: { category: Categ
     } finally { setSaving(false); }
   }
 
-  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="thread-modal-title"><button className="modal-close" onClick={onClose} aria-label="Tutup"><X size={19} /></button><p className="section-kicker">MULAI DISKUSI</p><h2 id="thread-modal-title">Buat Thread Baru</h2><form className="stack-form" onSubmit={submit}><label>Kategori<input value={categories.find((item) => item.id === category)?.slug} readOnly /></label><label>Judul thread<input required maxLength={180} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Apa yang ingin kamu diskusikan?" /></label><label>Isi thread<textarea required maxLength={10000} rows={6} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Ceritakan lebih lanjut…" /></label>{canPin && category === "PROMOTION" && <label className="form-checkbox"><input type="checkbox" checked={isPinned} onChange={(event) => setIsPinned(event.target.checked)} /> Sematkan iklan (Premium)</label>}{error && <p className="form-error" role="alert">{error}</p>}<button className="button button-primary" disabled={saving}>{saving ? "Mengirim…" : "Publikasikan thread"}</button></form></section></div>;
+  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="thread-modal-title"><button className="modal-close" onClick={onClose} aria-label="Tutup"><X size={19} /></button><p className="section-kicker">MULAI DISKUSI</p><h2 id="thread-modal-title">Buat Thread Baru</h2><form className="stack-form" onSubmit={submit}><label>Kategori<input value={categories.find((item) => item.id === category)?.slug} readOnly /></label><label>Judul thread<input required maxLength={180} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Apa yang ingin kamu diskusikan?" /></label><label>Isi thread<textarea required maxLength={10000} rows={6} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Ceritakan lebih lanjut…" /></label>{canPin && <label className="form-checkbox"><input type="checkbox" checked={isPinned} onChange={(event) => setIsPinned(event.target.checked)} /> Sematkan postingan (Premium, maks. 3)</label>}{error && <p className="form-error" role="alert">{error}</p>}<button className="button button-primary" disabled={saving}>{saving ? "Mengirim…" : "Publikasikan thread"}</button></form></section></div>;
 }

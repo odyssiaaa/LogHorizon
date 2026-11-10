@@ -51,7 +51,7 @@ export async function GET(request: Request) {
   const posts = await prisma.post.findMany({
     where,
     include: {
-      author: { select: { id: true, username: true, avatar: true, role: true } },
+      author: { select: { id: true, username: true, avatar: true, role: true, isPremium: true } },
       votes: { where: { userId: viewer?.id ?? "" }, select: { value: true } },
       escrowTransactions: { where: { status: "IN_ESCROW" }, select: { id: true, buyerId: true, sellerId: true, status: true } },
     },
@@ -90,6 +90,11 @@ export async function POST(request: Request) {
   const category = data.category;
 
   if (!title || title.length > 180) return jsonError("Judul wajib diisi (maksimal 180 karakter).", 400);
+  const isPinned = data.isPinned === true;
+  if (isPinned && !user.isPremium) return jsonError("Hanya member premium yang dapat menyematkan postingan.", 403);
+  if (isPinned && await prisma.post.count({ where: { authorId: user.id, isPinned: true } }) >= 3) {
+    return jsonError("Benefit Premium membatasi maksimal tiga postingan tersemat.", 403);
+  }
   if (category === PostCategory.MARKETPLACE) {
     const market = data.marketData as Partial<MarketData> | undefined;
     if (
@@ -115,7 +120,7 @@ export async function POST(request: Request) {
       status: "AVAILABLE",
     };
     const post = await prisma.post.create({
-      data: { authorId: user.id, category: PostCategory.MARKETPLACE, title, content, marketData: marketJson(marketData) },
+      data: { authorId: user.id, category: PostCategory.MARKETPLACE, title, content, isPinned, marketData: marketJson(marketData) },
     });
     void sendDiscordNotice("marketplace", `Lapak baru: ${title}`, `${market.type} · ${market.game} · Rp ${market.price.toLocaleString("id-ID")}`);
     return Response.json(post, { status: 201 });
@@ -123,10 +128,6 @@ export async function POST(request: Request) {
 
   if (typeof category !== "string" || !isPostCategory(category) || category === PostCategory.MARKETPLACE) return jsonError("Kategori tidak valid.", 400);
   if (!content || content.length > 10000) return jsonError("Isi thread wajib diisi (maksimal 10.000 karakter).", 400);
-  const isPinned = data.isPinned === true;
-  if (isPinned && (!user.isPremium || category !== PostCategory.PROMOTION)) {
-    return jsonError("Hanya member premium yang dapat menyematkan iklan pada ruang promosi.", 403);
-  }
   const post = await prisma.$transaction(async (tx) => {
     const created = await tx.post.create({ data: { authorId: user.id, category, title, content, isPinned } });
     await addXpInTransaction(tx, user.id, 10);

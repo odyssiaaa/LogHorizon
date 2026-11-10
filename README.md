@@ -36,6 +36,7 @@ Komunitas multi-game dengan Next.js App Router, TypeScript, Tailwind CSS, Postgr
 Halaman utama tersedia di `/`, forum di `/forum`, detail thread di `/forum/[id]`, forum jual-beli di `/marketplace`, papan peringkat di `/leaderboard`, turnamen/LFG di `/events`, serta kas komunitas di `/donate`.
 
 Pencarian forum mencakup judul, isi thread, komentar, dan nama anggota di sub-forum aktif. Marketplace dapat dicari berdasarkan judul, deskripsi, game, atau penjual; daftar turnamen dan LFG dapat difilter berdasarkan game, party, dan anggota.
+Leaderboard menampilkan peringkat XP/level dan donatur berdasarkan kontribusi sukses terverifikasi; catatan pembayaran mock tidak dihitung.
 
 ## Layanan Neon
 
@@ -53,9 +54,10 @@ Asisten chat `Satpam Horizon` memanggil Hugging Face Inference Providers melalui
 
 ## Catatan autentikasi dan moderasi
 
-- Login Discord membuat sesi database. Setelah autentikasi, profil Discord disimpan/diperbarui pada user, sedangkan role dan status ban tetap dikendalikan dari database.
+- Login Discord membuat sesi database dan memperbarui profil pengguna. Role situs disinkronkan dari role Discord yang ID-nya dikonfigurasi; status ban tetap dikendalikan dari database.
+- Sinkronisasi role Discord otomatis hanya aktif setelah `DISCORD_GUILD_ID`, `DISCORD_ROLE_EMPEROR_ID`, `DISCORD_ROLE_PRINCE_ID`, `DISCORD_ROLE_GRAND_CHANCELLOR_ID`, dan `DISCORD_ROLE_LORD_COMMANDER_ID` diatur menggunakan ID role asli dari server. Jangan mengisi nama role sebagai pengganti ID. `GUILD_TREASURY_GOAL_IDR` mengatur target kas pada `/donate`; tanpa nilai positif, target/progres tidak ditampilkan.
 - Untuk mempromosikan moderator/admin pertama, perbarui kolom `role` pada user melalui database. Nilai yang didukung: `MEMBER`, `MODERATOR`, `ADMIN`.
-- Route tulis forum dan marketplace memverifikasi sesi dan status ban di server. Vote dan laporan disimpan pada tabel terpisah dengan batas satu vote/laporan per user per post.
+- Route tulis forum dan marketplace memverifikasi sesi dan status ban di server. Reaksi LIKE/DISLIKE dan laporan disimpan pada tabel terpisah dengan batas satu reaksi/laporan per user per post. Terapkan perubahan voting melalui migrasi Prisma agar reaksi lama dan hitungannya tetap terjaga.
 - Laporan yang menunggu peninjauan ditampilkan di `/admin` untuk role `MODERATOR` dan `ADMIN`.
 - Proxy dan pemeriksaan server melindungi dashboard/API admin. Moderator dapat memproses laporan; perubahan role/status ban dan broadcast hanya dapat dilakukan Admin.
 - Broadcast Admin membuat thread pinned di Obrolan Umum lalu mengirim embed ke Discord webhook. Jika webhook gagal, thread tetap tersimpan dan dashboard menampilkan peringatan; atur `DISCORD_ANNOUNCEMENT_WEBHOOK_URL` hanya pada environment server.
@@ -65,6 +67,7 @@ Asisten chat `Satpam Horizon` memanggil Hugging Face Inference Providers melalui
 - `/api/discord/sync` menerima POST dari bot dengan header `Authorization: Bearer <DISCORD_SYNC_TOKEN>` dan JSON `{ "discordId": "Discord user ID", "xpDelta": 10, "role": "MEMBER" }`. Field `xpDelta` dan `role` opsional; batasi token ini pada bot tepercaya dan jangan menaruhnya di client.
 - Atur `DISCORD_MARKETPLACE_WEBHOOK_URL` serta `DISCORD_EVENTS_WEBHOOK_URL` untuk notifikasi lapak dan LFG. Pengumuman Admin memakai `DISCORD_ANNOUNCEMENT_WEBHOOK_URL`.
 - `/donate` hanya memakai mock payment gateway lokal dan endpoint-nya menolak semua request selain di `NODE_ENV=development`. Mock ini tidak memproses pembayaran nyata; untuk produksi, integrasikan provider pembayaran dan verifikasi callback/webhook provider sebelum mengubah status donasi atau memberi premium.
+- `/settings` menampilkan preferensi tema lokal, profil Discord, dan listing. Webhook notifikasi pribadi belum diaktifkan; donasi tiruan juga tidak menetapkan role Discord karena pemberian role harus menunggu pembayaran yang terverifikasi dan bot tepercaya.
 - Escrow adalah pencatatan status simulasi saja: status bergerak `AVAILABLE` → `IN_ESCROW` → `SOLD`, tetapi aplikasi tidak menerima atau menahan dana nyata. Gunakan payment provider dan tinjauan legal/compliance sebelum menawarkan escrow uang nyata.
 
 Semua kredensial rahasia hanya disimpan di environment server; jangan pernah menaruhnya di variabel `NEXT_PUBLIC_*`.

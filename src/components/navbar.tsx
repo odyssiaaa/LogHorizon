@@ -12,6 +12,7 @@ const links = [
   ["Leaderboard", "/leaderboard"],
   ["Events", "/events"],
   ["Donate", "/donate"],
+  ["Settings", "/settings"],
   ["Marketplace", "/marketplace"],
   ["Rules", "/#rules"],
 ];

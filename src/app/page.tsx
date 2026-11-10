@@ -25,6 +25,43 @@ const benefits = [
   { title: "Event & Turnamen", copy: "Asah skill, ikuti event, dan rebut hadiah bersama guild.", icon: Trophy },
 ];
 
+const roleGroups = [
+  {
+    title: "Kasta Penguasa",
+    description: "Kepemimpinan dan kebijakan guild.",
+    roles: [
+      ["👑 Emperor", "Pemilik guild dan penentu arah komunitas."],
+      ["✨ Prince / Princess", "Manajemen inti, infrastruktur, dan event besar."],
+      ["📘 Grand Chancellor", "Manajemen inti dan kebijakan guild."],
+    ],
+  },
+  {
+    title: "Kasta Penjaga",
+    description: "Keamanan, moderasi, dan ketertiban komunitas.",
+    roles: [["⚔️ Lord Commander", "Moderator yang menjaga forum dan menindak pelanggaran."]],
+  },
+  {
+    title: "Kasta Khusus Donatur",
+    description: "Gelar kehormatan untuk kontributor komunitas.",
+    roles: [
+      ["💎 Noble Patron", "Penyokong turnamen komunitas."],
+      ["👑 High Merchant", "Pendukung kas dan operasional guild."],
+      ["🛡️ Knight", "Kontributor operasional komunitas."],
+    ],
+  },
+  {
+    title: "Kasta Warga",
+    description: "Kreator dan petualang yang menghidupkan guild.",
+    roles: [
+      ["📢 Streamer", "Kreator konten siaran."],
+      ["🎨 Artist", "Kreator karya visual."],
+      ["🎵 Music Lover", "Pecinta dan kurator musik."],
+      ["👥 Citizen", "Warga komunitas."],
+      ["🎮 Gamer", "Petualang aktif lintas game."],
+    ],
+  },
+];
+
 export default function Home() {
   return (
     <main>
@@ -43,15 +80,29 @@ export default function Home() {
               <a className="button button-discord button-large" href="https://discord.gg/aJvbVyTxNb" target="_blank" rel="noreferrer">
                 Masuk Guild <span>(Join Discord)</span><ArrowUpRight size={18} />
               </a>
-              <Link className="button button-quiet" href="/forum">Jelajahi komunitas</Link>
+              <a className="button button-quiet" href="#about-section">Jelajahi Komunitas</a>
             </div>
-            <div className="hero-proof"><span><UsersRound size={15} /> Teman baru</span><span><ShieldCheck size={15} /> Komunitas aman</span><span><Gamepad2 size={15} /> Semua game</span></div>
+            <div className="hero-stats">
+              <div><strong>1,200+</strong><span>Anggota Guild</span></div>
+              <div><strong>400+</strong><span>Party Terbentuk</span></div>
+              <div><strong>24/7</strong><span>Voice Room Aktif</span></div>
+            </div>
           </div>
           <div className="hero-emblem-wrap"><Image className="hero-logo" src="/loghorizon-logo.png" alt="Logo komunitas LogHorizon: Find your party. Beyond the horizon." width={768} height={768} priority /></div>
         </div>
       </section>
 
-      <section className="section-shell about-section">
+      <section className="section-shell role-section" id="roles">
+        <div className="section-heading"><div><div className="section-kicker">05 / STRUKTUR KOMUNITAS</div><h2>Peran di dalam guild.</h2></div><Link href="/#rules" className="text-link">Aturan komunitas <ArrowUpRight size={16} /></Link></div>
+        <div className="role-groups">
+          {roleGroups.map((group) => <article className="role-group" key={group.title}>
+            <p className="section-kicker">{group.title}</p><p className="role-group-description">{group.description}</p>
+            <ul>{group.roles.map(([name, description]) => <li key={name}><strong>{name}</strong><span>{description}</span></li>)}</ul>
+          </article>)}
+        </div>
+      </section>
+
+      <section className="section-shell about-section" id="about-section">
         <div className="section-kicker">01 / TENTANG GUILD</div>
         <div className="about-content">
           <h2>Tak perlu menjelajah <span>sendirian.</span></h2>
@@ -69,6 +120,7 @@ export default function Home() {
             </article>
           ))}
         </div>
+        <Link className="marketplace-cta" href="/marketplace">Buka Forum Jual-Beli &amp; Promosi <ArrowUpRight size={17} /></Link>
       </section>
 
       <section className="section-shell community-section">
@@ -79,6 +131,11 @@ export default function Home() {
       <section className="section-shell rules-section" id="rules">
         <div><div className="section-kicker">04 / MAIN BARENG, TETAP NYAMAN</div><h2>Petualangan seru dimulai dari <span>saling menghargai.</span></h2></div>
         <ul className="rules-list"><li><ShieldCheck size={19} /><span><strong>Fair Play & No Toxic</strong> — tetap sportif dan saling menghormati.</span></li><li><UsersRound size={19} /><span><strong>Solidaritas Tinggi</strong> — bantu teman guild, jangan tinggalkan party.</span></li><li><Compass size={19} /><span><strong>Keamanan Bersama</strong> — No Scam / Cheat, jujur dan jaga komunitas.</span></li></ul>
+      </section>
+
+      <section className="section-shell sponsors-section">
+        <div><p className="section-kicker">OFFICIAL SPONSORS</p><h2>Dukungan yang menjaga guild terus bergerak.</h2><p className="muted-copy">Nama sponsor akan ditampilkan setelah pembayaran terverifikasi dan persetujuan publikasi tersedia.</p></div>
+        <div className="sponsor-placeholder">Belum ada sponsor terverifikasi</div>
       </section>
 
       <section className="join-banner section-shell" id="join">

@@ -1,0 +1,5 @@
+ALTER TYPE "VoteType" RENAME VALUE 'UP' TO 'LIKE';
+ALTER TYPE "VoteType" RENAME VALUE 'DOWN' TO 'DISLIKE';
+
+ALTER TABLE "Post" RENAME COLUMN "upvotes" TO "likes";
+ALTER TABLE "Post" RENAME COLUMN "downvotes" TO "dislikes";

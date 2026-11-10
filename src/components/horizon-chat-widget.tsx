@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MessageCircle, Send, Shield, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { signIn } from "next-auth/react";
 import { readApiResponse } from "@/lib/api-response";
+import { DiscordAvatar } from "@/components/discord-avatar";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -20,7 +22,33 @@ export function HorizonChatWidget() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
+  const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const saved = localStorage.getItem("loghorizon-preferences");
+        if (saved) {
+          const preferences: unknown = JSON.parse(saved);
+          if (preferences && typeof preferences === "object" && "animations" in preferences && typeof preferences.animations === "boolean") {
+            setAnimationsEnabled(preferences.animations);
+          }
+        }
+      } catch (reason) {
+        console.error("[chat] Failed to read animation preference", reason);
+      }
+    }, 0);
+    function syncPreferences(event: Event) {
+      const detail = (event as CustomEvent<{ animations?: unknown }>).detail;
+      if (typeof detail?.animations === "boolean") setAnimationsEnabled(detail.animations);
+    }
+    window.addEventListener("loghorizon-preferences", syncPreferences);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("loghorizon-preferences", syncPreferences);
+    };
+  }, []);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -64,7 +92,8 @@ export function HorizonChatWidget() {
     }
   }
 
-  const transition = reduceMotion
+  const shouldReduceMotion = reduceMotion || !animationsEnabled;
+  const transition = shouldReduceMotion
     ? { duration: 0 }
     : { duration: 0.2, ease: "easeOut" as const };
 
@@ -74,9 +103,9 @@ export function HorizonChatWidget() {
         {open && (
           <motion.section
             key="horizon-chat"
-            initial={reduceMotion ? false : { opacity: 0, y: 12, scale: 0.98 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={reduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.98 }}
+            exit={shouldReduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.98 }}
             transition={transition}
             className="flex h-[min(34rem,calc(100dvh-7rem))] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-md border border-[#D1D5DB] bg-white text-[#111827] shadow-2xl dark:border-[#2A2438] dark:bg-[#120F17] dark:text-white"
             aria-label="Chat dengan Satpam Horizon"
@@ -106,21 +135,20 @@ export function HorizonChatWidget() {
               <>
                 <div className="flex-1 space-y-3 overflow-y-auto p-3" aria-live="polite">
                   {messages.map((message, index) => (
-                    <motion.p
+                    <motion.div
                       key={`${index}-${message.role}`}
-                      initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={transition}
-                      className={`max-w-[90%] whitespace-pre-wrap break-words rounded-sm px-3 py-2 text-sm leading-relaxed ${
-                        message.role === "user"
-                          ? "ml-auto bg-[#9D4EDD] text-white"
-                          : "mr-auto border border-[#E5E7EB] bg-[#F8F9FA] text-[#111827] dark:border-[#2A2438] dark:bg-[#1A1526] dark:text-white"
-                      }`}
+                      className={`chat-message-row ${message.role === "user" ? "chat-message-user" : "chat-message-assistant"}`}
                     >
-                      {message.content}
-                    </motion.p>
+                      {message.role === "user"
+                        ? <DiscordAvatar className="chat-message-avatar" src={session.user.avatar} username={session.user.username ?? session.user.name ?? "Gamer"} size={40} />
+                        : <span className="chat-bot-avatar"><Image src="/loghorizon-logo.png" alt="Satpam Horizon" width={28} height={28} /></span>}
+                      <p className={`chat-message-bubble ${message.role === "user" ? "user-bubble" : "assistant-bubble"}`}>{message.content}</p>
+                    </motion.div>
                   ))}
-                  {loading && <p className="mr-auto rounded-sm border border-[#E5E7EB] bg-[#F8F9FA] px-3 py-2 text-sm text-[#6B7280] dark:border-[#2A2438] dark:bg-[#1A1526] dark:text-[#9CA3AF]">Satpam sedang patroli…</p>}
+                  {loading && <div className="chat-message-row chat-message-assistant"><span className="chat-bot-avatar"><Image src="/loghorizon-logo.png" alt="Satpam Horizon" width={28} height={28} /></span><p className="chat-message-bubble assistant-bubble">Satpam sedang patroli…</p></div>}
                 </div>
                 {error && (
                   <div className="mx-3 mb-2 flex items-start justify-between gap-2 rounded-sm border border-red-300 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:text-red-300" role="alert">
@@ -167,8 +195,8 @@ export function HorizonChatWidget() {
       </AnimatePresence>
       <motion.button
         type="button"
-        whileHover={reduceMotion ? undefined : { scale: 1.04 }}
-        whileTap={reduceMotion ? undefined : { scale: 0.96 }}
+        whileHover={shouldReduceMotion ? undefined : { scale: 1.04 }}
+        whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
         onClick={() => setOpen((value) => !value)}
         className="grid size-14 place-items-center rounded-full border border-white/20 bg-[#9D4EDD] text-white shadow-xl transition-colors hover:bg-[#873DC2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9D4EDD]"
         aria-label={open ? "Tutup Satpam Horizon" : "Buka Satpam Horizon"}

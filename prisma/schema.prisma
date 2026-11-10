@@ -22,8 +22,8 @@ enum PostCategory {
 }
 
 enum VoteType {
-  UP
-  DOWN
+  LIKE
+  DISLIKE
 }
 
 enum ReportStatus {
@@ -178,8 +178,8 @@ model Post {
   title              String
   content            String              @db.Text
   isPinned           Boolean             @default(false)
-  upvotes            Int                 @default(0)
-  downvotes          Int                 @default(0)
+  likes              Int                 @default(0)
+  dislikes           Int                 @default(0)
   marketData         Json?
   createdAt          DateTime            @default(now())
   author             User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
