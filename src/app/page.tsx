@@ -40,7 +40,7 @@ export default function Home() {
               dan mobile—apa pun game favoritmu.
             </p>
             <div className="hero-actions">
-              <a className="button button-discord button-large" href="#join">
+              <a className="button button-discord button-large" href="https://discord.gg/aJvbVyTxNb" target="_blank" rel="noreferrer">
                 Masuk Guild <span>(Join Discord)</span><ArrowUpRight size={18} />
               </a>
               <Link className="button button-quiet" href="/forum">Jelajahi komunitas</Link>
@@ -83,7 +83,7 @@ export default function Home() {
 
       <section className="join-banner section-shell" id="join">
         <div><p className="section-kicker">PARTY-MU MENUNGGU</p><h2>Sudah siap melampaui horizon?</h2></div>
-        <a className="button button-discord" href="#join">Connect Discord <ArrowUpRight size={17} /></a>
+        <a className="button button-discord" href="https://discord.gg/aJvbVyTxNb" target="_blank" rel="noreferrer">Connect Discord <ArrowUpRight size={17} /></a>
       </section>
     </main>
   );

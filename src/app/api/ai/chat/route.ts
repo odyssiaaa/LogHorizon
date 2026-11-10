@@ -1,7 +1,7 @@
 import { authenticatedUser, jsonError } from "@/lib/http";
 
 const HF_CHAT_URL = "https://router.huggingface.co/v1/chat/completions";
-const MODEL = "mistralai/Mistral-7B-Instruct-v0.1";
+const MODEL = "meta-llama/Meta-Llama-3-8B-Instruct";
 const COOLDOWN_MS = 5_000;
 const MAX_INPUT_LENGTH = 200;
 const MAX_HISTORY_MESSAGES = 6;
