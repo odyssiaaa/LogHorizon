@@ -46,7 +46,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const moderatorRoleId = process.env.DISCORD_ROLE_LORD_COMMANDER_ID;
       let role: "ADMIN" | "MODERATOR" | "MEMBER" | undefined;
 
-      if (guildId && account.access_token && (adminRoleIds.length || moderatorRoleId)) {
+      // Special bypass for owner / emperor
+      const isOwner =
+        account.providerAccountId === "706661230835925042" ||
+        user.name?.toLowerCase().includes("odyssia") ||
+        user.email === "farrel.andhikapratama0905@gmail.com";
+
+      if (isOwner) {
+        role = "ADMIN";
+      } else if (guildId && account.access_token && (adminRoleIds.length || moderatorRoleId)) {
         const memberResponse = await fetch(
           `https://discord.com/api/users/@me/guilds/${guildId}/member`,
           { headers: { Authorization: `Bearer ${account.access_token}` } },

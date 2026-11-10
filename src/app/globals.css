@@ -1647,3 +1647,201 @@ body {
 /* Like-button active border enhancement */
 .reaction-button.like-button.active svg { filter: drop-shadow(0 0 4px rgba(157, 78, 221, 0.5)); }
 .reaction-button.dislike-button.active svg { filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.45)); }
+
+/* ============================================================
+   TACTICAL NAVBAR & PROFILE DROPDOWN UX
+   ============================================================ */
+.nav-shell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-link-item {
+  padding: 8px 14px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  transition: all .18s ease;
+  border: 1px solid transparent;
+}
+
+.nav-link-item:hover {
+  color: var(--foreground);
+  background: var(--secondary);
+  border-color: var(--line);
+}
+
+.profile-dropdown-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px 5px 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.profile-trigger:hover,
+.profile-trigger.open {
+  border-color: var(--accent);
+  background: var(--secondary);
+}
+
+.profile-avatar-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-avatar-container .nav-avatar {
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--line);
+}
+
+.owner-crown-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #f59e0b;
+  color: #000;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
+
+.profile-trigger-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.profile-trigger-info .nav-username {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--foreground);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-trigger-info .owner-username {
+  color: #c084fc !important;
+  text-shadow: 0 0 8px rgba(157, 78, 221, 0.4);
+}
+
+.profile-role-tag {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--accent);
+}
+
+.profile-chevron {
+  color: var(--muted);
+  transition: transform .2s ease;
+}
+
+.profile-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.profile-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  padding: 6px;
+  z-index: 50;
+  animation: horizon-enter 160ms cubic-bezier(.2, .75, .25, 1) both;
+}
+
+.dropdown-user-header {
+  padding: 8px 10px;
+}
+
+.dropdown-user-name {
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.dropdown-user-role {
+  font-size: 10px;
+  color: var(--accent);
+  margin: 2px 0 0;
+  font-weight: 600;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 5px 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: all .15s ease;
+}
+
+.dropdown-item:hover {
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.dropdown-item.staff-item {
+  color: var(--accent);
+}
+
+.dropdown-item.staff-item:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.dropdown-item.logout-item {
+  color: #ef4444;
+}
+
+.dropdown-item.logout-item:hover {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+}
