@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
-import { CalendarDays, Plus, Search, Users } from "lucide-react";
+import { CalendarDays, Headphones, LogOut, MessageSquare, Plus, Search, Users, ExternalLink } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 
 type Participant = { id: string; teamName: string; leader: { username: string | null } };
@@ -40,10 +40,13 @@ export function EventsBoard() {
   const [maxSlots, setMaxSlots] = useState("8");
   const [eventDate, setEventDate] = useState("");
   const [teamNames, setTeamNames] = useState<Record<string, string>>({});
-  const [lfgGame, setLfgGame] = useState("");
-  const [description, setDescription] = useState("");
+  const [lfgGame, setLfgGame] = useState("Valorant");
+  const [description, setDescription] = useState("Butuh 2 orang untuk push rank jam 8 malam.");
   const [scheduledAt, setScheduledAt] = useState("");
   const [partySlots, setPartySlots] = useState("5");
+  const [activePartyChat, setActivePartyChat] = useState<string | null>(null);
+  const [partyChatMessages, setPartyChatMessages] = useState<Record<string, { sender: string; text: string; time: string }[]>>({});
+  const [chatInput, setChatInput] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -101,10 +104,7 @@ export function EventsBoard() {
         body: JSON.stringify({ game: lfgGame, description, scheduledAt: new Date(scheduledAt).toISOString(), maxSlots: Number(partySlots) }),
       });
       await readApiResponse(response, "Jadwal party gagal dibuat.");
-      setLfgGame("");
-      setDescription("");
-      setScheduledAt("");
-      setNotice("Jadwal party dipublikasikan.");
+      setNotice("Jadwal party dipublikasikan! Kamu dapat mengobrol di Chat Party Sementara atau berpindah ke Voice Channel Discord.");
       setRefreshKey((value) => value + 1);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Jadwal party gagal dibuat."); }
   }
@@ -114,9 +114,36 @@ export function EventsBoard() {
     try {
       const response = await fetch(`/api/lfg/${id}/join`, { method: "POST" });
       await readApiResponse(response, "Tidak dapat bergabung ke party.");
-      setNotice("Kamu berhasil bergabung ke party.");
+      setNotice("Kamu berhasil bergabung ke party! Ruang chat dan voice Discord telah terbuka.");
       setRefreshKey((value) => value + 1);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Tidak dapat bergabung ke party."); }
+  }
+
+  async function leaveParty(id: string) {
+    if (!confirm("Kamu yakin ingin keluar dari party ini?")) return;
+    try {
+      const response = await fetch(`/api/lfg/${id}/join`, { method: "DELETE" });
+      await readApiResponse(response, "Gagal keluar dari party.");
+      setNotice("Kamu telah keluar dari party.");
+      if (activePartyChat === id) setActivePartyChat(null);
+      setRefreshKey((value) => value + 1);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Gagal keluar dari party."); }
+  }
+
+  function sendPartyChat(partyId: string, e: FormEvent) {
+    e.preventDefault();
+    if (!chatInput.trim() || !session?.user) return;
+    const sender = session.user.username ?? session.user.name ?? "Petualang";
+    const newMsg = {
+      sender,
+      text: chatInput.trim(),
+      time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+    };
+    setPartyChatMessages((prev) => ({
+      ...prev,
+      [partyId]: [...(prev[partyId] ?? []), newMsg],
+    }));
+    setChatInput("");
   }
 
   const normalizedSearch = search.trim().toLocaleLowerCase();
@@ -129,12 +156,13 @@ export function EventsBoard() {
       .some((value) => value.toLocaleLowerCase().includes(normalizedSearch)),
   );
   const isAdmin = session?.user?.role === "ADMIN";
+
   return (
     <main className="page-shell events-page">
       <header className="events-heading">
         <p className="section-kicker">GUILD OPERATIONS</p>
         <h1>Events & <span>Party Finder</span></h1>
-        <p className="muted-copy">Daftarkan tim ke turnamen atau temukan party untuk sesi berikutnya.</p>
+        <p className="muted-copy">Daftarkan tim ke turnamen resmi atau koordinasikan jadwal mabar guild.</p>
       </header>
       {error && <p className="inline-error" role="alert">{error}</p>}
       {notice && <p className="inline-notice" role="status">{notice}</p>}
@@ -143,6 +171,7 @@ export function EventsBoard() {
         <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari game, party, atau anggota…" aria-label="Cari turnamen dan jadwal party" />
       </div>
 
+      {/* TOURNAMENT SECTION */}
       <section className="events-section">
         <div className="events-section-heading"><div><p className="section-kicker">BRACKET / SINGLE ELIMINATION</p><h2>Turnamen</h2></div><CalendarDays size={18} /></div>
         {isAdmin && <form className="stack-form event-create-form" onSubmit={createTournament}>
@@ -165,6 +194,7 @@ export function EventsBoard() {
         </div>
       </section>
 
+      {/* LOOKING FOR GROUP SECTION */}
       <section className="events-section">
         <div className="events-section-heading"><div><p className="section-kicker">LOOKING FOR GROUP</p><h2>Jadwal Mabar</h2></div><Users size={18} /></div>
         <form className="stack-form lfg-create-form" onSubmit={createLfg}>
@@ -178,11 +208,114 @@ export function EventsBoard() {
           {visibleLfgPosts.length === 0 && <p className="empty-state">{search ? "Tidak ada jadwal party yang cocok dengan pencarian." : "Belum ada party yang mencari anggota."}</p>}
           {visibleLfgPosts.map((post) => {
             const occupied = post.joins.length + 1;
-            return <article className="event-card lfg-card" key={post.id}>
-              <div className="event-card-heading"><div><span className="event-game">{post.game}</span><p>{new Date(post.scheduledAt).toLocaleString("id-ID")}</p></div><span className="event-status">{occupied}/{post.maxSlots} · {post.status}</span></div>
-              <p className="event-description">{post.description}</p>
-              <div className="lfg-footer"><span>Host: {post.author.username ?? "Gamer"}</span><div className="lfg-actions">{post.joins.map((join, index) => <span key={`${join.username ?? "member"}-${index}`}>{join.username ?? "Gamer"}</span>)}{post.status === "OPEN" && !post.isOwner && !post.joinedByViewer && <button className="button button-quiet" onClick={() => void joinParty(post.id)}>Join Party</button>}</div></div>
-            </article>;
+            const isMember = post.isOwner || post.joinedByViewer;
+            const messages = partyChatMessages[post.id] ?? [];
+            const isChatOpen = activePartyChat === post.id;
+
+            return (
+              <article className="event-card lfg-card" key={post.id}>
+                <div className="event-card-heading">
+                  <div>
+                    <span className="event-game">{post.game}</span>
+                    <p>{new Date(post.scheduledAt).toLocaleString("id-ID")}</p>
+                  </div>
+                  <span className={`event-status ${post.status === "FULL" ? "border-amber-500 text-amber-500" : ""}`}>
+                    {occupied}/{post.maxSlots} · {post.status}
+                  </span>
+                </div>
+                <p className="event-description">{post.description}</p>
+                
+                <div className="lfg-footer">
+                  <span>Host: <strong>{post.author.username ?? "Gamer"}</strong></span>
+                  <div className="lfg-actions">
+                    <div className="flex flex-wrap gap-1.5 items-center mr-2">
+                      <span className="px-2 py-0.5 rounded bg-purple-900/30 text-purple-300 text-xs font-semibold">👑 {post.author.username ?? "Host"}</span>
+                      {post.joins.map((join, index) => (
+                        <span key={`${join.username ?? "member"}-${index}`} className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-xs">
+                          {join.username ?? "Gamer"}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* ACTION BUTTONS */}
+                    {post.status === "OPEN" && !isMember && (
+                      <button className="button button-quiet" onClick={() => void joinParty(post.id)}>
+                        Join Party
+                      </button>
+                    )}
+
+                    {post.joinedByViewer && !post.isOwner && (
+                      <button className="button button-sold text-xs" onClick={() => void leaveParty(post.id)} title="Keluar jika berhalangan hadir">
+                        <LogOut size={13} className="mr-1 inline" /> Keluar Party
+                      </button>
+                    )}
+
+                    {isMember && (
+                      <button
+                        className={`button ${isChatOpen ? "button-primary" : "button-quiet"} text-xs`}
+                        onClick={() => setActivePartyChat(isChatOpen ? null : post.id)}
+                      >
+                        <MessageSquare size={13} className="mr-1 inline" /> {isChatOpen ? "Tutup Chat Party" : "Chat Party Sementara"}
+                      </button>
+                    )}
+
+                    {isMember && (
+                      <a
+                        href="https://discord.gg/aJvbVyTxNb"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="button button-discord text-xs flex items-center gap-1.5"
+                        title="Buka Voice Channel di Discord LogHorizon"
+                      >
+                        <Headphones size={13} /> Masuk Voice Discord <ExternalLink size={12} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* TEMPORARY PARTY CHAT ROOM */}
+                {isChatOpen && isMember && (
+                  <div className="party-chat-box mt-3 p-3 rounded border border-purple-500/30 bg-[#0e0a16]">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
+                      <span className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
+                        <MessageSquare size={14} /> Ruang Chat Party Sementara ({post.game})
+                      </span>
+                      <a href="https://discord.gg/aJvbVyTxNb" target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline flex items-center gap-1">
+                        <Headphones size={12} /> Voice Discord
+                      </a>
+                    </div>
+
+                    <div className="party-messages-list max-h-40 overflow-y-auto space-y-1.5 text-xs pr-1">
+                      {messages.length === 0 ? (
+                        <p className="text-gray-400 italic py-2">Belum ada obrolan party. Sapa kawan-kawanmu dan atur strategi sebelum jam main!</p>
+                      ) : (
+                        messages.map((msg, i) => (
+                          <div key={i} className="flex items-start gap-1.5">
+                            <span className="text-purple-300 font-bold">{msg.sender}:</span>
+                            <span className="text-gray-200 flex-1">{msg.text}</span>
+                            <span className="text-[10px] text-gray-500">{msg.time}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <form onSubmit={(e) => sendPartyChat(post.id, e)} className="flex gap-2 mt-2 pt-2 border-t border-white/10">
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder="Ketik pesan party (misal: 'Gas room 2 jam 8 tepat ya')..."
+                        className="flex-1 bg-[#161224] border border-white/10 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                        maxLength={200}
+                      />
+                      <button type="submit" className="button button-primary text-xs py-1.5 px-3">
+                        Kirim
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </article>
+            );
           })}
         </div>
       </section>
