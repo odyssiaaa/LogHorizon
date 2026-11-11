@@ -1,8 +1,5 @@
-import { PostCategory } from "@prisma/client";
 import { requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
-import { addXpInTransaction } from "@/lib/xp";
 
 const DISCORD_WEBHOOK_HOSTS = new Set(["discord.com", "discordapp.com", "canary.discord.com", "ptb.discord.com"]);
 
@@ -30,72 +27,82 @@ export async function POST(request: Request) {
     return Response.json({ error: "Judul dan isi pengumuman wajib diisi (maksimal 180 dan 10.000 karakter)." }, { status: 400 });
   }
 
-  const post = await prisma.$transaction(async (tx) => {
-    const created = await tx.post.create({
-      data: {
-        authorId: access.user.id,
-        category: PostCategory.GENERAL_CHAT,
-        title,
-        content,
-        isPinned: true,
-      },
-      select: { id: true, title: true },
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 jam tayang di Landing Page
+
+  const announcement = await prisma.announcement.create({
+    data: {
+      authorId: access.user.id,
+      title,
+      content,
+      createdAt: now,
+      expiresAt,
+    },
+    include: {
+      author: { select: { username: true } },
+    },
+  });
+
+  // Kirim notifikasi sistem ke seluruh member aktif
+  try {
+    const allUsers = await prisma.user.findMany({
+      where: { isBanned: false },
+      select: { id: true },
+      take: 500,
     });
-    await addXpInTransaction(tx, access.user.id, 10);
-    return created;
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    if (allUsers.length) {
+      await prisma.notification.createMany({
+        data: allUsers.map((u) => ({
+          userId: u.id,
+          type: "SYSTEM",
+          message: `📢 PENGUMUMAN RESMI: ${title}`,
+          link: "/",
+        })),
+        skipDuplicates: true,
+      });
+    }
+  } catch (err) {
+    console.error("[broadcast] Failed to broadcast notification:", err);
+  }
 
   const webhook = process.env.DISCORD_ANNOUNCEMENT_WEBHOOK_URL;
   if (!webhook) {
     return Response.json({
-      post,
+      announcement,
       notificationSent: false,
-      warning: "Pengumuman berhasil disematkan (pinned) di Forum! Discord Webhook belum dikonfigurasi.",
+      warning: "Pengumuman berhasil dipublikasikan di Landing Page (aktif 24 jam)! Discord Webhook belum dikonfigurasi.",
     }, { status: 201 });
   }
 
   const webhookUrl = getWebhookUrl(webhook);
   if (!webhookUrl) {
     return Response.json({
-      post,
+      announcement,
       notificationSent: false,
-      warning: "Pengumuman berhasil disematkan di Forum, namun URL Discord Webhook tidak valid.",
+      warning: "Pengumuman berhasil dipublikasikan di Landing Page (aktif 24 jam)! Format webhook URL tidak valid.",
     }, { status: 201 });
   }
 
   try {
-    const response = await fetch(webhookUrl, {
+    const body = {
+      content: `@everyone 📢 **PENGUMUMAN GUILD RESMI LOGHORIZON**\n\n**${title}**\n\n${content}\n\n*• Emperor & Council LogHorizon*`,
+      allowed_mentions: { parse: ["everyone"] },
+    };
+    const res = await fetch(webhookUrl.toString(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        allowed_mentions: { parse: [] },
-        embeds: [{
-          title,
-          description: content.slice(0, 4000),
-          color: 0x9d4edd,
-          footer: { text: "LogHorizon · Pengumuman Guild" },
-          url: new URL(`/forum/${post.id}`, process.env.AUTH_URL ?? request.url).toString(),
-        }],
-      }),
-      redirect: "error",
-      signal: AbortSignal.timeout(8000),
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(6000),
     });
-    if (!response.ok) {
-      console.error("Discord announcement webhook returned a non-success status:", response.status);
-      return Response.json({
-        post,
-        notificationSent: false,
-        warning: "Pengumuman berhasil dipin, tetapi Discord webhook gagal mengirim notifikasi.",
-      }, { status: 207 });
-    }
-  } catch (error) {
-    console.error("Failed to send Discord announcement webhook:", error);
     return Response.json({
-      post,
+      announcement,
+      notificationSent: res.ok,
+    }, { status: 201 });
+  } catch {
+    return Response.json({
+      announcement,
       notificationSent: false,
-      warning: "Pengumuman berhasil dipin, tetapi Discord webhook gagal mengirim notifikasi.",
-    }, { status: 207 });
+      warning: "Pengumuman aktif di Landing Page, namun pengiriman Discord Webhook mengalami kendala.",
+    }, { status: 201 });
   }
-
-  return Response.json({ post, notificationSent: true }, { status: 201 });
 }

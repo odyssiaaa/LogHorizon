@@ -197,14 +197,21 @@ export function EventsBoard() {
     <main className="page-shell events-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
       <header className="events-heading mb-6">
         <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">GUILD OPERATIONS</p>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white break-words">Events & <span>Party Finder</span></h1>
-        <p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Daftarkan tim ke turnamen resmi atau koordinasikan jadwal mabar guild.</p>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Events & <span>Party Finder</span></h1>
+        <p className="muted-copy text-base md:text-lg text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">Daftarkan tim ke turnamen resmi atau koordinasikan jadwal mabar guild.</p>
       </header>
       {error && <p className="inline-error mb-4" role="alert">{error}</p>}
       {notice && <p className="inline-notice mb-4" role="status">{notice}</p>}
-      <div className="market-search events-search mb-6" role="search">
-        <Search size={17} />
-        <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari game, party, atau anggota…" aria-label="Cari turnamen dan jadwal party" />
+      <div className="relative flex items-center mb-6" role="search">
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Cari game, party, atau anggota…"
+          aria-label="Cari turnamen dan jadwal party"
+          className="w-full pl-11 pr-4 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
+        />
       </div>
 
       {/* TOURNAMENT SECTION */}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Award, Crown, Medal, Trophy } from "lucide-react";
+import { Award, Crown, Medal, Search, Trophy, X } from "lucide-react";
 import { motion } from "framer-motion";
 import type { LeaderboardAdventurer, LeaderboardBenefactor } from "@/types/community";
 import { TacticalEmptyState } from "@/components/ui-feedback";
@@ -33,14 +33,43 @@ function benefactorTier(badges: string[]) {
 
 export function LeaderboardTable({ members, benefactors }: { members: LeaderboardMember[]; benefactors: Benefactor[] }) {
   const [activeTab, setActiveTab] = useState<"adventurers" | "benefactors">("adventurers");
+  const [search, setSearch] = useState("");
+
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredMembers = members.filter((m) =>
+    (m.username ?? "Gamer").toLowerCase().includes(normalizedSearch)
+  );
+  const filteredBenefactors = benefactors.filter((b) =>
+    (b.username ?? "Gamer").toLowerCase().includes(normalizedSearch)
+  );
 
   return (
     <main className="page-shell leaderboard-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
       <header className="leaderboard-heading mb-6">
         <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">KOMPETISI GUILD</p>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white break-words">Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Leaderboard</span></h1>
-        <p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Peringkat petualang aktif dan benefactor berdasarkan dukungan terverifikasi.</p>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Leaderboard</span></h1>
+        <p className="muted-copy text-base md:text-lg text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">Peringkat petualang aktif dan benefactor berdasarkan dukungan terverifikasi.</p>
       </header>
+
+      <div className="relative flex items-center my-4">
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari petualang atau donatur…"
+          aria-label="Cari petualang atau donatur"
+          className="w-full pl-11 pr-10 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch("")}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+          >
+            <X size={15} />
+          </button>
+        )}
+      </div>
 
       <div className="leaderboard-tabs relative flex overflow-x-auto scrollbar-none gap-2 border-b border-gray-200 dark:border-[#211C2B] pb-1 -mx-4 px-4 sm:mx-0 sm:px-0" role="tablist" aria-label="Papan peringkat">
         <button
@@ -91,7 +120,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                 </tr>
               </thead>
               <tbody>
-                {members.map((member, index) => {
+                {filteredMembers.map((member, index) => {
                   const RankIcon = rankIcons[index];
                   const iconSize = topIconSizes[index] ?? 16;
                   return (
@@ -122,8 +151,8 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                     </motion.tr>
                   );
                 })}
-                {members.length === 0 && (
-                  <tr><td className="leaderboard-empty" colSpan={5}>Belum ada data peringkat. XP akan tercatat setelah anggota mulai beraktivitas.</td></tr>
+                {filteredMembers.length === 0 && (
+                  <tr><td className="leaderboard-empty" colSpan={5}>{search ? `Tidak ada petualang yang cocok dengan "${search}".` : "Belum ada data peringkat. XP akan tercatat setelah anggota mulai beraktivitas."}</td></tr>
                 )}
               </tbody>
             </table>
@@ -140,7 +169,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                 </tr>
               </thead>
               <tbody>
-                {benefactors.map((member, index) => {
+                {filteredBenefactors.map((member, index) => {
                   const RoyaltyIcon = royaltyIcons[index];
                   const iconSize = topIconSizes[index] ?? 16;
                   return (
@@ -166,8 +195,8 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                     </motion.tr>
                   );
                 })}
-                {benefactors.length === 0 && (
-                  <tr><td className="leaderboard-empty" colSpan={4}>Belum ada kontribusi terverifikasi yang tercatat.</td></tr>
+                {filteredBenefactors.length === 0 && (
+                  <tr><td className="leaderboard-empty" colSpan={4}>{search ? `Tidak ada donatur yang cocok dengan "${search}".` : "Belum ada kontribusi terverifikasi yang tercatat."}</td></tr>
                 )}
               </tbody>
             </table>

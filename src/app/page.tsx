@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { HeroLogo } from "@/components/hero-logo";
+import { GuildBroadcastBanner } from "@/components/guild-broadcast-banner";
 import {
   ArrowUpRight,
   AudioLines,
@@ -67,6 +68,9 @@ const roleGroups = [
 export default function Home() {
   return (
     <main className="w-full max-w-full overflow-x-hidden">
+      {/* 24-HOUR ACTIVE GUILD BROADCAST BANNER */}
+      <GuildBroadcastBanner />
+
       {/* HERO SECTION */}
       <section className="hero-section relative py-12 sm:py-16 md:py-20 lg:py-24 border-b border-gray-200 dark:border-[#211C2B]">
         <div className="hero-glow" aria-hidden="true" />
@@ -77,13 +81,13 @@ export default function Home() {
                 <span className="status-dot w-2 h-2 rounded-full bg-[#42d99b] inline-block animate-pulse" />
                 MULTI-GAME COMMUNITY
               </p>
-              <h1 className="hero-title text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-black tracking-tight text-gray-900 dark:text-white whitespace-nowrap leading-none select-none">
+              <h1 className="hero-title text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white whitespace-nowrap leading-none select-none">
                 LOG<span className="text-[#9D4EDD] dark:text-[#C77DFF]">HORIZON</span>
               </h1>
               <p className="hero-tagline text-lg sm:text-xl md:text-2xl font-extrabold tracking-wider text-gray-800 dark:text-gray-100 mt-4 leading-snug">
                 FIND YOUR PARTY.<br className="hidden sm:inline" /> BEYOND THE HORIZON.
               </p>
-              <p className="hero-description text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-lg mt-3 leading-relaxed">
+              <p className="hero-description text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-lg mt-3 leading-relaxed">
                 Satu guild untuk semua petualang. Temukan rekan mabar sefrekuensi di PC, konsol,
                 dan mobile, apa pun genre dan game favoritmu.
               </p>

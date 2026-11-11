@@ -142,6 +142,32 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
     }
   }
 
+  async function handleTogglePin(postId: string, currentPin: boolean) {
+    const nextPin = !currentPin;
+    setPosts((prev) =>
+      [...prev]
+        .map((p) => (p.id === postId ? { ...p, isPinned: nextPin } : p))
+        .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
+    );
+
+    try {
+      const res = await fetch(`/api/posts/${postId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPinned: nextPin }),
+      });
+      await readApiResponse(res, "Gagal mengubah status sematan.");
+      setMessage(nextPin ? "Thread berhasil disematkan (PINNED)." : "Sematan thread dilepas.");
+    } catch (err) {
+      setPosts((prev) =>
+        [...prev]
+          .map((p) => (p.id === postId ? { ...p, isPinned: currentPin } : p))
+          .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
+      );
+      setError(err instanceof Error ? err.message : "Gagal mengubah status pin.");
+    }
+  }
+
   function handleCreateThread() {
     if (!user) {
       setLoginAction("membuat thread");
@@ -220,7 +246,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
             onChange={(event) => setSearchValue(event.target.value)}
             placeholder="Cari thread atau kata kunci…"
             aria-label="Cari diskusi"
-            className="w-full pl-10 pr-20 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
+            className="w-full pl-11 pr-20 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
           />
           {searchValue && (
             <button
@@ -308,10 +334,10 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                       <Pin size={13} /> PINNED
                     </span>
                   )}
-                  <Link className="post-title text-base sm:text-lg font-bold break-words hover:text-[#9D4EDD] dark:hover:text-[#C77DFF] transition-colors" href={`/forum/${post.id}`}>
+                  <Link className="post-title text-lg md:text-xl font-bold break-words hover:text-[#9D4EDD] dark:hover:text-[#C77DFF] transition-colors" href={`/forum/${post.id}`}>
                     {post.title}
                   </Link>
-                  <p className="post-excerpt text-xs sm:text-sm text-gray-600 dark:text-gray-400 break-words leading-relaxed mt-1.5">{post.content}</p>
+                  <p className="post-excerpt text-sm md:text-base text-gray-600 dark:text-gray-400 break-words leading-relaxed mt-1.5">{post.content}</p>
                   <div className="post-meta flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-gray-500 dark:text-gray-400 mt-3">
                     <span className="post-author">
                       <DiscordAvatar src={post.author.avatar} username={post.author.username} />
@@ -329,6 +355,16 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                     <Link href={`/forum/${post.id}`}>
                       <MessageCircle size={14} /> Diskusi
                     </Link>
+                    {(user?.role === "ADMIN" || user?.role === "MODERATOR") && (
+                      <button
+                        type="button"
+                        className={`report-button ${post.isPinned ? "text-[#9D4EDD] font-bold" : "text-gray-400 hover:text-[#9D4EDD]"}`}
+                        onClick={() => void handleTogglePin(post.id, post.isPinned)}
+                        title={post.isPinned ? "Lepas sematan (Unpin)" : "Sematkan thread (Pin)"}
+                      >
+                        <Pin size={13} /> {post.isPinned ? "Lepas Pin" : "Pin Thread"}
+                      </button>
+                    )}
                     <button className="report-button" onClick={() => handleReportPost(post.id)}>
                       <Flag size={13} /> Report Post
                     </button>

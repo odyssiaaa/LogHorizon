@@ -1,10 +1,13 @@
 const hosts = new Set(["discord.com", "discordapp.com", "canary.discord.com", "ptb.discord.com"]);
 
-type Channel = "announcements" | "marketplace" | "events";
+type Channel = "announcements" | "marketplace" | "events" | "treasury";
 
 export async function sendDiscordNotice(channel: Channel, title: string, description: string, url?: string) {
-  const envName = channel === "announcements" ? "DISCORD_ANNOUNCEMENT_WEBHOOK_URL" : `DISCORD_${channel.toUpperCase()}_WEBHOOK_URL`;
-  const value = process.env[envName];
+  const envName =
+    channel === "announcements"
+      ? "DISCORD_ANNOUNCEMENT_WEBHOOK_URL"
+      : `DISCORD_${channel.toUpperCase()}_WEBHOOK_URL`;
+  const value = process.env[envName] || process.env.DISCORD_ANNOUNCEMENT_WEBHOOK_URL;
   if (!value) return false;
 
   let webhook: URL;

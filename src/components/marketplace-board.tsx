@@ -269,7 +269,15 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   }
 
   return <main className="community-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden"><div className="page-shell px-0 sm:px-0">
-    <div className="market-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"><div><p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">MARKETPLACE KOMUNITAS</p><h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white break-words">Lapak <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Gamer</span></h1><p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-2xl mt-1">Jual beli akun, item, top-up, dan jasa gaming dengan komunitas LogHorizon. Transaksi dipantau oleh sistem keamanan guild.</p><span className={`live-status live-${liveState} inline-block mt-2`}>{liveState === "live" ? "Live" : liveState === "connecting" ? "Menghubungkan live…" : liveState === "stale" ? "Memperbarui…" : liveState === "error" ? "Live terputus" : "Live tidak aktif"}</span></div><div>{status === "loading" ? <span className="nav-loading" /> : <button className="button button-primary w-full sm:w-auto inline-flex items-center justify-center gap-2" onClick={createListing}><Plus size={17} /> <span>Buat Lapak</span></button>}</div></div>
+    <div className="market-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div>
+        <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">MARKETPLACE KOMUNITAS</p>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Lapak <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Gamer</span></h1>
+        <p className="muted-copy text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mt-1 leading-relaxed">Jual beli akun, item, top-up, dan jasa gaming dengan komunitas LogHorizon. Transaksi dipantau oleh sistem keamanan guild.</p>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap mt-2 live-status live-${liveState}`}>{liveState === "live" ? "Live" : liveState === "connecting" ? "Menghubungkan live…" : liveState === "stale" ? "Memperbarui…" : liveState === "error" ? "Live terputus" : "Live tidak aktif"}</span>
+      </div>
+      <div>{status === "loading" ? <span className="nav-loading" /> : <button className="button button-primary w-full sm:w-auto inline-flex items-center justify-center gap-2" onClick={createListing}><Plus size={17} /> <span>Buat Lapak</span></button>}</div>
+    </div>
     <section className="market-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] mb-6" aria-label="Filter dan pencarian marketplace">
       <div className="market-search relative flex items-center sm:col-span-2 lg:col-span-1">
         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-gray-400">
@@ -284,7 +292,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
           onChange={(event) => setSearchValue(event.target.value)}
           placeholder="Cari judul, game, atau penjual…"
           aria-label="Cari lapak"
-          className="w-full pl-10 pr-10 py-2 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
+          className="w-full pl-11 pr-10 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
         />
         {searchValue && (
           <button

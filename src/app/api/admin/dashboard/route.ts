@@ -34,6 +34,7 @@ export async function GET(request: Request) {
     recentPosts,
     marketplaceListings,
     donations,
+    announcements,
   ] = await prisma.$transaction([
     prisma.user.count(),
     prisma.post.count({
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
     prisma.post.count({ where: { category: { not: PostCategory.MARKETPLACE } } }),
     prisma.report.count({ where: { status: ReportStatus.PENDING } }),
     prisma.donation.aggregate({
-      where: { status: "SUCCEEDED" },
+      where: { status: { in: ["APPROVED", "SUCCEEDED"] } },
       _sum: { amount: true },
     }),
     prisma.report.findMany({
@@ -114,7 +115,14 @@ export async function GET(request: Request) {
         user: { select: { id: true, username: true, avatar: true, badges: true } },
       },
       orderBy: { createdAt: "desc" },
-      take: 25,
+      take: 50,
+    }),
+    prisma.announcement.findMany({
+      include: {
+        author: { select: { username: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 30,
     }),
   ]);
 
@@ -131,6 +139,7 @@ export async function GET(request: Request) {
     users,
     marketplaceListings,
     donations,
+    announcements,
     pagination: { page, pageSize: PAGE_SIZE, total: totalUsers, totalPages: Math.ceil(totalUsers / PAGE_SIZE) },
     canManageRoles: access.user.role === Role.ADMIN,
     canBanMembers: true,

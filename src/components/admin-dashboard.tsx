@@ -80,10 +80,22 @@ type DonationRecord = {
   id: string;
   userId: string;
   amount: number;
-  status: "PENDING" | "SUCCEEDED" | "FAILED";
+  status: "PENDING" | "APPROVED" | "REJECTED" | "SUCCEEDED" | "FAILED";
+  senderName?: string | null;
+  notes?: string | null;
+  proofUrl?: string | null;
   gatewayRef?: string | null;
   createdAt: string;
   user?: { id: string; username: string | null; avatar: string | null; badges?: string[] };
+};
+
+type AnnouncementRecord = {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  expiresAt: string;
+  author: { username: string | null };
 };
 
 type DashboardData = {
@@ -99,6 +111,7 @@ type DashboardData = {
   users: Member[];
   marketplaceListings?: MarketplaceListing[];
   donations?: DonationRecord[];
+  announcements?: AnnouncementRecord[];
   pagination: { page: number; pageSize: number; total: number; totalPages: number };
   canManageRoles: boolean;
   canBanMembers: boolean;
@@ -311,7 +324,7 @@ export function AdminDashboard({ role }: { role: Role }) {
   }
 
   // Verify Donation
-  async function verifyDonation(donationId: string, newStatus: "SUCCEEDED" | "FAILED") {
+  async function verifyDonation(donationId: string, newStatus: "APPROVED" | "REJECTED" | "SUCCEEDED" | "FAILED") {
     setBusyId(donationId);
     setError("");
     try {
@@ -332,9 +345,9 @@ export function AdminDashboard({ role }: { role: Role }) {
           : current,
       );
       setNotice(
-        newStatus === "SUCCEEDED"
-          ? "Donasi berhasil diverifikasi! Lencana donor dan status anggota otomatis aktif."
-          : "Donasi ditandai tidak valid.",
+        newStatus === "APPROVED" || newStatus === "SUCCEEDED"
+          ? "Donasi berhasil disetujui! Lencana donor dan status akun otomatis diperbarui."
+          : "Donasi berhasil ditolak.",
       );
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Gagal memproses verifikasi donasi.");
@@ -732,8 +745,8 @@ export function AdminDashboard({ role }: { role: Role }) {
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white">Manajemen Member &amp; Kasta Role</h2>
                 <p className="text-xs text-gray-500">Kelola role, sesuaikan level / XP, status premium, dan pembatasan akun anggota.</p>
               </div>
-              <div className="relative w-full sm:w-72">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <div className="relative flex items-center w-full sm:w-72">
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 <input
                   value={search}
                   onChange={(event) => {
@@ -741,7 +754,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                     setPage(1);
                   }}
                   placeholder="Cari Username / Discord ID…"
-                  className="w-full pl-9 pr-3 py-1.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white"
+                  className="w-full pl-11 pr-4 py-2 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
                 />
               </div>
             </div>
@@ -908,14 +921,123 @@ export function AdminDashboard({ role }: { role: Role }) {
         {/* ========================================================================= */}
         {tab === "transactions" && (
           <section className="space-y-8" role="tabpanel">
-            {/* 1. Kas Donasi Masuk */}
+            {/* 1. Antrean Verifikasi Donasi QRIS Manual */}
+            <div className="admin-panel p-5 rounded-lg border border-amber-500/30 bg-amber-500/5">
+              <div className="admin-panel-heading mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <HeartHandshake size={18} className="text-amber-500" /> Antrean Verifikasi Donasi QRIS (Manual)
+                    </h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Petualang mengirim konfirmasi transfer QRIS. Cek nama pengirim &amp; bukti transfer sebelum menyetujui.
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded bg-amber-500/15 text-amber-500 font-bold text-xs">
+                    {(data?.donations?.filter((d) => d.status === "PENDING") ?? []).length} Menunggu
+                  </span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs min-w-[700px]">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
+                      <th className="py-2.5">Petualang</th>
+                      <th className="py-2.5">Atas Nama / Pengirim</th>
+                      <th className="py-2.5">Nominal (IDR)</th>
+                      <th className="py-2.5">Bukti &amp; Catatan</th>
+                      <th className="py-2.5">Waktu</th>
+                      <th className="py-2.5 text-right">Aksi Verifikasi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
+                    {data?.donations
+                      ?.filter((item) => item.status === "PENDING")
+                      .map((item) => (
+                        <tr key={item.id} className="hover:bg-amber-500/5 transition">
+                          <td className="py-3">
+                            <div className="flex items-center gap-2">
+                              <DiscordAvatar src={item.user?.avatar ?? null} username={item.user?.username ?? "Petualang"} size={26} />
+                              <div>
+                                <p className="font-semibold text-gray-900 dark:text-white">{item.user?.username ?? "Petualang"}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 font-medium text-gray-800 dark:text-gray-200">
+                            {item.senderName || "-"}
+                          </td>
+                          <td className="py-3 font-bold text-purple-600 dark:text-purple-300">
+                            {formatMoney.format(item.amount)}
+                          </td>
+                          <td className="py-3">
+                            <div className="space-y-1">
+                              {item.proofUrl ? (
+                                <a
+                                  href={item.proofUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#9D4EDD] hover:underline"
+                                >
+                                  <ExternalLink size={12} /> Buka Bukti Transfer
+                                </a>
+                              ) : (
+                                <span className="text-[11px] text-gray-400">Tanpa tautan bukti</span>
+                              )}
+                              {item.notes && (
+                                <p className="text-[11px] text-gray-500 line-clamp-1 italic">
+                                  &quot;{item.notes}&quot;
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 text-gray-500 whitespace-nowrap">
+                            {new Date(item.createdAt).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
+                          </td>
+                          <td className="py-3 text-right space-x-2 whitespace-nowrap">
+                            {isAdmin && (
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={busyId === item.id}
+                                  onClick={() => void verifyDonation(item.id, "APPROVED")}
+                                  className="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition"
+                                >
+                                  ✓ ACC / Setujui
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={busyId === item.id}
+                                  onClick={() => void verifyDonation(item.id, "REJECTED")}
+                                  className="px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition"
+                                >
+                                  ✕ Tolak
+                                </button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    {!(data?.donations?.filter((d) => d.status === "PENDING") ?? []).length && (
+                      <tr>
+                        <td className="py-6 text-center text-gray-400" colSpan={6}>
+                          Tidak ada antrean donasi yang menunggu verifikasi saat ini.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* 2. Riwayat Donasi & Benefactor Guild */}
             <div className="admin-panel p-5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
               <div className="admin-panel-heading mb-4">
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <HeartHandshake size={18} className="text-[#9D4EDD]" /> Riwayat Donasi &amp; Benefactor Guild
+                  <Coins size={18} className="text-[#9D4EDD]" /> Riwayat Semua Donasi
                 </h2>
                 <p className="text-xs text-gray-500">
-                  Verifikasi konfirmasi donasi dari petualang untuk mengaktifkan lencana donor (*Knight*, *High Merchant*, *Noble Patron*).
+                  Daftar transaksi donasi yang telah diproses (Disetujui, Ditolak, atau Selesai).
                 </p>
               </div>
 
@@ -924,10 +1046,10 @@ export function AdminDashboard({ role }: { role: Role }) {
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
                       <th className="py-2.5">Petualang</th>
+                      <th className="py-2.5">Atas Nama</th>
                       <th className="py-2.5">Nominal (IDR)</th>
                       <th className="py-2.5">Tanggal</th>
                       <th className="py-2.5">Status</th>
-                      <th className="py-2.5 text-right">Aksi Verifikasi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
@@ -939,6 +1061,9 @@ export function AdminDashboard({ role }: { role: Role }) {
                             <span className="font-semibold text-gray-900 dark:text-white">{item.user?.username ?? "Petualang"}</span>
                           </div>
                         </td>
+                        <td className="py-3 text-gray-600 dark:text-gray-300">
+                          {item.senderName || "-"}
+                        </td>
                         <td className="py-3 font-bold text-purple-600 dark:text-purple-300">
                           {formatMoney.format(item.amount)}
                         </td>
@@ -948,7 +1073,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                         <td className="py-3">
                           <span
                             className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              item.status === "SUCCEEDED"
+                              item.status === "APPROVED" || item.status === "SUCCEEDED"
                                 ? "bg-emerald-500/15 text-emerald-500"
                                 : item.status === "PENDING"
                                   ? "bg-amber-500/15 text-amber-500"
@@ -957,21 +1082,6 @@ export function AdminDashboard({ role }: { role: Role }) {
                           >
                             {item.status}
                           </span>
-                        </td>
-                        <td className="py-3 text-right space-x-2">
-                          {isAdmin && item.status !== "SUCCEEDED" && (
-                            <button
-                              type="button"
-                              disabled={busyId === item.id}
-                              onClick={() => void verifyDonation(item.id, "SUCCEEDED")}
-                              className="px-2.5 py-1 rounded bg-emerald-600 text-white font-bold hover:bg-emerald-700"
-                            >
-                              ✓ Verifikasi / Setujui
-                            </button>
-                          )}
-                          {isAdmin && item.status === "SUCCEEDED" && (
-                            <span className="text-emerald-500 font-semibold text-xs">Terverifikasi</span>
-                          )}
                         </td>
                       </tr>
                     ))}
@@ -987,7 +1097,7 @@ export function AdminDashboard({ role }: { role: Role }) {
               </div>
             </div>
 
-            {/* 2. Pantauan Transaksi Lapak Marketplace */}
+            {/* 3. Pantauan Transaksi Lapak Marketplace */}
             <div className="admin-panel p-5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
               <div className="admin-panel-heading mb-4">
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -1076,13 +1186,30 @@ export function AdminDashboard({ role }: { role: Role }) {
         {/* ========================================================================= */}
         {/* TAB 5: BROADCAST ANNOUNCEMENTS */}
         {/* ========================================================================= */}
-        {tab === "broadcast" && isAdmin && <BroadcastForm onNotice={setNotice} onError={setError} />}
+        {tab === "broadcast" && isAdmin && (
+          <BroadcastSection
+            announcements={data?.announcements ?? []}
+            onNotice={setNotice}
+            onError={setError}
+            onRefresh={loadDashboard}
+          />
+        )}
       </div>
     </main>
   );
 }
 
-function BroadcastForm({ onNotice, onError }: { onNotice: (message: string) => void; onError: (message: string) => void }) {
+function BroadcastSection({
+  announcements,
+  onNotice,
+  onError,
+  onRefresh,
+}: {
+  announcements: AnnouncementRecord[];
+  onNotice: (message: string) => void;
+  onError: (message: string) => void;
+  onRefresh: () => void;
+}) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
@@ -1100,7 +1227,8 @@ function BroadcastForm({ onNotice, onError }: { onNotice: (message: string) => v
       const result = await readApiResponse<{ notificationSent: boolean; warning?: string }>(response, "Broadcast gagal.");
       setTitle("");
       setContent("");
-      onNotice(result.notificationSent ? "Pengumuman berhasil disematkan di forum dan dikirim ke Discord." : result.warning ?? "Pengumuman berhasil dipin di Forum.");
+      onNotice(result.notificationSent ? "Pengumuman berhasil disiarkan ke Beranda (aktif 24 jam) dan Discord." : result.warning ?? "Pengumuman berhasil diterbitkan.");
+      onRefresh();
     } catch (reason) {
       onError(reason instanceof Error ? reason.message : "Broadcast gagal.");
     } finally {
@@ -1108,54 +1236,121 @@ function BroadcastForm({ onNotice, onError }: { onNotice: (message: string) => v
     }
   }
 
+  const now = new Date();
+  const activeAnnouncements = announcements.filter((a) => new Date(a.expiresAt) > now);
+  const archivedAnnouncements = announcements.filter((a) => new Date(a.expiresAt) <= now);
+
   return (
-    <section className="admin-panel broadcast-panel p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]" role="tabpanel">
-      <div className="admin-panel-heading flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Broadcast Pengumuman Resmi Guild</h2>
+    <div className="space-y-8" role="tabpanel">
+      <section className="admin-panel broadcast-panel p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+        <div className="admin-panel-heading flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Broadcast Pengumuman Resmi Guild (24 Jam)</h2>
+            <p className="text-xs text-gray-500">
+              Pengumuman akan otomatis tayang di banner utama Beranda selama 24 jam dan disiarkan ke webhook Discord.
+            </p>
+          </div>
+          <span className="p-2 rounded-full bg-[#9D4EDD]/15 text-[#9D4EDD]">
+            <Megaphone size={20} />
+          </span>
+        </div>
+        <form className="stack-form broadcast-form space-y-4" onSubmit={submit}>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Judul Pengumuman</label>
+            <input
+              required
+              maxLength={180}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Contoh: Pengumuman Turnamen Akbar Season 1 LogHorizon"
+              className="w-full px-3.5 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Isi Pengumuman</label>
+            <textarea
+              required
+              maxLength={10000}
+              rows={6}
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              placeholder="Tulis informasi detail pengumuman untuk seluruh member guild…"
+              className="w-full px-3.5 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white"
+            />
+          </div>
           <p className="text-xs text-gray-500">
-            Pengumuman akan otomatis tersemat (pinned) di Forum Obrolan Umum dan disiarkan ke Discord.
+            Setelah dikirim, banner pengumuman akan otomatis terarsip setelah 24 jam tanpa memerlukan campur tangan manual.
           </p>
+          <button
+            type="submit"
+            className="button button-primary px-5 py-2.5 text-sm font-bold flex items-center gap-2"
+            disabled={saving}
+          >
+            <Megaphone size={16} /> {saving ? "Mengirim Pengumuman…" : "Siarkan Pengumuman (24 Jam)"}
+          </button>
+        </form>
+      </section>
+
+      {/* Daftar Pengumuman Guild (Aktif & Arsip) */}
+      <section className="admin-panel p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Megaphone size={16} className="text-[#9D4EDD]" /> Riwayat Siaran Pengumuman
+          </h3>
+          <span className="text-xs text-gray-400">Total: {announcements.length}</span>
         </div>
-        <span className="p-2 rounded-full bg-[#9D4EDD]/15 text-[#9D4EDD]">
-          <Megaphone size={20} />
-        </span>
-      </div>
-      <form className="stack-form broadcast-form space-y-4" onSubmit={submit}>
-        <div>
-          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Judul Pengumuman</label>
-          <input
-            required
-            maxLength={180}
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Contoh: Pengumuman Turnamen Akbar Season 1 LogHorizon"
-            className="w-full px-3.5 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Isi Pengumuman</label>
-          <textarea
-            required
-            maxLength={10000}
-            rows={7}
-            value={content}
-            onChange={(event) => setContent(event.target.value)}
-            placeholder="Tulis informasi detail pengumuman untuk seluruh member guild…"
-            className="w-full px-3.5 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white"
-          />
-        </div>
-        <p className="text-xs text-gray-500">
-          Notifikasi pengumuman otomatis dikirim melalui secure server webhook ke channel Discord LogHorizon.
-        </p>
-        <button
-          type="submit"
-          className="button button-primary px-5 py-2.5 text-sm font-bold flex items-center gap-2"
-          disabled={saving}
-        >
-          <Megaphone size={16} /> {saving ? "Mengirim Pengumuman…" : "Pin & Siarkan Pengumuman"}
-        </button>
-      </form>
-    </section>
+
+        {announcements.length === 0 ? (
+          <p className="text-xs text-gray-400 py-4 text-center">Belum ada pengumuman yang disiarkan.</p>
+        ) : (
+          <div className="space-y-3">
+            {activeAnnouncements.map((item) => (
+              <div
+                key={item.id}
+                className="p-4 rounded-md border border-[#9D4EDD]/40 bg-[#9D4EDD]/5 flex flex-col sm:flex-row sm:items-start justify-between gap-3"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#9D4EDD] text-white">
+                      Aktif di Beranda
+                    </span>
+                    <h4 className="font-bold text-sm text-gray-900 dark:text-white">{item.title}</h4>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{item.content}</p>
+                  <p className="text-[11px] text-gray-400 font-mono">
+                    Oleh: {item.author.username ?? "Admin"} • Dibuat: {new Date(item.createdAt).toLocaleString("id-ID")}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <span className="text-[11px] font-mono text-purple-400 bg-purple-950/40 px-2 py-1 rounded">
+                    Berakhir: {new Date(item.expiresAt).toLocaleTimeString("id-ID")}
+                  </span>
+                </div>
+              </div>
+            ))}
+
+            {archivedAnnouncements.map((item) => (
+              <div
+                key={item.id}
+                className="p-3.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-gray-50/50 dark:bg-black/20 flex flex-col sm:flex-row sm:items-start justify-between gap-2 opacity-75"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-200 dark:bg-gray-800 text-gray-500">
+                      Diarsipkan
+                    </span>
+                    <h4 className="font-semibold text-xs text-gray-800 dark:text-gray-300">{item.title}</h4>
+                  </div>
+                  <p className="text-xs text-gray-500 line-clamp-2">{item.content}</p>
+                </div>
+                <div className="shrink-0 text-right text-[11px] text-gray-400 font-mono">
+                  {new Date(item.createdAt).toLocaleDateString("id-ID")}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }

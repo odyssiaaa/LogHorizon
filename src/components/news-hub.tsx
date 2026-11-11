@@ -75,10 +75,10 @@ export function NewsHub() {
               <Rss size={13} className="animate-pulse" />
               <span>LOGHORIZON DISPATCH NETWORK</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white uppercase font-sans break-words">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white uppercase font-sans break-words">
               Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">News Hub</span>
             </h1>
-            <p className="mt-2 text-xs sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
+            <p className="mt-2 text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
               Arsip warta terlengkap seputar skena gaming, turnamen esports, rilis konsol, dan inovasi teknologi komputasi berbahasa Indonesia.
             </p>
           </div>
@@ -125,14 +125,14 @@ export function NewsHub() {
           </div>
 
           {/* Quick Search Bar */}
-          <div className="relative w-full md:w-72 shrink-0">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative flex items-center w-full md:w-72 shrink-0">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari game, topik, atau kata kunci…"
-              className="w-full pl-9 pr-8 py-1.5 rounded bg-white dark:bg-[#120F17] text-gray-900 dark:text-white border border-gray-200 dark:border-[#211C2B] text-xs outline-none focus:border-[#9D4EDD] transition-colors"
+              className="w-full pl-11 pr-8 py-2 rounded bg-white dark:bg-[#120F17] text-gray-900 dark:text-white border border-gray-200 dark:border-[#211C2B] text-xs outline-none focus:border-[#9D4EDD] transition-colors"
             />
             {searchQuery && (
               <button

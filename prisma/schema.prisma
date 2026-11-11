@@ -53,6 +53,8 @@ enum EscrowStatus {
 
 enum DonationStatus {
   PENDING
+  APPROVED
+  REJECTED
   SUCCEEDED
   FAILED
 }
@@ -86,6 +88,7 @@ model User {
   escrowAsSeller EscrowTransaction[] @relation("EscrowSeller")
   donations      Donation[]
   notifications  Notification[]
+  announcements  Announcement[]
 }
 
 model Tournament {
@@ -165,6 +168,9 @@ model Donation {
   userId      String
   amount      Int
   status      DonationStatus @default(PENDING)
+  senderName  String?
+  notes       String?
+  proofUrl    String?
   gatewayRef  String?        @unique
   createdAt   DateTime       @default(now())
   completedAt DateTime?
@@ -291,4 +297,16 @@ model Notification {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead, createdAt])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  authorId  String
+  title     String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  expiresAt DateTime @default(now())
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt, expiresAt])
 }
