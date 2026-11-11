@@ -155,25 +155,25 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   }
 
   return (
-    <main className="community-page">
-      <div className="page-shell">
-        <div className="forum-heading">
+    <main className="community-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
+      <div className="page-shell px-0 sm:px-0">
+        <div className="forum-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <p className="section-kicker">RUANG DISKUSI GUILD</p>
-            <h1>Forum <span>Komunitas</span></h1>
-            <p className="muted-copy">Temukan party, berbagi cerita, dan tumbuh bersama para petualang.</p>
+            <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">RUANG DISKUSI GUILD</p>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white break-words">Forum <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Komunitas</span></h1>
+            <p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Temukan party, berbagi cerita, dan tumbuh bersama para petualang.</p>
           </div>
           {status === "loading" ? (
             <span className="nav-loading" />
           ) : (
-            <button className="button button-primary" onClick={handleCreateThread}>
-              <Plus size={17} /> Buat Thread Baru
+            <button className="button button-primary w-full sm:w-auto inline-flex items-center justify-center gap-2" onClick={handleCreateThread}>
+              <Plus size={17} /> <span>Buat Thread Baru</span>
             </button>
           )}
         </div>
 
         {/* FORUM TABS WITH FRAMER MOTION TRANSITION */}
-        <div className="forum-tabs relative flex gap-2 border-b border-gray-200 dark:border-[#211C2B]" role="tablist" aria-label="Kategori sub-forum">
+        <div className="forum-tabs relative flex overflow-x-auto scrollbar-none gap-2 border-b border-gray-200 dark:border-[#211C2B] pb-1 -mx-4 px-4 sm:mx-0 sm:px-0" role="tablist" aria-label="Kategori sub-forum">
           {categories.map((item) => {
             const isActive = category === item.id;
             return (
@@ -308,11 +308,11 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                       <Pin size={13} /> PINNED
                     </span>
                   )}
-                  <Link className="post-title" href={`/forum/${post.id}`}>
+                  <Link className="post-title text-base sm:text-lg font-bold break-words hover:text-[#9D4EDD] dark:hover:text-[#C77DFF] transition-colors" href={`/forum/${post.id}`}>
                     {post.title}
                   </Link>
-                  <p className="post-excerpt">{post.content}</p>
-                  <div className="post-meta">
+                  <p className="post-excerpt text-xs sm:text-sm text-gray-600 dark:text-gray-400 break-words leading-relaxed mt-1.5">{post.content}</p>
+                  <div className="post-meta flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-gray-500 dark:text-gray-400 mt-3">
                     <span className="post-author">
                       <DiscordAvatar src={post.author.avatar} username={post.author.username} />
                       <span>

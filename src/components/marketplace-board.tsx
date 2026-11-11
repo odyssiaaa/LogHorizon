@@ -267,10 +267,10 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
     }
   }
 
-  return <main className="community-page"><div className="page-shell">
-    <div className="market-heading"><div><p className="section-kicker">MARKETPLACE KOMUNITAS</p><h1>Lapak <span>Gamer</span></h1><p className="muted-copy">Jual beli akun, item, top-up, dan jasa gaming dengan komunitas LogHorizon. Escrow saat ini hanya simulasi status, bukan penahanan uang.</p><span className={`live-status live-${liveState}`}>{liveState === "live" ? "Live" : liveState === "connecting" ? "Menghubungkan live…" : liveState === "stale" ? "Memperbarui…" : liveState === "error" ? "Live terputus" : "Live tidak aktif"}</span></div><div>{status === "loading" ? <span className="nav-loading" /> : <button className="button button-primary" onClick={createListing}><Plus size={17} /> Buat Lapak</button>}</div></div>
-    <section className="market-filters" aria-label="Filter dan pencarian marketplace">
-      <div className="market-search">
+  return <main className="community-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden"><div className="page-shell px-0 sm:px-0">
+    <div className="market-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"><div><p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">MARKETPLACE KOMUNITAS</p><h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white break-words">Lapak <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Gamer</span></h1><p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-2xl mt-1">Jual beli akun, item, top-up, dan jasa gaming dengan komunitas LogHorizon. Escrow saat ini hanya simulasi status, bukan penahanan uang.</p><span className={`live-status live-${liveState} inline-block mt-2`}>{liveState === "live" ? "Live" : liveState === "connecting" ? "Menghubungkan live…" : liveState === "stale" ? "Memperbarui…" : liveState === "error" ? "Live terputus" : "Live tidak aktif"}</span></div><div>{status === "loading" ? <span className="nav-loading" /> : <button className="button button-primary w-full sm:w-auto inline-flex items-center justify-center gap-2" onClick={createListing}><Plus size={17} /> <span>Buat Lapak</span></button>}</div></div>
+    <section className="market-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] mb-6" aria-label="Filter dan pencarian marketplace">
+      <div className="market-search sm:col-span-2 lg:col-span-1">
         {isSearching ? (
           <Loader2 size={16} className="animate-spin text-[#9D4EDD] shrink-0" />
         ) : (
@@ -300,24 +300,24 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
       <label>Nama game<input value={game} onChange={(event) => setGame(event.target.value)} placeholder="Semua game" /></label>
       <label><ArrowDownUp size={14} /> Urutkan harga<select value={sort} onChange={(event) => setSort(event.target.value)}><option value="newest">Terbaru</option><option value="cheapest">Termurah</option><option value="expensive">Termahal</option></select></label>
     </section>
-    {notice && <div className="inline-notice" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Tutup notifikasi"><X size={15} /></button></div>}
-    {error && <div className="inline-error" role="alert">{error}</div>}
+    {notice && <div className="inline-notice mb-4" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Tutup notifikasi"><X size={15} /></button></div>}
+    {error && <div className="inline-error mb-4" role="alert">{error}</div>}
     {loading ? (
-      <div className="market-grid">
+      <div className="market-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {[1, 2, 3, 4, 5, 6].map((key) => (
           <SkeletonMarketCard key={key} />
         ))}
       </div>
     ) : posts.length ? (
-      <section className="market-grid">
+      <section className="market-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
       {posts.map((post, index) => {
         if (!isPublicMarketData(post.marketData)) return <article className="market-card" key={post.id}><p className="inline-error">Data lapak tidak valid.</p></article>;
         const market = post.marketData;
         return <motion.article className={`market-card ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
-          <div className="market-listing-labels">{post.isPinned && <span className="pinned-label">PINNED</span>}<span className={market.type === "WTS" ? "trade-badge wts" : "trade-badge wtb"}>{market.type}</span><span className="market-label-game">{market.game}</span><span className="market-label-price">{money.format(market.price)}</span><span className={`status-badge ${market.status === "AVAILABLE" ? "available" : market.status === "IN_ESCROW" ? "in-escrow" : "sold"}`}>{market.status === "IN_ESCROW" ? "IN ESCROW" : market.status}</span></div>
+          <div className="market-listing-labels flex flex-wrap gap-1.5 mb-3">{post.isPinned && <span className="pinned-label">PINNED</span>}<span className={market.type === "WTS" ? "trade-badge wts" : "trade-badge wtb"}>{market.type}</span><span className="market-label-game">{market.game}</span><span className="market-label-price">{money.format(market.price)}</span><span className={`status-badge ${market.status === "AVAILABLE" ? "available" : market.status === "IN_ESCROW" ? "in-escrow" : "sold"}`}>{market.status === "IN_ESCROW" ? "IN ESCROW" : market.status}</span></div>
           <div className="market-image">{market.imageUrl ? <Image src={market.imageUrl} alt={`Bukti lapak ${post.title}`} fill unoptimized loading="lazy" sizes="(max-width: 700px) 100vw, 33vw" /> : <ShoppingBag size={28} />}</div>
-          <div className="market-card-body"><h2>{post.title}</h2><p className="market-game">{market.game}</p><p className="market-price">{money.format(market.price)}</p><p className="market-description">{post.content}</p>
-            <div className="market-card-meta"><span className="post-author"><DiscordAvatar src={post.author.avatar} username={post.author.username} /><span>oleh <strong className={post.author.isPremium ? "premium-username" : undefined}>{post.author.username ?? "Gamer"}</strong></span></span><span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span></div>
+          <div className="market-card-body"><h2 className="text-lg sm:text-xl font-bold break-words text-gray-900 dark:text-white">{post.title}</h2><p className="market-game">{market.game}</p><p className="market-price">{money.format(market.price)}</p><p className="market-description break-words text-xs sm:text-sm">{post.content}</p>
+            <div className="market-card-meta flex flex-wrap items-center gap-2"><span className="post-author"><DiscordAvatar src={post.author.avatar} username={post.author.username} /><span>oleh <strong className={post.author.isPremium ? "premium-username" : undefined}>{post.author.username ?? "Gamer"}</strong></span></span><span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span></div>
             <PostReactions postId={post.id} likes={post.likes} dislikes={post.dislikes} reaction={post.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} onChange={(result) => setPosts((current) => current.map((entry) => entry.id === post.id ? { ...entry, ...result, votes: result.reaction ? [{ value: result.reaction }] : [] } : entry))} />
             {user && contacts[post.id]?.userId === user.id ? (
               <div className="market-contact-revealed">
@@ -344,7 +344,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                       : "Login untuk Lihat Kontak"}
               </button>
             )}
-            <div className="market-card-actions">
+            <div className="market-card-actions flex flex-wrap gap-2 mt-4">
               {market.status === "AVAILABLE" && market.type === "WTS" && user?.id !== post.authorId && <button className="button button-primary" disabled={escrowLoading === post.id} onClick={() => void startEscrow(post.id)}>{escrowLoading === post.id ? "Memproses…" : "Ajukan transaksi escrow"}</button>}
               {(user?.id === post.authorId || user?.role === "ADMIN" || user?.role === "MODERATOR") && market.status !== "IN_ESCROW" && <button className="button button-quiet" disabled={escrowLoading === post.id} onClick={() => void updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD")}>{market.status === "SOLD" ? "Tandai tersedia" : "Tandai terjual"}</button>}
               {post.escrowTransactions?.filter((transaction) => transaction.sellerId === user?.id || user?.role === "ADMIN" || user?.role === "MODERATOR").map((transaction) => <button key={transaction.id} className="button button-sold" disabled={escrowLoading === post.id} onClick={() => void completeEscrow(transaction.id, post.id)}>{escrowLoading === post.id ? "Memproses…" : "Konfirmasi transaksi selesai"}</button>)}

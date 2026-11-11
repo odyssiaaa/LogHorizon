@@ -66,7 +66,7 @@ export function NewsHub() {
   });
 
   return (
-    <main className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <main className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
       {/* Header Section */}
       <header className="mb-8 border-b border-gray-200 dark:border-[#211C2B] pb-8">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
@@ -75,15 +75,15 @@ export function NewsHub() {
               <Rss size={13} className="animate-pulse" />
               <span>LOGHORIZON DISPATCH NETWORK</span>
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-gray-900 dark:text-white uppercase font-sans">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white uppercase font-sans break-words">
               Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">News Hub</span>
             </h1>
-            <p className="mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
+            <p className="mt-2 text-xs sm:text-base text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
               Arsip warta terlengkap seputar skena gaming, turnamen esports, rilis konsol, dan inovasi teknologi komputasi berbahasa Indonesia.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-[#16121F] px-3 py-1.5 rounded border border-gray-200 dark:border-[#262033]">
               Transmisi: <strong className="text-purple-600 dark:text-purple-400 font-bold">{articles.length} Berita Aktif</strong>
             </span>
@@ -102,7 +102,7 @@ export function NewsHub() {
         {/* Filter Controls (Search + Categories) */}
         <div className="mt-8 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           {/* Category Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
             {[
               { id: "ALL", label: "Semua Warta" },
               { id: "Game & Esports", label: "🎮 Game & Esports" },
@@ -267,12 +267,12 @@ function NewsCard({ article, index }: { article: NormalizedArticle; index: numbe
           </div>
 
           {/* Title */}
-          <h2 className="text-base font-extrabold text-gray-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#9D4EDD] dark:group-hover:text-[#C77DFF] transition-colors">
+          <h2 className="text-base font-extrabold text-gray-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#9D4EDD] dark:group-hover:text-[#C77DFF] transition-colors break-words">
             {article.title}
           </h2>
 
           {/* Snippet / Description */}
-          <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 line-clamp-3 leading-relaxed">
+          <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 line-clamp-3 leading-relaxed break-words">
             {article.description}
           </p>
         </div>

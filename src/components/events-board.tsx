@@ -158,15 +158,15 @@ export function EventsBoard() {
   const isAdminOrMod = session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR";
 
   return (
-    <main className="page-shell events-page">
-      <header className="events-heading">
-        <p className="section-kicker">GUILD OPERATIONS</p>
-        <h1>Events & <span>Party Finder</span></h1>
-        <p className="muted-copy">Daftarkan tim ke turnamen resmi atau koordinasikan jadwal mabar guild.</p>
+    <main className="page-shell events-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
+      <header className="events-heading mb-6">
+        <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">GUILD OPERATIONS</p>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white break-words">Events & <span>Party Finder</span></h1>
+        <p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Daftarkan tim ke turnamen resmi atau koordinasikan jadwal mabar guild.</p>
       </header>
-      {error && <p className="inline-error" role="alert">{error}</p>}
-      {notice && <p className="inline-notice" role="status">{notice}</p>}
-      <div className="market-search events-search" role="search">
+      {error && <p className="inline-error mb-4" role="alert">{error}</p>}
+      {notice && <p className="inline-notice mb-4" role="status">{notice}</p>}
+      <div className="market-search events-search mb-6" role="search">
         <Search size={17} />
         <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari game, party, atau anggota…" aria-label="Cari turnamen dan jadwal party" />
       </div>

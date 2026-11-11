@@ -107,7 +107,7 @@ export function HorizonChatWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={shouldReduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.98 }}
             transition={transition}
-            className="flex h-[min(34rem,calc(100dvh-7rem))] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-md border border-[#D1D5DB] bg-white text-[#111827] shadow-2xl dark:border-[#2A2438] dark:bg-[#120F17] dark:text-white"
+            className="flex h-[min(34rem,calc(100dvh-7rem))] w-[calc(100vw-2rem)] sm:w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-md border border-[#D1D5DB] bg-white text-[#111827] shadow-2xl dark:border-[#2A2438] dark:bg-[#120F17] dark:text-white"
             aria-label="Chat dengan Satpam Horizon"
           >
             <header className="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3 dark:border-[#2A2438]">
@@ -145,7 +145,7 @@ export function HorizonChatWidget() {
                       {message.role === "user"
                         ? <DiscordAvatar className="chat-message-avatar" src={session.user.avatar} username={session.user.username ?? session.user.name ?? "Gamer"} size={40} />
                         : <span className="chat-bot-avatar"><Image src="/loghorizon-logo.png" alt="Satpam Horizon" width={28} height={28} /></span>}
-                      <p className={`chat-message-bubble ${message.role === "user" ? "user-bubble" : "assistant-bubble"}`}>{message.content}</p>
+                      <p className={`chat-message-bubble break-words ${message.role === "user" ? "user-bubble" : "assistant-bubble"}`}>{message.content}</p>
                     </motion.div>
                   ))}
                   {loading && <div className="chat-message-row chat-message-assistant"><span className="chat-bot-avatar"><Image src="/loghorizon-logo.png" alt="Satpam Horizon" width={28} height={28} /></span><p className="chat-message-bubble assistant-bubble">Satpam sedang patroli…</p></div>}

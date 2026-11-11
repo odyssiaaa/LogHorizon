@@ -45,6 +45,7 @@ body {
   width: 100%;
   max-width: 100vw;
   position: relative;
+  overflow-wrap: break-word;
 }
 a { color: inherit; text-decoration: none; }
 button, input, textarea, select { font: inherit; }
@@ -372,7 +373,7 @@ button { cursor: pointer; }
   .about-section, .rules-section { grid-template-columns: 1fr; gap: 18px; padding-block: 55px; }
   .division-section, .community-section { padding-block: 55px; }
   .section-heading { align-items: start; flex-direction: column; }
-  .division-grid { gap: 9px; }
+  .division-grid { grid-template-columns: 1fr; gap: 12px; }
   .division-card, .benefit-card { padding: 17px; }
   .division-card { min-height: 168px; }
   .benefit-grid { grid-template-columns: 1fr; }
@@ -388,7 +389,7 @@ button { cursor: pointer; }
   .post-meta { gap: 10px; }
   .modal-card { padding: 25px 19px; }
   .thread-card, .comments-section { padding: 18px 14px; }
-  .market-filters { grid-template-columns: 1fr 1fr; padding: 12px; gap: 10px; }
+  .market-filters { grid-template-columns: 1fr; padding: 12px; gap: 10px; }
   .market-grid { grid-template-columns: 1fr; }
   .market-image { height: 205px; }
   .form-grid-two { grid-template-columns: 1fr; }
@@ -1060,7 +1061,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 @media (max-width: 600px) {
-  .hero-copy h1 { font-size: clamp(3rem, 14vw, 4.5rem); }
+  .hero-copy h1 { font-size: clamp(2rem, 9vw, 3.25rem); }
   .post-excerpt,
   .market-description,
   .thread-body,
@@ -1301,7 +1302,7 @@ body {
 
 @media (max-width: 600px) {
   .hero-copy h1 {
-    font-size: clamp(3.25rem, 15vw, 4.75rem);
+    font-size: clamp(2rem, 9vw, 3.25rem);
   }
 
   .hero-description,

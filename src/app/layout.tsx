@@ -49,8 +49,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id" className={`${plusJakartaSans.variable} ${geistMono.variable} h-full antialiased dark`}>
-      <body className="min-h-full flex flex-col bg-[#F8F9FA] text-[#111827] dark:bg-[#08060B] dark:text-white">
+    <html lang="id" className={`${plusJakartaSans.variable} ${geistMono.variable} h-full antialiased dark overflow-x-hidden max-w-full w-full`}>
+      <body className="min-h-full w-full max-w-full overflow-x-hidden flex flex-col bg-[#F8F9FA] text-[#111827] dark:bg-[#08060B] dark:text-white">
         <Providers>
           <Navbar />
           <div className="flex-1 w-full max-w-full overflow-x-hidden">

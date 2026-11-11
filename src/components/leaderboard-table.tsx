@@ -34,14 +34,14 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
   const [activeTab, setActiveTab] = useState<"adventurers" | "benefactors">("adventurers");
 
   return (
-    <main className="page-shell leaderboard-page">
-      <header className="leaderboard-heading">
-        <p className="section-kicker">KOMPETISI GUILD</p>
-        <h1>Guild <span>Leaderboard</span></h1>
-        <p className="muted-copy">Peringkat petualang aktif dan benefactor berdasarkan dukungan terverifikasi.</p>
+    <main className="page-shell leaderboard-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
+      <header className="leaderboard-heading mb-6">
+        <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">KOMPETISI GUILD</p>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white break-words">Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Leaderboard</span></h1>
+        <p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Peringkat petualang aktif dan benefactor berdasarkan dukungan terverifikasi.</p>
       </header>
 
-      <div className="leaderboard-tabs" role="tablist" aria-label="Papan peringkat">
+      <div className="leaderboard-tabs relative flex overflow-x-auto scrollbar-none gap-2 border-b border-gray-200 dark:border-[#211C2B] pb-1 -mx-4 px-4 sm:mx-0 sm:px-0" role="tablist" aria-label="Papan peringkat">
         <button
           type="button"
           role="tab"
