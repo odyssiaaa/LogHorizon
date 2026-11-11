@@ -1,7 +1,13 @@
 import { authenticatedUser, jsonError } from "@/lib/http";
+import { prisma } from "@/lib/prisma";
 
-const GEMINI_ENDPOINT_PRIMARY = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
-const GEMINI_ENDPOINT_FALLBACK = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
+const GEMINI_ENDPOINTS = [
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
+];
+
 const COOLDOWN_MS = 2_500;
 const MAX_INPUT_LENGTH = 300;
 const MAX_BODY_BYTES = 16_384;
@@ -51,7 +57,6 @@ function validateHistory(value: unknown): ChatMessage[] {
     history.push({ role: item.role, content });
   }
 
-  // Keep max last 6 history entries for conversational context
   return history.slice(-6);
 }
 
@@ -73,7 +78,7 @@ function formatGeminiContents(history: ChatMessage[], currentMessage: string): G
     turns.push({ role: "user", text: cleanCurrent });
   }
 
-  // Merge consecutive turns with the exact same role to enforce strict alternation
+  // Merge consecutive turns with the same role
   const merged: { role: "user" | "model"; text: string }[] = [];
   for (const turn of turns) {
     const prev = merged[merged.length - 1];
@@ -84,13 +89,11 @@ function formatGeminiContents(history: ChatMessage[], currentMessage: string): G
     }
   }
 
-  // Standard LLM chat templates require the conversation following system to start with user.
-  // Strip any leading assistant/model greeting from history so that first turn is always user.
+  // First turn following system instruction must always be user
   while (merged.length > 0 && merged[0].role === "model") {
     merged.shift();
   }
 
-  // Ensure conversation ends with user message
   if (merged.length === 0 || merged[merged.length - 1].role !== "user") {
     merged.push({ role: "user", text: cleanCurrent || "Halo Satpam Horizon" });
   }
@@ -99,6 +102,139 @@ function formatGeminiContents(history: ChatMessage[], currentMessage: string): G
     role: turn.role,
     parts: [{ text: turn.text }],
   }));
+}
+
+async function getLiveDatabaseContext(userId: string) {
+  try {
+    const [
+      currentUser,
+      topXpUsers,
+      donorRaw,
+      totalForumThreads,
+      latestForumPosts,
+      allMarketListings,
+      openTournaments,
+      openLfg,
+    ] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { username: true, role: true, level: true, xp: true, isPremium: true },
+      }),
+      prisma.user.findMany({
+        where: { isBanned: false },
+        orderBy: [{ level: "desc" }, { xp: "desc" }],
+        take: 5,
+        select: { username: true, level: true, xp: true },
+      }),
+      prisma.$queryRaw<{ username: string | null; badges: string[]; total: string }[]>`
+        SELECT u."username", u."badges", SUM(d."amount")::text AS "total"
+        FROM "User" u
+        INNER JOIN "Donation" d ON d."userId" = u."id"
+        WHERE u."isBanned" = false
+          AND d."status" = 'SUCCEEDED'::"DonationStatus"
+          AND (d."gatewayRef" IS NULL OR d."gatewayRef" NOT LIKE 'mock-%')
+        GROUP BY u."id"
+        ORDER BY SUM(d."amount") DESC
+        LIMIT 3
+      `.catch(() => []),
+      prisma.post.count({
+        where: { category: { not: "MARKETPLACE" } },
+      }),
+      prisma.post.findMany({
+        where: { category: { not: "MARKETPLACE" } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: { title: true, category: true },
+      }),
+      prisma.post.findMany({
+        where: { category: "MARKETPLACE" },
+        orderBy: { createdAt: "desc" },
+        take: 15,
+        select: { title: true, marketData: true },
+      }),
+      prisma.tournament.findMany({
+        where: { status: "OPEN" },
+        orderBy: { eventDate: "asc" },
+        take: 3,
+        select: { game: true, maxSlots: true, eventDate: true },
+      }),
+      prisma.lfgPost.findMany({
+        where: { status: "OPEN" },
+        orderBy: { scheduledAt: "asc" },
+        take: 3,
+        select: { game: true, description: true, scheduledAt: true, maxSlots: true },
+      }),
+    ]);
+
+    // Parse marketplace listings
+    const availableMarket = allMarketListings
+      .filter((item) => {
+        const m = (item.marketData && typeof item.marketData === "object" ? item.marketData : {}) as Record<string, unknown>;
+        return !m.status || m.status === "AVAILABLE";
+      })
+      .slice(0, 5)
+      .map((item) => {
+        const m = (item.marketData && typeof item.marketData === "object" ? item.marketData : {}) as Record<string, unknown>;
+        const price = Number(m.price ?? 0);
+        const game = String(m.game ?? "Game");
+        const formattedPrice = price > 0 ? `Rp ${price.toLocaleString("id-ID")}` : "Gratis / Hubungi Penjual";
+        return `"${item.title}" [${game}] - ${formattedPrice}`;
+      });
+
+    const topDonors = (donorRaw || []).map((d) => {
+      const amount = Number(d.total || 0);
+      let tier = "Guild Supporter";
+      if (d.badges?.includes("Noble Patron") || amount >= 500_000) tier = "Noble Patron";
+      else if (d.badges?.includes("High Merchant") || amount >= 250_000) tier = "High Merchant";
+      else if (d.badges?.includes("Knight") || amount >= 50_000) tier = "Knight";
+      return `${d.username ?? "Anonim"} (${tier}: Rp ${amount.toLocaleString("id-ID")})`;
+    });
+
+    const xpLeaderboardSummary = topXpUsers.length
+      ? topXpUsers.map((u, i) => `${i + 1}. ${u.username ?? "Gamer"} (Lv.${u.level}, ${u.xp} XP)`).join(", ")
+      : "Belum ada petualang di papan peringkat.";
+
+    const donorSummary = topDonors.length
+      ? topDonors.join(", ")
+      : "Belum ada donatur terverifikasi.";
+
+    const forumSummary = latestForumPosts.length
+      ? `Total ${totalForumThreads} thread. 5 Thread terbaru: ` + latestForumPosts.map((p) => `"${p.title}"`).join(", ")
+      : `Total ${totalForumThreads} thread forum. Belum ada postingan terbaru.`;
+
+    const marketSummary = availableMarket.length
+      ? `Total lapak aktif: ${allMarketListings.length}. Lapak tersedia: ` + availableMarket.join(", ")
+      : "Belum ada barang aktif di lapak saat ini.";
+
+    const eventList = [
+      ...openTournaments.map((t) => `Turnamen ${t.game} (Slot: ${t.maxSlots})`),
+      ...openLfg.map((l) => `Party ${l.game} (${l.description.slice(0, 30)}...)`),
+    ];
+    const eventSummary = eventList.length
+      ? eventList.slice(0, 4).join(", ")
+      : "Belum ada turnamen atau sesi mabar LFG yang aktif saat ini.";
+
+    return {
+      userContext: currentUser
+        ? `Username: "${currentUser.username ?? "Gamer"}", Role: ${currentUser.role}, Level: ${currentUser.level}, XP: ${currentUser.xp}, Status Premium: ${currentUser.isPremium ? "Ya (Elite Member)" : "Tidak"}`
+        : "User belum teridentifikasi penuh.",
+      xpLeaderboardSummary,
+      donorSummary,
+      forumSummary,
+      marketSummary,
+      eventSummary,
+    };
+  } catch (error) {
+    console.error("[gemini-chat] Failed to fetch live database context:", error);
+    return {
+      userContext: "Data user tidak dapat dimuat sementara.",
+      xpLeaderboardSummary: "Papan peringkat sedang disinkronisasi.",
+      donorSummary: "Data kas donatur sedang disinkronisasi.",
+      forumSummary: "Forum komunitas sedang aktif.",
+      marketSummary: "Lapak marketplace tersedia dengan sistem Escrow aman.",
+      eventSummary: "Turnamen & Party LFG tersedia di menu Events.",
+    };
+  }
 }
 
 export async function POST(request: Request) {
@@ -133,7 +269,7 @@ export async function POST(request: Request) {
   }
   const message = payload.message.trim();
   if (!message || message.length > MAX_INPUT_LENGTH) {
-    return jsonError("Pesan harus berisi 1–300 karakter.", 400);
+    return jsonError("Pesan harus berisi 1-300 karakter.", 400);
   }
 
   const history = validateHistory(payload.history);
@@ -146,19 +282,37 @@ export async function POST(request: Request) {
     });
   }
 
+  // Retrieve live PostgreSQL database context
+  const dbContext = await getLiveDatabaseContext(user.id);
+
   const systemPrompt = [
-    "Kamu adalah Satpam Horizon, penjaga gerbang komunitas multi-game LogHorizon yang kocak, sarkas, gaul, suka pakai bahasa gamer Indonesia (seperti mabar, afk, noob, gacor, push rank), dan sangat menghormati Emperor / Admin guild.",
-    "Jawab pertanyaan atau obrolan user secara natural, nyambung, lucu, dan singkat (maksimal 2-3 kalimat).",
-    `Info guild penting: Emperor/Owner guild adalah .odyssia (Farrel). User yang sedang bicara bernama "${user.username ?? user.name ?? "Petualang"}" (Level ${user.level ?? 1}, Role: ${user.role ?? "MEMBER"}).`,
-    "Fitur web LogHorizon: Forum diskusi (f/general-chat, f/promotion, f/feedback), Lapak Marketplace gamer, Leaderboard peringkat XP/kas donatur, Jadwal mabar & turnamen (Events), dan Warta Berita (News Hub).",
-  ].join(" ");
+    "IDENTITAS & KEPRIBADIAN:",
+    "Kamu adalah 'Satpam Horizon', maskot penjaga gerbang resmi dan bot intelijen komunitas multi-game LogHorizon.",
+    "Gaya bahasamu kocak, ramah, santai, sedikit sarkas ala gamer Indonesia (sering pakai istilah: mabar, afk, noob, gacor, push rank, sepuh, GGWP).",
+    "Kamu sangat menghormati Emperor guild (.odyssia / Farrel) dan jajaran Admin/Council.",
+    "Jawab pertanyaan secara ringkas, padat, natural, cerdas, dan informatif (maksimal 2-4 kalimat). Jangan halu atau mengarang data jika user menanyakan data komunitas, rujuklah DATA LIVE di bawah ini.",
+    "",
+    "DATA LIVE DARI DATABASE NEON SAAT INI:",
+    `- Penanya saat ini: ${dbContext.userContext}`,
+    `- Top 5 Leaderboard XP: ${dbContext.xpLeaderboardSummary}`,
+    `- Top 3 Donatur Kas: ${dbContext.donorSummary}`,
+    `- Data Forum Diskusi: ${dbContext.forumSummary}`,
+    `- Data Lapak Marketplace: ${dbContext.marketSummary}`,
+    `- Events & Party Aktif: ${dbContext.eventSummary}`,
+    "",
+    "PENGETAHUAN LENGKAP FITUR & STRUKTUR WEBSITE LOGHORIZON:",
+    "1. Navigasi Utama: Beranda (/), Forum Komunitas (/forum), Marketplace Jual-Beli (/marketplace), Leaderboard (/leaderboard), Warta Berita (/news), Turnamen & LFG Party Finder (/events), Kas Donasi (/donate), Aturan & Hierarki (/rules), dan Pengaturan Profil (/profile).",
+    "2. Sistem Keamanan Escrow: Lapak FJB menggunakan rekening bersama pihak ketiga aman (Escrow) agar transaksi anti-scam. Status lapak: AVAILABLE, IN_ESCROW, SOLD.",
+    "3. Sistem Perolehan Level & XP: Petualang mendapat +10 XP tiap membuat thread forum, +5 XP tiap mengirim komentar diskusi, dan +50 XP tiap transaksi lapak sukses selesai. Level otomatis naik seiring akumulasi XP.",
+    "4. Kas Donasi & Role Discord: Donasi (/donate) mendukung server guild. Donatur mendapatkan badge dan role Discord: Knight (Rp 50.000+), High Merchant (Rp 250.000+), dan Noble Patron (Rp 500.000+).",
+    "5. Struktur Kasta Kerajaan: Emperor (.odyssia - Pemimpin Tertinggi), Prince/Princess (Wakil), Grand Chancellor & Lord Commander (Council/Moderator), Royal Guard, Knight, High Merchant, dan Adventurer (Member).",
+    "6. Aturan Inti: No toxic, junjung tinggi sportivitas fair play, dilarang cheat/scam, dan jaga persaudaraan sesama gamer.",
+  ].join("\n");
 
   const contents = formatGeminiContents(history, message);
-
-  const endpoints = [GEMINI_ENDPOINT_PRIMARY, GEMINI_ENDPOINT_FALLBACK];
   let lastErrorDetail = "";
 
-  for (const endpoint of endpoints) {
+  for (const endpoint of GEMINI_ENDPOINTS) {
     try {
       const response = await fetch(endpoint, {
         method: "POST",
@@ -172,7 +326,7 @@ export async function POST(request: Request) {
           },
           contents,
           generationConfig: {
-            maxOutputTokens: 200,
+            maxOutputTokens: 250,
             temperature: 0.7,
           },
         }),
@@ -201,10 +355,17 @@ export async function POST(request: Request) {
           cleanSnippet = errorText.slice(0, 180);
         }
 
+        if (status === 404) {
+          // Model endpoint not found, fallback to next endpoint model automatically
+          lastErrorDetail = `Model 404: ${cleanSnippet}`;
+          continue;
+        }
+
         if (status === 400 || status === 401 || status === 403) {
           lastErrorDetail = `HTTP ${status}: ${cleanSnippet}`;
           continue;
         }
+
         if (status === 429) {
           return Response.json({
             reply: "Antrean server Gemini lagi padat mabar nih (Rate limit 429)! Tunggu beberapa detik terus coba lagi ya bro.",
@@ -219,8 +380,7 @@ export async function POST(request: Request) {
     }
   }
 
-  // Meaningful non-repetitive error message with debug info
   return Response.json({
-    reply: `Aduh sinyal ke otak AI lagi ngelag (${lastErrorDetail || "Server timeout"}). Coba kirim ulang pesanmu sekali lagi ya petualang!`,
+    reply: `Aduh sinyal ke otak Satpam lagi ngelag (${lastErrorDetail || "Server timeout"}). Coba kirim ulang pesanmu sekali lagi ya petualang!`,
   });
 }
