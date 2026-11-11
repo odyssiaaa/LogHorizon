@@ -1212,6 +1212,7 @@ function BroadcastSection({
 }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -1222,12 +1223,13 @@ function BroadcastSection({
       const response = await fetch("/api/admin/broadcast", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content }),
+        body: JSON.stringify({ title, content, imageUrl: imageUrl.trim() || undefined }),
       });
       const result = await readApiResponse<{ notificationSent: boolean; warning?: string }>(response, "Broadcast gagal.");
       setTitle("");
       setContent("");
-      onNotice(result.notificationSent ? "Pengumuman berhasil disiarkan ke Beranda (aktif 24 jam) dan Discord." : result.warning ?? "Pengumuman berhasil diterbitkan.");
+      setImageUrl("");
+      onNotice(result.notificationSent ? "Warta berhasil disiarkan ke Beranda, News Hub, dan Discord." : result.warning ?? "Warta berhasil diterbitkan.");
       onRefresh();
     } catch (reason) {
       onError(reason instanceof Error ? reason.message : "Broadcast gagal.");
@@ -1267,7 +1269,7 @@ function BroadcastSection({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Isi Pengumuman</label>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Isi Pengumuman / Warta</label>
             <textarea
               required
               maxLength={10000}
@@ -1278,8 +1280,20 @@ function BroadcastSection({
               className="w-full px-3.5 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white"
             />
           </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+              URL Banner / Gambar Warta (Opsional)
+            </label>
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(event) => setImageUrl(event.target.value)}
+              placeholder="https://images.unsplash.com/... atau URL gambar discord"
+              className="w-full px-3.5 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white"
+            />
+          </div>
           <p className="text-xs text-gray-500">
-            Setelah dikirim, banner pengumuman akan otomatis terarsip setelah 24 jam tanpa memerlukan campur tangan manual.
+            Warta akan disiarkan ke Beranda (24 jam), News Hub, serta channel pengumuman Discord via webhook.
           </p>
           <button
             type="submit"

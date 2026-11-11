@@ -23,6 +23,7 @@ export async function POST(request: Request) {
   const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
   const title = typeof data.title === "string" ? data.title.trim() : "";
   const content = typeof data.content === "string" ? data.content.trim() : "";
+  const imageUrl = typeof data.imageUrl === "string" && /^https?:\/\//i.test(data.imageUrl) ? data.imageUrl.trim() : null;
   if (!title || title.length > 180 || !content || content.length > 10000) {
     return Response.json({ error: "Judul dan isi pengumuman wajib diisi (maksimal 180 dan 10.000 karakter)." }, { status: 400 });
   }
@@ -65,44 +66,69 @@ export async function POST(request: Request) {
     console.error("[broadcast] Failed to broadcast notification:", err);
   }
 
-  const webhook = process.env.DISCORD_ANNOUNCEMENT_WEBHOOK_URL;
-  if (!webhook) {
-    return Response.json({
-      announcement,
-      notificationSent: false,
-      warning: "Pengumuman berhasil dipublikasikan di Landing Page (aktif 24 jam)! Discord Webhook belum dikonfigurasi.",
-    }, { status: 201 });
+  // Kirim ke Discord Webhook (News & Announcement)
+  const webhookTargets = [
+    process.env.DISCORD_NEWS_WEBHOOK_URL,
+    process.env.DISCORD_ANNOUNCEMENT_WEBHOOK_URL,
+  ].filter(Boolean) as string[];
+
+  const validWebhooks = Array.from(new Set(webhookTargets))
+    .map(getWebhookUrl)
+    .filter((u): u is URL => u !== null);
+
+  if (validWebhooks.length === 0) {
+    return Response.json(
+      {
+        announcement,
+        notificationSent: false,
+        warning:
+          "Warta berhasil dipublikasikan di Beranda & News Hub! Webhook Discord belum dikonfigurasi.",
+      },
+      { status: 201 }
+    );
   }
 
-  const webhookUrl = getWebhookUrl(webhook);
-  if (!webhookUrl) {
-    return Response.json({
-      announcement,
-      notificationSent: false,
-      warning: "Pengumuman berhasil dipublikasikan di Landing Page (aktif 24 jam)! Format webhook URL tidak valid.",
-    }, { status: 201 });
-  }
+  let anySent = false;
+  const embed: Record<string, unknown> = {
+    title: title.slice(0, 256),
+    description: content.slice(0, 4000),
+    color: 0x9d4edd,
+    url: "https://loghorizon.vercel.app/news",
+    ...(imageUrl ? { image: { url: imageUrl } } : {}),
+    footer: { text: "LogHorizon Guild Dispatch" },
+    timestamp: new Date().toISOString(),
+  };
 
-  try {
-    const body = {
-      content: `@everyone 📢 **PENGUMUMAN GUILD RESMI LOGHORIZON**\n\n**${title}**\n\n${content}\n\n*• Emperor & Council LogHorizon*`,
-      allowed_mentions: { parse: ["everyone"] },
-    };
-    const res = await fetch(webhookUrl.toString(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(6000),
-    });
-    return Response.json({
+  const body = {
+    content: `@everyone 📢 **WARTA RESMI GUILD LOGHORIZON**\n\n**${title}**\n\n${content}\n\n*• Emperor & Council LogHorizon*`,
+    embeds: [embed],
+    allowed_mentions: { parse: ["everyone"] },
+  };
+
+  await Promise.all(
+    validWebhooks.map(async (webhookUrl) => {
+      try {
+        const res = await fetch(webhookUrl.toString(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(6000),
+        });
+        if (res.ok) anySent = true;
+      } catch {
+        // continue
+      }
+    })
+  );
+
+  return Response.json(
+    {
       announcement,
-      notificationSent: res.ok,
-    }, { status: 201 });
-  } catch {
-    return Response.json({
-      announcement,
-      notificationSent: false,
-      warning: "Pengumuman aktif di Landing Page, namun pengiriman Discord Webhook mengalami kendala.",
-    }, { status: 201 });
-  }
+      notificationSent: anySent,
+      warning: anySent
+        ? undefined
+        : "Warta aktif di Beranda & News Hub, namun pengiriman webhook Discord mengalami kendala.",
+    },
+    { status: 201 }
+  );
 }
