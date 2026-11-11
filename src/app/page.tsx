@@ -67,7 +67,7 @@ export default function Home() {
   return (
     <main className="w-full max-w-full overflow-x-hidden">
       {/* HERO SECTION */}
-      <section className="hero-section relative overflow-hidden py-12 sm:py-16 md:py-24 border-b border-gray-200 dark:border-[#211C2B]">
+      <section className="hero-section relative py-12 sm:py-16 md:py-20 lg:py-24 border-b border-gray-200 dark:border-[#211C2B]">
         <div className="hero-glow" aria-hidden="true" />
         <div className="page-shell px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -76,7 +76,7 @@ export default function Home() {
                 <span className="status-dot w-2 h-2 rounded-full bg-[#42d99b] inline-block animate-pulse" />
                 MULTI-GAME COMMUNITY
               </p>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-gray-900 dark:text-white break-words leading-none">
+              <h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-[3.8rem] xl:text-[4.5rem] font-black tracking-tight text-gray-900 dark:text-white whitespace-nowrap leading-none select-none">
                 LOG<span className="text-[#9D4EDD] dark:text-[#C77DFF]">HORIZON</span>
               </h1>
               <p className="hero-tagline text-lg sm:text-xl md:text-2xl font-extrabold tracking-wider text-gray-800 dark:text-gray-100 mt-4 leading-snug">
@@ -110,9 +110,9 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="hero-emblem-wrap lg:col-span-5 flex justify-center mt-6 lg:mt-0">
+            <div className="hero-emblem-wrap lg:col-span-5 flex justify-center items-center mt-6 lg:mt-0">
               <Image
-                className="hero-logo w-44 sm:w-60 md:w-72 lg:w-full max-w-[320px] h-auto object-contain drop-shadow-2xl"
+                className="hero-logo w-48 sm:w-60 md:w-72 lg:w-80 xl:w-[350px] max-w-[350px] h-auto object-contain drop-shadow-2xl"
                 src="/loghorizon-logo.png"
                 alt="Logo komunitas LogHorizon: Find your party. Beyond the horizon."
                 width={768}
