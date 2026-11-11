@@ -279,8 +279,21 @@ export default function Home() {
             Mitra dan sponsor terverifikasi yang mendanai turnamen serta operasional server LogHorizon.
           </p>
         </div>
-        <div className="mt-6 p-6 rounded-md border border-dashed border-gray-300 dark:border-[#211C2B] text-center text-xs font-mono text-gray-400">
-          Belum ada sponsor terverifikasi
+        <div className="mt-6 p-6 sm:p-8 rounded-lg border border-dashed border-gray-300 dark:border-[#2A2438] bg-white/40 dark:bg-[#120F17]/50 flex flex-col sm:flex-row items-center justify-between gap-5 text-center sm:text-left">
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-gray-900 dark:text-white">
+              Ingin Menjadi Mitra Resmi atau Sponsor Turnamen Guild?
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-lg leading-relaxed">
+              Dukung prizepool kompetisi esports dan operasional server. Dapatkan badge kehormatan, eksposur brand, serta peran eksklusif di ekosistem LogHorizon.
+            </p>
+          </div>
+          <Link
+            href="/donate"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-xs font-bold text-white bg-[#9D4EDD] hover:bg-[#8338EC] transition-colors shrink-0 shadow-sm shadow-[#9D4EDD]/25"
+          >
+            <span>Ajukan Kemitraan / Jadi Benefactor ➡️</span>
+          </Link>
         </div>
       </section>
 

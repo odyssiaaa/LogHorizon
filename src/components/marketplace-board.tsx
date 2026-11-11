@@ -315,7 +315,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
         const market = post.marketData;
         return <motion.article className={`market-card ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
           <div className="market-listing-labels flex flex-wrap gap-1.5 mb-3">{post.isPinned && <span className="pinned-label">PINNED</span>}<span className={market.type === "WTS" ? "trade-badge wts" : "trade-badge wtb"}>{market.type}</span><span className="market-label-game">{market.game}</span><span className="market-label-price">{money.format(market.price)}</span><span className={`status-badge ${market.status === "AVAILABLE" ? "available" : market.status === "IN_ESCROW" ? "in-escrow" : "sold"}`}>{market.status === "IN_ESCROW" ? "IN ESCROW" : market.status}</span></div>
-          <div className="market-image">{market.imageUrl ? <Image src={market.imageUrl} alt={`Bukti lapak ${post.title}`} fill unoptimized loading="lazy" sizes="(max-width: 700px) 100vw, 33vw" /> : <ShoppingBag size={28} />}</div>
+          <div className="market-image"><MarketImage src={market.imageUrl} alt={`Bukti lapak ${post.title}`} /></div>
           <div className="market-card-body"><h2 className="text-lg sm:text-xl font-bold break-words text-gray-900 dark:text-white">{post.title}</h2><p className="market-game">{market.game}</p><p className="market-price">{money.format(market.price)}</p><p className="market-description break-words text-xs sm:text-sm">{post.content}</p>
             <div className="market-card-meta flex flex-wrap items-center gap-2"><span className="post-author"><DiscordAvatar src={post.author.avatar} username={post.author.username} /><span>oleh <strong className={post.author.isPremium ? "premium-username" : undefined}>{post.author.username ?? "Gamer"}</strong></span></span><span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span></div>
             <PostReactions postId={post.id} likes={post.likes} dislikes={post.dislikes} reaction={post.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} onChange={(result) => setPosts((current) => current.map((entry) => entry.id === post.id ? { ...entry, ...result, votes: result.reaction ? [{ value: result.reaction }] : [] } : entry))} />
@@ -436,4 +436,23 @@ function MarketModal({ canPin, onClose, onCreated }: { canPin: boolean; onClose:
     {imagePreview && <Image className="market-image-preview" src={imagePreview} alt="Pratinjau foto lapak" width={260} height={180} unoptimized />}
     {error && <p className="form-error" role="alert">{error}</p>}<button className="button button-primary" disabled={saving}>{saving ? "Menerbitkan…" : "Terbitkan Lapak"}</button>
   </form></section></div>;
+}
+
+function MarketImage({ src, alt }: { src: string | null | undefined; alt: string }) {
+  const [error, setError] = useState(false);
+  if (!src || error) {
+    return <ShoppingBag size={28} className="text-gray-400 opacity-60" />;
+  }
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      unoptimized
+      loading="lazy"
+      sizes="(max-width: 700px) 100vw, 33vw"
+      onError={() => setError(true)}
+      className="object-cover"
+    />
+  );
 }
