@@ -57,7 +57,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             {children}
           </div>
           <footer className="border-t border-gray-200 dark:border-[#211C2B] bg-white/50 dark:bg-[#0A0710]/80 py-8 mt-auto">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-5 text-center sm:text-left pr-16 sm:pr-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-5 text-center md:text-left pr-4 sm:pr-20">
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                   © 2026 LogHorizon. All rights reserved.
@@ -66,24 +66,34 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   Find your party. Beyond the horizon.
                 </p>
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-gray-600 dark:text-gray-400">
+              <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+                <Link href="/" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                  Home
+                </Link>
+                <Link href="/forum" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                  Forum
+                </Link>
+                <Link href="/marketplace" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                  Marketplace
+                </Link>
+                <Link href="/leaderboard" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                  Leaderboard
+                </Link>
                 <Link href="/news" className="text-purple-600 dark:text-purple-400 font-bold hover:underline">
                   News
                 </Link>
-                <Link href="/leaderboard" className="hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Leaderboard
-                </Link>
-                <Link href="/events" className="hover:text-gray-900 dark:hover:text-white transition-colors">
+                <Link href="/events" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                   Events
                 </Link>
-                <a href="https://discord.gg/aJvbVyTxNb" target="_blank" rel="noreferrer" className="hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Discord
-                </a>
-                <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-gray-900 dark:hover:text-white transition-colors">
-                  Instagram
-                </a>
-                <a href="https://youtube.com" target="_blank" rel="noreferrer" className="hover:text-gray-900 dark:hover:text-white transition-colors">
-                  YouTube
+                <Link href="/donate" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                  Donate
+                </Link>
+                <Link href="/#rules" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                  Rules
+                </Link>
+                <span className="text-gray-300 dark:text-gray-700 hidden sm:inline">|</span>
+                <a href="https://discord.gg/aJvbVyTxNb" target="_blank" rel="noreferrer" className="text-[#5865F2] hover:underline font-semibold transition-colors">
+                  Discord Guild
                 </a>
               </div>
             </div>

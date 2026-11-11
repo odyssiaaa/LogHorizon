@@ -22,13 +22,8 @@ export async function POST(request: Request) {
   const access = await requireStaff(["ADMIN"]);
   if (access.response) return access.response;
 
-  const webhook = process.env.DISCORD_ANNOUNCEMENT_WEBHOOK_URL;
-  if (!webhook) return Response.json({ error: "DISCORD_ANNOUNCEMENT_WEBHOOK_URL belum dikonfigurasi." }, { status: 503 });
-  const webhookUrl = getWebhookUrl(webhook);
-  if (!webhookUrl) return Response.json({ error: "URL Discord webhook tidak valid." }, { status: 500 });
-
   const payload: unknown = await request.json();
-  const data = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
+  const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
   const title = typeof data.title === "string" ? data.title.trim() : "";
   const content = typeof data.content === "string" ? data.content.trim() : "";
   if (!title || title.length > 180 || !content || content.length > 10000) {
@@ -49,6 +44,24 @@ export async function POST(request: Request) {
     await addXpInTransaction(tx, access.user.id, 10);
     return created;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+  const webhook = process.env.DISCORD_ANNOUNCEMENT_WEBHOOK_URL;
+  if (!webhook) {
+    return Response.json({
+      post,
+      notificationSent: false,
+      warning: "Pengumuman berhasil disematkan (pinned) di Forum! Discord Webhook belum dikonfigurasi.",
+    }, { status: 201 });
+  }
+
+  const webhookUrl = getWebhookUrl(webhook);
+  if (!webhookUrl) {
+    return Response.json({
+      post,
+      notificationSent: false,
+      warning: "Pengumuman berhasil disematkan di Forum, namun URL Discord Webhook tidak valid.",
+    }, { status: 201 });
+  }
 
   try {
     const response = await fetch(webhookUrl, {

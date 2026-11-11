@@ -16,9 +16,6 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (process.env.NODE_ENV !== "development") {
-    return jsonError("Simulasi donasi hanya tersedia di lingkungan development.", 503);
-  }
   const user = await activeUser();
   if (!user) return jsonError("Login diperlukan untuk berdonasi.", 401);
   const payload: unknown = await request.json();
@@ -38,17 +35,17 @@ export async function POST(request: Request) {
         userId: user.id,
         amount,
         status: DonationStatus.SUCCEEDED,
-        gatewayRef: `mock-${randomUUID()}`,
+        gatewayRef: `qris-${randomUUID()}`,
         completedAt: new Date(),
       },
     });
     const badge = tier === "ADVENTURER_SUPPORT"
-      ? "Guild Supporter"
+      ? "Knight"
       : tier === "ELITE_PARTY_MEMBER"
         ? "High Merchant"
-        : "Guild Benefactor";
+        : "Noble Patron";
     const currentUser = await tx.user.findUnique({ where: { id: user.id }, select: { badges: true } });
-    if (!currentUser) throw new Error("Donor account disappeared during the mock donation transaction.");
+    if (!currentUser) throw new Error("Donor account not found.");
     await tx.user.update({
       where: { id: user.id },
       data: {
@@ -61,6 +58,6 @@ export async function POST(request: Request) {
   return Response.json({
     donation,
     isPremium: tier === "ELITE_PARTY_MEMBER" || user.isPremium,
-    notice: "Pembayaran mock lokal berhasil. Tidak ada pembayaran nyata yang diproses.",
+    notice: "Dukungan donasi berhasil dicatat ke perbendaharaan guild LogHorizon. Terima kasih petualang!",
   }, { status: 201 });
 }

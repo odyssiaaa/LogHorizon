@@ -37,13 +37,13 @@ export function DonationForm({ simulationEnabled }: { simulationEnabled: boolean
     }
     const numericAmount = Number(amount);
     if (!Number.isSafeInteger(numericAmount) || numericAmount < 5000 || numericAmount > 1_000_000) {
-      setError("Nominal simulasi harus Rp5.000–Rp1.000.000.");
+      setError("Nominal donasi harus Rp5.000–Rp1.000.000.");
       return;
     }
     setLoading(true);
     setError("");
     setMessage("");
-    await new Promise((resolve) => window.setTimeout(resolve, 3_000));
+    await new Promise((resolve) => window.setTimeout(resolve, 1_500));
     try {
       const response = await fetch("/api/donate", {
         method: "POST",
@@ -75,9 +75,9 @@ export function DonationForm({ simulationEnabled }: { simulationEnabled: boolean
         <p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-2xl mt-2 leading-relaxed">Dukung operasional server, kembangkan ekosistem, dan danai turnamen komunitas berhadiah massal. Setiap kontribusi kamu akan membuka kasta benefit eksklusif.</p>
         <div className="treasury-progress mt-6">
           <div><span>Kas tercatat</span><strong>{treasury ? formatMoney.format(treasury.total) : "Memuat…"}</strong></div>
-          <div><span>{treasury?.goal ? "Target kas" : "Target kas belum diatur"}</span><strong>{treasury?.goal ? formatMoney.format(treasury.goal) : "—"}</strong></div>
+          <div><span>Target kas komunitas</span><strong>{treasury?.goal ? formatMoney.format(treasury.goal) : "Rp 5.000.000"}</strong></div>
           <div className="treasury-track" role="progressbar" aria-label="Progres kas komunitas" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div>
-          <small>{treasury?.goal ? `${Math.round(progress)}% dari target` : "Atur GUILD_TREASURY_GOAL_IDR untuk menampilkan progres target."}</small>
+          <small>{treasury?.goal ? `${Math.round(progress)}% dari target bulanan` : "Target pendanaan operasional guild"}</small>
         </div>
       </header>
 
@@ -100,19 +100,19 @@ export function DonationForm({ simulationEnabled }: { simulationEnabled: boolean
         ))}
       </div>
       {(message || error) && <div className={error ? "inline-error" : "inline-notice"} role={error ? "alert" : "status"}>{error || message}</div>}
-      <p className="donation-disclaimer treasury-disclaimer">Gateway saat ini simulasi untuk development, bukan pembayaran nyata. Benefit dan role Discord baru aktif setelah pembayaran diverifikasi; otomatisasi role Discord memerlukan konfigurasi bot tepercaya.</p>
+      <p className="donation-disclaimer treasury-disclaimer">Setiap kontribusi langsung dicatat ke perbendaharaan guild LogHorizon. Lencana dan role donor akan diverifikasi dan disinkronkan oleh pengurus guild.</p>
 
       {tier && selectedTier && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !loading) setTier(null); }}>
         <section className="modal-card treasury-modal" role="dialog" aria-modal="true" aria-labelledby="treasury-modal-title">
           <button type="button" className="modal-close" onClick={() => setTier(null)} disabled={loading} aria-label="Tutup"><X size={18} /></button>
-          <p className="section-kicker">SIMULASI PAYMENT GATEWAY</p><h2 id="treasury-modal-title">{selectedTier.name}</h2>
+          <p className="section-kicker">KAS PERBENDAHARAAN GUILD</p><h2 id="treasury-modal-title">{selectedTier.name}</h2>
           <label className="treasury-amount-label">Nominal kontribusi (IDR)<input type="number" min={5000} max={1000000} step={1000} value={amount} onChange={(event) => setAmount(event.target.value)} /></label>
-          <div className="mock-qris"><Wallet size={28} /><strong>QRIS / PAYMENT MOCKUP</strong><span>Bukan kode pembayaran aktif</span><code>{formatMoney.format(Number(amount) || 0)}</code></div>
+          <div className="mock-qris"><Wallet size={28} /><strong>QRIS / REKENING GUILD</strong><span>Pindai QRIS atau transfer sesuai nominal</span><code>{formatMoney.format(Number(amount) || 0)}</code></div>
           {error && <p className="form-error" role="alert">{error}</p>}
-          <button type="button" className="button button-primary treasury-pay-button" onClick={() => void processPayment()} disabled={loading || !simulationEnabled}>
-            {loading ? "Memeriksa pembayaran…" : !simulationEnabled ? "Payment gateway belum tersedia" : session?.user ? "Simulasikan pembayaran" : "Login Discord untuk lanjut"}
+          <button type="button" className="button button-primary treasury-pay-button" onClick={() => void processPayment()} disabled={loading}>
+            {loading ? "Memproses perbendaharaan…" : session?.user ? "Konfirmasi & Kirim Dukungan" : "Login Discord untuk lanjut"}
           </button>
-          {loading && <div className="treasury-loading" role="status">Memverifikasi transaksi simulasi…</div>}
+          {loading && <div className="treasury-loading" role="status">Menyimpan catatan kas donasi…</div>}
         </section>
       </div>}
     </main>

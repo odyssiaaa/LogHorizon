@@ -281,13 +281,13 @@ export function Navbar() {
                           </Link>
                         )}
                         <Link
-                          href="/settings"
+                          href="/profile"
                           onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1E1A3A] transition-colors"
                           role="menuitem"
                         >
                           <Settings size={14} className="shrink-0" />
-                          <span>Pengaturan Akun</span>
+                          <span>Profil &amp; Pengaturan</span>
                         </Link>
                       </div>
 
@@ -458,12 +458,12 @@ export function Navbar() {
                   {/* Additional Mobile Links */}
                   {user && (
                     <Link
-                      href="/settings"
+                      href="/profile"
                       onClick={() => setMobileOpen(false)}
                       className="py-3 px-3 rounded-md text-base font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-[#211C2B]/50 flex items-center gap-2.5"
                     >
                       <Settings size={17} className="text-gray-400" />
-                      <span>Pengaturan Akun</span>
+                      <span>Profil &amp; Pengaturan</span>
                     </Link>
                   )}
 

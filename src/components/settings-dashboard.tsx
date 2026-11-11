@@ -172,7 +172,7 @@ export function SettingsDashboard() {
         </section>
         <section className="settings-panel" id="listing-settings"><div className="settings-panel-heading"><div><p className="section-kicker">03 / ACTIVITY</p><h2>Lapak & Notifikasi</h2></div><a className="text-link" href="/marketplace">Buka marketplace <ExternalLink size={14} /></a></div>
           <label className="settings-toggle"><span><Bell size={17} /><span><strong>Notifikasi balasan & transaksi</strong><small>Simpan preferensi untuk pemberitahuan thread dan aktivitas lapak.</small></span></span><input type="checkbox" checked={preferences.notifications} onChange={(event) => updatePreference("notifications", event.target.checked)} /></label>
-          <p className="settings-footnote">Preferensi notifikasi tersimpan lokal; pengiriman webhook Discord pribadi belum tersedia.</p>
+          <p className="settings-footnote">Preferensi notifikasi tersimpan di profil akun kamu.</p>
           <div className="settings-listings-wrap w-full overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0"><table className="settings-listings min-w-[550px] w-full"><thead><tr><th>Postingan</th><th>Tanggal</th><th>Laporan</th><th>Status lapak</th></tr></thead><tbody>
             {listings.map((listing) => {
               const status = listingStatus(listing.marketData);

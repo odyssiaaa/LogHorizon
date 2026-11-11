@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { HeroLogo } from "@/components/hero-logo";
 import {
   ArrowUpRight,
   AudioLines,
@@ -111,14 +112,7 @@ export default function Home() {
               </div>
             </div>
             <div className="hero-emblem-wrap lg:col-span-5 flex justify-center items-center mt-6 lg:mt-0">
-              <Image
-                className="hero-logo w-48 sm:w-60 md:w-72 lg:w-80 xl:w-[350px] max-w-[350px] h-auto object-contain drop-shadow-2xl"
-                src="/loghorizon-logo.png"
-                alt="Logo komunitas LogHorizon: Find your party. Beyond the horizon."
-                width={768}
-                height={768}
-                priority
-              />
+              <HeroLogo />
             </div>
           </div>
         </div>
@@ -140,16 +134,11 @@ export default function Home() {
 
       {/* 02 / DIVISI GAME */}
       <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-200 dark:border-[#211C2B]">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-          <div>
-            <div className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-2">02 / PILIH PETUALANGANMU</div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
-              Satu guild. Banyak dunia.
-            </h2>
-          </div>
-          <Link href="/forum" className="text-link text-xs sm:text-sm font-bold text-[#9D4EDD] hover:underline inline-flex items-center gap-1.5 self-start sm:self-auto">
-            Temukan party <ArrowUpRight size={16} />
-          </Link>
+        <div className="mb-8">
+          <div className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-2">02 / PILIH PETUALANGANMU</div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
+            Satu guild. Banyak dunia.
+          </h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {divisions.map(({ title, games, icon: Icon }, index) => (
@@ -172,8 +161,18 @@ export default function Home() {
             </article>
           ))}
         </div>
-        <div className="mt-8 text-center">
-          <Link className="marketplace-cta inline-flex items-center gap-2 px-6 py-3 rounded-md text-xs sm:text-sm font-bold border border-gray-300 dark:border-[#262033] bg-white dark:bg-[#120F17] hover:border-[#9D4EDD] transition-colors" href="/marketplace">
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+          <Link
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md text-xs sm:text-sm font-bold bg-[#9D4EDD] hover:bg-[#8338EC] text-white transition-all shadow-md shadow-[#9D4EDD]/25"
+            href="/events"
+          >
+            <span>Temukan Party (Events)</span>
+            <ArrowUpRight size={17} />
+          </Link>
+          <Link
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md text-xs sm:text-sm font-bold border border-gray-300 dark:border-[#262033] bg-white dark:bg-[#120F17] hover:border-[#9D4EDD] text-gray-800 dark:text-gray-200 hover:text-[#9D4EDD] transition-colors"
+            href="/marketplace"
+          >
             <span>Buka Forum Jual-Beli &amp; Promosi</span>
             <ArrowUpRight size={17} />
           </Link>

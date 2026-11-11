@@ -32,7 +32,22 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (!user) return jsonError("Login diperlukan.", 401);
   const { id } = await params;
   const payload: unknown = await request.json();
-  const status = payload && typeof payload === "object" ? (payload as Record<string, unknown>).status : undefined;
+  const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+
+  // Support Pin / Unpin by staff
+  if (typeof data.isPinned === "boolean") {
+    if (user.role !== "ADMIN" && user.role !== "MODERATOR") {
+      return jsonError("Hanya staf yang dapat menyematkan (pin) postingan.", 403);
+    }
+    const updated = await prisma.post.update({
+      where: { id },
+      data: { isPinned: data.isPinned },
+      select: { id: true, isPinned: true },
+    });
+    return Response.json(updated);
+  }
+
+  const status = data.status;
   if (status !== "SOLD" && status !== "AVAILABLE") {
     return jsonError("Status yang diminta tidak valid.", 400);
   }

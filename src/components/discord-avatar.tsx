@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 
-export function DiscordAvatar({ src, username, size = 40, className = "" }: { src: string | null; username: string | null; size?: 40 | 48; className?: string }) {
+export function DiscordAvatar({ src, username, size = 40, className = "" }: { src: string | null; username: string | null; size?: number; className?: string }) {
   const [hasError, setHasError] = useState(false);
   const label = username ?? "Gamer";
 

@@ -207,25 +207,25 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
 
         {/* SEARCH BAR WITH DEBOUNCE SPINNER */}
         <form
-          className="market-search forum-search relative flex items-center"
+          className="market-search forum-search relative flex items-center my-4"
           role="search"
           onSubmit={(event) => event.preventDefault()}
         >
-          <div className="absolute left-3.5 flex items-center pointer-events-none text-gray-400">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-gray-400">
             {isSearching ? <Loader2 size={16} className="animate-spin text-purple-500" /> : <Search size={16} />}
           </div>
           <input
             maxLength={120}
             value={searchValue}
             onChange={(event) => setSearchValue(event.target.value)}
-            placeholder="Ketik untuk mencari (otomatis mencari setelah 0.5s)…"
+            placeholder="Cari thread atau kata kunci…"
             aria-label="Cari diskusi"
-            className="pl-10 pr-20"
+            className="w-full pl-10 pr-20 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
           />
           {searchValue && (
             <button
               type="button"
-              className="absolute right-3 text-xs text-gray-400 hover:text-white"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-white font-medium"
               onClick={() => {
                 setSearchValue("");
                 setSearch("");
@@ -236,14 +236,14 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
           )}
         </form>
 
-        <div className="forum-category-intro">
-          <div>
-            <span className="category-bullet" /> <strong>{activeCategory.slug}</strong>
-            <p>{activeCategory.description}</p>
+        <div className="forum-category-intro flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] mb-4">
+          <div className="min-w-0 flex-1">
+            <span className="category-bullet" /> <strong className="break-words">{activeCategory.slug}</strong>
+            <p className="break-words text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{activeCategory.description}</p>
           </div>
-          <div className="forum-feed-status">
-            <span>{posts.length} thread</span>
-            <span className={`live-status live-${liveState}`}>
+          <div className="forum-feed-status flex items-center gap-3 shrink-0 whitespace-nowrap self-start sm:self-auto">
+            <span className="whitespace-nowrap shrink-0 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">{posts.length} thread</span>
+            <span className={`live-status live-${liveState} whitespace-nowrap shrink-0`}>
               {liveState === "live"
                 ? "Live"
                 : liveState === "connecting"
