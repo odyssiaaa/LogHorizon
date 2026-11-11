@@ -19,7 +19,7 @@ const roleLabels: Record<LeaderboardMember["role"], string> = {
 const rankIcons = [Trophy, Medal, Award] as const;
 const royaltyIcons = [Crown, Medal, Award] as const;
 
-// Icon sizes for top-3 — progressively smaller
+// Icon sizes for top 3: progressively smaller
 const topIconSizes = [22, 19, 17] as const;
 
 const currency = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });

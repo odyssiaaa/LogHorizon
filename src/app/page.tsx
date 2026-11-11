@@ -77,7 +77,7 @@ export default function Home() {
                 <span className="status-dot w-2 h-2 rounded-full bg-[#42d99b] inline-block animate-pulse" />
                 MULTI-GAME COMMUNITY
               </p>
-              <h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-[3.8rem] xl:text-[4.5rem] font-black tracking-tight text-gray-900 dark:text-white whitespace-nowrap leading-none select-none">
+              <h1 className="hero-title text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-black tracking-tight text-gray-900 dark:text-white whitespace-nowrap leading-none select-none">
                 LOG<span className="text-[#9D4EDD] dark:text-[#C77DFF]">HORIZON</span>
               </h1>
               <p className="hero-tagline text-lg sm:text-xl md:text-2xl font-extrabold tracking-wider text-gray-800 dark:text-gray-100 mt-4 leading-snug">
@@ -85,7 +85,7 @@ export default function Home() {
               </p>
               <p className="hero-description text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-lg mt-3 leading-relaxed">
                 Satu guild untuk semua petualang. Temukan rekan mabar sefrekuensi di PC, konsol,
-                dan mobile—apa pun genre dan game favoritmu.
+                dan mobile, apa pun genre dan game favoritmu.
               </p>
               <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 mt-6">
                 <a className="button button-discord button-large w-full sm:w-auto inline-flex items-center justify-center gap-2 text-sm font-bold" href="https://discord.gg/aJvbVyTxNb" target="_blank" rel="noreferrer">
@@ -127,7 +127,7 @@ export default function Home() {
           </h2>
           <p className="mt-3 text-sm sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
             LogHorizon adalah kompas bagi para solo queue gamer untuk menemukan rekan mabar (party) yang tepat.
-            Kenalan baru, teman satu guild, dan petualangan epik berikutnya—semuanya bermula dari sini.
+            Kenalan baru, teman satu guild, dan petualangan epik berikutnya berawal dari sini.
           </p>
         </div>
       </section>
@@ -211,19 +211,19 @@ export default function Home() {
             <li className="flex items-start gap-3 p-4 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
               <ShieldCheck size={20} className="text-[#9D4EDD] shrink-0 mt-0.5" />
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                <strong className="text-gray-900 dark:text-white">Fair Play & No Toxic</strong> — Junjung tinggi sportivitas dan saling menghormati rekan party.
+                <strong className="text-gray-900 dark:text-white">Fair Play & No Toxic</strong>: Junjung tinggi sportivitas dan saling menghormati rekan party.
               </span>
             </li>
             <li className="flex items-start gap-3 p-4 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
               <UsersRound size={20} className="text-[#9D4EDD] shrink-0 mt-0.5" />
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                <strong className="text-gray-900 dark:text-white">Solidaritas Tinggi</strong> — Bantu anggota guild yang membutuhkan, jangan tinggalkan tim di tengah pertempuran.
+                <strong className="text-gray-900 dark:text-white">Solidaritas Tinggi</strong>: Bantu anggota guild yang membutuhkan, jangan tinggalkan tim di tengah pertempuran.
               </span>
             </li>
             <li className="flex items-start gap-3 p-4 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
               <Compass size={20} className="text-[#9D4EDD] shrink-0 mt-0.5" />
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                <strong className="text-gray-900 dark:text-white">Keamanan Bersama</strong> — Nol toleransi terhadap penipuan (scam) maupun cheat ilegal.
+                <strong className="text-gray-900 dark:text-white">Keamanan Bersama</strong>: Nol toleransi terhadap penipuan (scam) maupun cheat ilegal.
               </span>
             </li>
           </ul>

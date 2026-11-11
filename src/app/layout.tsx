@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { Navbar } from "@/components/navbar";
 import { Providers } from "@/components/providers";
-import { HorizonChatWidget } from "@/components/horizon-chat-widget";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -30,18 +29,18 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://loghorizon.vercel.app"),
-  title: "LogHorizon — Find Your Party",
+  title: "LogHorizon | Find Your Party",
   description: "Satu guild untuk semua petualang.",
   icons: { icon: "/loghorizon-logo.png", apple: "/loghorizon-logo.png" },
   openGraph: {
-    title: "LogHorizon — Find Your Party",
+    title: "LogHorizon | Find Your Party",
     description: "Satu guild untuk semua petualang.",
     images: [{ url: "/loghorizon-logo.png", width: 768, height: 768, alt: "Logo LogHorizon" }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "LogHorizon — Find Your Party",
+    title: "LogHorizon | Find Your Party",
     description: "Satu guild untuk semua petualang.",
     images: ["/loghorizon-logo.png"],
   },
@@ -104,7 +103,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </div>
             </div>
           </footer>
-          <HorizonChatWidget />
         </Providers>
       </body>
     </html>

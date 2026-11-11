@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, Flag, MessageCircle, Pin, Send, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, Flag, MessageCircle, Pin, Send, Trash2, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -43,9 +43,6 @@ export function ForumThread({ id }: { id: string }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [loginAction, setLoginAction] = useState("");
   const [reportOpen, setReportOpen] = useState(false);
-  const [summary, setSummary] = useState("");
-  const [summaryError, setSummaryError] = useState("");
-  const [summarizing, setSummarizing] = useState(false);
   const { data: session } = useSession();
   const user = session?.user;
 
@@ -115,32 +112,6 @@ export function ForumThread({ id }: { id: string }) {
     setReportOpen(true);
   }
 
-  async function summarizeThread() {
-    if (!user) {
-      setLoginAction("membuat ringkasan AI");
-      return;
-    }
-    if (user.isBanned) {
-      setSummaryError("Akun kamu sedang dibatasi dan tidak dapat menggunakan fitur AI.");
-      return;
-    }
-    setSummarizing(true);
-    setSummaryError("");
-    try {
-      const response = await fetch("/api/ai/forum-summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId: id }),
-      });
-      const result = await readApiResponse<{ summary: string }>(response, "Ringkasan AI gagal dibuat.");
-      setSummary(result.summary);
-    } catch (reason) {
-      setSummaryError(reason instanceof Error ? reason.message : "Ringkasan AI gagal dibuat.");
-    } finally {
-      setSummarizing(false);
-    }
-  }
-
   if (loading) return <main className="community-page"><div className="empty-state">Memuat thread…</div></main>;
   if (!thread) return <main className="community-page page-shell"><div className="inline-error">{error || "Thread tidak ditemukan."}</div><Link className="text-link" href="/forum"><ArrowLeft size={16} /> Kembali ke forum</Link></main>;
 
@@ -163,7 +134,7 @@ export function ForumThread({ id }: { id: string }) {
   ));
 
   return <main className="community-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full max-w-full overflow-x-hidden"><div className="page-shell px-0 sm:px-0 thread-layout"><div><Link className="back-link inline-flex items-center gap-1.5 text-xs font-bold text-[#9D4EDD] mb-4" href="/forum"><ArrowLeft size={16} /> Kembali ke forum</Link>
-    <article className="thread-card p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">{thread.isPinned && <span className="pinned-label"><Pin size={13} /> PINNED</span>}<p className="section-kicker text-xs font-bold text-[#9D4EDD] uppercase tracking-wider">{thread.category.toLowerCase().replaceAll("_", " ")}</p><h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white break-words mt-2 leading-tight">{thread.title}</h1><div className="thread-meta flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-gray-500 my-3"><span className="post-author"><DiscordAvatar src={thread.author.avatar} username={thread.author.username} /><span>oleh <Link href={`/u/${thread.author.username ?? "user"}`} className={`hover:underline ${thread.author.isPremium ? "premium-username" : "font-semibold text-gray-800 dark:text-gray-200"}`}>{thread.author.username ?? "Gamer"}</Link></span></span> · {new Date(thread.createdAt).toLocaleString("id-ID")}</div><PostReactions postId={thread.id} likes={thread.likes} dislikes={thread.dislikes} reaction={thread.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} /><div className="thread-body break-words leading-relaxed text-sm sm:text-base my-4 text-gray-700 dark:text-gray-300">{thread.content}</div><div className="thread-actions flex flex-wrap items-center gap-2 sm:gap-3"><button className="button button-quiet button-small" onClick={() => void summarizeThread()} disabled={summarizing}><Sparkles size={14} /> {summarizing ? "Merangkum…" : "Ringkas dengan AI"}</button><button className="report-button" onClick={reportPost}><Flag size={14} /> Report Post</button>{user && (user.role === "ADMIN" || user.role === "MODERATOR" || user.id === thread.author?.id) && <button className="report-button text-red-500 hover:text-red-400" onClick={() => void deleteThread()}><Trash2 size={14} /> Hapus Thread</button>}</div>{summaryError && <div className="inline-error mt-3" role="status">{summaryError}</div>}{summary && <section className="thread-summary mt-4 p-4 rounded bg-[#9D4EDD]/10 border border-[#9D4EDD]/20 text-xs sm:text-sm text-gray-800 dark:text-gray-200 break-words" aria-label="Ringkasan AI"><strong><Sparkles size={14} /> Ringkasan AI</strong><p className="mt-1 leading-relaxed">{summary}</p></section>}</article>
+    <article className="thread-card p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">{thread.isPinned && <span className="pinned-label"><Pin size={13} /> PINNED</span>}<p className="section-kicker text-xs font-bold text-[#9D4EDD] uppercase tracking-wider">{thread.category.toLowerCase().replaceAll("_", " ")}</p><h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white break-words mt-2 leading-tight">{thread.title}</h1><div className="thread-meta flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-gray-500 my-3"><span className="post-author"><DiscordAvatar src={thread.author.avatar} username={thread.author.username} /><span>oleh <Link href={`/u/${thread.author.username ?? "user"}`} className={`hover:underline ${thread.author.isPremium ? "premium-username" : "font-semibold text-gray-800 dark:text-gray-200"}`}>{thread.author.username ?? "Gamer"}</Link></span></span> · {new Date(thread.createdAt).toLocaleString("id-ID")}</div><PostReactions postId={thread.id} likes={thread.likes} dislikes={thread.dislikes} reaction={thread.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} /><div className="thread-body break-words leading-relaxed text-sm sm:text-base my-4 text-gray-700 dark:text-gray-300">{thread.content}</div><div className="thread-actions flex flex-wrap items-center gap-2 sm:gap-3"><button className="report-button" onClick={reportPost}><Flag size={14} /> Report Post</button>{user && (user.role === "ADMIN" || user.role === "MODERATOR" || user.id === thread.author?.id) && <button className="report-button text-red-500 hover:text-red-400" onClick={() => void deleteThread()}><Trash2 size={14} /> Hapus Thread</button>}</div></article>
     {error && <div className={error.startsWith("Laporan berhasil") ? "inline-notice mt-3" : "inline-error mt-3"} role="status">{error}<button onClick={() => setError("")} aria-label="Tutup"><X size={15} /></button></div>}
     <section className="comments-section mt-8"><div className="section-heading flex items-center justify-between gap-3 mb-4"><h2 className="text-xl sm:text-2xl font-bold">Diskusi</h2><span className="text-xs text-gray-400">{thread.comments.length} komentar</span></div>
       {user && !user.isBanned ? <form className="comment-compose" onSubmit={(event) => { event.preventDefault(); void sendComment(null, comment); }}><textarea required maxLength={5000} rows={3} value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Bagikan pendapatmu…" className="w-full" /><button className="button button-primary w-full sm:w-auto" disabled={sending}><Send size={15} /> Kirim komentar</button></form> : user?.isBanned ? <p className="banned-note">Akun kamu sedang dibatasi dan tidak dapat berkomentar.</p> : <button className="button button-quiet w-full sm:w-auto" onClick={() => setLoginAction("berkomentar")}>Login untuk ikut berdiskusi</button>}

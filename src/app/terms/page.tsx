@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, CheckCircle2, FileText, Scale, ShieldAlert } from "lucide-react";
 
 export const metadata = {
-  title: "Syarat & Ketentuan — LogHorizon",
+  title: "Syarat & Ketentuan | LogHorizon",
   description: "Syarat, ketentuan, dan etika bertransaksi serta berdiskusi di komunitas LogHorizon.",
 };
 
@@ -39,7 +39,7 @@ export default function TermsPage() {
           <ul className="list-disc list-inside text-xs sm:text-sm space-y-1.5 pl-2 text-gray-600 dark:text-gray-400">
             <li>Dilarang melakukan pelecehan, intimidasi, ujaran kebencian, atau perilaku toxic di Forum, Chat, dan Voice Room.</li>
             <li>Dilarang keras menyebarkan cheat ilegal, eksploit yang merusak ekosistem game, malware, atau tautan phishing.</li>
-            <li>Dilarang melakukan spamming massal pada forum atau abuse terhadap sistem kecerdasan buatan Satpam Horizon.</li>
+            <li>Dilarang melakukan spamming massal pada forum atau eksploitasi dan perusakan terhadap sistem komunitas.</li>
           </ul>
         </section>
 

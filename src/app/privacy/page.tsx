@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ArrowLeft, Lock, Shield, Sparkles } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Lock, Shield } from "lucide-react";
 
 export const metadata = {
-  title: "Kebijakan Privasi — LogHorizon",
+  title: "Kebijakan Privasi | LogHorizon",
   description: "Kebijakan privasi dan perlindungan data anggota komunitas LogHorizon.",
 };
 
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Sparkles size={16} className="text-[#9D4EDD]" /> 2. Penggunaan Data Komunitas
+            <CheckCircle2 size={16} className="text-[#9D4EDD]" /> 2. Penggunaan Data Komunitas
           </h2>
           <p className="text-sm leading-relaxed">
             Data yang tersimpan digunakan semata-mata untuk memfasilitasi aktivitas komunitas internal:

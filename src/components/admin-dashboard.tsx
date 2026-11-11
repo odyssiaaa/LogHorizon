@@ -384,35 +384,35 @@ export function AdminDashboard({ role }: { role: Role }) {
             <span className="admin-stat-icon text-[#9D4EDD]"><Users size={18} /></span>
             <span className="admin-stat-label text-xs text-gray-400 block mt-1">Total Member</span>
             <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-              {data?.stats.totalMembers ?? "—"}
+              {data?.stats.totalMembers ?? "0"}
             </strong>
           </article>
           <article className="admin-stat-card p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
             <span className="admin-stat-icon text-blue-500"><MessageSquare size={18} /></span>
             <span className="admin-stat-label text-xs text-gray-400 block mt-1">Thread Forum</span>
             <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-              {data?.stats.totalForumThreads ?? "—"}
+              {data?.stats.totalForumThreads ?? "0"}
             </strong>
           </article>
           <article className="admin-stat-card p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
             <span className="admin-stat-icon text-emerald-500"><Store size={18} /></span>
             <span className="admin-stat-label text-xs text-gray-400 block mt-1">Lapak Aktif</span>
             <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-              {data?.stats.activeMarketplaceListings ?? "—"}
+              {data?.stats.activeMarketplaceListings ?? "0"}
             </strong>
           </article>
           <article className="admin-stat-card p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
             <span className="admin-stat-icon text-amber-500"><Flag size={18} /></span>
             <span className="admin-stat-label text-xs text-gray-400 block mt-1">Laporan Masuk</span>
             <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-              {data?.stats.pendingReports ?? "—"}
+              {data?.stats.pendingReports ?? "0"}
             </strong>
           </article>
           <article className="admin-stat-card p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] col-span-2 lg:col-span-1">
             <span className="admin-stat-icon text-purple-400"><DollarSign size={18} /></span>
             <span className="admin-stat-label text-xs text-gray-400 block mt-1">Kas Donasi</span>
             <strong className="text-lg sm:text-xl font-black text-purple-600 dark:text-purple-300 block mt-0.5 truncate">
-              {data ? formatMoney.format(data.stats.totalDonations) : "—"}
+              {data ? formatMoney.format(data.stats.totalDonations) : "Rp 0"}
             </strong>
           </article>
         </section>
@@ -540,8 +540,8 @@ export function AdminDashboard({ role }: { role: Role }) {
                     <span className="font-semibold text-emerald-500">Normal / Online</span>
                   </li>
                   <li className="flex items-center justify-between">
-                    <span>Inference AI Satpam:</span>
-                    <span className="font-semibold text-emerald-500">Router Siap</span>
+                    <span>Status Server:</span>
+                    <span className="font-semibold text-emerald-500">Operasional Normal</span>
                   </li>
                   <li className="flex items-center justify-between">
                     <span>Perlindungan Akun:</span>
@@ -692,7 +692,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                               PINNED
                             </span>
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-gray-400">Standar</span>
                           )}
                         </td>
                         <td className="py-2.5 text-right space-x-1.5 whitespace-nowrap">
@@ -781,7 +781,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                         </div>
                       </td>
                       <td className="py-3 font-mono text-gray-400 text-[11px]">
-                        {member.discordId ?? "—"}
+                        {member.discordId ?? "Belum terhubung"}
                       </td>
                       <td className="py-3">
                         <select
@@ -1014,7 +1014,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                     {data?.marketplaceListings?.map((listing) => {
                       const mData = (listing.marketData && typeof listing.marketData === "object" ? listing.marketData : {}) as Record<string, unknown>;
                       const statusStr = String(mData.status ?? "AVAILABLE");
-                      const gameStr = String(mData.game ?? "—");
+                      const gameStr = String(mData.game ?? "Semua game");
                       const priceNum = Number(mData.price ?? 0);
 
                       return (

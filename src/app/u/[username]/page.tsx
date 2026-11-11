@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: PageProps) {
   const { username } = await params;
   const decoded = decodeURIComponent(username);
   return {
-    title: `${decoded} — Profil Petualang LogHorizon`,
+    title: `${decoded} | Profil Petualang LogHorizon`,
     description: `Profil petualang, reputasi, level, dan aktivitas komunitas dari ${decoded} di LogHorizon.`,
   };
 }

@@ -3,7 +3,7 @@ import { AdminDashboard } from "@/components/admin-dashboard";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export const metadata = { title: "Admin Panel — LogHorizon" };
+export const metadata = { title: "Admin Panel | LogHorizon" };
 export const instant = false;
 
 export default async function AdminPage() {

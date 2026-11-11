@@ -1,7 +1,7 @@
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { prisma } from "@/lib/prisma";
 
-export const metadata = { title: "Guild Leaderboard — LogHorizon" };
+export const metadata = { title: "Guild Leaderboard | LogHorizon" };
 export const instant = false;
 
 export default async function LeaderboardPage() {
