@@ -3,13 +3,15 @@ import { authenticatedUser, jsonError } from "@/lib/http";
 const HF_ROUTER_PRIMARY = "https://router.huggingface.co/hf-inference/v1/chat/completions";
 const HF_ROUTER_FALLBACK = "https://router.huggingface.co/v1/chat/completions";
 const MODEL_PRIMARY = "Qwen/Qwen2.5-7B-Instruct";
-const MODEL_FALLBACK = "meta-llama/Meta-Llama-3-8B-Instruct";
+const MODEL_FALLBACK = "meta-llama/Llama-3.2-3B-Instruct";
 const COOLDOWN_MS = 2_500;
 const MAX_INPUT_LENGTH = 300;
-const MAX_HISTORY_MESSAGES = 10;
 const MAX_BODY_BYTES = 16_384;
 
+type ChatRole = "system" | "user" | "assistant";
 type ChatMessage = { role: "user" | "assistant"; content: string };
+type SanitizedMessage = { role: ChatRole; content: string };
+
 type HuggingFaceResponse = {
   choices?: { message?: { content?: unknown } }[];
   error?: string | { message?: string };
@@ -43,6 +45,49 @@ function validateHistory(value: unknown): ChatMessage[] {
 
   // Keep max last 6 history entries for conversational context
   return history.slice(-6);
+}
+
+function sanitizeMessages(systemPrompt: string, history: ChatMessage[], currentMessage: string): SanitizedMessage[] {
+  const turns: { role: "user" | "assistant"; content: string }[] = [];
+
+  for (const h of history) {
+    const text = h.content?.trim();
+    if (text) {
+      turns.push({ role: h.role, content: text });
+    }
+  }
+
+  const cleanCurrent = currentMessage.trim();
+  if (cleanCurrent) {
+    turns.push({ role: "user", content: cleanCurrent });
+  }
+
+  // Merge consecutive turns with the exact same role to enforce strict alternation
+  const mergedTurns: { role: "user" | "assistant"; content: string }[] = [];
+  for (const turn of turns) {
+    const prev = mergedTurns[mergedTurns.length - 1];
+    if (prev && prev.role === turn.role) {
+      prev.content = `${prev.content}\n${turn.content}`.trim();
+    } else {
+      mergedTurns.push({ role: turn.role, content: turn.content });
+    }
+  }
+
+  // Standard LLM chat templates require the conversation following system to start with user.
+  // Strip any leading assistant greeting from history so that first turn is always user.
+  while (mergedTurns.length > 0 && mergedTurns[0].role === "assistant") {
+    mergedTurns.shift();
+  }
+
+  // Ensure conversation ends with user message
+  if (mergedTurns.length === 0 || mergedTurns[mergedTurns.length - 1].role !== "user") {
+    mergedTurns.push({ role: "user", content: cleanCurrent || "Halo Satpam Horizon" });
+  }
+
+  return [
+    { role: "system", content: systemPrompt.trim() },
+    ...mergedTurns,
+  ];
 }
 
 export async function POST(request: Request) {
@@ -97,16 +142,13 @@ export async function POST(request: Request) {
     "Fitur web LogHorizon: Forum diskusi (f/general-chat, f/promotion, f/feedback), Lapak Marketplace gamer, Leaderboard peringkat XP/kas donatur, Jadwal mabar & turnamen (Events), dan Warta Berita (News Hub).",
   ].join(" ");
 
-  const messagesPayload = [
-    { role: "system", content: systemPrompt },
-    ...history,
-    { role: "user", content: message },
-  ];
+  const sanitizedMessages = sanitizeMessages(systemPrompt, history, message);
 
   const attempts = [
     { url: HF_ROUTER_PRIMARY, model: MODEL_PRIMARY },
     { url: HF_ROUTER_FALLBACK, model: MODEL_PRIMARY },
     { url: HF_ROUTER_PRIMARY, model: MODEL_FALLBACK },
+    { url: HF_ROUTER_FALLBACK, model: MODEL_FALLBACK },
   ];
 
   let lastErrorDetail = "";
@@ -121,10 +163,9 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           model: attempt.model,
-          messages: messagesPayload,
-          max_tokens: 220,
+          messages: sanitizedMessages,
+          max_tokens: 180,
           temperature: 0.7,
-          stream: false,
         }),
         signal: AbortSignal.timeout(12_000),
       });
@@ -141,11 +182,23 @@ export async function POST(request: Request) {
       } else {
         const status = response.status;
         const errorText = await response.text();
-        console.warn(`[ai-chat] Router ${attempt.url} [${attempt.model}] failed with HTTP ${status}:`, errorText);
+        console.error(`[ai-chat] Router ${attempt.url} [${attempt.model}] failed with HTTP ${status}:`, errorText);
+
+        let cleanSnippet = errorText;
+        try {
+          const parsed = JSON.parse(errorText);
+          cleanSnippet =
+            parsed?.error?.message ??
+            (typeof parsed?.error === "string" ? parsed.error : null) ??
+            parsed?.message ??
+            errorText.slice(0, 180);
+        } catch {
+          cleanSnippet = errorText.slice(0, 180);
+        }
 
         if (status === 401 || status === 403) {
           return Response.json({
-            reply: `Token HF_ACCESS_TOKEN ditolak Hugging Face (HTTP ${status}). Cek izin token 'Inference Providers' di akun Hugging Face kamu bro!`,
+            reply: `Token HF_ACCESS_TOKEN ditolak Hugging Face (HTTP ${status}: ${cleanSnippet}). Cek izin token 'Inference Providers' di akun Hugging Face kamu bro!`,
           });
         }
         if (status === 429) {
@@ -154,10 +207,11 @@ export async function POST(request: Request) {
           });
         }
         if (status === 503) {
-          lastErrorDetail = "Model AI lagi warm-up di server";
+          lastErrorDetail = `Model ${attempt.model} sedang warm-up di server (HTTP 503)`;
           continue;
         }
-        lastErrorDetail = `HTTP ${status}`;
+
+        lastErrorDetail = `HTTP ${status}: ${cleanSnippet}`;
       }
     } catch (err) {
       console.warn(`[ai-chat] Connection error with ${attempt.url}:`, err);
@@ -165,7 +219,7 @@ export async function POST(request: Request) {
     }
   }
 
-  // Meaningful non-repetitive error message
+  // Meaningful non-repetitive error message with debug info
   return Response.json({
     reply: `Aduh sinyal ke otak AI lagi ngelag (${lastErrorDetail || "Server timeout"}). Coba kirim ulang pesanmu sekali lagi ya petualang!`,
   });
