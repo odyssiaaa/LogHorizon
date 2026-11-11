@@ -1,8 +1,10 @@
 import { authenticatedUser, jsonError } from "@/lib/http";
 
-const HF_CHAT_URL = "https://router.huggingface.co/v1/chat/completions";
-const MODEL = "meta-llama/Meta-Llama-3-8B-Instruct";
-const COOLDOWN_MS = 3_000;
+const HF_ROUTER_PRIMARY = "https://router.huggingface.co/hf-inference/v1/chat/completions";
+const HF_ROUTER_FALLBACK = "https://router.huggingface.co/v1/chat/completions";
+const MODEL_PRIMARY = "Qwen/Qwen2.5-7B-Instruct";
+const MODEL_FALLBACK = "meta-llama/Meta-Llama-3-8B-Instruct";
+const COOLDOWN_MS = 2_500;
 const MAX_INPUT_LENGTH = 300;
 const MAX_HISTORY_MESSAGES = 10;
 const MAX_BODY_BYTES = 16_384;
@@ -19,67 +21,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function validateHistory(value: unknown): ChatMessage[] | null {
-  if (value === undefined) return [];
-  if (!Array.isArray(value) || value.length > MAX_HISTORY_MESSAGES) return null;
+function validateHistory(value: unknown): ChatMessage[] {
+  if (!Array.isArray(value)) return [];
 
   const history: ChatMessage[] = [];
   let totalLength = 0;
+
   for (const item of value) {
     if (!isRecord(item) || (item.role !== "user" && item.role !== "assistant") || typeof item.content !== "string") {
-      return null;
+      continue;
     }
 
     const maxLength = item.role === "user" ? MAX_INPUT_LENGTH : 1_500;
     const content = item.content.trim();
-    if (!content || content.length > maxLength) return null;
+    if (!content || content.length > maxLength) continue;
 
     totalLength += content.length;
-    if (totalLength > 4_000) return null;
+    if (totalLength > 4_000) break;
     history.push({ role: item.role, content });
   }
-  return history;
-}
 
-function generateLocalReply(message: string, username: string, level: number): string {
-  const lower = message.toLowerCase();
-
-  if (lower.includes("halo") || lower.includes("hai") || lower.includes("p ") || lower.includes("oi") || lower.includes("siang") || lower.includes("malam") || lower.includes("pagi") || lower.includes("sore")) {
-    return `Oit petualang ${username}! Satpam Horizon siap berjaga di gerbang guild. Ada party atau misi apa yang bisa kubantu hari ini?`;
-  }
-  if (lower.includes("owner") || lower.includes("emperor") || lower.includes("odyssia") || lower.includes("farrel") || lower.includes("pemilik")) {
-    return `Hormat gerak! 👑 Emperor kita adalah .odyssia (Farrel), penguasa dan pemilik tunggal tahta LogHorizon. Kendali absolut guild berada di tangannya!`;
-  }
-  if (lower.includes("aturan") || lower.includes("rules") || lower.includes("larangan") || lower.includes("toxic") || lower.includes("cheat")) {
-    return `Catat baik-baik, petualang: 1. Fair Play & No Toxic, 2. Solidaritas tinggi (jangan kabur dari party), 3. Anti scam & cheat! Langgar ini, langsung berhadapan dengan pentungan Satpam & ⚔️ Lord Commander!`;
-  }
-  if (lower.includes("forum") || lower.includes("diskusi") || lower.includes("thread")) {
-    return `Mau ngobrol atau cari party? Langsung meluncur ke menu Forum di atas! Ada obrolan umum (f/general-chat), promosi (f/promotion), dan kotak aspirasi guild.`;
-  }
-  if (lower.includes("market") || lower.includes("jual") || lower.includes("beli") || lower.includes("lapak") || lower.includes("escrow")) {
-    return `Butuh item, akun, atau jasa joki? Buka halaman Marketplace (Lapak Gamer). Ingat, utamakan transaksi aman dan patuhi regulasi guild!`;
-  }
-  if (lower.includes("level") || lower.includes("xp") || lower.includes("rank") || lower.includes("leaderboard")) {
-    return `Levelmu saat ini Lv.${level}. Rajin-rajinlah berdiskusi di forum dan aktif di guild untuk menaikkan XP dan memuncaki Leaderboard Petualang!`;
-  }
-  if (lower.includes("donasi") || lower.includes("donate") || lower.includes("kas") || lower.includes("treasury") || lower.includes("sponsor")) {
-    return `Mau menyokong kas guild? Kunjungi menu Donate (Guild Treasury). Ada kasta kehormatan 🛡️ Knight, 👑 High Merchant, hingga 💎 Noble Patron dengan badge dan benefit glowing!`;
-  }
-  if (lower.includes("discord") || lower.includes("server") || lower.includes("voice") || lower.includes("party")) {
-    return `Server Discord LogHorizon aktif 24/7! Kamu bisa masuk ke voice room mana pun untuk mabar Valorant, MLBB, Dota, Genshin, atau sekadar nongkrong santai.`;
-  }
-  if (lower.includes("siapa kamu") || lower.includes("satpam")) {
-    return `Aku Satpam Horizon, AI penjaga gerbang benteng LogHorizon. Tugas utamaku mengawasi gerbang, memandu petualang baru, dan memastikan tidak ada cheater yang menyusup!`;
-  }
-
-  const defaultReplies = [
-    `Roger that, petualang ${username}! Pesanmu kuterima. Sebagai penjaga gerbang Lv.${level}, saranku segera cari party di forum atau nongkrong di voice channel Discord guild!`,
-    `Hmm, sinyal gerbang tertangkap jelas! Tetap jaga sportivitas dan pantau terus papan pengumuman guild ya. Ada hal lain yang mau ditanyakan?`,
-    `Siap, tercatat di buku patroli Satpam! Kalau ada yang mencurigakan di forum atau marketplace, jangan ragu klik tombol Report Post agar tim Lord Commander segera turun tangan!`,
-    `Mantap jiwa! Terus asah skill-mu bersama kawan-kawan guild LogHorizon. Jangan lupa cek menu Leaderboard untuk lihat siapa petualang paling terdepan hari ini!`
-  ];
-  const picked = defaultReplies[Math.abs(message.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)) % defaultReplies.length];
-  return picked;
+  // Keep max last 6 history entries for conversational context
+  return history.slice(-6);
 }
 
 export async function POST(request: Request) {
@@ -97,8 +60,8 @@ export async function POST(request: Request) {
   const cooldownLimit = user.isPremium ? 500 : COOLDOWN_MS;
   if (previousRequestAt && now - previousRequestAt < cooldownLimit) {
     return Response.json(
-      { error: "Satpam masih cooldown. Tunggu sebentar sebelum bertanya lagi." },
-      { status: 429, headers: { "Retry-After": "3", "Cache-Control": "no-store" } },
+      { error: "Sabar bro, jangan spam! Satpam lagi narik napas dulu (cooldown 2.5s)." },
+      { status: 429, headers: { "Retry-After": "2", "Cache-Control": "no-store" } },
     );
   }
 
@@ -118,57 +81,92 @@ export async function POST(request: Request) {
   }
 
   const history = validateHistory(payload.history);
-  if (!history) return jsonError("Riwayat percakapan tidak valid.", 400);
-
   lastRequestAt.set(user.id, now);
 
   const token = process.env.HF_ACCESS_TOKEN;
-  if (token) {
+  if (!token) {
+    return Response.json({
+      reply: "Waduh bro, token AI (HF_ACCESS_TOKEN) belum dipasang di environment server! Hubungi Emperor .odyssia biar Satpam bisa mikir pakai LLM asli.",
+    });
+  }
+
+  const systemPrompt = [
+    "Kamu adalah Satpam Horizon, penjaga gerbang komunitas multi-game LogHorizon yang kocak, sarkas, gaul, suka pakai bahasa gamer Indonesia (seperti mabar, afk, noob, gacor, push rank), dan sangat menghormati Emperor / Admin guild.",
+    "Jawab pertanyaan atau obrolan user secara natural, nyambung, lucu, dan singkat (maksimal 2-3 kalimat).",
+    `Info guild penting: Emperor/Owner guild adalah .odyssia (Farrel). User yang sedang bicara bernama "${user.username ?? user.name ?? "Petualang"}" (Level ${user.level ?? 1}, Role: ${user.role ?? "MEMBER"}).`,
+    "Fitur web LogHorizon: Forum diskusi (f/general-chat, f/promotion, f/feedback), Lapak Marketplace gamer, Leaderboard peringkat XP/kas donatur, Jadwal mabar & turnamen (Events), dan Warta Berita (News Hub).",
+  ].join(" ");
+
+  const messagesPayload = [
+    { role: "system", content: systemPrompt },
+    ...history,
+    { role: "user", content: message },
+  ];
+
+  const attempts = [
+    { url: HF_ROUTER_PRIMARY, model: MODEL_PRIMARY },
+    { url: HF_ROUTER_FALLBACK, model: MODEL_PRIMARY },
+    { url: HF_ROUTER_PRIMARY, model: MODEL_FALLBACK },
+  ];
+
+  let lastErrorDetail = "";
+
+  for (const attempt of attempts) {
     try {
-      const response = await fetch(HF_CHAT_URL, {
+      const response = await fetch(attempt.url, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: MODEL,
-          messages: [
-            {
-              role: "system",
-              content: [
-                "Kamu adalah Satpam Horizon, penjaga komunitas multi-game guild LogHorizon.",
-                "Jawab dalam bahasa Indonesia dengan ramah, cerdas, sedikit humoris, dan bergaya pelindung benteng RPG gamer.",
-                "Hormati Owner/Emperor .odyssia (Farrel) dengan penuh takzim.",
-                `Anggota yang sedang berbicara adalah ${user.username ?? "Petualang"} di level ${user.level}.`,
-                "Bantu arahkan anggota seputar forum, marketplace, discord, leaderboard, dan turnamen guild.",
-              ].join(" "),
-            },
-            ...history,
-            { role: "user", content: message },
-          ],
-          max_tokens: 180,
+          model: attempt.model,
+          messages: messagesPayload,
+          max_tokens: 220,
+          temperature: 0.7,
           stream: false,
         }),
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(12_000),
       });
 
       if (response.ok) {
         const result = (await response.json()) as HuggingFaceResponse;
         const reply = result.choices?.[0]?.message?.content;
         if (typeof reply === "string" && reply.trim()) {
-          return Response.json({ reply: reply.trim() });
+          return Response.json(
+            { reply: reply.trim() },
+            { headers: { "Cache-Control": "no-store" } },
+          );
         }
+      } else {
+        const status = response.status;
+        const errorText = await response.text();
+        console.warn(`[ai-chat] Router ${attempt.url} [${attempt.model}] failed with HTTP ${status}:`, errorText);
+
+        if (status === 401 || status === 403) {
+          return Response.json({
+            reply: `Token HF_ACCESS_TOKEN ditolak Hugging Face (HTTP ${status}). Cek izin token 'Inference Providers' di akun Hugging Face kamu bro!`,
+          });
+        }
+        if (status === 429) {
+          return Response.json({
+            reply: "Antrean server AI lagi padat mabar nih (Rate limit 429)! Tunggu sekitar 10-15 detik terus coba lagi ya bro.",
+          });
+        }
+        if (status === 503) {
+          lastErrorDetail = "Model AI lagi warm-up di server";
+          continue;
+        }
+        lastErrorDetail = `HTTP ${status}`;
       }
-    } catch (e) {
-      console.warn("[ai-chat] Cloud inference fallback to intelligent rule agent", e);
+    } catch (err) {
+      console.warn(`[ai-chat] Connection error with ${attempt.url}:`, err);
+      lastErrorDetail = err instanceof Error ? err.message : "Koneksi timeout";
     }
   }
 
-  // Guaranteed resilient smart conversational engine
-  const reply = generateLocalReply(message, user.username ?? "Petualang", user.level);
-  return Response.json(
-    { reply },
-    { headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } },
-  );
+  // Meaningful non-repetitive error message
+  return Response.json({
+    reply: `Aduh sinyal ke otak AI lagi ngelag (${lastErrorDetail || "Server timeout"}). Coba kirim ulang pesanmu sekali lagi ya petualang!`,
+  });
 }

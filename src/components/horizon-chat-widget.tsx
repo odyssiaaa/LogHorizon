@@ -24,6 +24,13 @@ export function HorizonChatWidget() {
   const [cooldown, setCooldown] = useState(0);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, loading, open]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -69,12 +76,12 @@ export function HorizonChatWidget() {
       return;
     }
 
-    const history = messages.slice(-6);
+    const history = messages.slice(-6).map((m) => ({ role: m.role, content: m.content }));
     setMessages((current) => [...current, { role: "user", content }]);
     setInput("");
     setError("");
     setLoading(true);
-    setCooldown(5);
+    setCooldown(3);
 
     try {
       const response = await fetch("/api/ai/chat", {
@@ -148,7 +155,8 @@ export function HorizonChatWidget() {
                       <p className={`chat-message-bubble break-words ${message.role === "user" ? "user-bubble" : "assistant-bubble"}`}>{message.content}</p>
                     </motion.div>
                   ))}
-                  {loading && <div className="chat-message-row chat-message-assistant"><span className="chat-bot-avatar"><Image src="/loghorizon-logo.png" alt="Satpam Horizon" width={28} height={28} /></span><p className="chat-message-bubble assistant-bubble">Satpam sedang patroli…</p></div>}
+                  {loading && <div className="chat-message-row chat-message-assistant"><span className="chat-bot-avatar"><Image src="/loghorizon-logo.png" alt="Satpam Horizon" width={28} height={28} /></span><p className="chat-message-bubble assistant-bubble">Satpam sedang mengetik…</p></div>}
+                  <div ref={messagesEndRef} />
                 </div>
                 {error && (
                   <div className="mx-3 mb-2 flex items-start justify-between gap-2 rounded-sm border border-red-300 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:text-red-300" role="alert">
@@ -181,7 +189,7 @@ export function HorizonChatWidget() {
                       </button>
                     </div>
                     <div className="mt-1 flex justify-between text-[11px] text-[#6B7280] dark:text-[#6B7280]">
-                      <span>{cooldown > 0 ? `Cooldown ${cooldown} detik` : "Jeda 5 detik antar pesan"}</span>
+                      <span>{cooldown > 0 ? `Cooldown ${cooldown} detik` : "Jeda 3 detik antar pesan"}</span>
                       <span>{input.length}/200</span>
                     </div>
                   </form>
