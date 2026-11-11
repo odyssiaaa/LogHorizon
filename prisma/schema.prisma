@@ -122,11 +122,13 @@ model LfgPost {
   scheduledAt DateTime
   maxSlots    Int
   status      LfgStatus @default(OPEN)
+  expiresAt   DateTime  @default(now())
   createdAt   DateTime  @default(now())
   author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   joins       LfgJoin[]
 
   @@index([status, scheduledAt])
+  @@index([expiresAt])
 }
 
 model LfgJoin {

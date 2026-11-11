@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
-import { CalendarDays, Headphones, LogOut, MessageSquare, Plus, Search, Users, ExternalLink } from "lucide-react";
+import { CalendarDays, Clock, ExternalLink, Headphones, LogOut, MessageSquare, Plus, Search, Trash2, Users } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 
 type Participant = { id: string; teamName: string; leader: { username: string | null } };
@@ -20,13 +20,29 @@ type LfgPost = {
   game: string;
   description: string;
   scheduledAt: string;
+  expiresAt?: string;
+  createdAt?: string;
   maxSlots: number;
   status: "OPEN" | "FULL" | "CLOSED";
   isOwner: boolean;
+  canManage?: boolean;
   joinedByViewer: boolean;
   author: { username: string | null };
   joins: { username: string | null }[];
 };
+
+function formatRemainingTime(expiresAtStr?: string) {
+  if (!expiresAtStr) return "Aktif";
+  const diffMs = new Date(expiresAtStr).getTime() - Date.now();
+  if (diffMs <= 0) return "Kedaluwarsa";
+  const diffMinutes = Math.floor(diffMs / (60 * 1000));
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+  if (hours > 0) {
+    return `${hours}j ${minutes}m`;
+  }
+  return `${minutes}m`;
+}
 
 export function EventsBoard() {
   const { data: session } = useSession();
@@ -44,6 +60,7 @@ export function EventsBoard() {
   const [description, setDescription] = useState("Butuh 2 orang untuk push rank jam 8 malam.");
   const [scheduledAt, setScheduledAt] = useState("");
   const [partySlots, setPartySlots] = useState("5");
+  const [durationHours, setDurationHours] = useState("24");
   const [activePartyChat, setActivePartyChat] = useState<string | null>(null);
   const [partyChatMessages, setPartyChatMessages] = useState<Record<string, { sender: string; text: string; time: string }[]>>({});
   const [chatInput, setChatInput] = useState("");
@@ -101,12 +118,31 @@ export function EventsBoard() {
       const response = await fetch("/api/lfg", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ game: lfgGame, description, scheduledAt: new Date(scheduledAt).toISOString(), maxSlots: Number(partySlots) }),
+        body: JSON.stringify({
+          game: lfgGame,
+          description,
+          scheduledAt: new Date(scheduledAt).toISOString(),
+          maxSlots: Number(partySlots),
+          durationHours: Number(durationHours),
+        }),
       });
       await readApiResponse(response, "Jadwal party gagal dibuat.");
       setNotice("Jadwal party dipublikasikan! Kamu dapat mengobrol di Chat Party Sementara atau berpindah ke Voice Channel Discord.");
       setRefreshKey((value) => value + 1);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Jadwal party gagal dibuat."); }
+  }
+
+  async function deleteParty(id: string, gameTitle: string) {
+    if (!confirm(`Tutup dan bubarkan party "${gameTitle}" sekarang?`)) return;
+    try {
+      const response = await fetch(`/api/lfg/${id}`, { method: "DELETE" });
+      await readApiResponse(response, "Gagal menutup party.");
+      setNotice(`Party "${gameTitle}" berhasil ditutup.`);
+      if (activePartyChat === id) setActivePartyChat(null);
+      setRefreshKey((value) => value + 1);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Gagal menutup party.");
+    }
   }
 
   async function joinParty(id: string) {
@@ -233,6 +269,20 @@ export function EventsBoard() {
           <label>Nama game<input required maxLength={80} value={lfgGame} onChange={(event) => setLfgGame(event.target.value)} placeholder="Valorant" /></label>
           <label>Jadwal<input required type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} /></label>
           <label>Jumlah pemain total<input required type="number" min={2} max={20} value={partySlots} onChange={(event) => setPartySlots(event.target.value)} /></label>
+          <label>
+            Durasi aktif party
+            <select
+              value={durationHours}
+              onChange={(event) => setDurationHours(event.target.value)}
+              className="w-full bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded px-3 py-2 text-xs sm:text-sm text-gray-900 dark:text-white"
+            >
+              <option value="1">1 Jam (Mabar Kilat)</option>
+              <option value="3">3 Jam (Push Rank)</option>
+              <option value="6">6 Jam (Sesi Santai)</option>
+              <option value="12">12 Jam</option>
+              <option value="24">24 Jam (Default)</option>
+            </select>
+          </label>
           <label className="form-wide">Deskripsi<textarea required maxLength={500} rows={2} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Butuh 2 orang untuk push rank jam 8 malam." /></label>
           <button className="button button-primary"><Plus size={15} /> Posting jadwal</button>
         </form>
@@ -251,9 +301,16 @@ export function EventsBoard() {
                     <span className="event-game">{post.game}</span>
                     <p>{new Date(post.scheduledAt).toLocaleString("id-ID")}</p>
                   </div>
-                  <span className={`event-status ${post.status === "FULL" ? "border-amber-500 text-amber-500" : ""}`}>
-                    {occupied}/{post.maxSlots} · {post.status}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`event-status ${post.status === "FULL" ? "border-amber-500 text-amber-500" : ""}`}>
+                      {occupied}/{post.maxSlots} · {post.status}
+                    </span>
+                    {post.expiresAt && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25" title={`Kedaluwarsa otomatis pada ${new Date(post.expiresAt).toLocaleString("id-ID")}`}>
+                        <Clock size={11} /> Expire: {formatRemainingTime(post.expiresAt)}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <p className="event-description">{post.description}</p>
                 
@@ -279,6 +336,16 @@ export function EventsBoard() {
                     {post.joinedByViewer && !post.isOwner && (
                       <button className="button button-sold text-xs" onClick={() => void leaveParty(post.id)} title="Keluar jika berhalangan hadir">
                         <LogOut size={13} className="mr-1 inline" /> Keluar Party
+                      </button>
+                    )}
+
+                    {(post.isOwner || post.canManage || isAdminOrMod) && (
+                      <button
+                        className="button button-sold text-xs text-red-500 hover:text-red-400 border-red-500/30 hover:border-red-500"
+                        onClick={() => void deleteParty(post.id, post.game)}
+                        title="Tutup dan bubarkan party ini lebih awal"
+                      >
+                        <Trash2 size={13} className="mr-1 inline" /> Tutup Party
                       </button>
                     )}
 
