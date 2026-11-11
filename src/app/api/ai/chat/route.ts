@@ -1,20 +1,28 @@
 import { authenticatedUser, jsonError } from "@/lib/http";
 
-const HF_ROUTER_PRIMARY = "https://router.huggingface.co/hf-inference/v1/chat/completions";
-const HF_ROUTER_FALLBACK = "https://router.huggingface.co/v1/chat/completions";
-const MODEL_PRIMARY = "Qwen/Qwen2.5-7B-Instruct";
-const MODEL_FALLBACK = "meta-llama/Llama-3.2-3B-Instruct";
+const GEMINI_ENDPOINT_PRIMARY = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
+const GEMINI_ENDPOINT_FALLBACK = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
 const COOLDOWN_MS = 2_500;
 const MAX_INPUT_LENGTH = 300;
 const MAX_BODY_BYTES = 16_384;
 
-type ChatRole = "system" | "user" | "assistant";
 type ChatMessage = { role: "user" | "assistant"; content: string };
-type SanitizedMessage = { role: ChatRole; content: string };
+type GeminiPart = { text: string };
+type GeminiContent = { role: "user" | "model"; parts: GeminiPart[] };
 
-type HuggingFaceResponse = {
-  choices?: { message?: { content?: unknown } }[];
-  error?: string | { message?: string };
+type GeminiResponse = {
+  candidates?: {
+    content?: {
+      parts?: { text?: string }[];
+      role?: string;
+    };
+    finishReason?: string;
+  }[];
+  error?: {
+    code?: number;
+    message?: string;
+    status?: string;
+  };
 };
 
 const lastRequestAt = new Map<string, number>();
@@ -47,47 +55,50 @@ function validateHistory(value: unknown): ChatMessage[] {
   return history.slice(-6);
 }
 
-function sanitizeMessages(systemPrompt: string, history: ChatMessage[], currentMessage: string): SanitizedMessage[] {
-  const turns: { role: "user" | "assistant"; content: string }[] = [];
+function formatGeminiContents(history: ChatMessage[], currentMessage: string): GeminiContent[] {
+  const turns: { role: "user" | "model"; text: string }[] = [];
 
   for (const h of history) {
     const text = h.content?.trim();
     if (text) {
-      turns.push({ role: h.role, content: text });
+      turns.push({
+        role: h.role === "assistant" ? "model" : "user",
+        text,
+      });
     }
   }
 
   const cleanCurrent = currentMessage.trim();
   if (cleanCurrent) {
-    turns.push({ role: "user", content: cleanCurrent });
+    turns.push({ role: "user", text: cleanCurrent });
   }
 
   // Merge consecutive turns with the exact same role to enforce strict alternation
-  const mergedTurns: { role: "user" | "assistant"; content: string }[] = [];
+  const merged: { role: "user" | "model"; text: string }[] = [];
   for (const turn of turns) {
-    const prev = mergedTurns[mergedTurns.length - 1];
+    const prev = merged[merged.length - 1];
     if (prev && prev.role === turn.role) {
-      prev.content = `${prev.content}\n${turn.content}`.trim();
+      prev.text = `${prev.text}\n${turn.text}`.trim();
     } else {
-      mergedTurns.push({ role: turn.role, content: turn.content });
+      merged.push({ role: turn.role, text: turn.text });
     }
   }
 
   // Standard LLM chat templates require the conversation following system to start with user.
-  // Strip any leading assistant greeting from history so that first turn is always user.
-  while (mergedTurns.length > 0 && mergedTurns[0].role === "assistant") {
-    mergedTurns.shift();
+  // Strip any leading assistant/model greeting from history so that first turn is always user.
+  while (merged.length > 0 && merged[0].role === "model") {
+    merged.shift();
   }
 
   // Ensure conversation ends with user message
-  if (mergedTurns.length === 0 || mergedTurns[mergedTurns.length - 1].role !== "user") {
-    mergedTurns.push({ role: "user", content: cleanCurrent || "Halo Satpam Horizon" });
+  if (merged.length === 0 || merged[merged.length - 1].role !== "user") {
+    merged.push({ role: "user", text: cleanCurrent || "Halo Satpam Horizon" });
   }
 
-  return [
-    { role: "system", content: systemPrompt.trim() },
-    ...mergedTurns,
-  ];
+  return merged.map((turn) => ({
+    role: turn.role,
+    parts: [{ text: turn.text }],
+  }));
 }
 
 export async function POST(request: Request) {
@@ -128,10 +139,10 @@ export async function POST(request: Request) {
   const history = validateHistory(payload.history);
   lastRequestAt.set(user.id, now);
 
-  const token = process.env.HF_ACCESS_TOKEN;
-  if (!token) {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!apiKey) {
     return Response.json({
-      reply: "Waduh bro, token AI (HF_ACCESS_TOKEN) belum dipasang di environment server! Hubungi Emperor .odyssia biar Satpam bisa mikir pakai LLM asli.",
+      reply: "Waduh bro, token AI (GEMINI_API_KEY) belum dipasang di environment server! Hubungi Emperor .odyssia biar Satpam bisa mikir pakai Google Gemini Flash asli.",
     });
   }
 
@@ -142,37 +153,35 @@ export async function POST(request: Request) {
     "Fitur web LogHorizon: Forum diskusi (f/general-chat, f/promotion, f/feedback), Lapak Marketplace gamer, Leaderboard peringkat XP/kas donatur, Jadwal mabar & turnamen (Events), dan Warta Berita (News Hub).",
   ].join(" ");
 
-  const sanitizedMessages = sanitizeMessages(systemPrompt, history, message);
+  const contents = formatGeminiContents(history, message);
 
-  const attempts = [
-    { url: HF_ROUTER_PRIMARY, model: MODEL_PRIMARY },
-    { url: HF_ROUTER_FALLBACK, model: MODEL_PRIMARY },
-    { url: HF_ROUTER_PRIMARY, model: MODEL_FALLBACK },
-    { url: HF_ROUTER_FALLBACK, model: MODEL_FALLBACK },
-  ];
-
+  const endpoints = [GEMINI_ENDPOINT_PRIMARY, GEMINI_ENDPOINT_FALLBACK];
   let lastErrorDetail = "";
 
-  for (const attempt of attempts) {
+  for (const endpoint of endpoints) {
     try {
-      const response = await fetch(attempt.url, {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          "X-goog-api-key": apiKey,
         },
         body: JSON.stringify({
-          model: attempt.model,
-          messages: sanitizedMessages,
-          max_tokens: 180,
-          temperature: 0.7,
+          systemInstruction: {
+            parts: [{ text: systemPrompt }],
+          },
+          contents,
+          generationConfig: {
+            maxOutputTokens: 200,
+            temperature: 0.7,
+          },
         }),
         signal: AbortSignal.timeout(12_000),
       });
 
       if (response.ok) {
-        const result = (await response.json()) as HuggingFaceResponse;
-        const reply = result.choices?.[0]?.message?.content;
+        const result = (await response.json()) as GeminiResponse;
+        const reply = result.candidates?.[0]?.content?.parts?.[0]?.text;
         if (typeof reply === "string" && reply.trim()) {
           return Response.json(
             { reply: reply.trim() },
@@ -182,39 +191,30 @@ export async function POST(request: Request) {
       } else {
         const status = response.status;
         const errorText = await response.text();
-        console.error(`[ai-chat] Router ${attempt.url} [${attempt.model}] failed with HTTP ${status}:`, errorText);
+        console.error(`[gemini-chat] HTTP ${status} from ${endpoint}:`, errorText);
 
         let cleanSnippet = errorText;
         try {
           const parsed = JSON.parse(errorText);
-          cleanSnippet =
-            parsed?.error?.message ??
-            (typeof parsed?.error === "string" ? parsed.error : null) ??
-            parsed?.message ??
-            errorText.slice(0, 180);
+          cleanSnippet = parsed?.error?.message ?? errorText.slice(0, 180);
         } catch {
           cleanSnippet = errorText.slice(0, 180);
         }
 
-        if (status === 401 || status === 403) {
-          return Response.json({
-            reply: `Token HF_ACCESS_TOKEN ditolak Hugging Face (HTTP ${status}: ${cleanSnippet}). Cek izin token 'Inference Providers' di akun Hugging Face kamu bro!`,
-          });
+        if (status === 400 || status === 401 || status === 403) {
+          lastErrorDetail = `HTTP ${status}: ${cleanSnippet}`;
+          continue;
         }
         if (status === 429) {
           return Response.json({
-            reply: "Antrean server AI lagi padat mabar nih (Rate limit 429)! Tunggu sekitar 10-15 detik terus coba lagi ya bro.",
+            reply: "Antrean server Gemini lagi padat mabar nih (Rate limit 429)! Tunggu beberapa detik terus coba lagi ya bro.",
           });
-        }
-        if (status === 503) {
-          lastErrorDetail = `Model ${attempt.model} sedang warm-up di server (HTTP 503)`;
-          continue;
         }
 
         lastErrorDetail = `HTTP ${status}: ${cleanSnippet}`;
       }
     } catch (err) {
-      console.warn(`[ai-chat] Connection error with ${attempt.url}:`, err);
+      console.warn(`[gemini-chat] Connection error with ${endpoint}:`, err);
       lastErrorDetail = err instanceof Error ? err.message : "Koneksi timeout";
     }
   }
