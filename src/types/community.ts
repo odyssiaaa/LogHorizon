@@ -10,6 +10,7 @@ export type AuthorSummary = {
   avatar: string | null;
   role: RoleType;
   isPremium: boolean;
+  successfulSales?: number;
 };
 
 export type PublicMarketData = {

@@ -2,6 +2,7 @@ import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { addXpInTransaction } from "@/lib/xp";
+import { createNotification } from "@/lib/notifications";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -14,6 +15,13 @@ export async function POST(request: Request, { params }: RouteContext) {
   const content = typeof data.content === "string" ? data.content.trim() : "";
   const parentId = typeof data.parentId === "string" ? data.parentId : null;
   if (!content || content.length > 5000) return jsonError("Komentar wajib diisi (maksimal 5.000 karakter).", 400);
+
+  const post = await prisma.post.findUnique({
+    where: { id },
+    select: { id: true, title: true, authorId: true },
+  });
+  if (!post) return jsonError("Postingan tidak ditemukan.", 404);
+
   if (parentId) {
     const parent = await prisma.comment.findFirst({ where: { id: parentId, postId: id }, select: { id: true } });
     if (!parent) return jsonError("Komentar yang dibalas tidak ditemukan.", 404);
@@ -27,5 +35,16 @@ export async function POST(request: Request, { params }: RouteContext) {
     await addXpInTransaction(tx, user.id, 5, commentCount >= 25 ? "Guild Guide" : undefined);
     return created;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+  // Trigger notification if commenter is not post author
+  if (post.authorId !== user.id) {
+    void createNotification({
+      userId: post.authorId,
+      type: "REPLY",
+      message: `${user.username ?? "Seorang petualang"} membalas thread "${post.title.slice(0, 45)}"`,
+      link: `/forum/${post.id}`,
+    });
+  }
+
   return Response.json(comment, { status: 201 });
 }

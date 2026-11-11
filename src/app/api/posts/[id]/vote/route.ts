@@ -1,6 +1,7 @@
 import { VoteType } from "@prisma/client";
 import { authenticatedUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -12,10 +13,17 @@ export async function POST(request: Request, { params }: RouteContext) {
   const value = payload && typeof payload === "object" ? (payload as Record<string, unknown>).value : null;
   if (value !== VoteType.LIKE && value !== VoteType.DISLIKE) return jsonError("Tipe reaksi tidak valid.", 400);
 
+  const post = await prisma.post.findUnique({
+    where: { id },
+    select: { id: true, title: true, authorId: true },
+  });
+  if (!post) return jsonError("Thread tidak ditemukan.", 404);
+
   const result = await prisma.$transaction(async (tx) => {
     const lockedPosts = await tx.$queryRaw<{ id: string }[]>`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
     if (!lockedPosts.length) return null;
     const existing = await tx.postVote.findUnique({ where: { postId_userId: { postId: id, userId: user.id } } });
+    const isNewLike = !existing && value === VoteType.LIKE;
     if (existing?.value === value) {
       await tx.postVote.delete({ where: { id: existing.id } });
     } else if (existing) {
@@ -37,7 +45,18 @@ export async function POST(request: Request, { params }: RouteContext) {
       likes: updated.likes,
       dislikes: updated.dislikes,
       reaction: existing?.value === value ? null : value,
+      isNewLike,
     };
   });
-  return result ? Response.json(result) : jsonError("Thread tidak ditemukan.", 404);
+
+  if (result?.isNewLike && post.authorId !== user.id) {
+    void createNotification({
+      userId: post.authorId,
+      type: "LIKE",
+      message: `${user.username ?? "Petualang"} menyukai thread kamu: "${post.title.slice(0, 45)}"`,
+      link: `/forum/${post.id}`,
+    });
+  }
+
+  return result ? Response.json({ likes: result.likes, dislikes: result.dislikes, reaction: result.reaction }) : jsonError("Thread tidak ditemukan.", 404);
 }

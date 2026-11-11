@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Award, Crown, Medal, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import type { LeaderboardAdventurer, LeaderboardBenefactor } from "@/types/community";
@@ -105,7 +106,9 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                         {RankIcon ? <RankIcon aria-label={`Peringkat ${index + 1}`} size={iconSize} /> : `#${index + 1}`}
                       </td>
                       <td className={`leaderboard-player${member.isPremium ? " premium-username" : ""}`}>
-                        {member.username ?? "Gamer"}
+                        <Link href={`/u/${member.username ?? "user"}`} className="hover:text-[#9D4EDD] hover:underline font-bold">
+                          {member.username ?? "Gamer"}
+                        </Link>
                       </td>
                       <td className="numeric-cell">{member.level}</td>
                       <td className="numeric-cell hidden md:table-cell">{member.xp.toLocaleString("id-ID")}</td>
@@ -151,7 +154,11 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                       <td className="leaderboard-rank">
                         {RoyaltyIcon ? <RoyaltyIcon aria-label={`Peringkat ${index + 1}`} size={iconSize} /> : `#${index + 1}`}
                       </td>
-                      <td className="leaderboard-player">{member.username ?? "Gamer"}</td>
+                      <td className="leaderboard-player font-bold">
+                        <Link href={`/u/${member.username ?? "user"}`} className="hover:text-[#9D4EDD] hover:underline">
+                          {member.username ?? "Gamer"}
+                        </Link>
+                      </td>
                       <td className="numeric-cell">{currency.format(member.total)}</td>
                       <td className="badge-cell">
                         <span className="leaderboard-badge donor-tier">{benefactorTier(member.badges)}</span>

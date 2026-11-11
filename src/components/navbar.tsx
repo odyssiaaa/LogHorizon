@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { NotificationBell } from "@/components/notification-bell";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -196,7 +197,9 @@ export function Navbar() {
             {status === "loading" ? (
               <div className="h-8 w-24 rounded bg-gray-200 dark:bg-[#1E1A3A] animate-pulse" />
             ) : user ? (
-              <div className="relative" ref={dropdownRef}>
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setDropdownOpen((prev) => !prev)}
@@ -310,6 +313,7 @@ export function Navbar() {
                   )}
                 </AnimatePresence>
               </div>
+            </div>
             ) : (
               <motion.button
                 whileHover={{ scale: 1.02 }}

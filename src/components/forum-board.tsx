@@ -317,9 +317,12 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                       <DiscordAvatar src={post.author.avatar} username={post.author.username} />
                       <span>
                         oleh{" "}
-                        <strong className={post.author.isPremium ? "premium-username" : undefined}>
+                        <Link
+                          href={`/u/${post.author.username ?? "user"}`}
+                          className={`hover:underline ${post.author.isPremium ? "premium-username" : "font-semibold text-gray-800 dark:text-gray-200"}`}
+                        >
                           {post.author.username ?? "Gamer"}
-                        </strong>
+                        </Link>
                       </span>
                     </span>
                     <span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span>

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { ArrowDownUp, Flag, Loader2, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
@@ -320,7 +321,23 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
           <div className="market-listing-labels flex flex-wrap gap-1.5 mb-3">{post.isPinned && <span className="pinned-label">PINNED</span>}<span className={market.type === "WTS" ? "trade-badge wts" : "trade-badge wtb"}>{market.type}</span><span className="market-label-game">{market.game}</span><span className="market-label-price">{money.format(market.price)}</span><span className={`status-badge ${market.status === "AVAILABLE" ? "available" : market.status === "IN_ESCROW" ? "in-escrow" : "sold"}`}>{market.status === "IN_ESCROW" ? "IN ESCROW" : market.status}</span></div>
           <div className="market-image"><MarketImage src={market.imageUrl} alt={`Bukti lapak ${post.title}`} /></div>
           <div className="market-card-body"><h2 className="text-lg sm:text-xl font-bold break-words text-gray-900 dark:text-white">{post.title}</h2><p className="market-game">{market.game}</p><p className="market-price">{money.format(market.price)}</p><p className="market-description break-words text-xs sm:text-sm">{post.content}</p>
-            <div className="market-card-meta flex flex-wrap items-center gap-2"><span className="post-author"><DiscordAvatar src={post.author.avatar} username={post.author.username} /><span>oleh <strong className={post.author.isPremium ? "premium-username" : undefined}>{post.author.username ?? "Gamer"}</strong></span></span><span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span></div>
+            <div className="market-card-meta flex flex-wrap items-center justify-between gap-2">
+              <span className="post-author flex items-center gap-2">
+                <DiscordAvatar src={post.author.avatar} username={post.author.username} size={28} />
+                <span>
+                  oleh{" "}
+                  <Link
+                    href={`/u/${post.author.username ?? "user"}`}
+                    className={`font-semibold hover:underline ${post.author.isPremium ? "premium-username" : ""}`}
+                  >
+                    {post.author.username ?? "Gamer"}
+                  </Link>
+                </span>
+              </span>
+              <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded text-[11px]">
+                ✔ {post.author.successfulSales ?? 0} Transaksi Sukses
+              </span>
+            </div>
             <PostReactions postId={post.id} likes={post.likes} dislikes={post.dislikes} reaction={post.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} onChange={(result) => setPosts((current) => current.map((entry) => entry.id === post.id ? { ...entry, ...result, votes: result.reaction ? [{ value: result.reaction }] : [] } : entry))} />
             {user && contacts[post.id]?.userId === user.id ? (
               <div className="market-contact-revealed">
@@ -351,7 +368,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               {market.status === "AVAILABLE" && market.type === "WTS" && user?.id !== post.authorId && <button className="button button-primary" disabled={escrowLoading === post.id} onClick={() => void startEscrow(post.id)}>{escrowLoading === post.id ? "Memproses…" : "Ajukan transaksi escrow"}</button>}
               {(user?.id === post.authorId || user?.role === "ADMIN" || user?.role === "MODERATOR") && market.status !== "IN_ESCROW" && <button className="button button-quiet" disabled={escrowLoading === post.id} onClick={() => void updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD")}>{market.status === "SOLD" ? "Tandai tersedia" : "Tandai terjual"}</button>}
               {post.escrowTransactions?.filter((transaction) => transaction.sellerId === user?.id || user?.role === "ADMIN" || user?.role === "MODERATOR").map((transaction) => <button key={transaction.id} className="button button-sold" disabled={escrowLoading === post.id} onClick={() => void completeEscrow(transaction.id, post.id)}>{escrowLoading === post.id ? "Memproses…" : "Konfirmasi transaksi selesai"}</button>)}
-              <button className="report-button" onClick={() => void report(post.id)}><Flag size={14} /> Report Post</button>
+              <button className="report-button" onClick={() => void report(post.id)}><Flag size={14} /> Laporkan Penjual</button>
               {(user?.id === post.authorId || user?.role === "ADMIN" || user?.role === "MODERATOR") && (
                 <button
                   className="report-button text-red-500 hover:text-red-400"

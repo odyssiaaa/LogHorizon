@@ -2,6 +2,7 @@ import { EscrowStatus, Prisma } from "@prisma/client";
 import { activeUser, jsonError } from "@/lib/http";
 import { isMarketData, marketJson } from "@/lib/market-data";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -20,9 +21,22 @@ export async function POST(_request: Request, { params }: RouteContext) {
       const transaction = await tx.escrowTransaction.create({
         data: { postId: id, buyerId: buyer.id, sellerId: post.authorId, amount: post.marketData.price, status: EscrowStatus.IN_ESCROW },
       });
-      return { transaction, marketData: updatedData };
+      return { transaction, marketData: updatedData, sellerId: post.authorId, postTitle: post.title };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-    return Response.json({ ...result, notice: "Status transaksi dicatat. Fitur ini simulasi alur escrow; tidak ada dana yang benar-benar diproses atau ditahan." }, { status: 201 });
+
+    // Notify seller
+    void createNotification({
+      userId: result.sellerId,
+      type: "ESCROW",
+      message: `${buyer.username ?? "Seorang pembeli"} mengajukan transaksi escrow untuk lapak "${result.postTitle.slice(0, 40)}"`,
+      link: `/marketplace`,
+    });
+
+    return Response.json({
+      transaction: result.transaction,
+      marketData: result.marketData,
+      notice: "Transaksi escrow berhasil dicatat. Transaksi dipantau oleh sistem keamanan guild.",
+    }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "LISTING_NOT_FOUND") return jsonError("Lapak tidak ditemukan atau datanya tidak valid.", 404);
     if (error instanceof Error && error.message === "SELF_PURCHASE") return jsonError("Pemilik lapak tidak dapat membeli lapaknya sendiri.", 400);

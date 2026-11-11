@@ -91,6 +91,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <Link href="/#rules" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                   Rules
                 </Link>
+                <Link href="/privacy" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                  Privacy
+                </Link>
+                <Link href="/terms" className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                  Terms
+                </Link>
                 <span className="text-gray-300 dark:text-gray-700 hidden sm:inline">|</span>
                 <a href="https://discord.gg/aJvbVyTxNb" target="_blank" rel="noreferrer" className="text-[#5865F2] hover:underline font-semibold transition-colors">
                   Discord Guild

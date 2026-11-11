@@ -4,11 +4,12 @@ import { activeUser, jsonError } from "@/lib/http";
 import { isMarketData, marketJson } from "@/lib/market-data";
 import { prisma } from "@/lib/prisma";
 import { addXpInTransaction } from "@/lib/xp";
+import { createNotification } from "@/lib/notifications";
 
 type RouteContext = { params: Promise<{ id: string }> };
 type CompletionResult =
   | { error: "TRANSACTION_NOT_ACTIVE" | "FORBIDDEN" | "INVALID_LISTING" }
-  | { transaction: EscrowTransaction; sellerId: string };
+  | { transaction: EscrowTransaction; sellerId: string; buyerId: string; postTitle: string };
 
 export async function PATCH(request: Request, { params }: RouteContext) {
   const user = await activeUser();
@@ -33,7 +34,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       data: { status: EscrowStatus.COMPLETED, completedAt: new Date() },
     });
     await addXpInTransaction(tx, escrow.sellerId, 50, "Top Trader");
-    return { transaction: updated, sellerId: escrow.sellerId };
+    return { transaction: updated, sellerId: escrow.sellerId, buyerId: escrow.buyerId, postTitle: escrow.post.title };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") return jsonError("Transaksi berubah bersamaan. Muat ulang dan coba lagi.", 409);
@@ -44,5 +45,14 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     if (result.error === "FORBIDDEN") return jsonError("Hanya penjual atau moderator yang dapat mengonfirmasi transaksi.", 403);
     return jsonError("Data lapak tidak valid.", 422);
   }
-  return Response.json({ transaction: result.transaction, notice: "Lapak ditandai SOLD dan penjual mendapat 50 XP. Escrow ini hanya simulasi, bukan layanan penyimpanan dana." });
+
+  // Notify buyer of completion
+  void createNotification({
+    userId: result.buyerId,
+    type: "ESCROW",
+    message: `Transaksi lapak "${result.postTitle.slice(0, 40)}" telah diselesaikan! Terima kasih telah bertransaksi aman.`,
+    link: `/marketplace`,
+  });
+
+  return Response.json({ transaction: result.transaction, notice: "Transaksi berhasil diselesaikan! Lapak ditandai SOLD dan reputasi transaksi berhasil dicatat." });
 }

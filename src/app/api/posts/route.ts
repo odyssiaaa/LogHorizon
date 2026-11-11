@@ -59,15 +59,30 @@ export async function GET(request: Request) {
       orderBy: priceOrder ? { createdAt: "desc" } : [{ isPinned: "desc" }, { createdAt: "desc" }],
     });
 
+    const sellerIds = [...new Set(posts.map((p) => p.authorId))];
+    const completedEscrows = await prisma.escrowTransaction.groupBy({
+      by: ["sellerId"],
+      where: { sellerId: { in: sellerIds }, status: "COMPLETED" },
+      _count: { id: true },
+    });
+    const successMap = new Map(completedEscrows.map((item) => [item.sellerId, item._count.id]));
+
     const publicPosts = posts.map((post) => {
-      if (post.category !== PostCategory.MARKETPLACE) return { ...post, escrowTransactions: [] };
+      const authorWithRep = {
+        ...post.author,
+        successfulSales: successMap.get(post.author.id) ?? 0,
+      };
+
+      if (post.category !== PostCategory.MARKETPLACE) return { ...post, author: authorWithRep, escrowTransactions: [] };
       const escrowTransactions = post.escrowTransactions
         .filter((transaction) => viewer && (viewer.id === transaction.sellerId || viewer.role === "ADMIN" || viewer.role === "MODERATOR"))
         .map(({ id, sellerId }) => ({ id, sellerId }));
-      if (!post.marketData || typeof post.marketData !== "object" || Array.isArray(post.marketData)) return { ...post, escrowTransactions };
+      if (!post.marketData || typeof post.marketData !== "object" || Array.isArray(post.marketData)) {
+        return { ...post, author: authorWithRep, escrowTransactions };
+      }
       const publicMarketData = { ...post.marketData } as Record<string, Prisma.JsonValue>;
       delete publicMarketData.contact;
-      return { ...post, marketData: publicMarketData, escrowTransactions };
+      return { ...post, author: authorWithRep, marketData: publicMarketData, escrowTransactions };
     });
     if (!priceOrder) return Response.json(publicPosts);
     const sorted = posts.sort((a, b) => {
