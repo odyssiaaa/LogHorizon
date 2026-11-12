@@ -8,6 +8,8 @@ declare module "next-auth" {
     discordId: string | null;
     username: string | null;
     avatar: string | null;
+    level?: number;
+    xp?: number;
   }
 
   interface Session {
@@ -19,6 +21,8 @@ declare module "next-auth" {
       discordId: string | null;
       username: string | null;
       avatar: string | null;
+      level?: number;
+      xp?: number;
     } & import("next-auth").DefaultSession["user"];
   }
 }

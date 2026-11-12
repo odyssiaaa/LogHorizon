@@ -6,28 +6,36 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import {
+  BookOpen,
   ChevronDown,
   Crown,
+  HeartHandshake,
+  Home,
   LogOut,
   Menu,
+  MessageSquare,
   Moon,
+  Newspaper,
   Settings,
   ShieldCheck,
+  Store,
   Sun,
+  Swords,
+  Trophy,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { NotificationBell } from "@/components/notification-bell";
 
 const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Forum", href: "/forum" },
-  { label: "Marketplace", href: "/marketplace" },
-  { label: "Leaderboard", href: "/leaderboard" },
-  { label: "News", href: "/news" },
-  { label: "Events", href: "/events" },
-  { label: "Donate", href: "/donate" },
-  { label: "Rules", href: "/#rules" },
+  { label: "Home", href: "/", icon: Home },
+  { label: "Forum", href: "/forum", icon: MessageSquare },
+  { label: "Marketplace", href: "/marketplace", icon: Store },
+  { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
+  { label: "News", href: "/news", icon: Newspaper },
+  { label: "Events", href: "/events", icon: Swords },
+  { label: "Donate", href: "/donate", icon: HeartHandshake },
+  { label: "Rules", href: "/#rules", icon: BookOpen },
 ];
 
 export function Navbar() {
@@ -43,7 +51,7 @@ export function Navbar() {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Sync initial theme
+  // Sync initial theme from localStorage
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("loghorizon-theme");
     const dark = savedTheme !== "light";
@@ -51,17 +59,17 @@ export function Navbar() {
     document.documentElement.classList.toggle("dark", dark);
   }, []);
 
-  // Scroll listener for floating glassmorphism effect
+  // Scroll listener for floating navbar
   useEffect(() => {
     function handleScroll() {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 15);
     }
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Click outside to close profile dropdown
+  // Click outside to close desktop profile dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -72,9 +80,10 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close mobile drawer on route change or ESC key
+  // Close mobile drawer on route change
   useEffect(() => {
     setMobileOpen(false);
+    setDropdownOpen(false);
   }, [pathname]);
 
   // Lock body scroll when mobile drawer is open
@@ -92,6 +101,7 @@ export function Navbar() {
     };
   }, [mobileOpen]);
 
+  // Close on Escape key
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -115,15 +125,16 @@ export function Navbar() {
 
   return (
     <>
+      {/* ========================================================================= */}
+      {/* 1. TOP NAVBAR (Sticky z-40, Glassmorphism) */}
+      {/* ========================================================================= */}
       <header
-        className={`sticky top-0 z-50 w-full transition-all duration-300 ${
-          scrolled
-            ? "py-2.5 bg-white/70 dark:bg-[#08060B]/70 backdrop-blur-md border-b-[0.5px] border-[#E5E7EB] dark:border-[#211C2B] shadow-sm shadow-purple-950/5"
-            : "py-4 bg-transparent border-b-[0.5px] border-transparent"
+        className={`sticky top-0 z-40 w-full transition-all duration-300 bg-white/80 dark:bg-[#08060B]/80 backdrop-blur-md border-b border-[#E5E7EB] dark:border-[#211C2B] ${
+          scrolled ? "py-2.5 shadow-sm shadow-purple-950/5" : "py-3 sm:py-3.5"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
-          {/* 1. SISI KIRI: Logo & Nama Guild */}
+          {/* SISI KIRI: Logo & Nama Guild */}
           <Link href="/" className="flex items-center gap-2.5 group shrink-0" aria-label="LogHorizon Beranda">
             <div className="relative size-9 rounded-full overflow-hidden border border-[#9D4EDD]/40 group-hover:border-[#9D4EDD] transition-colors bg-[#171322] flex items-center justify-center shadow-sm">
               <Image
@@ -140,11 +151,11 @@ export function Navbar() {
             </span>
           </Link>
 
-          {/* 2. SISI TENGAH: Menu Navigasi (Desktop) dengan Micro-Interaction Aura Pill */}
+          {/* SISI TENGAH: Menu Navigasi Horizontal (Khusus Desktop md:flex) */}
           <nav
             className="hidden md:flex items-center gap-0.5 px-2.5 py-1 rounded-full border border-gray-200/60 dark:border-[#211C2B]/80 bg-white/40 dark:bg-[#120F17]/40 backdrop-blur-sm"
             onMouseLeave={() => setHoveredPath(null)}
-            aria-label="Navigasi Utama"
+            aria-label="Navigasi Utama Desktop"
           >
             {navLinks.map((link) => {
               const isActive =
@@ -176,9 +187,9 @@ export function Navbar() {
             })}
           </nav>
 
-          {/* 3. SISI KANAN: Aksi User (Theme Toggle, Profile / Discord Connect, & Mobile Toggle) */}
-          <div className="flex items-center gap-3">
-            {/* Theme Toggle Button */}
+          {/* SISI KANAN: Aksi Desktop & Hamburger Mobile */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Theme Toggle (Tampil di Desktop & Mobile) */}
             <button
               type="button"
               onClick={toggleTheme}
@@ -193,146 +204,151 @@ export function Navbar() {
               )}
             </button>
 
-            {/* Auth Section */}
-            {status === "loading" ? (
-              <div className="h-8 w-24 rounded bg-gray-200 dark:bg-[#1E1A3A] animate-pulse" />
-            ) : user ? (
-              <div className="flex items-center gap-2">
-                <NotificationBell />
-                <div className="relative" ref={dropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setDropdownOpen((prev) => !prev)}
-                  className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full border border-gray-200 dark:border-[#211C2B] bg-white/60 dark:bg-[#120F17]/60 hover:border-[#9D4EDD]/60 transition-colors"
-                  aria-expanded={dropdownOpen}
-                  aria-label="Menu pengguna"
-                >
-                  <div className="relative size-7 rounded-full overflow-hidden border border-[#9D4EDD]/60 bg-[#1E1A3A] flex items-center justify-center shrink-0">
-                    {user.avatar ? (
-                      <Image
-                        src={user.avatar}
-                        alt={user.username ?? "User"}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <span className="text-xs font-bold text-purple-300">
-                        {(user.username ?? user.name ?? "G").slice(0, 1).toUpperCase()}
-                      </span>
-                    )}
-                    {isOwner && (
-                      <span className="absolute bottom-0 right-0 size-2.5 bg-amber-400 rounded-full border border-black flex items-center justify-center">
-                        <Crown size={7} className="text-black" />
-                      </span>
-                    )}
-                  </div>
-
-                  <span className="hidden sm:inline text-xs font-bold text-gray-800 dark:text-gray-200 max-w-[100px] truncate">
-                    {user.username ?? user.name ?? "Gamer"}
-                  </span>
-
-                  <ChevronDown
-                    size={13}
-                    className={`text-gray-400 transition-transform duration-200 ${
-                      dropdownOpen ? "rotate-180 text-[#9D4EDD]" : ""
-                    }`}
-                  />
-                </button>
-
-                {/* Dropdown Menu Taktis */}
-                <AnimatePresence>
-                  {dropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 6, scale: 0.96 }}
-                      transition={{ duration: 0.16, ease: "easeOut" }}
-                      className="absolute right-0 mt-2 w-64 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-2 shadow-2xl z-50 backdrop-blur-xl"
-                      role="menu"
+            {/* Aksi Khusus Desktop (Lonceng Notifikasi & Profil) */}
+            <div className="hidden md:flex items-center gap-2.5">
+              {status === "loading" ? (
+                <div className="h-8 w-24 rounded bg-gray-200 dark:bg-[#1E1A3A] animate-pulse" />
+              ) : user ? (
+                <div className="flex items-center gap-2">
+                  <NotificationBell />
+                  <div className="relative" ref={dropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setDropdownOpen((prev) => !prev)}
+                      className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full border border-gray-200 dark:border-[#211C2B] bg-white/60 dark:bg-[#120F17]/60 hover:border-[#9D4EDD]/60 transition-colors"
+                      aria-expanded={dropdownOpen}
+                      aria-label="Menu profil pengguna"
                     >
-                      {/* Info Profil */}
-                      <div className="px-3 py-2.5 border-b border-gray-100 dark:border-[#211C2B]">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-extrabold text-xs text-gray-900 dark:text-white truncate">
-                            {user.username ?? user.name ?? "Gamer"}
+                      <div className="relative size-7 rounded-full overflow-hidden border border-[#9D4EDD]/60 bg-[#1E1A3A] flex items-center justify-center shrink-0">
+                        {user.avatar ? (
+                          <Image
+                            src={user.avatar}
+                            alt={user.username ?? "User"}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        ) : (
+                          <span className="text-xs font-bold text-purple-300">
+                            {(user.username ?? user.name ?? "G").slice(0, 1).toUpperCase()}
                           </span>
-                          {isOwner && <Crown size={12} className="text-amber-400 shrink-0" />}
-                        </div>
-                        <p className="text-[11px] font-mono text-[#9D4EDD] dark:text-[#C77DFF] mt-0.5">
-                          {isOwner
-                            ? "👑 Guild Owner (Emperor)"
-                            : user.role === "ADMIN"
-                              ? "🛡️ Guild Admin"
-                              : user.role === "MODERATOR"
-                                ? "⚔️ Lord Commander"
-                                : "🎮 Guild Member"}
-                        </p>
-                      </div>
-
-                      {/* Menu Aksi */}
-                      <div className="py-1">
-                        {isStaff && (
-                          <Link
-                            href="/admin"
-                            onClick={() => setDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-3 py-2 rounded text-xs font-semibold text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-[#1E1A3A] transition-colors"
-                            role="menuitem"
-                          >
-                            <ShieldCheck size={14} className="shrink-0" />
-                            <span>Dashboard Admin</span>
-                          </Link>
                         )}
-                        <Link
-                          href="/profile"
-                          onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1E1A3A] transition-colors"
-                          role="menuitem"
-                        >
-                          <Settings size={14} className="shrink-0" />
-                          <span>Profil &amp; Pengaturan</span>
-                        </Link>
+                        {isOwner && (
+                          <span className="absolute bottom-0 right-0 size-2.5 bg-amber-400 rounded-full border border-black flex items-center justify-center">
+                            <Crown size={7} className="text-black" />
+                          </span>
+                        )}
                       </div>
 
-                      {/* Sign Out */}
-                      <div className="pt-1 border-t border-gray-100 dark:border-[#211C2B]">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setDropdownOpen(false);
-                            void signOut();
-                          }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                          role="menuitem"
+                      <span className="text-xs font-bold text-gray-800 dark:text-gray-200 max-w-[100px] truncate">
+                        {user.username ?? user.name ?? "Gamer"}
+                      </span>
+
+                      <ChevronDown
+                        size={13}
+                        className={`text-gray-400 transition-transform duration-200 ${
+                          dropdownOpen ? "rotate-180 text-[#9D4EDD]" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {/* Dropdown Menu Desktop */}
+                    <AnimatePresence>
+                      {dropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                          transition={{ duration: 0.16, ease: "easeOut" }}
+                          className="absolute right-0 mt-2 w-64 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-2 shadow-2xl z-50 backdrop-blur-xl"
+                          role="menu"
                         >
-                          <LogOut size={14} className="shrink-0" />
-                          <span>Sign Out</span>
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                          <div className="px-3 py-2.5 border-b border-gray-100 dark:border-[#211C2B]">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-extrabold text-xs text-gray-900 dark:text-white truncate">
+                                {user.username ?? user.name ?? "Gamer"}
+                              </span>
+                              {isOwner && <Crown size={12} className="text-amber-400 shrink-0" />}
+                            </div>
+                            <div className="flex items-center justify-between mt-1">
+                              <p className="text-[11px] font-mono text-[#9D4EDD] dark:text-[#C77DFF]">
+                                {isOwner
+                                  ? "👑 Guild Owner"
+                                  : user.role === "ADMIN"
+                                    ? "🛡️ Guild Admin"
+                                    : user.role === "MODERATOR"
+                                      ? "⚔️ Lord Commander"
+                                      : "🎮 Guild Member"}
+                              </p>
+                              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400">
+                                Lv. {user.level ?? 1}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="py-1">
+                            {isStaff && (
+                              <Link
+                                href="/admin"
+                                onClick={() => setDropdownOpen(false)}
+                                className="flex items-center gap-2.5 px-3 py-2 rounded text-xs font-semibold text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-[#1E1A3A] transition-colors"
+                                role="menuitem"
+                              >
+                                <ShieldCheck size={14} className="shrink-0" />
+                                <span>Dashboard Admin</span>
+                              </Link>
+                            )}
+                            <Link
+                              href="/profile"
+                              onClick={() => setDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1E1A3A] transition-colors"
+                              role="menuitem"
+                            >
+                              <Settings size={14} className="shrink-0" />
+                              <span>Profil &amp; Pengaturan</span>
+                            </Link>
+                          </div>
+
+                          <div className="pt-1 border-t border-gray-100 dark:border-[#211C2B]">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDropdownOpen(false);
+                                void signOut();
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                              role="menuitem"
+                            >
+                              <LogOut size={14} className="shrink-0" />
+                              <span>Sign Out</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              ) : (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.96 }}
+                  type="button"
+                  onClick={() => void signIn("discord")}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-sm bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold transition-all shadow-sm shadow-[#5865F2]/25 shrink-0"
+                >
+                  <span className="text-sm leading-none">◉</span>
+                  <span>Connect Discord</span>
+                </motion.button>
+              )}
             </div>
-            ) : (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.96 }}
-                type="button"
-                onClick={() => void signIn("discord")}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-sm bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold transition-all shadow-sm shadow-[#5865F2]/25 shrink-0"
-              >
-                <span className="text-sm leading-none">◉</span>
-                <span>Connect Discord</span>
-              </motion.button>
-            )}
 
-            {/* Mobile Hamburger Button */}
+            {/* Hamburger Menu Button (Khusus Mobile di bawah md) */}
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
               className="md:hidden size-9 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white/50 dark:bg-[#120F17]/60 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:border-[#9D4EDD] transition-colors"
               aria-label="Buka menu navigasi"
+              aria-expanded={mobileOpen}
             >
               <Menu size={18} />
             </button>
@@ -340,35 +356,37 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* 4. RESPONSIVE MOBILE SIDE DRAWER (Framer Motion Slide-in) */}
+      {/* ========================================================================= */}
+      {/* 2. TAMPILAN MOBILE: OFFCANVAS SLIDEBAR MENU (Side Drawer) */}
+      {/* ========================================================================= */}
       <AnimatePresence>
         {mobileOpen && (
           <>
-            {/* Backdrop Overlay */}
+            {/* Latar Belakang Gelap Transparan (Backdrop Overlay) */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100] md:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden"
               aria-hidden="true"
             />
 
-            {/* Slide Drawer Content */}
+            {/* Slidebar Menu Drawer (Off-Canvas dari Sisi Kanan) */}
             <motion.aside
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="fixed top-0 right-0 bottom-0 w-80 max-w-[85vw] bg-white dark:bg-[#0D0A14] border-l border-gray-200 dark:border-[#211C2B] p-6 flex flex-col justify-between z-[101] shadow-2xl md:hidden overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-72 max-w-[80vw] bg-white dark:bg-[#0D0A14] border-l border-gray-200 dark:border-[#211C2B] p-5 flex flex-col justify-between shadow-2xl md:hidden overflow-y-auto"
               aria-label="Menu navigasi mobile"
             >
               <div>
-                {/* Header Drawer */}
-                <div className="flex items-center justify-between pb-5 border-b border-gray-100 dark:border-[#211C2B]">
+                {/* Header Slidebar: Logo LogHorizon + Tombol Tutup (X) */}
+                <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-[#211C2B]">
                   <div className="flex items-center gap-2.5">
-                    <div className="relative size-8 rounded-full overflow-hidden border border-[#9D4EDD]/40">
+                    <div className="relative size-8 rounded-full overflow-hidden border border-[#9D4EDD]/40 bg-[#171322] flex items-center justify-center">
                       <Image src="/loghorizon-logo.png" alt="LogHorizon" fill className="object-cover" />
                     </div>
                     <span className="font-black text-sm text-gray-900 dark:text-white tracking-wider">
@@ -379,18 +397,18 @@ export function Navbar() {
                   <button
                     type="button"
                     onClick={() => setMobileOpen(false)}
-                    className="size-8 rounded-md border border-gray-200 dark:border-[#211C2B] text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center justify-center"
-                    aria-label="Tutup menu"
+                    className="size-8 rounded-md border border-gray-200 dark:border-[#211C2B] text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center justify-center transition"
+                    aria-label="Tutup menu navigasi"
                   >
                     <X size={16} />
                   </button>
                 </div>
 
-                {/* Profile Card Mobile */}
+                {/* Kartu Info User Mobile */}
                 {user ? (
-                  <div className="mt-5 p-3.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-gray-50 dark:bg-[#14101C]">
+                  <div className="mt-4 p-3.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-gray-50 dark:bg-[#14101C]">
                     <div className="flex items-center gap-3">
-                      <div className="relative size-9 rounded-full overflow-hidden border border-[#9D4EDD]/60 bg-[#1E1A3A] shrink-0">
+                      <div className="relative size-10 rounded-full overflow-hidden border border-[#9D4EDD]/60 bg-[#1E1A3A] shrink-0">
                         {user.avatar ? (
                           <Image src={user.avatar} alt={user.username ?? "User"} fill className="object-cover" unoptimized />
                         ) : (
@@ -398,35 +416,47 @@ export function Navbar() {
                             {(user.username ?? user.name ?? "G").slice(0, 1).toUpperCase()}
                           </span>
                         )}
+                        {isOwner && (
+                          <span className="absolute bottom-0 right-0 size-3 bg-amber-400 rounded-full border border-black flex items-center justify-center">
+                            <Crown size={8} className="text-black" />
+                          </span>
+                        )}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <p className="font-extrabold text-xs text-gray-900 dark:text-white truncate">
+                          <p className="font-extrabold text-sm text-gray-900 dark:text-white truncate">
                             {user.username ?? user.name ?? "Gamer"}
                           </p>
                           {isOwner && <Crown size={12} className="text-amber-400 shrink-0" />}
                         </div>
-                        <p className="text-[10px] font-mono text-[#9D4EDD] dark:text-[#C77DFF]">
+                        <p className="text-[11px] font-mono text-[#9D4EDD] dark:text-[#C77DFF]">
                           {isOwner
                             ? "👑 Guild Owner"
                             : user.role === "ADMIN"
-                              ? "🛡️ Admin"
+                              ? "🛡️ Guild Admin"
                               : user.role === "MODERATOR"
-                                ? "⚔️ Moderator"
+                                ? "⚔️ Lord Commander"
                                 : "🎮 Member"}
                         </p>
+                        <div className="mt-1 flex items-center gap-1.5 text-[10px] font-mono text-gray-500 dark:text-gray-400">
+                          <span className="px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400 font-bold">
+                            Lv. {user.level ?? 1}
+                          </span>
+                          <span>•</span>
+                          <span>{user.xp ?? 0} XP</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-5">
+                  <div className="mt-4">
                     <button
                       type="button"
                       onClick={() => {
                         setMobileOpen(false);
                         void signIn("discord");
                       }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-sm bg-[#5865F2] text-white text-xs font-bold shadow-md shadow-[#5865F2]/20"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold shadow-md shadow-[#5865F2]/20 transition"
                     >
                       <span className="text-sm leading-none">◉</span>
                       <span>Connect Discord</span>
@@ -434,9 +464,10 @@ export function Navbar() {
                   </div>
                 )}
 
-                {/* Nav Links Vertikal (Ukuran Jempol Nyaman) */}
-                <nav className="mt-6 flex flex-col space-y-1">
+                {/* Daftar Menu Navigasi Vertikal */}
+                <nav className="mt-5 flex flex-col space-y-1" aria-label="Navigasi Menu Mobile">
                   {navLinks.map((link) => {
+                    const Icon = link.icon;
                     const isActive =
                       link.href === "/"
                         ? pathname === "/"
@@ -447,73 +478,73 @@ export function Navbar() {
                         key={link.href}
                         href={link.href}
                         onClick={() => setMobileOpen(false)}
-                        className={`py-3 px-3 rounded-md text-base font-bold transition-colors border-b border-gray-100 dark:border-[#211C2B]/50 flex items-center justify-between ${
+                        className={`py-3 px-4 rounded-md text-base font-semibold transition-colors flex items-center justify-between ${
                           isActive
-                            ? "text-[#9D4EDD] dark:text-[#C77DFF] bg-[#9D4EDD]/10"
-                            : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                            ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] font-bold"
+                            : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5"
                         }`}
                       >
-                        <span>{link.label}</span>
+                        <span className="flex items-center gap-3">
+                          <Icon size={18} className={isActive ? "text-[#9D4EDD] dark:text-[#C77DFF]" : "text-gray-400"} />
+                          <span>{link.label}</span>
+                        </span>
                         {isActive && <span className="size-1.5 rounded-full bg-[#9D4EDD]" />}
                       </Link>
                     );
                   })}
 
-                  {/* Additional Mobile Links */}
+                  {/* Link Menu Tambahan Mobile (Profile & Settings) */}
                   {user && (
                     <Link
                       href="/profile"
                       onClick={() => setMobileOpen(false)}
-                      className="py-3 px-3 rounded-md text-base font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-[#211C2B]/50 flex items-center gap-2.5"
+                      className={`py-3 px-4 rounded-md text-base font-semibold transition-colors flex items-center gap-3 ${
+                        pathname === "/profile"
+                          ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] font-bold"
+                          : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5"
+                      }`}
                     >
-                      <Settings size={17} className="text-gray-400" />
-                      <span>Profil &amp; Pengaturan</span>
+                      <Settings size={18} className={pathname === "/profile" ? "text-[#9D4EDD] dark:text-[#C77DFF]" : "text-gray-400"} />
+                      <span>Profile &amp; Settings</span>
                     </Link>
                   )}
 
+                  {/* Link Menu Tambahan Mobile (Admin Panel khusus Admin/Moderator) */}
                   {isStaff && (
                     <Link
                       href="/admin"
                       onClick={() => setMobileOpen(false)}
-                      className="py-3 px-3 rounded-md text-base font-semibold text-purple-600 dark:text-purple-300 border-b border-gray-100 dark:border-[#211C2B]/50 flex items-center gap-2.5"
+                      className={`py-3 px-4 rounded-md text-base font-semibold transition-colors flex items-center gap-3 ${
+                        pathname.startsWith("/admin")
+                          ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] font-bold"
+                          : "text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/20"
+                      }`}
                     >
-                      <ShieldCheck size={17} />
-                      <span>Dashboard Admin</span>
+                      <ShieldCheck size={18} />
+                      <span>Admin Panel</span>
                     </Link>
                   )}
                 </nav>
               </div>
 
-              {/* Bottom Drawer Actions */}
-              <div className="pt-6 border-t border-gray-100 dark:border-[#211C2B] space-y-3">
-                {/* Theme Selector Switch */}
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className="w-full flex items-center justify-between p-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-gray-50 dark:bg-[#14101C] text-xs font-semibold text-gray-700 dark:text-gray-300"
-                >
-                  <span className="flex items-center gap-2">
-                    {isDark ? <Moon size={14} className="text-purple-400" /> : <Sun size={14} className="text-amber-500" />}
-                    <span>Mode Tampilan</span>
-                  </span>
-                  <span className="text-xs uppercase font-mono text-purple-600 dark:text-purple-400">
-                    {isDark ? "Gelap (Dark)" : "Terang (Light)"}
-                  </span>
-                </button>
-
-                {/* Sign Out Mobile */}
-                {user && (
+              {/* Footer Slidebar (Sign Out jika Login) */}
+              <div className="pt-5 border-t border-gray-100 dark:border-[#211C2B] mt-6">
+                {user ? (
                   <button
                     type="button"
                     onClick={() => {
                       setMobileOpen(false);
                       void signOut();
                     }}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/25 border border-red-200/50 dark:border-red-900/30"
+                    className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/25 border border-red-200/50 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-950/40 transition"
                   >
-                    <LogOut size={14} />
-                    <span>Keluar Akun (Sign Out)</span>
+                    <LogOut size={16} />
+                    <span>Sign Out</span>
                   </button>
+                ) : (
+                  <p className="text-[11px] text-center text-gray-400 font-mono">
+                    LogHorizon • Find Your Party
+                  </p>
                 )}
               </div>
             </motion.aside>

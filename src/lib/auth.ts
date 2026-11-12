@@ -108,6 +108,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.discordId = user.discordId;
         session.user.username = user.username;
         session.user.avatar = user.avatar;
+        session.user.level = user.level ?? 1;
+        session.user.xp = user.xp ?? 0;
       }
       return session;
     },
