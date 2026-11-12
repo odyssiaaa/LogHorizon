@@ -27,8 +27,17 @@ export async function GET() {
     },
     orderBy: { createdAt: "desc" },
     include: {
-      author: { select: { id: true, username: true } },
-      joins: { select: { userId: true, user: { select: { username: true } } } },
+      author: {
+        select: {
+          id: true,
+          username: true,
+          inGameName: true,
+          primaryRole: true,
+          highestRank: true,
+          isPremium: true,
+        },
+      },
+      joins: { select: { userId: true, user: { select: { username: true, inGameName: true, primaryRole: true } } } },
     },
   });
 
@@ -42,6 +51,10 @@ export async function GET() {
       createdAt: post.createdAt.toISOString(),
       maxSlots: post.maxSlots,
       status: post.status,
+      targetRank: post.targetRank || "Bebas",
+      roleNeeded: post.roleNeeded || "Flex",
+      playGoal: post.playGoal || "Mabar Santai",
+      playTime: post.playTime || "Malam ini",
       author: post.author,
       isOwner: post.authorId === viewer?.id,
       canManage: post.authorId === viewer?.id || viewer?.role === "ADMIN" || viewer?.role === "MODERATOR",
@@ -61,6 +74,11 @@ export async function POST(request: Request) {
   const description = typeof data.description === "string" ? data.description.trim() : "";
   const maxSlots = Number(data.maxSlots);
   const scheduledAt = typeof data.scheduledAt === "string" ? new Date(data.scheduledAt) : new Date(Number.NaN);
+
+  const targetRank = typeof data.targetRank === "string" && data.targetRank.trim() ? data.targetRank.trim().slice(0, 50) : "Bebas";
+  const roleNeeded = typeof data.roleNeeded === "string" && data.roleNeeded.trim() ? data.roleNeeded.trim().slice(0, 50) : "Flex";
+  const playGoal = typeof data.playGoal === "string" && data.playGoal.trim() ? data.playGoal.trim().slice(0, 50) : "Mabar Santai";
+  const playTime = typeof data.playTime === "string" && data.playTime.trim() ? data.playTime.trim().slice(0, 50) : "Malam ini";
 
   if (
     !game ||
@@ -91,6 +109,10 @@ export async function POST(request: Request) {
       description,
       scheduledAt,
       maxSlots,
+      targetRank,
+      roleNeeded,
+      playGoal,
+      playTime,
       expiresAt,
     },
     select: {
@@ -100,9 +122,17 @@ export async function POST(request: Request) {
       scheduledAt: true,
       expiresAt: true,
       createdAt: true,
+      targetRank: true,
+      roleNeeded: true,
+      playGoal: true,
+      playTime: true,
     },
   });
 
-  void sendDiscordNotice("events", `Party LFG baru: ${game} (Aktif ${durationHours} jam)`, description);
+  void sendDiscordNotice(
+    "events",
+    `[Find Teammate] ${game} (${playGoal}) - Butuh ${roleNeeded}`,
+    `Rank Target: ${targetRank} | Jam Main: ${playTime}\n${description}\n(Masa aktif ${durationHours} jam)`
+  );
   return Response.json(post, { status: 201 });
 }

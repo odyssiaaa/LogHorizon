@@ -24,10 +24,20 @@ type LfgPost = {
   createdAt?: string;
   maxSlots: number;
   status: "OPEN" | "FULL" | "CLOSED";
+  targetRank?: string;
+  roleNeeded?: string;
+  playGoal?: string;
+  playTime?: string;
   isOwner: boolean;
   canManage?: boolean;
   joinedByViewer: boolean;
-  author: { username: string | null };
+  author: {
+    username: string | null;
+    inGameName?: string | null;
+    highestRank?: string | null;
+    primaryRole?: string | null;
+    isPremium?: boolean;
+  };
   joins: { username: string | null }[];
 };
 
@@ -57,10 +67,20 @@ export function EventsBoard() {
   const [eventDate, setEventDate] = useState("");
   const [teamNames, setTeamNames] = useState<Record<string, string>>({});
   const [lfgGame, setLfgGame] = useState("Valorant");
-  const [description, setDescription] = useState("Butuh 2 orang untuk push rank jam 8 malam.");
+  const [description, setDescription] = useState("Butuh party untuk push rank bareng!");
   const [scheduledAt, setScheduledAt] = useState("");
   const [partySlots, setPartySlots] = useState("5");
   const [durationHours, setDurationHours] = useState("24");
+  const [targetRank, setTargetRank] = useState("Bebas");
+  const [roleNeeded, setRoleNeeded] = useState("Flex");
+  const [playGoal, setPlayGoal] = useState("Push Rank");
+  const [playTime, setPlayTime] = useState("20.00 - 23.00 WIB");
+
+  // Filters for Find Teammate
+  const [filterGame, setFilterGame] = useState("ALL");
+  const [filterGoal, setFilterGoal] = useState("ALL");
+  const [filterRole, setFilterRole] = useState("ALL");
+
   const [activePartyChat, setActivePartyChat] = useState<string | null>(null);
   const [partyChatMessages, setPartyChatMessages] = useState<Record<string, { sender: string; text: string; time: string }[]>>({});
   const [chatInput, setChatInput] = useState("");
@@ -124,10 +144,14 @@ export function EventsBoard() {
           scheduledAt: new Date(scheduledAt).toISOString(),
           maxSlots: Number(partySlots),
           durationHours: Number(durationHours),
+          targetRank,
+          roleNeeded,
+          playGoal,
+          playTime,
         }),
       });
       await readApiResponse(response, "Jadwal party gagal dibuat.");
-      setNotice("Jadwal party dipublikasikan! Kamu dapat mengobrol di Chat Party Sementara atau berpindah ke Voice Channel Discord.");
+      setNotice("Jadwal party dipublikasikan! Rekan guild dapat langsung bergabung ke tim.");
       setRefreshKey((value) => value + 1);
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Jadwal party gagal dibuat."); }
   }
@@ -187,10 +211,24 @@ export function EventsBoard() {
     [tournament.game, tournament.status, ...tournament.participants.map((participant) => participant.teamName), ...tournament.participants.map((participant) => participant.leader.username ?? "")]
       .some((value) => value.toLocaleLowerCase().includes(normalizedSearch)),
   );
-  const visibleLfgPosts = lfgPosts.filter((post) =>
-    [post.game, post.description, post.author.username ?? "", ...post.joins.map((join) => join.username ?? "")]
-      .some((value) => value.toLocaleLowerCase().includes(normalizedSearch)),
-  );
+  const visibleLfgPosts = lfgPosts.filter((post) => {
+    const matchesSearch = [
+      post.game,
+      post.description,
+      post.targetRank ?? "",
+      post.roleNeeded ?? "",
+      post.playGoal ?? "",
+      post.playTime ?? "",
+      post.author.username ?? "",
+      ...post.joins.map((join) => join.username ?? ""),
+    ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch));
+
+    const matchesGame = filterGame === "ALL" || post.game.toLowerCase().includes(filterGame.toLowerCase());
+    const matchesGoal = filterGoal === "ALL" || (post.playGoal ?? "").toLowerCase() === filterGoal.toLowerCase();
+    const matchesRole = filterRole === "ALL" || (post.roleNeeded ?? "").toLowerCase() === filterRole.toLowerCase();
+
+    return matchesSearch && matchesGame && matchesGoal && matchesRole;
+  });
   const isAdminOrMod = session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR";
 
   return (
@@ -269,32 +307,204 @@ export function EventsBoard() {
         </div>
       </section>
 
-      {/* LOOKING FOR GROUP SECTION */}
+      {/* LOOKING FOR GROUP / FIND TEAMMATE SECTION */}
       <section className="events-section">
-        <div className="events-section-heading"><div><p className="section-kicker">LOOKING FOR GROUP</p><h2>Jadwal Mabar</h2></div><Users size={18} /></div>
+        <div className="events-section-heading">
+          <div>
+            <p className="section-kicker">FIND TEAMMATE &amp; LFG</p>
+            <h2>Pencarian Party &amp; Rekan Mabar</h2>
+          </div>
+          <Users size={18} />
+        </div>
+
+        {/* FIND TEAMMATE FILTER CHIPS */}
+        <div className="mb-4 p-3 bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-lg space-y-2">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">Filter Game:</span>
+            {["ALL", "Valorant", "Mobile Legends", "Genshin Impact", "CS2", "Dota 2", "Roblox"].map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setFilterGame(g)}
+                className={`px-2.5 py-1 rounded text-xs transition-all ${
+                  filterGame === g
+                    ? "bg-[#9D4EDD] text-white font-bold shadow-sm"
+                    : "bg-gray-100 dark:bg-[#1E1926] text-gray-700 dark:text-gray-300 hover:text-white"
+                }`}
+              >
+                {g === "ALL" ? "Semua Game" : g}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs pt-1 border-t border-gray-100 dark:border-white/5">
+            <span className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">Tujuan Main:</span>
+            {["ALL", "Push Rank", "Mabar Santai", "Turnamen / Scrim"].map((goal) => (
+              <button
+                key={goal}
+                type="button"
+                onClick={() => setFilterGoal(goal)}
+                className={`px-2.5 py-1 rounded text-xs transition-all ${
+                  filterGoal === goal
+                    ? "bg-purple-600 text-white font-bold"
+                    : "bg-gray-100 dark:bg-[#1E1926] text-gray-700 dark:text-gray-300 hover:text-white"
+                }`}
+              >
+                {goal === "ALL" ? "Semua Tujuan" : goal}
+              </button>
+            ))}
+
+            <span className="font-bold text-gray-500 uppercase tracking-wider text-[10px] ml-auto">Role:</span>
+            {["ALL", "Flex", "Duelist", "Roamer", "Tank", "Support"].map((role) => (
+              <button
+                key={role}
+                type="button"
+                onClick={() => setFilterRole(role)}
+                className={`px-2 py-0.5 rounded text-[11px] transition-all ${
+                  filterRole === role
+                    ? "bg-indigo-600 text-white font-bold"
+                    : "bg-gray-100 dark:bg-[#1E1926] text-gray-700 dark:text-gray-300 hover:text-white"
+                }`}
+              >
+                {role === "ALL" ? "Semua" : role}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <form className="stack-form lfg-create-form" onSubmit={createLfg}>
-          <label>Nama game<input required maxLength={80} value={lfgGame} onChange={(event) => setLfgGame(event.target.value)} placeholder="Valorant" /></label>
-          <label>Jadwal<input required type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} /></label>
-          <label>Jumlah pemain total<input required type="number" min={2} max={20} value={partySlots} onChange={(event) => setPartySlots(event.target.value)} /></label>
-          <label>
-            Durasi aktif party
-            <select
-              value={durationHours}
-              onChange={(event) => setDurationHours(event.target.value)}
-              className="w-full bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded px-3 py-2 text-xs sm:text-sm text-gray-900 dark:text-white"
-            >
-              <option value="1">1 Jam (Mabar Kilat)</option>
-              <option value="3">3 Jam (Push Rank)</option>
-              <option value="6">6 Jam (Sesi Santai)</option>
-              <option value="12">12 Jam</option>
-              <option value="24">24 Jam (Default)</option>
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 form-wide">
+            <label>
+              Nama Game
+              <input
+                required
+                maxLength={80}
+                value={lfgGame}
+                onChange={(event) => setLfgGame(event.target.value)}
+                placeholder="Valorant / MLBB / CS2"
+              />
+            </label>
+
+            <label>
+              Target / Rank Minimal
+              <select
+                value={targetRank}
+                onChange={(event) => setTargetRank(event.target.value)}
+                className="w-full bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded px-3 py-2 text-xs sm:text-sm text-gray-900 dark:text-white"
+              >
+                <option value="Bebas">Bebas / Any Rank</option>
+                <option value="Iron - Bronze">Iron - Bronze</option>
+                <option value="Silver - Gold">Silver - Gold</option>
+                <option value="Platinum - Diamond">Platinum - Diamond</option>
+                <option value="Ascendant - Immortal">Ascendant - Immortal</option>
+                <option value="Mythic / Radiant">Mythic / Radiant</option>
+              </select>
+            </label>
+
+            <label>
+              Role yang Dicari
+              <select
+                value={roleNeeded}
+                onChange={(event) => setRoleNeeded(event.target.value)}
+                className="w-full bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded px-3 py-2 text-xs sm:text-sm text-gray-900 dark:text-white"
+              >
+                <option value="Flex">Flex (Bebas / Apa Saja)</option>
+                <option value="Duelist">Duelist / Carry</option>
+                <option value="Roamer">Roamer / Initiator</option>
+                <option value="Tank">Tank / Frontliner</option>
+                <option value="Support">Support / Healer</option>
+                <option value="Controller / Smoke">Controller / Smoke</option>
+              </select>
+            </label>
+
+            <label>
+              Tujuan Main
+              <select
+                value={playGoal}
+                onChange={(event) => setPlayGoal(event.target.value)}
+                className="w-full bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded px-3 py-2 text-xs sm:text-sm text-gray-900 dark:text-white"
+              >
+                <option value="Push Rank">⚔️ Push Rank (Fokus Menang)</option>
+                <option value="Mabar Santai">☕ Mabar Santai (Have Fun)</option>
+                <option value="Turnamen / Scrim">🏆 Turnamen / Scrim</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 form-wide">
+            <label>
+              Jadwal Sesi
+              <input
+                required
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(event) => setScheduledAt(event.target.value)}
+              />
+            </label>
+
+            <label>
+              Estimasi Jam Main
+              <input
+                required
+                maxLength={50}
+                value={playTime}
+                onChange={(event) => setPlayTime(event.target.value)}
+                placeholder="20.00 - 23.00 WIB"
+              />
+            </label>
+
+            <label>
+              Jumlah Pemain Total
+              <input
+                required
+                type="number"
+                min={2}
+                max={20}
+                value={partySlots}
+                onChange={(event) => setPartySlots(event.target.value)}
+              />
+            </label>
+
+            <label>
+              Durasi Aktif (Auto-Expire)
+              <select
+                value={durationHours}
+                onChange={(event) => setDurationHours(event.target.value)}
+                className="w-full bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded px-3 py-2 text-xs sm:text-sm text-gray-900 dark:text-white"
+              >
+                <option value="1">1 Jam (Mabar Kilat)</option>
+                <option value="3">3 Jam (Push Rank)</option>
+                <option value="6">6 Jam (Sesi Santai)</option>
+                <option value="12">12 Jam</option>
+                <option value="24">24 Jam (Default)</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="form-wide">
+            Deskripsi / Catatan Tambahan
+            <textarea
+              required
+              maxLength={500}
+              rows={2}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Contoh: Butuh 2 orang mic aktif, no toxic, gas push diamond!"
+            />
           </label>
-          <label className="form-wide">Deskripsi<textarea required maxLength={500} rows={2} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Butuh 2 orang untuk push rank jam 8 malam." /></label>
-          <button className="button button-primary"><Plus size={15} /> Posting jadwal</button>
+          <button className="button button-primary">
+            <Plus size={15} /> Publikasikan Jadwal Teammate
+          </button>
         </form>
+
         <div className="event-list">
-          {visibleLfgPosts.length === 0 && <p className="empty-state">{search ? "Tidak ada jadwal party yang cocok dengan pencarian." : "Belum ada party yang mencari anggota."}</p>}
+          {visibleLfgPosts.length === 0 && (
+            <p className="empty-state">
+              {search || filterGame !== "ALL" || filterGoal !== "ALL" || filterRole !== "ALL"
+                ? "Tidak ada jadwal party yang cocok dengan filter pencarian."
+                : "Belum ada party yang mencari anggota. Buat jadwal mabar di atas!"}
+            </p>
+          )}
           {visibleLfgPosts.map((post) => {
             const occupied = post.joins.length + 1;
             const isMember = post.isOwner || post.joinedByViewer;
@@ -305,27 +515,71 @@ export function EventsBoard() {
               <article className="event-card lfg-card" key={post.id}>
                 <div className="event-card-heading">
                   <div>
-                    <span className="event-game">{post.game}</span>
-                    <p>{new Date(post.scheduledAt).toLocaleString("id-ID")}</p>
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="event-game font-bold">{post.game}</span>
+                      <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                        {post.playGoal || "Mabar Santai"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      Jadwal: {new Date(post.scheduledAt).toLocaleString("id-ID")} {post.playTime ? `(${post.playTime})` : ""}
+                    </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className={`event-status ${post.status === "FULL" ? "border-amber-500 text-amber-500" : ""}`}>
                       {occupied}/{post.maxSlots} · {post.status}
                     </span>
                     {post.expiresAt && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25" title={`Kedaluwarsa otomatis pada ${new Date(post.expiresAt).toLocaleString("id-ID")}`}>
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25"
+                        title={`Kedaluwarsa otomatis pada ${new Date(post.expiresAt).toLocaleString("id-ID")}`}
+                      >
                         <Clock size={11} /> Expire: {formatRemainingTime(post.expiresAt)}
                       </span>
                     )}
                   </div>
                 </div>
-                <p className="event-description">{post.description}</p>
+
+                {/* GAMER PARAMETER BADGES */}
+                <div className="flex flex-wrap gap-2 my-2 py-1.5 px-2.5 rounded bg-gray-50 dark:bg-[#16121e] border border-gray-200 dark:border-[#211C2B] text-xs">
+                  <span className="text-gray-400">
+                    Target Rank: <strong className="text-amber-400">{post.targetRank || "Bebas"}</strong>
+                  </span>
+                  <span className="text-gray-500">·</span>
+                  <span className="text-gray-400">
+                    Role Dicari: <strong className="text-indigo-400">{post.roleNeeded || "Flex"}</strong>
+                  </span>
+                  {post.playTime && (
+                    <>
+                      <span className="text-gray-500">·</span>
+                      <span className="text-gray-400">
+                        Jam: <strong className="text-emerald-400">{post.playTime}</strong>
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                <p className="event-description text-sm leading-relaxed">{post.description}</p>
                 
-                <div className="lfg-footer">
-                  <span>Host: <strong>{post.author.username ?? "Gamer"}</strong></span>
-                  <div className="lfg-actions">
-                    <div className="flex flex-wrap gap-1.5 items-center mr-2">
-                      <span className="px-2 py-0.5 rounded bg-purple-900/30 text-purple-300 text-xs font-semibold">👑 {post.author.username ?? "Host"}</span>
+                <div className="lfg-footer mt-3 pt-3 border-t border-gray-100 dark:border-white/5">
+                  <div className="text-xs text-gray-400">
+                    Host:{" "}
+                    <strong className="text-purple-300">
+                      {post.author.username ?? "Gamer"}
+                      {post.author.inGameName ? ` (${post.author.inGameName})` : ""}
+                    </strong>
+                    {post.author.highestRank && (
+                      <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        {post.author.highestRank}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="lfg-actions mt-2 flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap gap-1.5 items-center mr-auto">
+                      <span className="px-2 py-0.5 rounded bg-purple-900/30 text-purple-300 text-xs font-semibold">
+                        👑 {post.author.username ?? "Host"}
+                      </span>
                       {post.joins.map((join, index) => (
                         <span key={`${join.username ?? "member"}-${index}`} className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-xs">
                           {join.username ?? "Gamer"}

@@ -39,6 +39,7 @@ export async function GET(request: Request) {
     announcements,
     siteConfig,
     sponsors,
+    escrowTransactions,
   ] = await prisma.$transaction([
     prisma.user.count(),
     prisma.post.count({
@@ -143,6 +144,16 @@ export async function GET(request: Request) {
     prisma.sponsor.findMany({
       orderBy: { createdAt: "desc" },
     }),
+    prisma.escrowTransaction.findMany({
+      include: {
+        post: { select: { id: true, title: true } },
+        buyer: { select: { id: true, username: true, discordId: true } },
+        seller: { select: { id: true, username: true, discordId: true } },
+        claimedBy: { select: { id: true, username: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 30,
+    }),
   ]);
 
   const defaultSiteConfig = {
@@ -176,6 +187,7 @@ export async function GET(request: Request) {
     announcements,
     siteConfig: siteConfig ?? defaultSiteConfig,
     sponsors,
+    escrowTransactions,
     pagination: { page, pageSize: PAGE_SIZE, total: totalUsers, totalPages: Math.ceil(totalUsers / PAGE_SIZE) },
     canManageRoles: access.user.role === Role.ADMIN,
     canBanMembers: true,

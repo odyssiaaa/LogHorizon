@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { DiscordAvatar } from "@/components/discord-avatar";
+import { EscrowChatModal } from "@/components/escrow-chat-modal";
 
 type Role = "MEMBER" | "MODERATOR" | "ADMIN";
 
@@ -123,6 +124,18 @@ type Sponsor = {
   createdAt: string;
 };
 
+type EscrowRecord = {
+  id: string;
+  amount: number;
+  status: string;
+  claimedById: string | null;
+  createdAt: string;
+  post: { id: string; title: string };
+  buyer: { id: string; username: string | null; discordId: string | null };
+  seller: { id: string; username: string | null; discordId: string | null };
+  claimedBy: { id: string; username: string | null } | null;
+};
+
 type DashboardData = {
   stats: {
     totalMembers: number;
@@ -141,6 +154,7 @@ type DashboardData = {
   announcements?: AnnouncementRecord[];
   siteConfig?: SiteConfig;
   sponsors?: Sponsor[];
+  escrowTransactions?: EscrowRecord[];
   pagination: { page: number; pageSize: number; total: number; totalPages: number };
   canManageRoles: boolean;
   canBanMembers: boolean;
@@ -158,6 +172,7 @@ export function AdminDashboard({ role }: { role: Role }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [selectedEscrowId, setSelectedEscrowId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -476,6 +491,27 @@ export function AdminDashboard({ role }: { role: Role }) {
       setNotice(`Status lapak diperbarui menjadi ${newStatus}.`);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Gagal memperbarui status lapak.");
+    } finally {
+      setBusyId("");
+    }
+  }
+
+  // Claim Escrow Ticket
+  async function claimEscrow(id: string) {
+    setBusyId(id);
+    setError("");
+    try {
+      const res = await fetch(`/api/escrow/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "claim" }),
+      });
+      await readApiResponse(res, "Gagal mengklaim tiket rekber.");
+      setNotice("Tiket Rekber berhasil diklaim! Membuka ruang chat rekber...");
+      setSelectedEscrowId(id);
+      await loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal mengklaim tiket rekber.");
     } finally {
       setBusyId("");
     }
@@ -1258,7 +1294,108 @@ export function AdminDashboard({ role }: { role: Role }) {
                   </div>
                 </div>
 
-                {/* 3. PANTAUAN REKBER MARKETPLACE */}
+                {/* 3. TIKET REKBER 3-PIHAK (CLAIM & RUANG CHAT) */}
+                <div className="p-5 rounded-xl border border-purple-500/30 bg-white dark:bg-[#120F17] shadow-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <ShieldAlert className="text-purple-400" size={18} />
+                        Tiket Transaksi Rekber 3-Pihak
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Klaim tiket rekber yang diajukan member, masuk ke ruang obrolan privat 3-pihak (Buyer, Seller, Admin), dan pantau transaksi.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs min-w-[700px]">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
+                          <th className="py-2.5">Lapak Transaksi</th>
+                          <th className="py-2.5">Buyer &amp; Seller</th>
+                          <th className="py-2.5">Nominal</th>
+                          <th className="py-2.5">Penengah Rekber</th>
+                          <th className="py-2.5">Status</th>
+                          <th className="py-2.5 text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
+                        {data?.escrowTransactions?.map((escrow) => {
+                          const isClaimedByMe = escrow.claimedById === data.currentUserId;
+                          const isUnclaimed = !escrow.claimedById;
+
+                          return (
+                            <tr key={escrow.id} className="hover:bg-purple-950/10">
+                              <td className="py-3 font-semibold text-gray-900 dark:text-white max-w-xs truncate">
+                                {escrow.post.title}
+                              </td>
+                              <td className="py-3 text-gray-400">
+                                <div>🛒 {escrow.buyer.username ?? "Buyer"}</div>
+                                <div>🏷️ {escrow.seller.username ?? "Seller"}</div>
+                              </td>
+                              <td className="py-3 font-bold text-emerald-400">
+                                {formatMoney.format(escrow.amount)}
+                              </td>
+                              <td className="py-3">
+                                {escrow.claimedBy ? (
+                                  <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                                    🛡️ {escrow.claimedBy.username}
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/20 animate-pulse">
+                                    Menunggu Claim
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    escrow.status === "COMPLETED"
+                                      ? "bg-emerald-500/15 text-emerald-400"
+                                      : escrow.status === "CANCELLED"
+                                        ? "bg-red-500/15 text-red-400"
+                                        : "bg-purple-500/15 text-purple-400"
+                                  }`}
+                                >
+                                  {escrow.status}
+                                </span>
+                              </td>
+                              <td className="py-3 text-right space-x-1.5 whitespace-nowrap">
+                                {isUnclaimed && escrow.status === "IN_ESCROW" && (
+                                  <button
+                                    type="button"
+                                    disabled={busyId === escrow.id}
+                                    onClick={() => void claimEscrow(escrow.id)}
+                                    className="px-2.5 py-1 rounded text-xs bg-[#9D4EDD] hover:bg-[#8338EC] text-white font-bold transition-all"
+                                  >
+                                    Ambil Tiket Rekber (Claim)
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedEscrowId(escrow.id)}
+                                  className="px-2.5 py-1 rounded text-xs border border-purple-500/40 text-purple-400 hover:bg-purple-500/10 font-medium transition-all"
+                                >
+                                  💬 Buka Ruang Chat
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {!data?.escrowTransactions?.length && (
+                          <tr>
+                            <td className="py-6 text-center text-gray-400" colSpan={6}>
+                              Belum ada transaksi rekber 3-pihak yang aktif.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 4. PANTAUAN REKBER MARKETPLACE */}
                 <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
                   <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
                     Pantauan Transaksi Lapak &amp; Rekber Marketplace
@@ -1723,6 +1860,15 @@ export function AdminDashboard({ role }: { role: Role }) {
           </div>
         </div>
       </div>
+
+      {/* MODAL RUANG REKBER 3-PIHAK */}
+      {selectedEscrowId && (
+        <EscrowChatModal
+          escrowId={selectedEscrowId}
+          onClose={() => setSelectedEscrowId(null)}
+          onStatusChange={loadDashboard}
+        />
+      )}
     </main>
   );
 }

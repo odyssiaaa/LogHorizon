@@ -36,7 +36,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [loginAction, setLoginAction] = useState("");
   const [reportId, setReportId] = useState<string | null>(null);
-  const [liveState, setLiveState] = useState<LiveState>(realtimeUrl ? "connecting" : "unavailable");
+  const [liveState, setLiveState] = useState<LiveState>("live");
   const [liveError, setLiveError] = useState("");
   const { data: session, status } = useSession();
   const user = session?.user;

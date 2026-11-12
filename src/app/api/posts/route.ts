@@ -52,11 +52,13 @@ export async function GET(request: Request) {
     const posts = await prisma.post.findMany({
       where,
       include: {
-        author: { select: { id: true, username: true, avatar: true, role: true, isPremium: true } },
+        author: { select: { id: true, username: true, avatar: true, role: true, isPremium: true, discordId: true } },
         votes: { where: { userId: viewer?.id ?? "" }, select: { value: true } },
         escrowTransactions: { where: { status: "IN_ESCROW" }, select: { id: true, buyerId: true, sellerId: true, status: true } },
       },
-      orderBy: priceOrder ? { createdAt: "desc" } : [{ isPinned: "desc" }, { createdAt: "desc" }],
+      orderBy: priceOrder
+        ? [{ isPinned: "desc" }, { createdAt: "desc" }]
+        : [{ isPinned: "desc" }, { author: { isPremium: "desc" } }, { createdAt: "desc" }],
     });
 
     const sellerIds = [...new Set(posts.map((p) => p.authorId))];
@@ -125,17 +127,21 @@ export async function POST(request: Request) {
       typeof market.price !== "number" ||
       !Number.isInteger(market.price) ||
       market.price < 0 ||
-      typeof market.contact !== "string" ||
-      !market.contact.trim() ||
       (market.imageUrl != null && (typeof market.imageUrl !== "string" || !isValidUrl(market.imageUrl))) ||
       !content
     ) return jsonError("Data lapak tidak valid. Gambar bersifat opsional, tetapi URL yang diberikan harus valid.", 400);
+
+    const contact = typeof market.contact === "string" && market.contact.trim()
+      ? market.contact.trim()
+      : user.discordId
+        ? `https://discord.com/users/${user.discordId}`
+        : `@${user.username ?? "member"}`;
 
     const marketData: MarketData = {
       type: market.type,
       game: market.game.trim(),
       price: market.price,
-      contact: market.contact.trim(),
+      contact,
       imageUrl: typeof market.imageUrl === "string" ? market.imageUrl : null,
       status: "AVAILABLE",
     };

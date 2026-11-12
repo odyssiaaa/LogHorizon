@@ -75,6 +75,13 @@ model User {
   email          String?             @unique
   emailVerified  DateTime?
   image          String?
+
+  // Gamer Profile
+  favoriteGames  String[]            @default([])
+  inGameName     String?
+  highestRank    String?
+  primaryRole    String?
+
   accounts       Account[]
   sessions       Session[]
   posts          Post[]
@@ -86,6 +93,8 @@ model User {
   lfgJoins       LfgJoin[]
   escrowAsBuyer  EscrowTransaction[] @relation("EscrowBuyer")
   escrowAsSeller EscrowTransaction[] @relation("EscrowSeller")
+  escrowClaimed  EscrowTransaction[] @relation("EscrowClaimedBy")
+  escrowMessages EscrowMessage[]
   donations      Donation[]
   notifications  Notification[]
   announcements  Announcement[]
@@ -125,6 +134,10 @@ model LfgPost {
   scheduledAt DateTime
   maxSlots    Int
   status      LfgStatus @default(OPEN)
+  targetRank  String?   @default("Bebas")
+  roleNeeded  String?   @default("Flex")
+  playGoal    String?   @default("Mabar Santai")
+  playTime    String?   @default("Malam ini")
   expiresAt   DateTime  @default(now())
   createdAt   DateTime  @default(now())
   author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -147,20 +160,36 @@ model LfgJoin {
 }
 
 model EscrowTransaction {
-  id          String       @id @default(cuid())
+  id          String          @id @default(cuid())
   postId      String
   buyerId     String
   sellerId    String
+  claimedById String?
   amount      Int
-  status      EscrowStatus @default(IN_ESCROW)
-  createdAt   DateTime     @default(now())
+  status      EscrowStatus    @default(IN_ESCROW)
+  isLocked    Boolean         @default(false)
+  createdAt   DateTime        @default(now())
   completedAt DateTime?
-  post        Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
-  buyer       User         @relation("EscrowBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
-  seller      User         @relation("EscrowSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  post        Post            @relation(fields: [postId], references: [id], onDelete: Cascade)
+  buyer       User            @relation("EscrowBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller      User            @relation("EscrowSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  claimedBy   User?           @relation("EscrowClaimedBy", fields: [claimedById], references: [id], onDelete: SetNull)
+  messages    EscrowMessage[]
 
   @@index([status, createdAt])
   @@index([postId, status])
+}
+
+model EscrowMessage {
+  id        String            @id @default(cuid())
+  escrowId  String
+  senderId  String
+  message   String            @db.Text
+  createdAt DateTime          @default(now())
+  escrow    EscrowTransaction @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+  sender    User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([escrowId, createdAt])
 }
 
 model Donation {

@@ -11,6 +11,58 @@ type DiscordTokenResponse = {
 export async function GET() {
   const user = await authenticatedUser();
   if (!user) return jsonError("Login diperlukan.", 401);
+
+  const [postsCount, successfulTrades, donationsCount, lfgCount] = await Promise.all([
+    prisma.post.count({ where: { authorId: user.id, category: { not: "MARKETPLACE" } } }),
+    prisma.escrowTransaction.count({
+      where: {
+        OR: [{ buyerId: user.id }, { sellerId: user.id }],
+        status: "COMPLETED",
+      },
+    }),
+    prisma.donation.count({
+      where: { userId: user.id, status: { in: ["APPROVED", "SUCCEEDED"] } },
+    }),
+    prisma.lfgPost.count({ where: { authorId: user.id } }),
+  ]);
+
+  const achievements = [
+    {
+      id: "discussion-starter",
+      title: "🗣️ Pembuka Diskusi",
+      desc: "Menerbitkan minimal 1 thread diskusi di forum guild.",
+      unlocked: postsCount >= 1,
+    },
+    {
+      id: "trusted-trader",
+      title: "🛡️ Pedagang Terpercaya",
+      desc: "Menyelesaikan minimal 1 transaksi aman via Rekber Guild.",
+      unlocked: successfulTrades >= 1,
+    },
+    {
+      id: "guild-supporter",
+      title: "💎 Penyokong Guild",
+      desc: "Berdonasi mendukung operasional server perbendaharaan.",
+      unlocked:
+        donationsCount >= 1 ||
+        user.badges.includes("Knight") ||
+        user.badges.includes("High Merchant") ||
+        user.badges.includes("Noble Patron"),
+    },
+    {
+      id: "party-veteran",
+      title: "⚔️ Veteran Party",
+      desc: "Membuka pencarian tim di Find Teammate / LFG.",
+      unlocked: lfgCount >= 1,
+    },
+    {
+      id: "verified-gamer",
+      title: "🎮 Gamer Terverifikasi",
+      desc: "Melengkapi ID game dan role favorit di profil.",
+      unlocked: Boolean(user.inGameName && user.primaryRole),
+    },
+  ];
+
   return Response.json({
     id: user.id,
     discordId: user.discordId,
@@ -20,6 +72,56 @@ export async function GET() {
     xp: user.xp,
     role: user.role,
     isPremium: user.isPremium,
+    favoriteGames: user.favoriteGames ?? [],
+    inGameName: user.inGameName ?? "",
+    highestRank: user.highestRank ?? "",
+    primaryRole: user.primaryRole ?? "",
+    achievements,
+  });
+}
+
+export async function PATCH(request: Request) {
+  const user = await authenticatedUser();
+  if (!user) return jsonError("Login diperlukan.", 401);
+
+  const payload: unknown = await request.json();
+  const body = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+
+  const favoriteGames = Array.isArray(body.favoriteGames)
+    ? body.favoriteGames.filter((g): g is string => typeof g === "string").slice(0, 10)
+    : undefined;
+  const inGameName = typeof body.inGameName === "string" ? body.inGameName.trim().slice(0, 80) : undefined;
+  const highestRank = typeof body.highestRank === "string" ? body.highestRank.trim().slice(0, 50) : undefined;
+  const primaryRole = typeof body.primaryRole === "string" ? body.primaryRole.trim().slice(0, 50) : undefined;
+
+  const updated = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      ...(favoriteGames !== undefined ? { favoriteGames } : {}),
+      ...(inGameName !== undefined ? { inGameName } : {}),
+      ...(highestRank !== undefined ? { highestRank } : {}),
+      ...(primaryRole !== undefined ? { primaryRole } : {}),
+    },
+    select: {
+      id: true,
+      discordId: true,
+      username: true,
+      avatar: true,
+      level: true,
+      xp: true,
+      role: true,
+      isPremium: true,
+      favoriteGames: true,
+      inGameName: true,
+      highestRank: true,
+      primaryRole: true,
+    },
+  });
+
+  return Response.json({
+    success: true,
+    profile: updated,
+    message: "Profil gamer berhasil disimpan!",
   });
 }
 

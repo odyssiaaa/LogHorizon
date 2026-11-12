@@ -2,15 +2,18 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
+  Award,
   Calendar,
   CheckCircle2,
   Crown,
   ExternalLink,
   Flame,
+  Gamepad2,
   MessageSquare,
   Shield,
   ShieldCheck,
   Sparkles,
+  Sword,
   Trophy,
   Zap,
 } from "lucide-react";
@@ -61,10 +64,55 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
   if (!user) notFound();
 
-  // Query successful sales count
-  const successfulSales = await prisma.escrowTransaction.count({
-    where: { sellerId: user.id, status: "COMPLETED" },
-  });
+  // Query achievements stats
+  const [successfulSales, postsCount, donationsCount, lfgCount] = await Promise.all([
+    prisma.escrowTransaction.count({
+      where: {
+        OR: [{ sellerId: user.id }, { buyerId: user.id }],
+        status: "COMPLETED",
+      },
+    }),
+    prisma.post.count({ where: { authorId: user.id, category: { not: "MARKETPLACE" } } }),
+    prisma.donation.count({ where: { userId: user.id, status: { in: ["APPROVED", "SUCCEEDED"] } } }),
+    prisma.lfgPost.count({ where: { authorId: user.id } }),
+  ]);
+
+  const achievements = [
+    {
+      id: "discussion-starter",
+      title: "🗣️ Pembuka Diskusi",
+      desc: "Menerbitkan thread diskusi di forum",
+      unlocked: postsCount >= 1,
+    },
+    {
+      id: "trusted-trader",
+      title: "🛡️ Pedagang Terpercaya",
+      desc: "Transaksi aman via Rekber Guild",
+      unlocked: successfulSales >= 1,
+    },
+    {
+      id: "guild-supporter",
+      title: "💎 Penyokong Guild",
+      desc: "Donatur kas perbendaharaan",
+      unlocked:
+        donationsCount >= 1 ||
+        user.badges.includes("Knight") ||
+        user.badges.includes("High Merchant") ||
+        user.badges.includes("Noble Patron"),
+    },
+    {
+      id: "party-veteran",
+      title: "⚔️ Veteran Party",
+      desc: "Pencari tim di Find Teammate / LFG",
+      unlocked: lfgCount >= 1,
+    },
+    {
+      id: "verified-gamer",
+      title: "🎮 Gamer Terverifikasi",
+      desc: "ID Game & role favorit lengkap",
+      unlocked: Boolean(user.inGameName && user.primaryRole),
+    },
+  ];
 
   const isOwner = user.username?.toLowerCase() === ".odyssia" || user.name?.toLowerCase() === ".odyssia";
   const xpNeeded = user.level * 100;
@@ -162,10 +210,66 @@ export default async function PublicProfilePage({ params }: PageProps) {
         </div>
       </div>
 
+      {/* Gamer Profile Card */}
+      {(user.inGameName || user.primaryRole || user.highestRank || (user.favoriteGames && user.favoriteGames.length > 0)) && (
+        <div className="p-5 sm:p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] shadow-sm mb-8">
+          <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+            <Gamepad2 size={18} className="text-[#9D4EDD]" /> Profil Gamer &amp; Posisi Main (Find Teammate)
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#211C2B]">
+              <span className="text-[10px] text-gray-400 block font-semibold uppercase">IGN / ID Game</span>
+              <strong className="text-gray-900 dark:text-white block mt-0.5 truncate">{user.inGameName || "-"}</strong>
+            </div>
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#211C2B]">
+              <span className="text-[10px] text-gray-400 block font-semibold uppercase">Role Utama</span>
+              <strong className="text-[#9D4EDD] dark:text-[#C77DFF] block mt-0.5 truncate">{user.primaryRole || "-"}</strong>
+            </div>
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#211C2B]">
+              <span className="text-[10px] text-gray-400 block font-semibold uppercase">Rank Tertinggi</span>
+              <strong className="text-amber-500 block mt-0.5 truncate">{user.highestRank || "-"}</strong>
+            </div>
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#211C2B]">
+              <span className="text-[10px] text-gray-400 block font-semibold uppercase">Game Favorit</span>
+              <strong className="text-gray-800 dark:text-gray-200 block mt-0.5 truncate">
+                {user.favoriteGames?.length ? user.favoriteGames.join(", ") : "-"}
+              </strong>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Grid: Badges & Threads */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Left Column: Badges & Reputation */}
         <div className="space-y-6">
+          {/* Achievements */}
+          <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+            <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
+              <Award size={16} className="text-[#9D4EDD]" /> Pencapaian (Achievements)
+            </h2>
+            <div className="space-y-2">
+              {achievements.map((ach) => (
+                <div
+                  key={ach.id}
+                  className={`p-2.5 rounded-lg border flex items-center justify-between text-xs ${
+                    ach.unlocked
+                      ? "bg-purple-500/10 border-purple-500/30 text-gray-900 dark:text-white"
+                      : "bg-gray-50/50 dark:bg-[#08060B]/50 border-gray-100 dark:border-[#211C2B] opacity-50 text-gray-400"
+                  }`}
+                >
+                  <div>
+                    <span className="font-bold block text-[11px]">{ach.title}</span>
+                    <span className="text-[10px] text-gray-400">{ach.desc}</span>
+                  </div>
+                  <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${ach.unlocked ? "text-emerald-400 bg-emerald-500/15" : "text-gray-400"}`}>
+                    {ach.unlocked ? "TERBUKA" : "LOCKED"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
             <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
               <Trophy size={16} className="text-amber-500" /> Lencana Kehormatan

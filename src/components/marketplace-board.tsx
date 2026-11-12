@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ArrowDownUp, Flag, Loader2, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
+import { ArrowDownUp, Flag, Loader2, Plus, Search, ShieldCheck, ShoppingBag, Trash2, X } from "lucide-react";
 import { isPublicMarketData } from "@/lib/market-data";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
@@ -12,6 +12,7 @@ import { DiscordAvatar } from "@/components/discord-avatar";
 import { createRealtimeClient, type SealedLiveQuery } from "@neon/realtime/client";
 import { PostReactions } from "@/components/post-reactions";
 import { SkeletonMarketCard, TacticalEmptyState } from "@/components/ui-feedback";
+import { EscrowChatModal } from "@/components/escrow-chat-modal";
 import type { MarketplacePostRecord } from "@/types/community";
 import { motion } from "framer-motion";
 
@@ -53,7 +54,8 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [contacts, setContacts] = useState<Record<string, { userId: string; contact: string; discordId?: string | null; sellerUsername?: string | null }>>({});
   const [contactLoading, setContactLoading] = useState("");
   const [escrowLoading, setEscrowLoading] = useState("");
-  const [liveState, setLiveState] = useState<LiveState>(realtimeUrl ? "connecting" : "unavailable");
+  const [activeEscrowModalId, setActiveEscrowModalId] = useState<string | null>(null);
+  const [liveState, setLiveState] = useState<LiveState>("live");
 
   async function performContactAction(id: string, contactData: { contact: string; discordId?: string | null; sellerUsername?: string | null }, preopenedWindow?: Window | null) {
     const value = contactData.contact;
@@ -204,8 +206,11 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
     try {
       setEscrowLoading(id);
       const response = await fetch(`/api/posts/${id}/escrow`, { method: "POST" });
-      const data = await readApiResponse<{ notice: string }>(response, "Transaksi escrow gagal dimulai.");
+      const data = await readApiResponse<{ transaction?: { id: string }; notice: string }>(response, "Transaksi escrow gagal dimulai.");
       setNotice(data.notice);
+      if (data.transaction?.id) {
+        setActiveEscrowModalId(data.transaction.id);
+      }
       setRefreshKey((value) => value + 1);
     } catch (reason) {
       setNotice(reason instanceof Error ? reason.message : "Transaksi escrow gagal dimulai.");
@@ -326,7 +331,20 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
         if (!isPublicMarketData(post.marketData)) return <article className="market-card" key={post.id}><p className="inline-error">Data lapak tidak valid.</p></article>;
         const market = post.marketData;
         return <motion.article className={`market-card ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
-          <div className="market-listing-labels flex flex-wrap gap-1.5 mb-3">{post.isPinned && <span className="pinned-label">PINNED</span>}<span className={market.type === "WTS" ? "trade-badge wts" : "trade-badge wtb"}>{market.type}</span><span className="market-label-game">{market.game}</span><span className="market-label-price">{money.format(market.price)}</span><span className={`status-badge ${market.status === "AVAILABLE" ? "available" : market.status === "IN_ESCROW" ? "in-escrow" : "sold"}`}>{market.status === "IN_ESCROW" ? "IN ESCROW" : market.status}</span></div>
+          <div className="market-listing-labels flex flex-wrap gap-1.5 mb-3">
+            {post.isPinned && <span className="pinned-label">PINNED</span>}
+            {post.author.isPremium && (
+              <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                ✦ PREMIUM SELLER / VERIFIED
+              </span>
+            )}
+            <span className={market.type === "WTS" ? "trade-badge wts" : "trade-badge wtb"}>{market.type}</span>
+            <span className="market-label-game">{market.game}</span>
+            <span className="market-label-price">{money.format(market.price)}</span>
+            <span className={`status-badge ${market.status === "AVAILABLE" ? "available" : market.status === "IN_ESCROW" ? "in-escrow" : "sold"}`}>
+              {market.status === "IN_ESCROW" ? "IN ESCROW" : market.status}
+            </span>
+          </div>
           <div className="market-image"><MarketImage src={market.imageUrl} alt={`Bukti lapak ${post.title}`} /></div>
           <div className="market-card-body"><h2 className="text-lg sm:text-xl font-bold break-words text-gray-900 dark:text-white">{post.title}</h2><p className="market-game">{market.game}</p><p className="market-price">{money.format(market.price)}</p><p className="market-description break-words text-xs sm:text-sm">{post.content}</p>
             <div className="market-card-meta flex flex-wrap items-center justify-between gap-2">
@@ -373,7 +391,24 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               </button>
             )}
             <div className="market-card-actions flex flex-wrap gap-2 mt-4">
-              {market.status === "AVAILABLE" && market.type === "WTS" && user?.id !== post.authorId && <button className="button button-primary" disabled={escrowLoading === post.id} onClick={() => void startEscrow(post.id)}>{escrowLoading === post.id ? "Memproses…" : "Ajukan transaksi escrow"}</button>}
+              {market.status === "AVAILABLE" && market.type === "WTS" && user?.id !== post.authorId && (
+                <button
+                  className="button button-primary"
+                  disabled={escrowLoading === post.id}
+                  onClick={() => void startEscrow(post.id)}
+                >
+                  {escrowLoading === post.id ? "Memproses…" : "🛡️ Beli via Rekber Guild"}
+                </button>
+              )}
+              {post.escrowTransactions?.map((transaction) => (
+                <button
+                  key={transaction.id}
+                  className="button button-quiet text-xs flex items-center gap-1 border-purple-500/40 text-purple-400"
+                  onClick={() => setActiveEscrowModalId(transaction.id)}
+                >
+                  <ShieldCheck size={13} /> Ruang Rekber 3-Pihak
+                </button>
+              ))}
               {(user?.id === post.authorId || user?.role === "ADMIN" || user?.role === "MODERATOR") && market.status !== "IN_ESCROW" && <button className="button button-quiet" disabled={escrowLoading === post.id} onClick={() => void updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD")}>{market.status === "SOLD" ? "Tandai tersedia" : "Tandai terjual"}</button>}
               {post.escrowTransactions?.filter((transaction) => transaction.sellerId === user?.id || user?.role === "ADMIN" || user?.role === "MODERATOR").map((transaction) => <button key={transaction.id} className="button button-sold" disabled={escrowLoading === post.id} onClick={() => void completeEscrow(transaction.id, post.id)}>{escrowLoading === post.id ? "Memproses…" : "Konfirmasi transaksi selesai"}</button>)}
               <button className="report-button" onClick={() => void report(post.id)}><Flag size={14} /> Laporkan Penjual</button>
@@ -401,6 +436,13 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
     )}
   </div>
     {compose && <MarketModal canPin={Boolean(user?.isPremium)} onClose={() => setCompose(false)} onCreated={() => { setCompose(false); setRefreshKey((value) => value + 1); }} />}
+    {activeEscrowModalId && (
+      <EscrowChatModal
+        escrowId={activeEscrowModalId}
+        onClose={() => setActiveEscrowModalId(null)}
+        onStatusChange={() => setRefreshKey((value) => value + 1)}
+      />
+    )}
     <LoginPrompt open={Boolean(loginAction)} action={loginAction} onClose={() => setLoginAction("")} />
     <ReportDialog postId={reportId} open={Boolean(reportId)} onClose={() => setReportId(null)} onSuccess={setNotice} />
   </main>;
@@ -411,7 +453,6 @@ function MarketModal({ canPin, onClose, onCreated }: { canPin: boolean; onClose:
   const [type, setType] = useState<"WTS" | "WTB">("WTS");
   const [game, setGame] = useState("");
   const [price, setPrice] = useState("");
-  const [contact, setContact] = useState("");
   const [content, setContent] = useState("");
   const [isPinned, setIsPinned] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -436,7 +477,17 @@ function MarketModal({ canPin, onClose, onCreated }: { canPin: boolean; onClose:
         const upload = await readApiResponse<{ imageUrl: string }>(uploadResponse, "Gambar gagal diunggah.");
         imageUrl = upload.imageUrl;
       }
-      const response = await fetch("/api/posts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category: "MARKETPLACE", title, content, isPinned, marketData: { type, game, price: Number(price), contact, imageUrl } }) });
+      const response = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: "MARKETPLACE",
+          title,
+          content,
+          isPinned,
+          marketData: { type, game, price: Number(price), imageUrl },
+        }),
+      });
       await readApiResponse<unknown>(response, "Lapak gagal dibuat.");
       onCreated();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Lapak gagal dibuat."); }
@@ -446,7 +497,14 @@ function MarketModal({ canPin, onClose, onCreated }: { canPin: boolean; onClose:
   return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="modal-card market-modal" role="dialog" aria-modal="true" aria-labelledby="market-modal-title"><button className="modal-close" onClick={onClose} aria-label="Tutup"><X size={19} /></button><p className="section-kicker">PASANG LAPAK</p><h2 id="market-modal-title">Buat Lapak Baru</h2><form className="stack-form" onSubmit={submit}>
     <label>Judul Lapak<input required maxLength={180} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Contoh: Akun Genshin AR 60" /></label>
     <div className="form-grid-two"><label>Tipe Transaksi<select value={type} onChange={(event) => setType(event.target.value as "WTS" | "WTB")}><option value="WTS">WTS · Saya menjual</option><option value="WTB">WTB · Saya mencari</option></select></label><label>Nama Game<input required value={game} onChange={(event) => setGame(event.target.value)} placeholder="Nama game" /></label></div>
-    <div className="form-grid-two"><label>Harga (Rupiah)<input required type="number" min="0" step="1" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="250000" /></label><label>Kontak Penjual (Discord/WA)<input required value={contact} onChange={(event) => setContact(event.target.value)} placeholder="username atau nomor WA" /></label></div>
+    <div className="form-grid-two">
+      <label>Harga (Rupiah)<input required type="number" min="0" step="1" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="250000" /></label>
+      <div className="flex flex-col justify-end">
+        <p className="text-xs text-purple-400 bg-purple-950/20 border border-purple-500/30 rounded p-2.5">
+          🛡️ <strong>Kontak Otomatis Discord:</strong> Pembeli akan diarahkan langsung ke profil Discord resmi akun Anda saat menghubungi penjual.
+        </p>
+      </div>
+    </div>
     <label>Deskripsi<textarea required maxLength={10000} rows={4} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Jelaskan detail barang dan ketentuan transaksi…" /></label>
     {canPin && <label className="form-checkbox"><input type="checkbox" checked={isPinned} onChange={(event) => setIsPinned(event.target.checked)} /> Sematkan lapak (Premium, maks. 3)</label>}
     <label>Foto barang (opsional)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => {
