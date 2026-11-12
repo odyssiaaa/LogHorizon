@@ -72,8 +72,24 @@ export async function POST(request: Request) {
   const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
   const game = typeof data.game === "string" ? data.game.trim() : "";
   const description = typeof data.description === "string" ? data.description.trim() : "";
-  const maxSlots = Number(data.maxSlots);
-  const scheduledAt = typeof data.scheduledAt === "string" ? new Date(data.scheduledAt) : new Date(Number.NaN);
+  
+  // Slot calculations: can be directly maxSlots or calculated from slotsNeeded (host + needed)
+  let maxSlots = Number(data.maxSlots);
+  if (!Number.isInteger(maxSlots) || maxSlots < 2) {
+    const needed = Number(data.slotsNeeded ?? 2);
+    maxSlots = Number.isInteger(needed) && needed >= 1 && needed <= 19 ? needed + 1 : 5;
+  }
+
+  // Schedule: if not provided or in past, default to upcoming session (1 hour ahead)
+  let scheduledAt: Date;
+  if (typeof data.scheduledAt === "string" && data.scheduledAt.trim()) {
+    const parsed = new Date(data.scheduledAt);
+    scheduledAt = !Number.isNaN(parsed.getTime()) && parsed > new Date()
+      ? parsed
+      : new Date(Date.now() + 60 * 60 * 1000);
+  } else {
+    scheduledAt = new Date(Date.now() + 60 * 60 * 1000);
+  }
 
   const targetRank = typeof data.targetRank === "string" && data.targetRank.trim() ? data.targetRank.trim().slice(0, 50) : "Bebas";
   const roleNeeded = typeof data.roleNeeded === "string" && data.roleNeeded.trim() ? data.roleNeeded.trim().slice(0, 50) : "Flex";
@@ -87,11 +103,9 @@ export async function POST(request: Request) {
     description.length > 500 ||
     !Number.isInteger(maxSlots) ||
     maxSlots < 2 ||
-    maxSlots > 20 ||
-    Number.isNaN(scheduledAt.getTime()) ||
-    scheduledAt <= new Date()
+    maxSlots > 20
   ) {
-    return jsonError("Game, deskripsi, jadwal mendatang, dan slot party tidak valid.", 400);
+    return jsonError("Nama game, deskripsi ajakan, dan slot pemain tidak valid.", 400);
   }
 
   // Durasi kustom dengan default 24 jam
