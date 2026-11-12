@@ -106,100 +106,202 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
         </button>
       </div>
 
-      <motion.div key={activeTab} className="leaderboard-panel" role="tabpanel" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }}>
+      <motion.div key={activeTab} className="leaderboard-panel w-full" role="tabpanel" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }}>
         {activeTab === "adventurers" ? (
-          <div className="leaderboard-table-wrap w-full overflow-x-auto scrollbar-none">
-            <table className="leaderboard-table">
-              <thead>
-                <tr>
-                  <th scope="col">Rank</th>
-                  <th scope="col">Player</th>
-                  <th scope="col" className="numeric-cell">Level</th>
-                  <th scope="col" className="numeric-cell hidden md:table-cell">XP total</th>
-                  <th scope="col" className="badge-cell">Kasta / Badge</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredMembers.map((member, index) => {
-                  const RankIcon = rankIcons[index];
-                  const iconSize = topIconSizes[index] ?? 16;
-                  return (
-                    <motion.tr
-                      key={member.id}
-                      className={index < 3 ? `adventurer-rank rank-${index + 1}` : ""}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: Math.min(index, 9) * 0.035 }}
-                    >
-                      <td className="leaderboard-rank">
-                        {RankIcon ? <RankIcon aria-label={`Peringkat ${index + 1}`} size={iconSize} /> : `#${index + 1}`}
-                      </td>
-                      <td className={`leaderboard-player${member.isPremium ? " premium-username" : ""}`}>
-                        <Link href={`/u/${member.username ?? "user"}`} className="hover:text-[#9D4EDD] hover:underline font-bold">
+          <div>
+            {/* MOBILE LIST CARDS (< md) */}
+            <div className="md:hidden space-y-2.5">
+              {filteredMembers.map((member, index) => {
+                const RankIcon = rankIcons[index];
+                const iconSize = topIconSizes[index] ?? 16;
+                const badge = member.badges.length ? member.badges[0] : roleLabels[member.role];
+                return (
+                  <motion.div
+                    key={member.id}
+                    className={`flex items-center justify-between gap-3 p-3.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] ${
+                      index < 3 ? "border-[#9D4EDD]/40 bg-[#9D4EDD]/5" : ""
+                    }`}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index, 9) * 0.035 }}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] font-black text-xs">
+                        {RankIcon ? <RankIcon size={iconSize} /> : `#${index + 1}`}
+                      </div>
+                      <div className="min-w-0">
+                        <Link
+                          href={`/u/${member.username ?? "user"}`}
+                          className={`block font-bold text-sm truncate hover:text-[#9D4EDD] text-gray-900 dark:text-white ${
+                            member.isPremium ? "text-[#9D4EDD]" : ""
+                          }`}
+                        >
                           {member.username ?? "Gamer"}
                         </Link>
-                      </td>
-                      <td className="numeric-cell">{member.level}</td>
-                      <td className="numeric-cell hidden md:table-cell">{member.xp.toLocaleString("id-ID")}</td>
-                      <td className="badge-cell">
-                        <div className="leaderboard-badges">
-                          {(member.badges.length ? member.badges.slice(0, 2) : [roleLabels[member.role]]).map((badge) => (
-                            <span className="leaderboard-badge" key={badge}>{badge}</span>
-                          ))}
-                        </div>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-                {filteredMembers.length === 0 && (
-                  <tr><td className="leaderboard-empty" colSpan={5}>{search ? `Tidak ada petualang yang cocok dengan "${search}".` : "Belum ada data peringkat. XP akan tercatat setelah anggota mulai beraktivitas."}</td></tr>
-                )}
-              </tbody>
-            </table>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                          Lv. <strong className="text-gray-900 dark:text-gray-200">{member.level}</strong> • {member.xp.toLocaleString("id-ID")} XP
+                        </p>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <span className="whitespace-nowrap px-2.5 py-1 text-[11px] font-bold rounded bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
+                        {badge}
+                      </span>
+                    </div>
+                  </motion.div>
+                );
+              })}
+              {filteredMembers.length === 0 && (
+                <div className="p-8 text-center text-sm text-gray-400 bg-white dark:bg-[#120F17] rounded-lg border border-gray-200 dark:border-[#211C2B]">
+                  {search ? `Tidak ada petualang yang cocok dengan "${search}".` : "Belum ada data peringkat petualang."}
+                </div>
+              )}
+            </div>
+
+            {/* DESKTOP TABLE (>= md) */}
+            <div className="hidden md:block leaderboard-table-wrap w-full overflow-x-auto scrollbar-none">
+              <table className="leaderboard-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Rank</th>
+                    <th scope="col">Player</th>
+                    <th scope="col" className="numeric-cell">Level</th>
+                    <th scope="col" className="numeric-cell">XP total</th>
+                    <th scope="col" className="badge-cell">Kasta / Badge</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMembers.map((member, index) => {
+                    const RankIcon = rankIcons[index];
+                    const iconSize = topIconSizes[index] ?? 16;
+                    return (
+                      <motion.tr
+                        key={member.id}
+                        className={index < 3 ? `adventurer-rank rank-${index + 1}` : ""}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: Math.min(index, 9) * 0.035 }}
+                      >
+                        <td className="leaderboard-rank">
+                          {RankIcon ? <RankIcon aria-label={`Peringkat ${index + 1}`} size={iconSize} /> : `#${index + 1}`}
+                        </td>
+                        <td className={`leaderboard-player${member.isPremium ? " premium-username" : ""}`}>
+                          <Link href={`/u/${member.username ?? "user"}`} className="hover:text-[#9D4EDD] hover:underline font-bold">
+                            {member.username ?? "Gamer"}
+                          </Link>
+                        </td>
+                        <td className="numeric-cell">{member.level}</td>
+                        <td className="numeric-cell">{member.xp.toLocaleString("id-ID")}</td>
+                        <td className="badge-cell">
+                          <div className="leaderboard-badges">
+                            {(member.badges.length ? member.badges.slice(0, 2) : [roleLabels[member.role]]).map((badge) => (
+                              <span className="leaderboard-badge" key={badge}>{badge}</span>
+                            ))}
+                          </div>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                  {filteredMembers.length === 0 && (
+                    <tr><td className="leaderboard-empty" colSpan={5}>{search ? `Tidak ada petualang yang cocok dengan "${search}".` : "Belum ada data peringkat. XP akan tercatat setelah anggota mulai beraktivitas."}</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
-          <div className="leaderboard-table-wrap w-full overflow-x-auto scrollbar-none">
-            <table className="leaderboard-table benefactor-table">
-              <thead>
-                <tr>
-                  <th scope="col">Rank</th>
-                  <th scope="col">Benefactor</th>
-                  <th scope="col" className="numeric-cell">Kontribusi</th>
-                  <th scope="col" className="badge-cell">Kasta</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredBenefactors.map((member, index) => {
-                  const RoyaltyIcon = royaltyIcons[index];
-                  const iconSize = topIconSizes[index] ?? 16;
-                  return (
-                    <motion.tr
-                      key={member.id}
-                      className={`benefactor-rank rank-${index + 1}`}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: Math.min(index, 9) * 0.035 }}
-                    >
-                      <td className="leaderboard-rank">
-                        {RoyaltyIcon ? <RoyaltyIcon aria-label={`Peringkat ${index + 1}`} size={iconSize} /> : `#${index + 1}`}
-                      </td>
-                      <td className="leaderboard-player font-bold">
-                        <Link href={`/u/${member.username ?? "user"}`} className="hover:text-[#9D4EDD] hover:underline">
+          <div>
+            {/* MOBILE LIST CARDS FOR BENEFACTORS (< md) */}
+            <div className="md:hidden space-y-2.5">
+              {filteredBenefactors.map((member, index) => {
+                const RoyaltyIcon = royaltyIcons[index];
+                const iconSize = topIconSizes[index] ?? 16;
+                const tier = benefactorTier(member.badges);
+                return (
+                  <motion.div
+                    key={member.id}
+                    className={`flex items-center justify-between gap-3 p-3.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] ${
+                      index < 3 ? "border-[#9D4EDD]/40 bg-[#9D4EDD]/5" : ""
+                    }`}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index, 9) * 0.035 }}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] font-black text-xs">
+                        {RoyaltyIcon ? <RoyaltyIcon size={iconSize} /> : `#${index + 1}`}
+                      </div>
+                      <div className="min-w-0">
+                        <Link
+                          href={`/u/${member.username ?? "user"}`}
+                          className="block font-bold text-sm truncate hover:text-[#9D4EDD] text-gray-900 dark:text-white"
+                        >
                           {member.username ?? "Gamer"}
                         </Link>
-                      </td>
-                      <td className="numeric-cell">{currency.format(member.total)}</td>
-                      <td className="badge-cell">
-                        <span className="leaderboard-badge donor-tier">{benefactorTier(member.badges)}</span>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-                {filteredBenefactors.length === 0 && (
-                  <tr><td className="leaderboard-empty" colSpan={4}>{search ? `Tidak ada donatur yang cocok dengan "${search}".` : "Belum ada kontribusi terverifikasi yang tercatat."}</td></tr>
-                )}
-              </tbody>
-            </table>
+                        <p className="text-[11px] font-semibold text-purple-600 dark:text-purple-300 truncate">
+                          {currency.format(member.total)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <span className="whitespace-nowrap px-2.5 py-1 text-[11px] font-bold rounded bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
+                        {tier}
+                      </span>
+                    </div>
+                  </motion.div>
+                );
+              })}
+              {filteredBenefactors.length === 0 && (
+                <div className="p-8 text-center text-sm text-gray-400 bg-white dark:bg-[#120F17] rounded-lg border border-gray-200 dark:border-[#211C2B]">
+                  {search ? `Tidak ada donatur yang cocok dengan "${search}".` : "Belum ada kontribusi terverifikasi yang tercatat."}
+                </div>
+              )}
+            </div>
+
+            {/* DESKTOP TABLE FOR BENEFACTORS (>= md) */}
+            <div className="hidden md:block leaderboard-table-wrap w-full overflow-x-auto scrollbar-none">
+              <table className="leaderboard-table benefactor-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Rank</th>
+                    <th scope="col">Benefactor</th>
+                    <th scope="col" className="numeric-cell">Kontribusi</th>
+                    <th scope="col" className="badge-cell">Kasta</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredBenefactors.map((member, index) => {
+                    const RoyaltyIcon = royaltyIcons[index];
+                    const iconSize = topIconSizes[index] ?? 16;
+                    return (
+                      <motion.tr
+                        key={member.id}
+                        className={`benefactor-rank rank-${index + 1}`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: Math.min(index, 9) * 0.035 }}
+                      >
+                        <td className="leaderboard-rank">
+                          {RoyaltyIcon ? <RoyaltyIcon aria-label={`Peringkat ${index + 1}`} size={iconSize} /> : `#${index + 1}`}
+                        </td>
+                        <td className="leaderboard-player font-bold">
+                          <Link href={`/u/${member.username ?? "user"}`} className="hover:text-[#9D4EDD] hover:underline">
+                            {member.username ?? "Gamer"}
+                          </Link>
+                        </td>
+                        <td className="numeric-cell">{currency.format(member.total)}</td>
+                        <td className="badge-cell">
+                          <span className="leaderboard-badge donor-tier">{benefactorTier(member.badges)}</span>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                  {filteredBenefactors.length === 0 && (
+                    <tr><td className="leaderboard-empty" colSpan={4}>{search ? `Tidak ada donatur yang cocok dengan "${search}".` : "Belum ada kontribusi terverifikasi yang tercatat."}</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </motion.div>

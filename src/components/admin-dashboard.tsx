@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -13,15 +14,16 @@ import {
   DollarSign,
   ExternalLink,
   Flag,
-  HeartHandshake,
+  ImageIcon,
   LayoutDashboard,
   Megaphone,
-  MessageSquare,
   Pin,
   PinOff,
   Plus,
   RefreshCw,
+  RotateCcw,
   Search,
+  Settings,
   Shield,
   ShieldAlert,
   ShieldCheck,
@@ -98,11 +100,36 @@ type AnnouncementRecord = {
   author: { username: string | null };
 };
 
+type SiteConfig = {
+  id: string;
+  statMembers: string;
+  statParties: string;
+  statVoice: string;
+  qrisImageUrl: string;
+  rekberAccount: string;
+  rekberFee: number;
+  monthlyGoal: number;
+  minDonation: number;
+  discordInviteUrl: string;
+  updatedAt?: string;
+};
+
+type Sponsor = {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+  websiteUrl: string | null;
+  tier: string;
+  createdAt: string;
+};
+
 type DashboardData = {
   stats: {
     totalMembers: number;
     totalForumThreads: number;
     activeMarketplaceListings: number;
+    activeEscrows?: number;
+    pendingDonations?: number;
     pendingReports: number;
     totalDonations: number;
   };
@@ -112,6 +139,8 @@ type DashboardData = {
   marketplaceListings?: MarketplaceListing[];
   donations?: DonationRecord[];
   announcements?: AnnouncementRecord[];
+  siteConfig?: SiteConfig;
+  sponsors?: Sponsor[];
   pagination: { page: number; pageSize: number; total: number; totalPages: number };
   canManageRoles: boolean;
   canBanMembers: boolean;
@@ -119,7 +148,7 @@ type DashboardData = {
   currentUserId: string;
 };
 
-type Tab = "overview" | "reports" | "members" | "transactions" | "broadcast";
+type Tab = "overview" | "settings" | "treasury" | "members" | "moderation";
 
 const formatMoney = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
@@ -134,6 +163,28 @@ export function AdminDashboard({ role }: { role: Role }) {
   const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState("");
 
+  // Site Config CMS Form State
+  const [configForm, setConfigForm] = useState<SiteConfig>({
+    id: "default",
+    statMembers: "1,200+",
+    statParties: "450+",
+    statVoice: "24/7",
+    qrisImageUrl: "/qris-guild.png",
+    rekberAccount: "BCA 1234567890 a.n LogHorizon",
+    rekberFee: 5000,
+    monthlyGoal: 5000000,
+    minDonation: 10000,
+    discordInviteUrl: "https://discord.gg/aJvbVyTxNb",
+  });
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  // New Sponsor Form State
+  const [sponsorName, setSponsorName] = useState("");
+  const [sponsorLogo, setSponsorLogo] = useState("");
+  const [sponsorWebsite, setSponsorWebsite] = useState("");
+  const [sponsorTier, setSponsorTier] = useState("Benefactor");
+  const [savingSponsor, setSavingSponsor] = useState(false);
+
   function loadDashboard() {
     setLoading(true);
     const query = new URLSearchParams({ page: String(page), search });
@@ -141,6 +192,9 @@ export function AdminDashboard({ role }: { role: Role }) {
       .then((response) => readApiResponse<DashboardData>(response, "Gagal memuat dashboard."))
       .then((result) => {
         setData(result);
+        if (result.siteConfig) {
+          setConfigForm(result.siteConfig);
+        }
         setError("");
       })
       .catch((reason: unknown) => {
@@ -156,12 +210,116 @@ export function AdminDashboard({ role }: { role: Role }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search]);
 
+  // Save Site Config CMS
+  async function handleSaveConfig(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSavingConfig(true);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(configForm),
+      });
+      const result = await readApiResponse<{ config: SiteConfig; message: string }>(response, "Gagal menyimpan konfigurasi.");
+      setConfigForm(result.config);
+      setNotice(result.message || "Pengaturan website berhasil disimpan!");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Gagal menyimpan konfigurasi.");
+    } finally {
+      setSavingConfig(false);
+    }
+  }
+
+  // Reset Simulated Donations to pure Rp 0
+  async function handleResetDonations() {
+    const confirmed = window.confirm(
+      "PERINGATAN: Apakah kamu yakin ingin mereset seluruh data donasi simulasi? Saldo kas terverifikasi akan kembali ke Rp 0."
+    );
+    if (!confirmed) return;
+
+    setBusyId("reset-donations");
+    setError("");
+    try {
+      const response = await fetch("/api/admin/donations/reset", {
+        method: "POST",
+      });
+      const result = await readApiResponse<{ message: string }>(response, "Gagal mereset data donasi.");
+      setNotice(result.message || "Seluruh data transaksi donasi simulasi telah dihapus. Saldo kas kembali Rp 0.");
+      loadDashboard();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Gagal mereset data donasi.");
+    } finally {
+      setBusyId("");
+    }
+  }
+
+  // Add Sponsor
+  async function handleAddSponsor(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!sponsorName.trim()) return;
+    setSavingSponsor(true);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/sponsors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: sponsorName.trim(),
+          logoUrl: sponsorLogo.trim() || undefined,
+          websiteUrl: sponsorWebsite.trim() || undefined,
+          tier: sponsorTier.trim() || "Benefactor",
+        }),
+      });
+      const result = await readApiResponse<{ sponsor: Sponsor }>(response, "Gagal menambahkan sponsor.");
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              sponsors: [result.sponsor, ...(current.sponsors ?? [])],
+            }
+          : current
+      );
+      setSponsorName("");
+      setSponsorLogo("");
+      setSponsorWebsite("");
+      setNotice(`Sponsor "${result.sponsor.name}" berhasil ditambahkan.`);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Gagal menambahkan sponsor.");
+    } finally {
+      setSavingSponsor(false);
+    }
+  }
+
+  // Delete Sponsor
+  async function handleDeleteSponsor(id: string, name: string) {
+    if (!window.confirm(`Hapus sponsor "${name}"?`)) return;
+    setBusyId(id);
+    setError("");
+    try {
+      await readApiResponse(await fetch(`/api/admin/sponsors/${id}`, { method: "DELETE" }), "Gagal menghapus sponsor.");
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              sponsors: current.sponsors?.filter((s) => s.id !== id),
+            }
+          : current
+      );
+      setNotice(`Sponsor "${name}" berhasil dihapus.`);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Gagal menghapus sponsor.");
+    } finally {
+      setBusyId("");
+    }
+  }
+
   // Handle report dismiss or delete
   async function handleReport(report: Report, action: "dismiss" | "delete-post") {
     const confirmed = window.confirm(
       action === "delete-post"
         ? `Hapus postingan "${report.post.title}" dan seluruh laporannya?`
-        : `Abaikan laporan untuk "${report.post.title}"?`,
+        : `Abaikan laporan untuk "${report.post.title}"?`
     );
     if (!confirmed) return;
     setBusyId(report.id);
@@ -173,14 +331,14 @@ export function AdminDashboard({ role }: { role: Role }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action }),
         }),
-        "Aksi moderasi gagal.",
+        "Aksi moderasi gagal."
       );
       setData((current) =>
         current
           ? {
               ...current,
               reports: current.reports.filter((item) =>
-                action === "delete-post" ? item.postId !== report.postId : item.id !== report.id,
+                action === "delete-post" ? item.postId !== report.postId : item.id !== report.id
               ),
               stats: {
                 ...current.stats,
@@ -189,11 +347,11 @@ export function AdminDashboard({ role }: { role: Role }) {
                   current.stats.pendingReports -
                     (action === "delete-post"
                       ? current.reports.filter((item) => item.postId === report.postId).length
-                      : 1),
+                      : 1)
                 ),
               },
             }
-          : current,
+          : current
       );
       setNotice(action === "delete-post" ? "Postingan dan laporannya telah dihapus." : "Laporan telah ditandai selesai.");
     } catch (reason) {
@@ -214,17 +372,17 @@ export function AdminDashboard({ role }: { role: Role }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ isPinned: !currentPinned }),
         }),
-        "Gagal mengubah pin status.",
+        "Gagal mengubah pin status."
       );
       setData((current) =>
         current
           ? {
               ...current,
               recentPosts: current.recentPosts?.map((p) =>
-                p.id === postId ? { ...p, isPinned: !currentPinned } : p,
+                p.id === postId ? { ...p, isPinned: !currentPinned } : p
               ),
             }
-          : current,
+          : current
       );
       setNotice(!currentPinned ? "Postingan berhasil disematkan (pinned)!" : "Pin postingan dicabut.");
     } catch (reason) {
@@ -248,7 +406,7 @@ export function AdminDashboard({ role }: { role: Role }) {
               recentPosts: current.recentPosts?.filter((p) => p.id !== postId),
               marketplaceListings: current.marketplaceListings?.filter((p) => p.id !== postId),
             }
-          : current,
+          : current
       );
       setNotice(`Thread "${title}" berhasil dihapus.`);
     } catch (reason) {
@@ -261,7 +419,7 @@ export function AdminDashboard({ role }: { role: Role }) {
   // Update member properties (role, ban, xp, premium)
   async function updateMember(
     member: Member,
-    change: { role?: Role; isBanned?: boolean; isPremium?: boolean; xp?: number; level?: number },
+    change: { role?: Role; isBanned?: boolean; isPremium?: boolean; xp?: number; level?: number }
   ) {
     setBusyId(member.id);
     setError("");
@@ -272,7 +430,7 @@ export function AdminDashboard({ role }: { role: Role }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(change),
         }),
-        "Perubahan member gagal disimpan.",
+        "Perubahan member gagal disimpan."
       );
       setData((current) =>
         current
@@ -280,7 +438,7 @@ export function AdminDashboard({ role }: { role: Role }) {
               ...current,
               users: current.users.map((item) => (item.id === updated.id ? updated : item)),
             }
-          : current,
+          : current
       );
       setNotice(`Data anggota ${updated.username ?? "member"} berhasil diperbarui.`);
     } catch (reason) {
@@ -301,7 +459,7 @@ export function AdminDashboard({ role }: { role: Role }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: newStatus }),
         }),
-        "Gagal memperbarui status lapak.",
+        "Gagal memperbarui status lapak."
       );
       setData((current) =>
         current
@@ -313,7 +471,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                 return { ...l, marketData: { ...mData, status: newStatus } };
               }),
             }
-          : current,
+          : current
       );
       setNotice(`Status lapak diperbarui menjadi ${newStatus}.`);
     } catch (reason) {
@@ -324,7 +482,7 @@ export function AdminDashboard({ role }: { role: Role }) {
   }
 
   // Verify Donation
-  async function verifyDonation(donationId: string, newStatus: "APPROVED" | "REJECTED" | "SUCCEEDED" | "FAILED") {
+  async function verifyDonation(donationId: string, newStatus: "APPROVED" | "REJECTED") {
     setBusyId(donationId);
     setError("");
     try {
@@ -334,7 +492,7 @@ export function AdminDashboard({ role }: { role: Role }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: newStatus }),
         }),
-        "Gagal memproses verifikasi donasi.",
+        "Gagal memproses verifikasi donasi."
       );
       setData((current) =>
         current
@@ -342,19 +500,23 @@ export function AdminDashboard({ role }: { role: Role }) {
               ...current,
               donations: current.donations?.map((d) => (d.id === donationId ? { ...d, status: newStatus } : d)),
             }
-          : current,
+          : current
       );
       setNotice(
-        newStatus === "APPROVED" || newStatus === "SUCCEEDED"
-          ? "Donasi berhasil disetujui! Lencana donor dan status akun otomatis diperbarui."
-          : "Donasi berhasil ditolak.",
+        newStatus === "APPROVED"
+          ? "Donasi berhasil diverifikasi (ACC)! Role & lencana donor otomatis diaktifkan."
+          : "Donasi ditolak."
       );
+      loadDashboard();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Gagal memproses verifikasi donasi.");
     } finally {
       setBusyId("");
     }
   }
+
+  const pendingDonationsList = data?.donations?.filter((d) => d.status === "PENDING") ?? [];
+  const processedDonationsList = data?.donations?.filter((d) => d.status !== "PENDING") ?? [];
 
   return (
     <main className="community-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
@@ -373,7 +535,7 @@ export function AdminDashboard({ role }: { role: Role }) {
               Command <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Center</span>
             </h1>
             <p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Pusat kendali operasional, moderasi komunitas, perbendaharaan, dan manajemen anggota LogHorizon.
+              Pusat kendali operasional, CMS website, perbendaharaan, dan manajemen anggota LogHorizon.
             </p>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
@@ -391,809 +553,1175 @@ export function AdminDashboard({ role }: { role: Role }) {
           </div>
         </div>
 
-        {/* METRIC STATS - 5 CARDS */}
-        <section className="admin-stats grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 my-6" aria-label="Statistik guild">
-          <article className="admin-stat-card p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
-            <span className="admin-stat-icon text-[#9D4EDD]"><Users size={18} /></span>
-            <span className="admin-stat-label text-xs text-gray-400 block mt-1">Total Member</span>
-            <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-              {data?.stats.totalMembers ?? "0"}
-            </strong>
-          </article>
-          <article className="admin-stat-card p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
-            <span className="admin-stat-icon text-blue-500"><MessageSquare size={18} /></span>
-            <span className="admin-stat-label text-xs text-gray-400 block mt-1">Thread Forum</span>
-            <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-              {data?.stats.totalForumThreads ?? "0"}
-            </strong>
-          </article>
-          <article className="admin-stat-card p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
-            <span className="admin-stat-icon text-emerald-500"><Store size={18} /></span>
-            <span className="admin-stat-label text-xs text-gray-400 block mt-1">Lapak Aktif</span>
-            <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-              {data?.stats.activeMarketplaceListings ?? "0"}
-            </strong>
-          </article>
-          <article className="admin-stat-card p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
-            <span className="admin-stat-icon text-amber-500"><Flag size={18} /></span>
-            <span className="admin-stat-label text-xs text-gray-400 block mt-1">Laporan Masuk</span>
-            <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-              {data?.stats.pendingReports ?? "0"}
-            </strong>
-          </article>
-          <article className="admin-stat-card p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] col-span-2 lg:col-span-1">
-            <span className="admin-stat-icon text-purple-400"><DollarSign size={18} /></span>
-            <span className="admin-stat-label text-xs text-gray-400 block mt-1">Kas Donasi</span>
-            <strong className="text-lg sm:text-xl font-black text-purple-600 dark:text-purple-300 block mt-0.5 truncate">
-              {data ? formatMoney.format(data.stats.totalDonations) : "Rp 0"}
-            </strong>
-          </article>
-        </section>
-
-        {/* 5 NAVIGATION TABS */}
-        <div
-          className="admin-tabs flex overflow-x-auto scrollbar-none gap-2 pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 mb-6 border-b border-gray-200 dark:border-[#211C2B]"
-          role="tablist"
-          aria-label="Menu navigasi admin"
-        >
-          <button
-            role="tab"
-            aria-selected={tab === "overview"}
-            className={`admin-tab ${tab === "overview" ? "active" : ""}`}
-            onClick={() => setTab("overview")}
-          >
-            <LayoutDashboard size={15} /> Ringkasan (Overview)
-          </button>
-          <button
-            role="tab"
-            aria-selected={tab === "reports"}
-            className={`admin-tab ${tab === "reports" ? "active" : ""}`}
-            onClick={() => setTab("reports")}
-          >
-            <Flag size={15} /> Moderasi &amp; Konten
-            {Boolean(data?.stats.pendingReports) && <span>{data?.stats.pendingReports}</span>}
-          </button>
-          <button
-            role="tab"
-            aria-selected={tab === "members"}
-            className={`admin-tab ${tab === "members" ? "active" : ""}`}
-            onClick={() => setTab("members")}
-          >
-            <Users size={15} /> Member &amp; Kasta
-          </button>
-          <button
-            role="tab"
-            aria-selected={tab === "transactions"}
-            className={`admin-tab ${tab === "transactions" ? "active" : ""}`}
-            onClick={() => setTab("transactions")}
-          >
-            <Coins size={15} /> Lapak &amp; Kas Donasi
-          </button>
-          {isAdmin && (
-            <button
-              role="tab"
-              aria-selected={tab === "broadcast"}
-              className={`admin-tab ${tab === "broadcast" ? "active" : ""}`}
-              onClick={() => setTab("broadcast")}
-            >
-              <Megaphone size={15} /> Broadcast Pengumuman
-            </button>
-          )}
-        </div>
-
         {/* Global Notifications */}
         {notice && (
-          <div className="inline-notice mb-4" role="status">
-            {notice}
+          <div className="inline-notice mb-4 p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center justify-between" role="status">
+            <span>{notice}</span>
             <button onClick={() => setNotice("")} aria-label="Tutup notifikasi">
               <X size={15} />
             </button>
           </div>
         )}
         {error && (
-          <div className="inline-error mb-4" role="alert">
-            {error}
+          <div className="inline-error mb-4 p-3 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center justify-between" role="alert">
+            <span>{error}</span>
             <button onClick={() => setError("")} aria-label="Tutup pesan">
               <X size={15} />
             </button>
           </div>
         )}
 
-        {loading && !data && <div className="empty-state py-12 text-center text-gray-500">Memuat data guild…</div>}
-
         {/* ========================================================================= */}
-        {/* TAB 1: OVERVIEW */}
+        {/* RESPONSIVE LAYOUT: DESKTOP SIDEBAR + MOBILE HORIZONTAL TABS */}
         {/* ========================================================================= */}
-        {tab === "overview" && (
-          <section className="space-y-6" role="tabpanel">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Quick Actions Panel */}
-              <div className="p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
-                <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
-                  <Sparkles size={18} className="text-[#9D4EDD]" /> Aksi Cepat Admin
-                </h2>
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => setTab("broadcast")}
-                    className="w-full text-left px-3.5 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
-                  >
-                    <span>📢 Terbitkan Pengumuman Resmi</span>
-                    <ChevronRight size={14} className="text-gray-400" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTab("reports")}
-                    className="w-full text-left px-3.5 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
-                  >
-                    <span>🛡️ Tinjau Laporan Pelanggaran</span>
-                    <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 font-bold">
-                      {data?.stats.pendingReports ?? 0}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTab("transactions")}
-                    className="w-full text-left px-3.5 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
-                  >
-                    <span>💎 Verifikasi Kas &amp; Donasi</span>
-                    <ChevronRight size={14} className="text-gray-400" />
-                  </button>
-                </div>
+        <div className="md:grid md:grid-cols-[230px_1fr] md:gap-8 items-start">
+          {/* DESKTOP SIDEBAR (< md hidden) */}
+          <aside className="hidden md:flex flex-col gap-1.5 sticky top-24 p-3 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] shadow-sm">
+            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-1.5">
+              PANEL KENDALI
+            </p>
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                tab === "overview"
+                  ? "bg-[#9D4EDD] text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+              }`}
+              onClick={() => setTab("overview")}
+            >
+              <div className="flex items-center gap-2.5">
+                <LayoutDashboard size={16} />
+                <span>Overview &amp; Statistik</span>
               </div>
+            </button>
 
-              {/* Security & Health Status */}
-              <div className="p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
-                <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
-                  <ShieldCheck size={18} className="text-emerald-500" /> Status Ekosistem Guild
-                </h2>
-                <ul className="space-y-2.5 text-xs text-gray-600 dark:text-gray-300">
-                  <li className="flex items-center justify-between">
-                    <span>Database Neon Serverless:</span>
-                    <span className="font-semibold text-emerald-500">Normal / Online</span>
-                  </li>
-                  <li className="flex items-center justify-between">
-                    <span>Status Server:</span>
-                    <span className="font-semibold text-emerald-500">Operasional Normal</span>
-                  </li>
-                  <li className="flex items-center justify-between">
-                    <span>Perlindungan Akun:</span>
-                    <span className="font-semibold text-emerald-500">OAuth Discord</span>
-                  </li>
-                  <li className="flex items-center justify-between">
-                    <span>Sistem Moderasi Konten:</span>
-                    <span className="font-semibold text-purple-400">Aktif</span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Direct Guild Portals */}
-              <div className="p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
-                <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
-                  <ExternalLink size={18} className="text-[#9D4EDD]" /> Akses Cepat Halaman
-                </h2>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <Link href="/forum" className="p-2 rounded border border-gray-200 dark:border-[#211C2B] text-center hover:border-[#9D4EDD]">
-                    Forum
-                  </Link>
-                  <Link href="/marketplace" className="p-2 rounded border border-gray-200 dark:border-[#211C2B] text-center hover:border-[#9D4EDD]">
-                    Marketplace
-                  </Link>
-                  <Link href="/leaderboard" className="p-2 rounded border border-gray-200 dark:border-[#211C2B] text-center hover:border-[#9D4EDD]">
-                    Leaderboard
-                  </Link>
-                  <Link href="/events" className="p-2 rounded border border-gray-200 dark:border-[#211C2B] text-center hover:border-[#9D4EDD]">
-                    Events &amp; LFG
-                  </Link>
-                  <Link href="/news" className="p-2 rounded border border-gray-200 dark:border-[#211C2B] text-center hover:border-[#9D4EDD]">
-                    News Hub
-                  </Link>
-                  <Link href="/donate" className="p-2 rounded border border-gray-200 dark:border-[#211C2B] text-center hover:border-[#9D4EDD]">
-                    Treasury
-                  </Link>
+            {isAdmin && (
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                  tab === "settings"
+                    ? "bg-[#9D4EDD] text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+                }`}
+                onClick={() => setTab("settings")}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Settings size={16} />
+                  <span>Pengaturan Web (CMS)</span>
                 </div>
-              </div>
-            </div>
-          </section>
-        )}
+              </button>
+            )}
 
-        {/* ========================================================================= */}
-        {/* TAB 2: REPORTS & CONTENT GUARD */}
-        {/* ========================================================================= */}
-        {tab === "reports" && (
-          <section className="space-y-8" role="tabpanel">
-            {/* 1. Laporan Masuk */}
-            <div className="admin-panel">
-              <div className="admin-panel-heading flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">Laporan Pengguna (Pending Reports)</h2>
-                  <p className="text-xs text-gray-500">Postingan atau aktivitas yang dilaporkan oleh member.</p>
-                </div>
-                <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-500 font-bold">
-                  {data?.reports.length ?? 0} pending
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                tab === "treasury"
+                  ? "bg-[#9D4EDD] text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+              }`}
+              onClick={() => setTab("treasury")}
+            >
+              <div className="flex items-center gap-2.5">
+                <Coins size={16} />
+                <span>Verifikasi Kas &amp; Rekber</span>
+              </div>
+              {Boolean(data?.stats.pendingDonations) && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${tab === "treasury" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                  {data?.stats.pendingDonations}
                 </span>
-              </div>
-
-              {!loading && data?.reports.length === 0 && (
-                <div className="empty-state py-8 text-center text-sm text-gray-400">
-                  Semua bersih! Tidak ada laporan yang tertunda saat ini.
-                </div>
               )}
+            </button>
 
-              <div className="admin-reports space-y-3">
-                {data?.reports.map((report) => (
-                  <article
-                    className="p-4 rounded-lg border border-amber-200 dark:border-amber-900/40 bg-white dark:bg-[#120F17] flex flex-col md:flex-row md:items-center justify-between gap-4"
-                    key={report.id}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 uppercase tracking-wider inline-flex items-center gap-1">
-                          <AlertTriangle size={11} /> PENDING
-                        </span>
-                        <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                          {report.post.title}
-                        </h3>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-                        <span>Kategori: {report.post.category.toLowerCase().replaceAll("_", " ")}</span>
-                        <span>Penulis: {report.post.author.username ?? "Gamer"}</span>
-                        <span>Pelapor: {report.reporter.username ?? "Gamer"}</span>
-                      </div>
-                      <p className="text-xs text-gray-700 dark:text-gray-300 mt-2 bg-gray-50 dark:bg-[#1A1526] p-2.5 rounded border border-gray-200 dark:border-[#211C2B]">
-                        <strong>Alasan Laporan:</strong> {report.reason}
-                      </p>
-                    </div>
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                tab === "members"
+                  ? "bg-[#9D4EDD] text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+              }`}
+              onClick={() => setTab("members")}
+            >
+              <div className="flex items-center gap-2.5">
+                <Users size={16} />
+                <span>Member &amp; Kasta</span>
+              </div>
+            </button>
 
-                    <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
-                      <Link
-                        className="button button-quiet button-small text-xs"
-                        href={`/forum/${report.post.id}`}
-                        target="_blank"
-                      >
-                        Buka Thread
-                      </Link>
-                      <button
-                        className="button button-danger button-small text-xs flex items-center gap-1"
-                        disabled={busyId === report.id}
-                        onClick={() => void handleReport(report, "delete-post")}
-                      >
-                        <Trash2 size={13} /> Hapus Konten
-                      </button>
-                      <button
-                        className="button button-success button-small text-xs flex items-center gap-1"
-                        disabled={busyId === report.id}
-                        onClick={() => void handleReport(report, "dismiss")}
-                      >
-                        <Check size={13} /> Tandai Aman
-                      </button>
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                tab === "moderation"
+                  ? "bg-[#9D4EDD] text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+              }`}
+              onClick={() => setTab("moderation")}
+            >
+              <div className="flex items-center gap-2.5">
+                <ShieldAlert size={16} />
+                <span>Moderasi &amp; Broadcast</span>
+              </div>
+              {Boolean(data?.stats.pendingReports) && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${tab === "moderation" ? "bg-white text-[#9D4EDD]" : "bg-rose-500/20 text-rose-400"}`}>
+                  {data?.stats.pendingReports}
+                </span>
+              )}
+            </button>
+          </aside>
+
+          {/* MOBILE HORIZONTAL SCROLLABLE TABS (>= md hidden) */}
+          <div className="md:hidden flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-2 mb-6 border-b border-gray-200 dark:border-[#211C2B] -mx-4 px-4">
+            <button
+              type="button"
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "overview" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+              }`}
+              onClick={() => setTab("overview")}
+            >
+              <LayoutDashboard size={14} /> Overview
+            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
+                  tab === "settings" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+                }`}
+                onClick={() => setTab("settings")}
+              >
+                <Settings size={14} /> Web CMS
+              </button>
+            )}
+            <button
+              type="button"
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "treasury" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+              }`}
+              onClick={() => setTab("treasury")}
+            >
+              <Coins size={14} /> Kas &amp; Rekber
+              {Boolean(data?.stats.pendingDonations) && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500 text-black font-extrabold">
+                  {data?.stats.pendingDonations}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "members" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+              }`}
+              onClick={() => setTab("members")}
+            >
+              <Users size={14} /> Member
+            </button>
+            <button
+              type="button"
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "moderation" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+              }`}
+              onClick={() => setTab("moderation")}
+            >
+              <ShieldAlert size={14} /> Moderasi
+              {Boolean(data?.stats.pendingReports) && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-extrabold">
+                  {data?.stats.pendingReports}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* MAIN TAB CONTENT */}
+          <div className="min-w-0">
+            {/* ========================================================================= */}
+            {/* TAB 1: OVERVIEW & STATISTIK GUILD */}
+            {/* ========================================================================= */}
+            {tab === "overview" && (
+              <section className="space-y-6" role="tabpanel">
+                {/* 5 METRIC CARDS */}
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+                  <article className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                    <div className="flex items-center justify-between text-[#9D4EDD]">
+                      <Users size={20} />
                     </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Total Member</span>
+                    <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
+                      {data?.stats.totalMembers ?? "0"}
+                    </strong>
                   </article>
-                ))}
-              </div>
-            </div>
 
-            {/* 2. Postingan Terbaru & Pin Control */}
-            <div className="admin-panel p-5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
-              <div className="admin-panel-heading mb-4">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Kontrol Konten Forum Terbaru</h2>
-                <p className="text-xs text-gray-500">Sematkan postingan penting (Pin/Unpin) atau bersihkan spam langsung dari panel ini.</p>
-              </div>
+                  <article className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                    <div className="flex items-center justify-between text-purple-400">
+                      <DollarSign size={20} />
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Kas Terverifikasi</span>
+                    <strong className="text-base sm:text-lg font-black text-purple-600 dark:text-purple-300 block mt-0.5 truncate">
+                      {data ? formatMoney.format(data.stats.totalDonations) : "Rp 0"}
+                    </strong>
+                  </article>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs min-w-[600px]">
-                  <thead>
-                    <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
-                      <th className="py-2">Judul Thread</th>
-                      <th className="py-2">Kategori</th>
-                      <th className="py-2">Penulis</th>
-                      <th className="py-2">Status Pin</th>
-                      <th className="py-2 text-right">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
-                    {data?.recentPosts?.map((post) => (
-                      <tr key={post.id}>
-                        <td className="py-2.5 font-semibold text-gray-900 dark:text-white max-w-xs truncate">
-                          {post.title}
-                        </td>
-                        <td className="py-2.5 text-gray-500">{post.category.toLowerCase().replaceAll("_", " ")}</td>
-                        <td className="py-2.5 text-gray-500">{post.author.username ?? "Gamer"}</td>
-                        <td className="py-2.5">
-                          {post.isPinned ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#9D4EDD]/15 text-[#9D4EDD]">
-                              PINNED
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">Standar</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 text-right space-x-1.5 whitespace-nowrap">
-                          <button
-                            type="button"
-                            disabled={busyId === post.id}
-                            onClick={() => void togglePinPost(post.id, post.isPinned)}
-                            className="px-2.5 py-1 rounded text-xs font-semibold border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD]"
-                          >
-                            {post.isPinned ? "Lepas Pin" : "📌 Pin Thread"}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busyId === post.id}
-                            onClick={() => void deletePostDirect(post.id, post.title)}
-                            className="px-2.5 py-1 rounded text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                          >
-                            Hapus
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        )}
+                  <article className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                    <div className="flex items-center justify-between text-amber-500">
+                      <Coins size={20} />
+                      {Boolean(data?.stats.pendingDonations) && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/20 text-amber-400">
+                          AKSI
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Donasi Pending</span>
+                    <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
+                      {data?.stats.pendingDonations ?? 0}
+                    </strong>
+                  </article>
 
-        {/* ========================================================================= */}
-        {/* TAB 3: USERS & ROLES */}
-        {/* ========================================================================= */}
-        {tab === "members" && (
-          <section className="admin-panel p-5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]" role="tabpanel">
-            <div className="admin-panel-heading flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Manajemen Member &amp; Kasta Role</h2>
-                <p className="text-xs text-gray-500">Kelola role, sesuaikan level / XP, status premium, dan pembatasan akun anggota.</p>
-              </div>
-              <div className="relative flex items-center w-full sm:w-72">
-                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input
-                  value={search}
-                  onChange={(event) => {
-                    setSearch(event.target.value);
-                    setPage(1);
-                  }}
-                  placeholder="Cari Username / Discord ID…"
-                  className="w-full pl-11 pr-4 py-2 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
-                />
-              </div>
-            </div>
+                  <article className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                    <div className="flex items-center justify-between text-blue-500">
+                      <Store size={20} />
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Rekber Aktif</span>
+                    <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
+                      {data?.stats.activeEscrows ?? 0}
+                    </strong>
+                  </article>
 
-            <div className="member-table-wrap w-full overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
-              <table className="member-table min-w-[750px] w-full text-xs text-left">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
-                    <th className="py-2.5">Member</th>
-                    <th className="py-2.5">Discord ID</th>
-                    <th className="py-2.5">Role Web</th>
-                    <th className="py-2.5">Level &amp; XP</th>
-                    <th className="py-2.5">Premium</th>
-                    <th className="py-2.5">Status Akun</th>
-                    <th className="py-2.5 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
-                  {data?.users.map((member) => (
-                    <tr key={member.id} className="hover:bg-gray-50/50 dark:hover:bg-[#1A1526]/50 transition-colors">
-                      <td className="py-3">
-                        <div className="flex items-center gap-2.5">
-                          <DiscordAvatar
-                            src={member.avatar}
-                            username={member.username ?? "Member"}
-                            size={28}
-                            className="rounded-full shrink-0"
+                  <article className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] col-span-2 lg:col-span-1">
+                    <div className="flex items-center justify-between text-rose-500">
+                      <Flag size={20} />
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Laporan Masuk</span>
+                    <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
+                      {data?.stats.pendingReports ?? 0}
+                    </strong>
+                  </article>
+                </div>
+
+                {/* QUICK ACTIONS & STATUS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                    <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
+                      <Sparkles size={18} className="text-[#9D4EDD]" /> Pintasan Manajemen
+                    </h2>
+                    <div className="space-y-2">
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => setTab("settings")}
+                          className="w-full text-left px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                        >
+                          <span>⚙️ Pengaturan Konten Website (CMS)</span>
+                          <ChevronRight size={14} className="text-gray-400" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setTab("treasury")}
+                        className="w-full text-left px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                      >
+                        <span>💎 Verifikasi Kas Donasi &amp; Rekber</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">
+                          {data?.stats.pendingDonations ?? 0} pending
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTab("members")}
+                        className="w-full text-left px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                      >
+                        <span>👥 Kelola Member, Kasta &amp; Status Banned</span>
+                        <ChevronRight size={14} className="text-gray-400" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTab("moderation")}
+                        className="w-full text-left px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                      >
+                        <span>🛡️ Moderasi Konten, Sponsor &amp; Broadcast</span>
+                        <ChevronRight size={14} className="text-gray-400" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                    <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
+                      <ShieldCheck size={18} className="text-emerald-500" /> Status Ekosistem Guild
+                    </h2>
+                    <ul className="space-y-3 text-xs text-gray-600 dark:text-gray-300">
+                      <li className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-[#211C2B]">
+                        <span>Database Neon PostgreSQL:</span>
+                        <span className="font-semibold text-emerald-500 flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Terhubung / Online
+                        </span>
+                      </li>
+                      <li className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-[#211C2B]">
+                        <span>Otentikasi Member:</span>
+                        <span className="font-semibold text-emerald-500">OAuth Discord Aman</span>
+                      </li>
+                      <li className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-[#211C2B]">
+                        <span>Target Kas Terverifikasi:</span>
+                        <span className="font-bold text-purple-400">
+                          {formatMoney.format(configForm.monthlyGoal || 5000000)}
+                        </span>
+                      </li>
+                      <li className="flex items-center justify-between py-1">
+                        <span>QRIS Resmi Perbendaharaan:</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[180px]">
+                          {configForm.qrisImageUrl}
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* ========================================================================= */}
+            {/* TAB 2: PENGATURAN KONTEN WEBSITE (SITE SETTINGS CMS) */}
+            {/* ========================================================================= */}
+            {tab === "settings" && isAdmin && (
+              <section className="space-y-6" role="tabpanel">
+                <div className="p-6 sm:p-8 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <div className="mb-6">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Settings size={20} className="text-[#9D4EDD]" /> Pengaturan Konten Website (Site Settings CMS)
+                    </h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Ubah statistik beranda, info pembayaran QRIS, nomor rekening Rekber, target kas, dan tautan resmi langsung tanpa edit kode.
+                    </p>
+                  </div>
+
+                  <form onSubmit={(e) => void handleSaveConfig(e)} className="space-y-6">
+                    {/* 1. STATISTIK BERANDA */}
+                    <div className="border-t border-gray-200 dark:border-[#211C2B] pt-4">
+                      <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-3">
+                        01 / STATISTIK COUNTER BERANDA
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            Teks Anggota Guild
+                          </label>
+                          <input
+                            type="text"
+                            value={configForm.statMembers}
+                            onChange={(e) => setConfigForm({ ...configForm, statMembers: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            placeholder="1,200+"
+                            required
                           />
-                          <div>
-                            <strong className="block text-gray-900 dark:text-white font-bold">
-                              {member.username ?? "Gamer"}
-                            </strong>
-                            {member.id === data.currentUserId && (
-                              <span className="text-[10px] text-purple-400 font-mono">(Akun Anda)</span>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            Teks Party Terbentuk
+                          </label>
+                          <input
+                            type="text"
+                            value={configForm.statParties}
+                            onChange={(e) => setConfigForm({ ...configForm, statParties: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            placeholder="450+"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            Teks Voice Aktif
+                          </label>
+                          <input
+                            type="text"
+                            value={configForm.statVoice}
+                            onChange={(e) => setConfigForm({ ...configForm, statVoice: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            placeholder="24/7"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. PEMBAYARAN & QRIS */}
+                    <div className="border-t border-gray-200 dark:border-[#211C2B] pt-4">
+                      <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-3">
+                        02 / INFO PEMBAYARAN, QRIS &amp; REKBER
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            URL Gambar QRIS Resmi Guild
+                          </label>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="text"
+                              value={configForm.qrisImageUrl}
+                              onChange={(e) => setConfigForm({ ...configForm, qrisImageUrl: e.target.value })}
+                              className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                              placeholder="/qris-guild.png"
+                              required
+                            />
+                            {configForm.qrisImageUrl && (
+                              <div className="relative w-10 h-10 rounded border border-gray-200 dark:border-[#211C2B] overflow-hidden bg-white shrink-0">
+                                <Image
+                                  src={configForm.qrisImageUrl}
+                                  alt="Preview QRIS"
+                                  fill
+                                  className="object-contain"
+                                />
+                              </div>
                             )}
                           </div>
                         </div>
-                      </td>
-                      <td className="py-3 font-mono text-gray-400 text-[11px]">
-                        {member.discordId ?? "Belum terhubung"}
-                      </td>
-                      <td className="py-3">
-                        <select
-                          className="role-select text-xs py-1 px-2 rounded border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]"
-                          aria-label={`Role ${member.username ?? "member"}`}
-                          value={member.role}
-                          disabled={!data.canManageRoles || busyId === member.id || member.id === data.currentUserId}
-                          onChange={(event) => void updateMember(member, { role: event.target.value as Role })}
-                        >
-                          <option value="MEMBER">Member</option>
-                          <option value="MODERATOR">Moderator</option>
-                          <option value="ADMIN">Admin</option>
-                        </select>
-                      </td>
-                      <td className="py-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-gray-800 dark:text-gray-200">
-                            Lv. {member.level ?? 1} ({member.xp ?? 0} XP)
-                          </span>
-                          {isAdmin && (
-                            <div className="inline-flex gap-1 ml-1">
-                              <button
-                                type="button"
-                                title="Tambah 50 XP"
-                                disabled={busyId === member.id}
-                                onClick={() => void updateMember(member, { xp: (member.xp ?? 0) + 50 })}
-                                className="px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 font-bold hover:bg-purple-200"
-                              >
-                                +50
-                              </button>
-                              <button
-                                type="button"
-                                title="Kurang 50 XP"
-                                disabled={busyId === member.id}
-                                onClick={() => void updateMember(member, { xp: Math.max(0, (member.xp ?? 0) - 50) })}
-                                className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold hover:bg-gray-200"
-                              >
-                                -50
-                              </button>
-                            </div>
-                          )}
+
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            Nomor Rekening / E-Wallet Rekber
+                          </label>
+                          <input
+                            type="text"
+                            value={configForm.rekberAccount}
+                            onChange={(e) => setConfigForm({ ...configForm, rekberAccount: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            placeholder="BCA 1234567890 a.n LogHorizon"
+                            required
+                          />
                         </div>
-                      </td>
-                      <td className="py-3">
-                        {isAdmin ? (
-                          <button
-                            type="button"
-                            disabled={busyId === member.id}
-                            onClick={() => void updateMember(member, { isPremium: !member.isPremium })}
-                            className={`px-2 py-1 rounded text-[11px] font-bold ${
-                              member.isPremium
-                                ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
-                                : "bg-gray-100 dark:bg-gray-800 text-gray-400"
-                            }`}
-                          >
-                            {member.isPremium ? "★ PREMIUM" : "Standar"}
-                          </button>
+
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            Biaya Admin Rekber (IDR)
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            step={1000}
+                            value={configForm.rekberFee}
+                            onChange={(e) => setConfigForm({ ...configForm, rekberFee: Number(e.target.value) })}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            placeholder="5000"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 3. TARGET KAS & MINIMAL DONASI */}
+                    <div className="border-t border-gray-200 dark:border-[#211C2B] pt-4">
+                      <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-3">
+                        03 / TARGET KAS &amp; BATAS MINIMAL DONASI
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            Target Kas Bulanan (IDR)
+                          </label>
+                          <input
+                            type="number"
+                            min={100000}
+                            step={50000}
+                            value={configForm.monthlyGoal}
+                            onChange={(e) => setConfigForm({ ...configForm, monthlyGoal: Number(e.target.value) })}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            placeholder="5000000"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            Batas Minimal Donasi (IDR)
+                          </label>
+                          <input
+                            type="number"
+                            min={1000}
+                            step={5000}
+                            value={configForm.minDonation}
+                            onChange={(e) => setConfigForm({ ...configForm, minDonation: Number(e.target.value) })}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            placeholder="10000"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4. LINK KOMUNITAS */}
+                    <div className="border-t border-gray-200 dark:border-[#211C2B] pt-4">
+                      <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-3">
+                        04 / LINK TAUTAN DISCORD RESMI
+                      </h3>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                          Link Invite Discord Resmi Guild
+                        </label>
+                        <input
+                          type="url"
+                          value={configForm.discordInviteUrl}
+                          onChange={(e) => setConfigForm({ ...configForm, discordInviteUrl: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                          placeholder="https://discord.gg/aJvbVyTxNb"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        type="submit"
+                        disabled={savingConfig}
+                        className="button button-primary px-6 py-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-2"
+                      >
+                        {savingConfig ? (
+                          <>
+                            <RefreshCw size={14} className="animate-spin" /> Menyimpan Pengaturan…
+                          </>
                         ) : (
-                          <span className="text-gray-400">{member.isPremium ? "★ Elite" : "Standar"}</span>
+                          <>
+                            <Check size={14} /> Simpan Pengaturan Website (CMS)
+                          </>
                         )}
-                      </td>
-                      <td className="py-3">
-                        <span className={member.isBanned ? "member-status banned text-red-500 font-bold" : "member-status active text-emerald-500 font-bold"}>
-                          {member.isBanned ? "BANNED" : "AKTIF"}
-                        </span>
-                      </td>
-                      <td className="py-3 text-right">
-                        <button
-                          type="button"
-                          className={member.isBanned ? "button button-unban button-small text-xs" : "button button-quiet button-small text-xs"}
-                          disabled={!data.canBanMembers || busyId === member.id || member.id === data.currentUserId}
-                          onClick={() => void updateMember(member, { isBanned: !member.isBanned })}
-                        >
-                          <Ban size={13} /> {member.isBanned ? "Unban" : "Ban"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {!loading && !data?.users.length && (
-                    <tr>
-                      <td className="py-8 text-center text-gray-400" colSpan={7}>
-                        Member tidak ditemukan.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </section>
+            )}
 
-            {/* Pagination */}
-            <div className="pagination flex items-center justify-between pt-4 mt-4 border-t border-gray-200 dark:border-[#211C2B] text-xs">
-              <span className="text-gray-500">
-                Menampilkan {data?.users.length ?? 0} dari {data?.pagination.total ?? 0} member
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  aria-label="Halaman sebelumnya"
-                  disabled={page <= 1}
-                  onClick={() => setPage((value) => Math.max(1, value - 1))}
-                  className="p-1 rounded border border-gray-200 dark:border-[#211C2B] disabled:opacity-40"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <span>
-                  Halaman {data?.pagination.page ?? page} / {Math.max(1, data?.pagination.totalPages ?? 1)}
-                </span>
-                <button
-                  type="button"
-                  aria-label="Halaman berikutnya"
-                  disabled={page >= (data?.pagination.totalPages ?? 1)}
-                  onClick={() => setPage((value) => value + 1)}
-                  className="p-1 rounded border border-gray-200 dark:border-[#211C2B] disabled:opacity-40"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TAB 4: MARKETPLACE & TREASURY */}
-        {/* ========================================================================= */}
-        {tab === "transactions" && (
-          <section className="space-y-8" role="tabpanel">
-            {/* 1. Antrean Verifikasi Donasi QRIS Manual */}
-            <div className="admin-panel p-5 rounded-lg border border-amber-500/30 bg-amber-500/5">
-              <div className="admin-panel-heading mb-4">
-                <div className="flex items-center justify-between">
+            {/* ========================================================================= */}
+            {/* TAB 3: VERIFIKASI DONASI & TRANSAKSI REKBER */}
+            {/* ========================================================================= */}
+            {tab === "treasury" && (
+              <section className="space-y-8" role="tabpanel">
+                {/* TOOLBAR & RESET DATA SIMULASI */}
+                <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                      <HeartHandshake size={18} className="text-amber-500" /> Antrean Verifikasi Donasi QRIS (Manual)
+                      <Coins size={18} className="text-[#9D4EDD]" /> Verifikasi Donasi &amp; Kas Perbendaharaan
                     </h2>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Petualang mengirim konfirmasi transfer QRIS. Cek nama pengirim &amp; bukti transfer sebelum menyetujui.
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      ACC atau tolak antrean donasi. Lencana kasta donatur otomatis aktif saat donasi disetujui.
                     </p>
                   </div>
-                  <span className="px-2.5 py-1 rounded bg-amber-500/15 text-amber-500 font-bold text-xs">
-                    {(data?.donations?.filter((d) => d.status === "PENDING") ?? []).length} Menunggu
-                  </span>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      disabled={busyId === "reset-donations"}
+                      onClick={() => void handleResetDonations()}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-red-600 dark:text-red-400 border border-red-300 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0"
+                    >
+                      <RotateCcw size={14} className={busyId === "reset-donations" ? "animate-spin" : ""} />
+                      <span>Reset Data Simulasi (Kembali Rp 0)</span>
+                    </button>
+                  )}
                 </div>
-              </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs min-w-[700px]">
-                  <thead>
-                    <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
-                      <th className="py-2.5">Petualang</th>
-                      <th className="py-2.5">Atas Nama / Pengirim</th>
-                      <th className="py-2.5">Nominal (IDR)</th>
-                      <th className="py-2.5">Bukti &amp; Catatan</th>
-                      <th className="py-2.5">Waktu</th>
-                      <th className="py-2.5 text-right">Aksi Verifikasi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
-                    {data?.donations
-                      ?.filter((item) => item.status === "PENDING")
-                      .map((item) => (
-                        <tr key={item.id} className="hover:bg-amber-500/5 transition">
-                          <td className="py-3">
-                            <div className="flex items-center gap-2">
-                              <DiscordAvatar src={item.user?.avatar ?? null} username={item.user?.username ?? "Petualang"} size={26} />
-                              <div>
-                                <p className="font-semibold text-gray-900 dark:text-white">{item.user?.username ?? "Petualang"}</p>
+                {/* 1. ANTREAN DONASI PENDING */}
+                <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                        Antrean Donasi Menunggu Verifikasi ({pendingDonationsList.length})
+                      </h3>
+                      <p className="text-xs text-gray-500">Periksa bukti transfer dan klik ACC untuk mengaktifkan kasta donatur.</p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs min-w-[700px]">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
+                          <th className="py-2.5">Pengirim Rekening</th>
+                          <th className="py-2.5">Akun Member</th>
+                          <th className="py-2.5">Nominal</th>
+                          <th className="py-2.5">Catatan / Ref</th>
+                          <th className="py-2.5">Bukti Transfer</th>
+                          <th className="py-2.5">Waktu</th>
+                          <th className="py-2.5 text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
+                        {pendingDonationsList.map((item) => (
+                          <tr key={item.id}>
+                            <td className="py-3 font-bold text-gray-900 dark:text-white">
+                              {item.senderName || "-"}
+                            </td>
+                            <td className="py-3">
+                              <div className="flex items-center gap-2">
+                                <DiscordAvatar src={item.user?.avatar ?? null} username={item.user?.username ?? "Member"} size={22} />
+                                <span className="font-semibold text-gray-800 dark:text-gray-200">{item.user?.username ?? "Member"}</span>
                               </div>
-                            </div>
-                          </td>
-                          <td className="py-3 font-medium text-gray-800 dark:text-gray-200">
-                            {item.senderName || "-"}
-                          </td>
-                          <td className="py-3 font-bold text-purple-600 dark:text-purple-300">
-                            {formatMoney.format(item.amount)}
-                          </td>
-                          <td className="py-3">
-                            <div className="space-y-1">
+                            </td>
+                            <td className="py-3 font-extrabold text-purple-600 dark:text-purple-300">
+                              {formatMoney.format(item.amount)}
+                            </td>
+                            <td className="py-3 text-gray-500 max-w-[150px] truncate">{item.notes || "-"}</td>
+                            <td className="py-3">
                               {item.proofUrl ? (
                                 <a
                                   href={item.proofUrl}
                                   target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#9D4EDD] hover:underline"
+                                  rel="noreferrer"
+                                  className="text-xs text-[#9D4EDD] hover:underline font-bold inline-flex items-center gap-1"
                                 >
-                                  <ExternalLink size={12} /> Buka Bukti Transfer
+                                  <span>Lihat Bukti</span>
+                                  <ExternalLink size={12} />
                                 </a>
                               ) : (
-                                <span className="text-[11px] text-gray-400">Tanpa tautan bukti</span>
+                                <span className="text-gray-400 text-[11px]">Tanpa bukti link</span>
                               )}
-                              {item.notes && (
-                                <p className="text-[11px] text-gray-500 line-clamp-1 italic">
-                                  &quot;{item.notes}&quot;
-                                </p>
-                              )}
+                            </td>
+                            <td className="py-3 text-gray-500 text-[11px]">
+                              {new Date(item.createdAt).toLocaleDateString("id-ID")}
+                            </td>
+                            <td className="py-3 text-right space-x-2 whitespace-nowrap">
+                              <button
+                                type="button"
+                                disabled={busyId === item.id}
+                                onClick={() => void verifyDonation(item.id, "APPROVED")}
+                                className="px-2.5 py-1 rounded text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 hover:bg-emerald-500/25"
+                              >
+                                ACC / Verifikasi
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busyId === item.id}
+                                onClick={() => void verifyDonation(item.id, "REJECTED")}
+                                className="px-2.5 py-1 rounded text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                              >
+                                Tolak
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {pendingDonationsList.length === 0 && (
+                          <tr>
+                            <td className="py-6 text-center text-gray-400" colSpan={7}>
+                              Tidak ada antrean donasi pending saat ini.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 2. RIWAYAT DONASI TERVERIFIKASI */}
+                <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white mb-3">
+                    Riwayat Donasi Selesai / Terverifikasi
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs min-w-[650px]">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
+                          <th className="py-2.5">User</th>
+                          <th className="py-2.5">Pengirim</th>
+                          <th className="py-2.5">Nominal</th>
+                          <th className="py-2.5">Tanggal</th>
+                          <th className="py-2.5">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
+                        {processedDonationsList.map((item) => (
+                          <tr key={item.id}>
+                            <td className="py-3">
+                              <div className="flex items-center gap-2">
+                                <DiscordAvatar src={item.user?.avatar ?? null} username={item.user?.username ?? "Member"} size={22} />
+                                <span className="font-semibold text-gray-900 dark:text-white">{item.user?.username ?? "Member"}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 text-gray-600 dark:text-gray-300">{item.senderName || "-"}</td>
+                            <td className="py-3 font-bold text-purple-600 dark:text-purple-300">
+                              {formatMoney.format(item.amount)}
+                            </td>
+                            <td className="py-3 text-gray-500">
+                              {new Date(item.createdAt).toLocaleDateString("id-ID")}
+                            </td>
+                            <td className="py-3">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  item.status === "APPROVED" || item.status === "SUCCEEDED"
+                                    ? "bg-emerald-500/15 text-emerald-500"
+                                    : "bg-red-500/15 text-red-500"
+                                }`}
+                              >
+                                {item.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                        {processedDonationsList.length === 0 && (
+                          <tr>
+                            <td className="py-6 text-center text-gray-400" colSpan={5}>
+                              Belum ada catatan donasi terverifikasi.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 3. PANTAUAN REKBER MARKETPLACE */}
+                <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
+                    Pantauan Transaksi Lapak &amp; Rekber Marketplace
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Selesaikan transaksi rekber (*SOLD*), batalkan (*AVAILABLE*), atau hapus lapak bermasalah.
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs min-w-[650px]">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
+                          <th className="py-2.5">Judul Lapak</th>
+                          <th className="py-2.5">Penjual</th>
+                          <th className="py-2.5">Harga</th>
+                          <th className="py-2.5">Status</th>
+                          <th className="py-2.5 text-right">Aksi Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
+                        {data?.marketplaceListings?.map((listing) => {
+                          const mData = (listing.marketData && typeof listing.marketData === "object" ? listing.marketData : {}) as Record<string, unknown>;
+                          const statusStr = String(mData.status ?? "AVAILABLE");
+                          const priceNum = Number(mData.price ?? 0);
+
+                          return (
+                            <tr key={listing.id}>
+                              <td className="py-3 font-semibold text-gray-900 dark:text-white max-w-xs truncate">
+                                {listing.title}
+                              </td>
+                              <td className="py-3 text-gray-500">{listing.author.username ?? "Gamer"}</td>
+                              <td className="py-3 font-bold text-gray-800 dark:text-gray-200">{formatMoney.format(priceNum)}</td>
+                              <td className="py-3">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    statusStr === "AVAILABLE"
+                                      ? "bg-emerald-500/15 text-emerald-500"
+                                      : statusStr === "IN_ESCROW"
+                                        ? "bg-amber-500/15 text-amber-500"
+                                        : "bg-gray-500/15 text-gray-400"
+                                  }`}
+                                >
+                                  {statusStr}
+                                </span>
+                              </td>
+                              <td className="py-3 text-right space-x-1.5 whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  disabled={busyId === listing.id}
+                                  onClick={() => void updateListingStatus(listing.id, statusStr === "SOLD" ? "AVAILABLE" : "SOLD")}
+                                  className="px-2.5 py-1 rounded text-xs border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD]"
+                                >
+                                  {statusStr === "SOLD" ? "Batalkan Rekber (Tersedia)" : "Selesaikan Rekber (Terjual)"}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={busyId === listing.id}
+                                  onClick={() => void deletePostDirect(listing.id, listing.title)}
+                                  className="px-2 py-1 rounded text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                >
+                                  Hapus
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {!data?.marketplaceListings?.length && (
+                          <tr>
+                            <td className="py-6 text-center text-gray-400" colSpan={5}>
+                              Belum ada lapak terbuka.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* ========================================================================= */}
+            {/* TAB 4: MANAJEMEN MEMBER & KASTA ROLE */}
+            {/* ========================================================================= */}
+            {tab === "members" && (
+              <section className="space-y-6" role="tabpanel">
+                <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Users size={18} className="text-[#9D4EDD]" /> Manajemen Member &amp; Kasta Role
+                      </h2>
+                      <p className="text-xs text-gray-500">
+                        Atur role web, sesuaikan Level &amp; XP, berikan status Premium, dan berikan sanksi Ban.
+                      </p>
+                    </div>
+                    <div className="relative w-full sm:w-64">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="search"
+                        value={search}
+                        onChange={(e) => {
+                          setSearch(e.target.value);
+                          setPage(1);
+                        }}
+                        placeholder="Cari username / discordId…"
+                        className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs min-w-[700px]">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
+                          <th className="py-2.5">Member</th>
+                          <th className="py-2.5">Role Web</th>
+                          <th className="py-2.5">Level / XP</th>
+                          <th className="py-2.5">Status Premium</th>
+                          <th className="py-2.5 text-right">Aksi Akun</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
+                        {data?.users.map((member) => {
+                          const isSelf = member.id === data.currentUserId;
+                          return (
+                            <tr key={member.id}>
+                              <td className="py-3">
+                                <div className="flex items-center gap-2.5">
+                                  <DiscordAvatar src={member.avatar} username={member.username ?? "Member"} size={28} />
+                                  <div>
+                                    <span className="font-bold text-gray-900 dark:text-white block">
+                                      {member.username ?? "Gamer"}
+                                    </span>
+                                    <span className="text-[10px] text-gray-400">ID: {member.discordId || member.id}</span>
+                                  </div>
+                                </div>
+                              </td>
+
+                              <td className="py-3">
+                                <select
+                                  disabled={!isAdmin || isSelf || busyId === member.id}
+                                  value={member.role}
+                                  onChange={(e) => void updateMember(member, { role: e.target.value as Role })}
+                                  className="px-2 py-1 rounded text-xs border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none"
+                                >
+                                  <option value="MEMBER">MEMBER</option>
+                                  <option value="MODERATOR">MODERATOR</option>
+                                  <option value="ADMIN">ADMIN</option>
+                                </select>
+                              </td>
+
+                              <td className="py-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-[#9D4EDD]">Lv. {member.level ?? 1}</span>
+                                  <span className="text-gray-400">({(member.xp ?? 0).toLocaleString("id-ID")} XP)</span>
+                                </div>
+                              </td>
+
+                              <td className="py-3">
+                                <button
+                                  type="button"
+                                  disabled={busyId === member.id}
+                                  onClick={() => void updateMember(member, { isPremium: !member.isPremium })}
+                                  className={`px-2.5 py-1 rounded text-[11px] font-bold border ${
+                                    member.isPremium
+                                      ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                                      : "bg-gray-100 dark:bg-gray-800 text-gray-500 border-transparent"
+                                  }`}
+                                >
+                                  {member.isPremium ? "★ Premium Aktif" : "Standar"}
+                                </button>
+                              </td>
+
+                              <td className="py-3 text-right">
+                                {!isSelf && (
+                                  <button
+                                    type="button"
+                                    disabled={busyId === member.id}
+                                    onClick={() => void updateMember(member, { isBanned: !member.isBanned })}
+                                    className={`px-2.5 py-1 rounded text-xs font-bold ${
+                                      member.isBanned
+                                        ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                                        : "bg-rose-500/15 text-rose-500 border border-rose-500/30 hover:bg-rose-500/25"
+                                    }`}
+                                  >
+                                    {member.isBanned ? "Buka Ban (Unban)" : "Ban Member"}
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  {Boolean(data?.pagination && data.pagination.totalPages > 1) && (
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-[#211C2B] mt-4">
+                      <span className="text-xs text-gray-500">
+                        Halaman {data?.pagination.page} dari {data?.pagination.totalPages}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={page <= 1}
+                          onClick={() => setPage(page - 1)}
+                          className="px-2.5 py-1 rounded border border-gray-200 dark:border-[#211C2B] text-xs disabled:opacity-50"
+                        >
+                          Sebelumnya
+                        </button>
+                        <button
+                          type="button"
+                          disabled={Boolean(data?.pagination && page >= data.pagination.totalPages)}
+                          onClick={() => setPage(page + 1)}
+                          className="px-2.5 py-1 rounded border border-gray-200 dark:border-[#211C2B] text-xs disabled:opacity-50"
+                        >
+                          Selanjutnya
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* ========================================================================= */}
+            {/* TAB 5: MODERASI KONTEN, SPONSOR & BROADCAST */}
+            {/* ========================================================================= */}
+            {tab === "moderation" && (
+              <section className="space-y-8" role="tabpanel">
+                {/* 1. KELOLA SPONSOR RESMI */}
+                <div className="p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Sparkles size={18} className="text-[#9D4EDD]" /> Kelola Sponsor Resmi (Section 06 Beranda)
+                      </h2>
+                      <p className="text-xs text-gray-500">
+                        Tambah atau hapus mitra dan sponsor resmi yang tampil di halaman depan LogHorizon.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Form Tambah Sponsor */}
+                  <form onSubmit={(e) => void handleAddSponsor(e)} className="p-4 rounded-lg bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#211C2B] mb-6 space-y-3">
+                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Tambah Sponsor Baru</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div>
+                        <input
+                          type="text"
+                          required
+                          value={sponsorName}
+                          onChange={(e) => setSponsorName(e.target.value)}
+                          placeholder="Nama Sponsor / Brand *"
+                          className="w-full px-3 py-1.5 rounded border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="url"
+                          value={sponsorLogo}
+                          onChange={(e) => setSponsorLogo(e.target.value)}
+                          placeholder="URL Logo (Opsional)"
+                          className="w-full px-3 py-1.5 rounded border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="url"
+                          value={sponsorWebsite}
+                          onChange={(e) => setSponsorWebsite(e.target.value)}
+                          placeholder="Link Website (Opsional)"
+                          className="w-full px-3 py-1.5 rounded border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={sponsorTier}
+                          onChange={(e) => setSponsorTier(e.target.value)}
+                          className="flex-1 px-2 py-1.5 rounded border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-xs text-gray-900 dark:text-white focus:outline-none"
+                        >
+                          <option value="Benefactor">Benefactor</option>
+                          <option value="Platinum Partner">Platinum</option>
+                          <option value="Gold Partner">Gold</option>
+                        </select>
+                        <button
+                          type="submit"
+                          disabled={savingSponsor}
+                          className="button button-primary px-3 py-1.5 rounded text-xs font-bold inline-flex items-center gap-1 shrink-0"
+                        >
+                          <Plus size={14} /> Tambah
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+
+                  {/* List Sponsor Aktif */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {data?.sponsors?.map((sp) => (
+                      <div
+                        key={sp.id}
+                        className="p-3 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {sp.logoUrl ? (
+                            <div className="relative w-8 h-8 rounded overflow-hidden shrink-0">
+                              <Image src={sp.logoUrl} alt={sp.name} fill className="object-contain" />
                             </div>
-                          </td>
-                          <td className="py-3 text-gray-500 whitespace-nowrap">
-                            {new Date(item.createdAt).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
-                          </td>
-                          <td className="py-3 text-right space-x-2 whitespace-nowrap">
-                            {isAdmin && (
-                              <>
-                                <button
-                                  type="button"
-                                  disabled={busyId === item.id}
-                                  onClick={() => void verifyDonation(item.id, "APPROVED")}
-                                  className="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition"
-                                >
-                                  ✓ ACC / Setujui
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={busyId === item.id}
-                                  onClick={() => void verifyDonation(item.id, "REJECTED")}
-                                  className="px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition"
-                                >
-                                  ✕ Tolak
-                                </button>
-                              </>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    {!(data?.donations?.filter((d) => d.status === "PENDING") ?? []).length && (
-                      <tr>
-                        <td className="py-6 text-center text-gray-400" colSpan={6}>
-                          Tidak ada antrean donasi yang menunggu verifikasi saat ini.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* 2. Riwayat Donasi & Benefactor Guild */}
-            <div className="admin-panel p-5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
-              <div className="admin-panel-heading mb-4">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Coins size={18} className="text-[#9D4EDD]" /> Riwayat Semua Donasi
-                </h2>
-                <p className="text-xs text-gray-500">
-                  Daftar transaksi donasi yang telah diproses (Disetujui, Ditolak, atau Selesai).
-                </p>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs min-w-[650px]">
-                  <thead>
-                    <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
-                      <th className="py-2.5">Petualang</th>
-                      <th className="py-2.5">Atas Nama</th>
-                      <th className="py-2.5">Nominal (IDR)</th>
-                      <th className="py-2.5">Tanggal</th>
-                      <th className="py-2.5">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
-                    {data?.donations?.map((item) => (
-                      <tr key={item.id}>
-                        <td className="py-3">
-                          <div className="flex items-center gap-2">
-                            <DiscordAvatar src={item.user?.avatar ?? null} username={item.user?.username ?? "Petualang"} size={24} />
-                            <span className="font-semibold text-gray-900 dark:text-white">{item.user?.username ?? "Petualang"}</span>
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-[#9D4EDD]/15 text-[#9D4EDD] flex items-center justify-center font-bold text-xs shrink-0">
+                              {sp.name.charAt(0)}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <strong className="block text-xs font-bold text-gray-900 dark:text-white truncate">
+                              {sp.name}
+                            </strong>
+                            <span className="text-[10px] text-purple-400 font-semibold">{sp.tier}</span>
                           </div>
-                        </td>
-                        <td className="py-3 text-gray-600 dark:text-gray-300">
-                          {item.senderName || "-"}
-                        </td>
-                        <td className="py-3 font-bold text-purple-600 dark:text-purple-300">
-                          {formatMoney.format(item.amount)}
-                        </td>
-                        <td className="py-3 text-gray-500">
-                          {new Date(item.createdAt).toLocaleDateString("id-ID")}
-                        </td>
-                        <td className="py-3">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              item.status === "APPROVED" || item.status === "SUCCEEDED"
-                                ? "bg-emerald-500/15 text-emerald-500"
-                                : item.status === "PENDING"
-                                  ? "bg-amber-500/15 text-amber-500"
-                                  : "bg-red-500/15 text-red-500"
-                            }`}
-                          >
-                            {item.status}
-                          </span>
-                        </td>
-                      </tr>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={busyId === sp.id}
+                          onClick={() => void handleDeleteSponsor(sp.id, sp.name)}
+                          className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded"
+                          title="Hapus Sponsor"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     ))}
-                    {!data?.donations?.length && (
-                      <tr>
-                        <td className="py-6 text-center text-gray-400" colSpan={5}>
-                          Belum ada catatan donasi masuk.
-                        </td>
-                      </tr>
+                    {!data?.sponsors?.length && (
+                      <p className="text-xs text-gray-400 col-span-3 py-4 text-center">
+                        Belum ada sponsor khusus yang ditambahkan.
+                      </p>
                     )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                  </div>
+                </div>
 
-            {/* 3. Pantauan Transaksi Lapak Marketplace */}
-            <div className="admin-panel p-5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
-              <div className="admin-panel-heading mb-4">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Store size={18} className="text-[#9D4EDD]" /> Pantauan Lapak Marketplace
-                </h2>
-                <p className="text-xs text-gray-500">
-                  Ubah status lapak (*AVAILABLE*, *IN_ESCROW*, *SOLD*) atau hapus listing bermasalah.
-                </p>
-              </div>
+                {/* 2. LAPORAN PELANGGARAN & MODERASI THREAD */}
+                <div className="p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
+                    <Flag size={18} className="text-amber-500" /> Moderasi Laporan Forum ({data?.reports.length ?? 0})
+                  </h2>
+                  <p className="text-xs text-gray-500 mb-4">Postingan atau aktivitas yang dilaporkan oleh member.</p>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs min-w-[650px]">
-                  <thead>
-                    <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
-                      <th className="py-2.5">Judul Lapak</th>
-                      <th className="py-2.5">Penjual</th>
-                      <th className="py-2.5">Game</th>
-                      <th className="py-2.5">Harga</th>
-                      <th className="py-2.5">Status</th>
-                      <th className="py-2.5 text-right">Ubah Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
-                    {data?.marketplaceListings?.map((listing) => {
-                      const mData = (listing.marketData && typeof listing.marketData === "object" ? listing.marketData : {}) as Record<string, unknown>;
-                      const statusStr = String(mData.status ?? "AVAILABLE");
-                      const gameStr = String(mData.game ?? "Semua game");
-                      const priceNum = Number(mData.price ?? 0);
-
-                      return (
-                        <tr key={listing.id}>
-                          <td className="py-3 font-semibold text-gray-900 dark:text-white max-w-xs truncate">
-                            {listing.title}
-                          </td>
-                          <td className="py-3 text-gray-500">{listing.author.username ?? "Gamer"}</td>
-                          <td className="py-3 text-gray-500">{gameStr}</td>
-                          <td className="py-3 font-bold text-gray-800 dark:text-gray-200">{formatMoney.format(priceNum)}</td>
-                          <td className="py-3">
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                statusStr === "AVAILABLE"
-                                  ? "bg-emerald-500/15 text-emerald-500"
-                                  : statusStr === "IN_ESCROW"
-                                    ? "bg-amber-500/15 text-amber-500"
-                                    : "bg-gray-500/15 text-gray-400"
-                              }`}
-                            >
-                              {statusStr}
+                  <div className="space-y-3">
+                    {data?.reports.map((report) => (
+                      <article
+                        className="p-4 rounded-lg border border-amber-200 dark:border-amber-900/40 bg-white dark:bg-[#120F17] flex flex-col md:flex-row md:items-center justify-between gap-4"
+                        key={report.id}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 uppercase tracking-wider inline-flex items-center gap-1">
+                              <AlertTriangle size={11} /> PENDING
                             </span>
-                          </td>
-                          <td className="py-3 text-right space-x-1.5 whitespace-nowrap">
-                            <button
-                              type="button"
-                              disabled={busyId === listing.id}
-                              onClick={() => void updateListingStatus(listing.id, statusStr === "SOLD" ? "AVAILABLE" : "SOLD")}
-                              className="px-2 py-1 rounded text-xs border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD]"
-                            >
-                              {statusStr === "SOLD" ? "Tandai Tersedia" : "Tandai Terjual"}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busyId === listing.id}
-                              onClick={() => void deletePostDirect(listing.id, listing.title)}
-                              className="px-2 py-1 rounded text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                            >
-                              Hapus
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {!data?.marketplaceListings?.length && (
-                      <tr>
-                        <td className="py-6 text-center text-gray-400" colSpan={6}>
-                          Belum ada lapak terbuka.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        )}
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                              {report.post.title}
+                            </h3>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Penulis: <strong>{report.post.author.username ?? "Gamer"}</strong> • Pelapor: <strong>{report.reporter.username ?? "Gamer"}</strong>
+                          </p>
+                          <p className="text-xs text-gray-700 dark:text-gray-300 mt-2 bg-gray-50 dark:bg-[#1A1526] p-2 rounded border border-gray-200 dark:border-[#211C2B]">
+                            <strong>Alasan:</strong> {report.reason}
+                          </p>
+                        </div>
 
-        {/* ========================================================================= */}
-        {/* TAB 5: BROADCAST ANNOUNCEMENTS */}
-        {/* ========================================================================= */}
-        {tab === "broadcast" && isAdmin && (
-          <BroadcastSection
-            announcements={data?.announcements ?? []}
-            onNotice={setNotice}
-            onError={setError}
-            onRefresh={loadDashboard}
-          />
-        )}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            disabled={busyId === report.id}
+                            onClick={() => void handleReport(report, "dismiss")}
+                            className="px-2.5 py-1 rounded text-xs border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD]"
+                          >
+                            Abaikan
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busyId === report.id}
+                            onClick={() => void handleReport(report, "delete-post")}
+                            className="px-2.5 py-1 rounded text-xs font-bold text-red-600 bg-red-500/10 hover:bg-red-500/20"
+                          >
+                            Hapus Post
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                    {!data?.reports.length && (
+                      <p className="text-xs text-gray-400 py-3 text-center">
+                        Semua bersih! Tidak ada laporan pending saat ini.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* DAFTAR POST TERKINI + PIN / UNPIN */}
+                  <div className="mt-8 pt-6 border-t border-gray-200 dark:border-[#211C2B]">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">
+                      Daftar Thread Terkini (Pin &amp; Hapus Konten)
+                    </h3>
+                    <div className="space-y-2">
+                      {data?.recentPosts?.slice(0, 10).map((post) => (
+                        <div
+                          key={post.id}
+                          className="p-3 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex items-center justify-between gap-3 text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            {post.isPinned && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#9D4EDD]/15 text-[#9D4EDD] shrink-0">
+                                PINNED
+                              </span>
+                            )}
+                            <span className="font-bold text-gray-900 dark:text-white truncate">
+                              {post.title}
+                            </span>
+                            <span className="text-gray-400 shrink-0">
+                              oleh {post.author.username ?? "Gamer"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              disabled={busyId === post.id}
+                              onClick={() => void togglePinPost(post.id, post.isPinned)}
+                              className={`p-1.5 rounded border ${
+                                post.isPinned
+                                  ? "text-[#9D4EDD] border-[#9D4EDD]/40 bg-[#9D4EDD]/10"
+                                  : "text-gray-500 border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD]"
+                              }`}
+                              title={post.isPinned ? "Lepas Pin" : "Sematkan (Pin)"}
+                            >
+                              {post.isPinned ? <PinOff size={13} /> : <Pin size={13} />}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busyId === post.id}
+                              onClick={() => void deletePostDirect(post.id, post.title)}
+                              className="p-1.5 rounded text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                              title="Hapus Thread"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. BROADCAST PENGUMUMAN RESMI (24 JAM) */}
+                {isAdmin && (
+                  <BroadcastSection
+                    announcements={data?.announcements ?? []}
+                    onNotice={setNotice}
+                    onError={setError}
+                    onRefresh={loadDashboard}
+                  />
+                )}
+              </section>
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );
@@ -1229,7 +1757,7 @@ function BroadcastSection({
       setTitle("");
       setContent("");
       setImageUrl("");
-      onNotice(result.notificationSent ? "Warta berhasil disiarkan ke Beranda, News Hub, dan Discord." : result.warning ?? "Warta berhasil diterbitkan.");
+      onNotice(result.notificationSent ? "Warta berhasil disiarkan ke Beranda dan Discord." : result.warning ?? "Warta berhasil diterbitkan.");
       onRefresh();
     } catch (reason) {
       onError(reason instanceof Error ? reason.message : "Broadcast gagal.");
@@ -1240,131 +1768,98 @@ function BroadcastSection({
 
   const now = new Date();
   const activeAnnouncements = announcements.filter((a) => new Date(a.expiresAt) > now);
-  const archivedAnnouncements = announcements.filter((a) => new Date(a.expiresAt) <= now);
 
   return (
-    <div className="space-y-8" role="tabpanel">
-      <section className="admin-panel broadcast-panel p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
-        <div className="admin-panel-heading flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Broadcast Pengumuman Resmi Guild (24 Jam)</h2>
-            <p className="text-xs text-gray-500">
-              Pengumuman akan otomatis tayang di banner utama Beranda selama 24 jam dan disiarkan ke webhook Discord.
-            </p>
-          </div>
-          <span className="p-2 rounded-full bg-[#9D4EDD]/15 text-[#9D4EDD]">
-            <Megaphone size={20} />
-          </span>
-        </div>
-        <form className="stack-form broadcast-form space-y-4" onSubmit={submit}>
-          <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Judul Pengumuman</label>
-            <input
-              required
-              maxLength={180}
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Contoh: Pengumuman Turnamen Akbar Season 1 LogHorizon"
-              className="w-full px-3.5 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Isi Pengumuman / Warta</label>
-            <textarea
-              required
-              maxLength={10000}
-              rows={6}
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              placeholder="Tulis informasi detail pengumuman untuk seluruh member guild…"
-              className="w-full px-3.5 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-              URL Banner / Gambar Warta (Opsional)
-            </label>
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={(event) => setImageUrl(event.target.value)}
-              placeholder="https://images.unsplash.com/... atau URL gambar discord"
-              className="w-full px-3.5 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white"
-            />
-          </div>
-          <p className="text-xs text-gray-500">
-            Warta akan disiarkan ke Beranda (24 jam), News Hub, serta channel pengumuman Discord via webhook.
-          </p>
-          <button
-            type="submit"
-            className="button button-primary px-5 py-2.5 text-sm font-bold flex items-center gap-2"
-            disabled={saving}
-          >
-            <Megaphone size={16} /> {saving ? "Mengirim Pengumuman…" : "Siarkan Pengumuman (24 Jam)"}
-          </button>
-        </form>
-      </section>
+    <div className="p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] space-y-6">
+      <div>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Megaphone size={18} className="text-[#9D4EDD]" /> Broadcast Pengumuman Resmi Guild (Tayang 24 Jam)
+        </h2>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Pengumuman resmi akan tayang sebagai banner di Beranda website dan otomatis terkirim ke Discord webhook.
+        </p>
+      </div>
 
-      {/* Daftar Pengumuman Guild (Aktif & Arsip) */}
-      <section className="admin-panel p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Megaphone size={16} className="text-[#9D4EDD]" /> Riwayat Siaran Pengumuman
-          </h3>
-          <span className="text-xs text-gray-400">Total: {announcements.length}</span>
+      <form onSubmit={(e) => void submit(e)} className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+            Judul Warta / Pengumuman <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            required
+            maxLength={120}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+            placeholder="Contoh: Maintenance Server Guild & Pendaftaran Turnamen"
+          />
         </div>
 
-        {announcements.length === 0 ? (
-          <p className="text-xs text-gray-400 py-4 text-center">Belum ada pengumuman yang disiarkan.</p>
-        ) : (
-          <div className="space-y-3">
-            {activeAnnouncements.map((item) => (
-              <div
-                key={item.id}
-                className="p-4 rounded-md border border-[#9D4EDD]/40 bg-[#9D4EDD]/5 flex flex-col sm:flex-row sm:items-start justify-between gap-3"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#9D4EDD] text-white">
-                      Aktif di Beranda
-                    </span>
-                    <h4 className="font-bold text-sm text-gray-900 dark:text-white">{item.title}</h4>
-                  </div>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{item.content}</p>
-                  <p className="text-[11px] text-gray-400 font-mono">
-                    Oleh: {item.author.username ?? "Admin"} • Dibuat: {new Date(item.createdAt).toLocaleString("id-ID")}
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <span className="text-[11px] font-mono text-purple-400 bg-purple-950/40 px-2 py-1 rounded">
-                    Berakhir: {new Date(item.expiresAt).toLocaleTimeString("id-ID")}
-                  </span>
-                </div>
-              </div>
-            ))}
+        <div>
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+            Isi Pengumuman Lengkap <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            required
+            rows={3}
+            maxLength={1000}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+            placeholder="Tuliskan instruksi, detail jadwal, atau pengumuman penting untuk seluruh anggota…"
+          />
+        </div>
 
-            {archivedAnnouncements.map((item) => (
-              <div
-                key={item.id}
-                className="p-3.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-gray-50/50 dark:bg-black/20 flex flex-col sm:flex-row sm:items-start justify-between gap-2 opacity-75"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-200 dark:bg-gray-800 text-gray-500">
-                      Diarsipkan
-                    </span>
-                    <h4 className="font-semibold text-xs text-gray-800 dark:text-gray-300">{item.title}</h4>
-                  </div>
-                  <p className="text-xs text-gray-500 line-clamp-2">{item.content}</p>
-                </div>
-                <div className="shrink-0 text-right text-[11px] text-gray-400 font-mono">
-                  {new Date(item.createdAt).toLocaleDateString("id-ID")}
-                </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+            URL Gambar / Banner (Opsional)
+          </label>
+          <input
+            type="url"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+            placeholder="https://imgur.com/... atau tautan gambar langsung"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving}
+          className="button button-primary px-5 py-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-2"
+        >
+          {saving ? "Menyiarkan pengumuman…" : "Siarkan Pengumuman (Web + Discord)"}
+        </button>
+      </form>
+
+      {/* Daftar Pengumuman Aktif */}
+      <div className="pt-4 border-t border-gray-200 dark:border-[#211C2B]">
+        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+          Pengumuman Sedang Tayang ({activeAnnouncements.length})
+        </h3>
+        <div className="space-y-2">
+          {activeAnnouncements.map((item) => (
+            <div
+              key={item.id}
+              className="p-3 rounded-lg bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#211C2B] flex items-center justify-between text-xs"
+            >
+              <div>
+                <strong className="block font-bold text-gray-900 dark:text-white">{item.title}</strong>
+                <span className="text-[10px] text-gray-400">
+                  Dibuat {new Date(item.createdAt).toLocaleString("id-ID")} • Berakhir {new Date(item.expiresAt).toLocaleString("id-ID")}
+                </span>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-500">
+                AKTIF (24H)
+              </span>
+            </div>
+          ))}
+          {!activeAnnouncements.length && (
+            <p className="text-xs text-gray-400 text-center py-2">Tidak ada pengumuman yang sedang tayang.</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

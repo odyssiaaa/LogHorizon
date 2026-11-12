@@ -40,9 +40,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     if (isApproved && existing.user) {
       const badge =
-        existing.amount >= 500_000
+        existing.amount >= 100_000
           ? "Noble Patron"
-          : existing.amount >= 250_000
+          : existing.amount >= 50_000
             ? "High Merchant"
             : "Knight";
 
@@ -53,7 +53,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         where: { id: existing.user.id },
         data: {
           badges: nextBadges,
-          ...(existing.amount >= 250_000 ? { isPremium: true } : {}),
+          ...(existing.amount >= 50_000 ? { isPremium: true } : {}),
         },
       });
 

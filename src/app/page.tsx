@@ -14,6 +14,10 @@ import {
   UsersRound,
 } from "lucide-react";
 
+import { prisma } from "@/lib/prisma";
+
+export const instant = false;
+
 const divisions = [
   { title: "FPS / Shooter", games: "Valorant · Apex Legends · CS2", icon: Swords },
   { title: "MOBA / Strategy", games: "Mobile Legends · Dota 2 · LoL", icon: Compass },
@@ -65,7 +69,16 @@ const roleGroups = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const [config, sponsors] = await Promise.all([
+    prisma.siteConfig.findUnique({ where: { id: "default" } }).catch(() => null),
+    prisma.sponsor.findMany({ orderBy: { createdAt: "desc" } }).catch(() => []),
+  ]);
+
+  const statMembers = config?.statMembers || "1,200+";
+  const statParties = config?.statParties || "450+";
+  const statVoice = config?.statVoice || "24/7";
+  const discordInviteUrl = config?.discordInviteUrl || "https://discord.gg/aJvbVyTxNb";
   return (
     <main className="w-full max-w-full overflow-x-hidden">
       {/* 24-HOUR ACTIVE GUILD BROADCAST BANNER */}
@@ -92,7 +105,7 @@ export default function Home() {
                 dan mobile, apa pun genre dan game favoritmu.
               </p>
               <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 mt-6">
-                <a className="button button-discord button-large w-full sm:w-auto inline-flex items-center justify-center gap-2 text-sm font-bold" href="https://discord.gg/aJvbVyTxNb" target="_blank" rel="noreferrer">
+                <a className="button button-discord button-large w-full sm:w-auto inline-flex items-center justify-center gap-2 text-sm font-bold" href={discordInviteUrl} target="_blank" rel="noreferrer">
                   <span>Masuk Guild (Join Discord)</span>
                   <ArrowUpRight size={18} />
                 </a>
@@ -102,15 +115,15 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-3 gap-2 sm:gap-6 mt-8 pt-6 border-t border-gray-200 dark:border-[#211C2B] max-w-lg">
                 <div>
-                  <strong className="block text-xl sm:text-2xl font-black text-gray-900 dark:text-white">1,200+</strong>
+                  <strong className="block text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{statMembers}</strong>
                   <span className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">Anggota Guild</span>
                 </div>
                 <div>
-                  <strong className="block text-xl sm:text-2xl font-black text-gray-900 dark:text-white">400+</strong>
+                  <strong className="block text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{statParties}</strong>
                   <span className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">Party Terbentuk</span>
                 </div>
                 <div>
-                  <strong className="block text-xl sm:text-2xl font-black text-gray-900 dark:text-white">24/7</strong>
+                  <strong className="block text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{statVoice}</strong>
                   <span className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">Voice Aktif</span>
                 </div>
               </div>
@@ -282,6 +295,44 @@ export default function Home() {
             Mitra dan sponsor terverifikasi yang mendanai turnamen serta operasional server LogHorizon.
           </p>
         </div>
+
+        {sponsors.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6">
+            {sponsors.map((sp) => (
+              <div
+                key={sp.id}
+                className="p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col items-center text-center justify-between gap-3"
+              >
+                {sp.logoUrl ? (
+                  <div className="relative w-16 h-16 rounded overflow-hidden">
+                    <Image src={sp.logoUrl} alt={sp.name} fill className="object-contain" />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-[#9D4EDD]/15 text-[#9D4EDD] flex items-center justify-center font-bold text-lg">
+                    {sp.name.charAt(0)}
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-bold text-sm text-gray-900 dark:text-white">{sp.name}</h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300">
+                    {sp.tier}
+                  </span>
+                </div>
+                {sp.websiteUrl && (
+                  <a
+                    href={sp.websiteUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-[#9D4EDD] hover:underline inline-flex items-center gap-1 font-semibold"
+                  >
+                    Kunjungi <ArrowUpRight size={12} />
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="mt-6 p-6 sm:p-8 rounded-lg border border-dashed border-gray-300 dark:border-[#2A2438] bg-white/40 dark:bg-[#120F17]/50 flex flex-col sm:flex-row items-center justify-between gap-5 text-center sm:text-left">
           <div className="space-y-1">
             <p className="text-sm font-bold text-gray-900 dark:text-white">
@@ -308,9 +359,9 @@ export default function Home() {
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white break-words">
               Sudah siap melampaui horizon?
             </h2>
-            <p className="text-xs sm:text-sm text-gray-300 mt-1">Gabung sekarang bersama 1,200+ petualang lintas platform.</p>
+            <p className="text-xs sm:text-sm text-gray-300 mt-1">Gabung sekarang bersama {statMembers} petualang lintas platform.</p>
           </div>
-          <a className="button button-discord inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md text-sm font-bold text-white whitespace-nowrap self-stretch sm:self-auto" href="https://discord.gg/aJvbVyTxNb" target="_blank" rel="noreferrer">
+          <a className="button button-discord inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md text-sm font-bold text-white whitespace-nowrap self-stretch sm:self-auto" href={discordInviteUrl} target="_blank" rel="noreferrer">
             <span>Connect Discord</span>
             <ArrowUpRight size={17} />
           </a>

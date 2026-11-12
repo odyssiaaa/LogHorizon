@@ -25,6 +25,8 @@ export async function GET(request: Request) {
   const [
     totalMembers,
     activeListings,
+    activeEscrows,
+    pendingDonationsCount,
     totalForumThreads,
     pendingReports,
     totalDonationsSum,
@@ -35,6 +37,8 @@ export async function GET(request: Request) {
     marketplaceListings,
     donations,
     announcements,
+    siteConfig,
+    sponsors,
   ] = await prisma.$transaction([
     prisma.user.count(),
     prisma.post.count({
@@ -42,6 +46,15 @@ export async function GET(request: Request) {
         category: PostCategory.MARKETPLACE,
         marketData: { path: ["status"], equals: "AVAILABLE" },
       },
+    }),
+    prisma.post.count({
+      where: {
+        category: PostCategory.MARKETPLACE,
+        marketData: { path: ["status"], equals: "IN_ESCROW" },
+      },
+    }),
+    prisma.donation.count({
+      where: { status: "PENDING" },
     }),
     prisma.post.count({ where: { category: { not: PostCategory.MARKETPLACE } } }),
     prisma.report.count({ where: { status: ReportStatus.PENDING } }),
@@ -124,13 +137,34 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
       take: 30,
     }),
+    prisma.siteConfig.findUnique({
+      where: { id: "default" },
+    }),
+    prisma.sponsor.findMany({
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
+
+  const defaultSiteConfig = {
+    id: "default",
+    statMembers: "1,200+",
+    statParties: "450+",
+    statVoice: "24/7",
+    qrisImageUrl: "/qris-guild.png",
+    rekberAccount: "BCA 1234567890 a.n LogHorizon",
+    rekberFee: 5000,
+    monthlyGoal: 5000000,
+    minDonation: 10000,
+    discordInviteUrl: "https://discord.gg/aJvbVyTxNb",
+  };
 
   return Response.json({
     stats: {
       totalMembers,
       totalForumThreads,
       activeMarketplaceListings: activeListings,
+      activeEscrows,
+      pendingDonations: pendingDonationsCount,
       pendingReports,
       totalDonations: totalDonationsSum._sum.amount ?? 0,
     },
@@ -140,6 +174,8 @@ export async function GET(request: Request) {
     marketplaceListings,
     donations,
     announcements,
+    siteConfig: siteConfig ?? defaultSiteConfig,
+    sponsors,
     pagination: { page, pageSize: PAGE_SIZE, total: totalUsers, totalPages: Math.ceil(totalUsers / PAGE_SIZE) },
     canManageRoles: access.user.role === Role.ADMIN,
     canBanMembers: true,

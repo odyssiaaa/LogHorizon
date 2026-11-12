@@ -310,3 +310,28 @@ model Announcement {
 
   @@index([createdAt, expiresAt])
 }
+
+model SiteConfig {
+  id               String   @id @default("default")
+  statMembers      String   @default("1,200+")
+  statParties      String   @default("450+")
+  statVoice        String   @default("24/7")
+  qrisImageUrl     String   @default("/qris-guild.png")
+  rekberAccount    String   @default("BCA 1234567890 a.n LogHorizon")
+  rekberFee        Int      @default(5000)
+  monthlyGoal      Int      @default(5000000)
+  minDonation      Int      @default(10000)
+  discordInviteUrl String   @default("https://discord.gg/aJvbVyTxNb")
+  updatedAt        DateTime @updatedAt
+}
+
+model Sponsor {
+  id         String   @id @default(cuid())
+  name       String
+  logoUrl    String?
+  websiteUrl String?
+  tier       String   @default("Benefactor")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}

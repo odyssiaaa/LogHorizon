@@ -13,8 +13,11 @@ const tiers = [
     id: "ADVENTURER_SUPPORT",
     name: "Adventurer Support",
     icon: ShieldCheck,
-    price: "Mulai Rp 10.000",
+    price: "Rp 10.000 - Rp 49.999",
+    rangeText: "Rp 10.000 - Rp 49.999",
     badge: "Knight",
+    min: 10000,
+    max: 49999,
     benefits: [
       "Role & Lencana Knight di profil dan leaderboard",
       "Dukungan operasional server guild",
@@ -25,8 +28,11 @@ const tiers = [
     id: "ELITE_PARTY_MEMBER",
     name: "Elite Party Member",
     icon: Crown,
-    price: "Mulai Rp 50.000",
+    price: "Rp 50.000 - Rp 99.999",
+    rangeText: "Rp 50.000 - Rp 99.999",
     badge: "High Merchant",
+    min: 50000,
+    max: 99999,
     benefits: [
       "Status Premium (Elite Party Member)",
       "Bebas fee marketplace dan sorotan khusus",
@@ -37,8 +43,11 @@ const tiers = [
     id: "GUILD_BENEFACTOR",
     name: "Guild Benefactor",
     icon: Gem,
-    price: "Mulai Rp 100.000",
+    price: "Mulai Rp 100.000+",
+    rangeText: "Mulai Rp 100.000+",
     badge: "Noble Patron",
+    min: 100000,
+    max: Infinity,
     benefits: [
       "Lencana Noble Patron di profil & leaderboard",
       "Sorotan benefactor utama turnamen guild",
@@ -48,6 +57,19 @@ const tiers = [
 ] as const;
 
 type TierId = (typeof tiers)[number]["id"];
+
+type TreasurySummary = {
+  total: number;
+  goal: number | null;
+  qrisImageUrl?: string;
+  minDonation?: number;
+};
+
+function getTierByAmount(val: number): TierId {
+  if (val >= 100000) return "GUILD_BENEFACTOR";
+  if (val >= 50000) return "ELITE_PARTY_MEMBER";
+  return "ADVENTURER_SUPPORT";
+}
 
 export function DonationForm({ simulationEnabled: _simulationEnabled }: { simulationEnabled: boolean }) {
   const { data: session } = useSession();
@@ -59,30 +81,39 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [treasury, setTreasury] = useState<{ total: number; goal: number | null } | null>(null);
+  const [treasury, setTreasury] = useState<TreasurySummary | null>(null);
 
   useEffect(() => {
     fetch("/api/donate")
-      .then(async (response) => readApiResponse<{ total: number; goal: number | null }>(response, "Ringkasan kas gagal dimuat."))
+      .then(async (response) => readApiResponse<TreasurySummary>(response, "Ringkasan kas gagal dimuat."))
       .then(setTreasury)
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Ringkasan kas gagal dimuat."));
   }, []);
 
+  function handleAmountChange(newVal: string) {
+    setAmount(newVal);
+    const num = Number(newVal);
+    if (Number.isSafeInteger(num) && num > 0) {
+      setTier(getTierByAmount(num));
+    }
+  }
+
   async function submitTransferConfirmation() {
-    if (!tier) return;
     if (!session?.user) {
       await signIn("discord");
       return;
     }
     const numericAmount = Number(amount);
-    if (!Number.isSafeInteger(numericAmount) || numericAmount < 5000 || numericAmount > 10_000_000) {
-      setError("Nominal donasi harus antara Rp 5.000 dan Rp 10.000.000.");
+    if (!Number.isSafeInteger(numericAmount) || numericAmount < 10000 || numericAmount > 10_000_000) {
+      setError("Nominal donasi harus minimal Rp 10.000 (maksimal Rp 10.000.000).");
       return;
     }
     if (!senderName.trim()) {
       setError("Harap isi nama pengirim / pemilik rekening transfer.");
       return;
     }
+
+    const currentTier = getTierByAmount(numericAmount);
 
     setLoading(true);
     setError("");
@@ -94,7 +125,7 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: numericAmount,
-          tier,
+          tier: currentTier,
           senderName: senderName.trim(),
           notes: notes.trim(),
           proofUrl: proofUrl.trim(),
@@ -115,8 +146,8 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
   }
 
   const progress = treasury?.goal ? Math.min(100, (treasury.total / treasury.goal) * 100) : 0;
-  const selectedTier = tiers.find((item) => item.id === tier);
-  const qrisUrl = process.env.NEXT_PUBLIC_QRIS_IMAGE_URL || "/qris-guild.png";
+  const selectedTier = tiers.find((item) => item.id === tier) ?? tiers[0];
+  const qrisUrl = treasury?.qrisImageUrl || process.env.NEXT_PUBLIC_QRIS_IMAGE_URL || "/qris-guild.png";
 
   return (
     <main className="page-shell donate-page treasury-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
@@ -250,14 +281,26 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
                 </label>
                 <input
                   type="number"
-                  min={5000}
+                  min={10000}
                   max={10000000}
-                  step={1000}
+                  step={5000}
                   value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
+                  onChange={(event) => handleAmountChange(event.target.value)}
                   className="w-full px-3 py-2 rounded border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                   placeholder="50000"
                 />
+              </div>
+
+              {/* Dynamic Tier Explanation */}
+              <div className="p-3 rounded-lg bg-[#9D4EDD]/10 border border-[#9D4EDD]/30 text-xs text-purple-700 dark:text-purple-300">
+                <p className="font-semibold">
+                  Nominal kamu masuk ke kategori <span className="font-bold underline">{selectedTier.name}</span> dengan benefit <span className="font-bold underline">{selectedTier.badge}</span>.
+                </p>
+                {Number(amount) < 10000 && (
+                  <p className="text-red-400 font-bold mt-1">
+                    Batas minimal donasi adalah Rp 10.000 untuk mendapatkan benefit guild.
+                  </p>
+                )}
               </div>
 
               <div>
