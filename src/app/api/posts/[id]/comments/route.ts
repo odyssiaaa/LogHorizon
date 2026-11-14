@@ -22,17 +22,36 @@ export async function POST(request: Request, { params }: RouteContext) {
   });
   if (!post) return jsonError("Postingan tidak ditemukan.", 404);
 
+  // Anti-spam check: Cooldown minimal 3 detik antar komentar dari user yang sama
+  const lastComment = await prisma.comment.findFirst({
+    where: { authorId: user.id },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  });
+  if (lastComment) {
+    const elapsedMs = Date.now() - new Date(lastComment.createdAt).getTime();
+    if (elapsedMs < 3000) {
+      return jsonError("Mohon tunggu sebentar sebelum mengirim komentar baru.", 429);
+    }
+  }
+
   if (parentId) {
     const parent = await prisma.comment.findFirst({ where: { id: parentId, postId: id }, select: { id: true } });
     if (!parent) return jsonError("Komentar yang dibalas tidak ditemukan.", 404);
   }
+
+  // Berikan XP hanya jika jeda komentar >= 30 detik untuk mencegah XP farming
+  const shouldAwardXp = !lastComment || (Date.now() - new Date(lastComment.createdAt).getTime() >= 30000);
+
   const comment = await prisma.$transaction(async (tx) => {
     const created = await tx.comment.create({
       data: { postId: id, authorId: user.id, parentId, content },
       include: { author: { select: { id: true, username: true, avatar: true } } },
     });
-    const commentCount = await tx.comment.count({ where: { authorId: user.id } });
-    await addXpInTransaction(tx, user.id, 5, commentCount >= 25 ? "Guild Guide" : undefined);
+    if (shouldAwardXp) {
+      const commentCount = await tx.comment.count({ where: { authorId: user.id } });
+      await addXpInTransaction(tx, user.id, 5, commentCount >= 25 ? "Guild Guide" : undefined);
+    }
     return created;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 

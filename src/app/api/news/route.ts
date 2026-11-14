@@ -171,6 +171,7 @@ async function fetchRssArticles(url: string, sourceName: string): Promise<Normal
     const response = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) LogHorizon/1.0" },
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(6000),
     });
     if (!response.ok) return [];
     const text = await response.text();
@@ -378,7 +379,7 @@ async function fetchGlobalArticles(): Promise<NormalizedArticle[]> {
       const query = encodeURIComponent("gaming OR esports OR teknologi OR game OR valorant OR playstation OR steam");
       const res = await fetch(
         `https://newsapi.org/v2/everything?q=${query}&language=id&sortBy=publishedAt&pageSize=18&apiKey=${newsApiKey}`,
-        { next: { revalidate: 3600 }, headers: { "User-Agent": "LogHorizon/1.0" } }
+        { next: { revalidate: 3600 }, headers: { "User-Agent": "LogHorizon/1.0" }, signal: AbortSignal.timeout(6000) }
       );
       if (res.ok) {
         const data = await res.json();
@@ -411,6 +412,7 @@ async function fetchGlobalArticles(): Promise<NormalizedArticle[]> {
       const res = await fetch("https://api.apitube.io/v1/news/everything?language.code=id&per_page=15", {
         headers: { "X-Api-Key": apitubeKey },
         next: { revalidate: 3600 },
+        signal: AbortSignal.timeout(6000),
       });
       if (res.ok) {
         const data = await res.json();

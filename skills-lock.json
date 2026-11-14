@@ -19,6 +19,12 @@
       "skillPath": "skills/caveman/SKILL.md",
       "computedHash": "b51af74aacdadbc3c2d6bb79f05db58dc521854b87f7ffabd48faf286a81ed31"
     },
+    "code-reviewer": {
+      "source": "rmyndharis/antigravity-skills",
+      "sourceType": "github",
+      "skillPath": "skills/code-reviewer/SKILL.md",
+      "computedHash": "e902ff73d4c1b6184a5be870ce5fc50e29ca876eba6211ed49af107f13accde3"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
@@ -79,6 +85,12 @@
       "skillPath": "skills/nextjs-app-router-patterns/SKILL.md",
       "computedHash": "827866279c1e74bdf7a2d0bb0a1a0e3ff2cfa5a0c948ff8f7f798827b731d17e"
     },
+    "security-auditor": {
+      "source": "rmyndharis/antigravity-skills",
+      "sourceType": "github",
+      "skillPath": "skills/security-auditor/SKILL.md",
+      "computedHash": "d209d74f45cbe10c099406b099c68e6f715792390f6833abc11ef30a11038fc9"
+    },
     "seo-audit": {
       "source": "coreyhaines31/marketingskills",
       "sourceType": "github",
@@ -96,6 +108,12 @@
       "sourceType": "github",
       "skillPath": "skills/web-design-guidelines/SKILL.md",
       "computedHash": "4f68ae07187fb0d1fb78c88b503d089da4cf5a9d9625d1f2e425b1590bf96d92"
+    },
+    "webapp-testing": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/webapp-testing/SKILL.md",
+      "computedHash": "48cd9a742a59250edec6db89cf081ef5465f365e2133f6d6c5e29c380b754b7d"
     }
   }
 }
