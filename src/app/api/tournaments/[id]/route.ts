@@ -1,7 +1,7 @@
 import { Prisma, TournamentStatus } from "@prisma/client";
 import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { advanceMatchWinner, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES } from "@/lib/tournament";
+import { advanceMatchWinner, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES, updateMatchStatus } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -86,15 +86,22 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   // Update a single match or whole matches list
   if (Array.isArray(data.matches)) {
     updatedMatches = data.matches as TournamentMatch[];
-  } else if (typeof data.matchId === "string" && data.winner !== undefined) {
-    // Admin updated a specific match score / winner
+  } else if (typeof data.matchId === "string") {
     const matchId = data.matchId;
-    const winnerName = typeof data.winner === "string" ? data.winner : "";
-    const winnerId = typeof data.winnerId === "string" ? data.winnerId : undefined;
-    const scoreA = typeof data.scoreA === "number" ? data.scoreA : undefined;
-    const scoreB = typeof data.scoreB === "number" ? data.scoreB : undefined;
-
-    updatedMatches = advanceMatchWinner(updatedMatches, matchId, winnerName, winnerId, scoreA, scoreB);
+    if (typeof data.matchStatus === "string") {
+      updatedMatches = updateMatchStatus(
+        updatedMatches,
+        matchId,
+        data.matchStatus as "UPCOMING" | "LIVE" | "FINISHED"
+      );
+    }
+    if (data.winner !== undefined) {
+      const winnerName = typeof data.winner === "string" ? data.winner : "";
+      const winnerId = typeof data.winnerId === "string" ? data.winnerId : undefined;
+      const scoreA = typeof data.scoreA === "number" ? data.scoreA : undefined;
+      const scoreB = typeof data.scoreB === "number" ? data.scoreB : undefined;
+      updatedMatches = advanceMatchWinner(updatedMatches, matchId, winnerName, winnerId, scoreA, scoreB);
+    }
   }
 
   // Gacha / Fisher-Yates Random Bracket Seeding (with balanced Auto-BYE)

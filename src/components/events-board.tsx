@@ -40,12 +40,13 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { readApiResponse } from "@/lib/api-response";
-import { advanceMatchWinner, TournamentMatch, TournamentTeam, TournamentRosterPlayer, DEFAULT_TOURNAMENT_RULES } from "@/lib/tournament";
+import { advanceMatchWinner, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, DEFAULT_TOURNAMENT_RULES } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 import { RosterPlayerRow } from "@/components/roster-player-row";
+import { QuickMatchScoreModal } from "@/components/quick-match-score-modal";
 
 type Participant = {
   id: string;
@@ -301,6 +302,14 @@ export function EventsBoard() {
   // View Team Roster Popup
   const [viewingRoster, setViewingRoster] = useState<TournamentTeam | null>(null);
 
+  // Live Auto-Refresh & Real-Time Sync State
+  const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
+  const [syncSecondsAgo, setSyncSecondsAgo] = useState<number>(0);
+  const [quickScoreModalMatch, setQuickScoreModalMatch] = useState<{
+    tournamentId: string;
+    match: TournamentMatch;
+  } | null>(null);
+
   useEffect(() => {
     let active = true;
     Promise.all([
@@ -320,6 +329,137 @@ export function EventsBoard() {
       active = false;
     };
   }, [refreshKey]);
+
+  // SMART AUTO-POLLING (Setiap 4 Detik saat tab browser aktif)
+  useEffect(() => {
+    const tickInterval = setInterval(() => {
+      setSyncSecondsAgo(Math.max(0, Math.floor((Date.now() - lastSyncTime) / 1000)));
+    }, 1000);
+
+    const pollInterval = setInterval(async () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        return;
+      }
+      const shouldPoll =
+        activeTab === "turnamen" ||
+        tournaments.some((t) => t.status === "ONGOING" || t.status === "REGISTRATION");
+      if (!shouldPoll) return;
+
+      try {
+        const res = await fetch(`/api/tournaments?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
+        if (!res.ok) return;
+        const fresh = await res.json();
+        if (Array.isArray(fresh)) {
+          setTournaments(fresh);
+          setLastSyncTime(Date.now());
+          setSyncSecondsAgo(0);
+
+          if (managingTournament) {
+            const current = fresh.find((t) => t.id === managingTournament.id);
+            if (current) {
+              setManagingTournament((prev) => (prev ? { ...prev, ...current } : prev));
+              setManageMatches(current.matches || []);
+              setManageTeams(current.teams || []);
+            }
+          }
+        }
+      } catch {
+        // Silently skip transient network failure during polling
+      }
+    }, 4000);
+
+    return () => {
+      clearInterval(tickInterval);
+      clearInterval(pollInterval);
+    };
+  }, [activeTab, tournaments, managingTournament, lastSyncTime]);
+
+  // Optimistic Quick Update handler for bracket card admin action buttons
+  function handleAdminQuickUpdate(tournamentId: string, matchId: string, action: "SET_LIVE" | "FINISH_MATCH") {
+    const targetTournament = tournaments.find((t) => t.id === tournamentId);
+    if (!targetTournament) return;
+    const match = targetTournament.matches?.find((m) => m.matchId === matchId);
+    if (!match) return;
+
+    if (action === "SET_LIVE") {
+      // 0ms Optimistic UI update
+      const updatedMatches = updateMatchStatus(targetTournament.matches || [], matchId, "LIVE");
+      setTournaments((prev) =>
+        prev.map((t) => (t.id === tournamentId ? { ...t, matches: updatedMatches } : t))
+      );
+      if (managingTournament && managingTournament.id === tournamentId) {
+        setManageMatches(updatedMatches);
+        setManagingTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
+      }
+      setNotice(`Match ${match.roundName} #${match.matchId} kini berstatus LIVE!`);
+
+      // Background DB Sync
+      fetch(`/api/tournaments/${tournamentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId, matchStatus: "LIVE" }),
+      }).catch((err) => {
+        console.error("Gagal sync match status LIVE:", err);
+      });
+    } else if (action === "FINISH_MATCH") {
+      setQuickScoreModalMatch({ tournamentId, match });
+    }
+  }
+
+  // Handle saving score from QuickMatchScoreModal with 0ms Optimistic UI
+  async function handleSaveQuickScore(
+    matchId: string,
+    winnerName: string,
+    winnerId?: string,
+    scoreA?: number,
+    scoreB?: number
+  ) {
+    if (!quickScoreModalMatch) return;
+    const { tournamentId } = quickScoreModalMatch;
+    const targetTournament = tournaments.find((t) => t.id === tournamentId);
+    if (!targetTournament) return;
+
+    // 0ms Optimistic local update
+    const updatedMatches = advanceMatchWinner(
+      targetTournament.matches || [],
+      matchId,
+      winnerName,
+      winnerId,
+      scoreA,
+      scoreB
+    );
+
+    setTournaments((prev) =>
+      prev.map((t) => (t.id === tournamentId ? { ...t, matches: updatedMatches } : t))
+    );
+    if (managingTournament && managingTournament.id === tournamentId) {
+      setManageMatches(updatedMatches);
+      setManagingTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
+    }
+    setQuickScoreModalMatch(null);
+    setNotice(`Skor tersimpan! ${winnerName} lolos ke babak berikutnya.`);
+
+    // Background DB Sync
+    try {
+      await fetch(`/api/tournaments/${tournamentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matchId,
+          winner: winnerName,
+          winnerId,
+          scoreA,
+          scoreB,
+        }),
+      });
+    } catch (err) {
+      console.error("Gagal sync skor match:", err);
+      setError("Gagal menyinkronkan skor ke database. Mohon periksa koneksi.");
+    }
+  }
 
   // Open Manage Modal
   function handleOpenManage(tournament: Tournament) {
@@ -1088,11 +1228,24 @@ export function EventsBoard() {
 
                   {/* VISUAL INTERACTIVE BRACKET TREE */}
                   <div className="mt-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <Flame size={14} className="text-[#9D4EDD]" />
-                        <span>Pohon Bagan Pertandingan (Bracket Tree)</span>
-                      </span>
+                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                          <Flame size={14} className="text-[#9D4EDD]" />
+                          <span>Pohon Bagan Pertandingan (Bracket Tree)</span>
+                        </span>
+                        {/* 🔴 LIVE SYNC AKTIF BADGE */}
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
+                          LIVE SYNC AKTIF
+                          <span className="text-emerald-500/70 font-normal">
+                            ({syncSecondsAgo <= 1 ? "baru saja" : `${syncSecondsAgo}d lalu`})
+                          </span>
+                        </span>
+                      </div>
                       <span className="text-[11px] text-gray-400">
                         Klik nama tim untuk melihat susunan pemain (roster)
                       </span>
@@ -1109,6 +1262,8 @@ export function EventsBoard() {
                           roundsMap={roundsMap}
                           teams={teams}
                           onTeamClick={(team) => setViewingRoster(team)}
+                          isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
+                          onAdminQuickUpdate={(matchId, action) => handleAdminQuickUpdate(tournament.id, matchId, action)}
                         />
                       </DragScrollContainer>
                     ) : (
@@ -1868,6 +2023,28 @@ export function EventsBoard() {
                         />
                       </div>
 
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextStatus = m.matchStatus === "LIVE" ? "UPCOMING" : "LIVE";
+                          const updated = updateMatchStatus(manageMatches, m.matchId, nextStatus);
+                          setManageMatches(updated);
+                          if (managingTournament) {
+                            fetch(`/api/tournaments/${managingTournament.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ matchId: m.matchId, matchStatus: nextStatus }),
+                            }).catch(() => {});
+                          }
+                        }}
+                        className={`px-2.5 py-1.5 rounded text-[11px] font-bold transition flex items-center gap-1 ${
+                          m.matchStatus === "LIVE"
+                            ? "bg-red-500/20 text-red-300 border border-red-500/40"
+                            : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30"
+                        }`}
+                      >
+                        {m.matchStatus === "LIVE" ? "⏹ Set Selesai/Upcoming" : "🔴 Mulai Match (Set LIVE)"}
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score)}
@@ -2965,6 +3142,13 @@ export function EventsBoard() {
           onAgree={handleRulesAgreed}
         />
       )}
+      {/* QUICK MATCH SCORE & FINISH MODAL */}
+      <QuickMatchScoreModal
+        isOpen={Boolean(quickScoreModalMatch)}
+        match={quickScoreModalMatch?.match || null}
+        onClose={() => setQuickScoreModalMatch(null)}
+        onSave={handleSaveQuickScore}
+      />
     </main>
   );
 }
@@ -2977,83 +3161,185 @@ export function MatchCard({
   teams,
   isFinal = false,
   onTeamClick,
+  isAdminOrMod = false,
+  onAdminQuickUpdate,
 }: {
   match: TournamentMatch;
   teams: TournamentTeam[];
   isFinal?: boolean;
   onTeamClick: (team: TournamentTeam) => void;
+  isAdminOrMod?: boolean;
+  onAdminQuickUpdate?: (matchId: string, action: "SET_LIVE" | "FINISH_MATCH") => void;
 }) {
   const teamAData = teams.find((t) => t.teamName.toLowerCase() === match.teamA.name.toLowerCase() || t.id === match.teamA.id);
   const teamBData = teams.find((t) => t.teamName.toLowerCase() === match.teamB.name.toLowerCase() || t.id === match.teamB.id);
 
-  const isWinnerA = match.winner && match.winner.toLowerCase() === match.teamA.name.toLowerCase();
-  const isWinnerB = match.winner && match.winner.toLowerCase() === match.teamB.name.toLowerCase();
+  const hasWinner = Boolean(match.winner);
+  const isWinnerA = Boolean(hasWinner && match.winner?.toLowerCase() === match.teamA.name.toLowerCase());
+  const isWinnerB = Boolean(hasWinner && match.winner?.toLowerCase() === match.teamB.name.toLowerCase());
+  const isLoserA = Boolean(hasWinner && !isWinnerA && match.teamA.name && match.teamA.name !== "TBD");
+  const isLoserB = Boolean(hasWinner && !isWinnerB && match.teamB.name && match.teamB.name !== "TBD" && match.teamB.name !== "BYE");
+
+  const isLive = match.matchStatus === "LIVE" && !hasWinner;
+  const isFinished = match.matchStatus === "FINISHED" || hasWinner || (match.teamA.score > 0 || match.teamB.score > 0);
+  const isUpcoming = !isLive && !isFinished;
 
   return (
     <div
       className={`rounded-xl border transition-all ${
-        isFinal
+        isLive
+          ? "border-[#9D4EDD] shadow-[0_0_15px_rgba(157,78,221,0.35)] ring-1 ring-[#9D4EDD] bg-gradient-to-b from-purple-950/25 via-[#130F1A] to-[#0E0B14]"
+          : isFinal
           ? "border-amber-500/40 bg-amber-950/10 shadow-amber-950/20 shadow-lg"
           : "border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#0E0B14] hover:border-[#9D4EDD]/50"
-      } p-3`}
+      } p-3 relative overflow-hidden`}
     >
-      <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-gray-100 dark:border-[#211C2B]/80 text-[10px] font-mono text-gray-400">
-        <span className="font-bold flex items-center gap-1">
+      <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-gray-100 dark:border-[#211C2B]/80 text-[10px] font-mono">
+        <span className="font-bold flex items-center gap-1 text-gray-400">
           {isFinal && <Crown size={12} className="text-amber-400" />}
           <span>{match.roundName}</span>
         </span>
-        {match.schedule && <span>{match.schedule}</span>}
+
+        {/* Status Badge */}
+        {isLive ? (
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 font-bold text-[9px] animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+            <span>SEDANG BERMAIN</span>
+          </span>
+        ) : isFinished ? (
+          <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-bold text-[9px]">
+            ✓ ROUND SELESAI
+          </span>
+        ) : (
+          <span className="px-2 py-0.5 rounded-full bg-gray-500/10 border border-gray-500/20 text-gray-400 text-[9px]">
+            ⏳ {match.schedule ? match.schedule : "MENUNGGU JADWAL"}
+          </span>
+        )}
       </div>
 
       <div className="space-y-1.5">
         {/* TEAM A */}
         <div
-          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors ${
+          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-all ${
             isWinnerA
-              ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-black"
+              ? "bg-emerald-500/15 border border-emerald-500/40 border-l-4 border-l-emerald-400 text-white font-bold shadow-xs"
+              : isLoserA
+              ? "opacity-40 grayscale text-zinc-500 line-through decoration-zinc-600/60 bg-black/10 dark:bg-black/30"
               : "bg-gray-50 dark:bg-[#161220] text-gray-800 dark:text-gray-200"
           }`}
         >
-          <button
-            type="button"
-            onClick={() => teamAData && onTeamClick(teamAData)}
-            className="text-xs truncate max-w-[150px] text-left hover:underline"
-            title={teamAData ? "Klik untuk melihat susunan pemain" : undefined}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <button
+              type="button"
+              onClick={() => teamAData && onTeamClick(teamAData)}
+              className={`text-xs truncate max-w-[135px] text-left hover:underline ${
+                isWinnerA ? "text-white font-bold" : isLoserA ? "text-zinc-500" : ""
+              }`}
+              title={teamAData ? "Klik untuk melihat susunan pemain" : undefined}
+            >
+              {match.teamA.name || "TBD"}
+            </button>
+            {isWinnerA && (
+              <span className="text-[9px] font-mono font-bold text-emerald-400 shrink-0">
+                ✓ LOLOS
+              </span>
+            )}
+          </div>
+          <span
+            className={`text-xs font-mono px-1.5 py-0.5 rounded ml-2 ${
+              isWinnerA
+                ? "bg-emerald-500/30 text-white font-black"
+                : isLoserA
+                ? "bg-black/20 text-zinc-500"
+                : "bg-black/20 font-bold"
+            }`}
           >
-            {match.teamA.name || "TBD"}
-          </button>
-          <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-black/20 font-bold ml-2">
             {match.teamA.score}
           </span>
         </div>
 
         {/* TEAM B */}
         <div
-          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors ${
+          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-all ${
             isWinnerB
-              ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-black"
+              ? "bg-emerald-500/15 border border-emerald-500/40 border-l-4 border-l-emerald-400 text-white font-bold shadow-xs"
+              : isLoserB
+              ? "opacity-40 grayscale text-zinc-500 line-through decoration-zinc-600/60 bg-black/10 dark:bg-black/30"
               : match.teamB.name === "BYE"
-                ? "bg-gray-100/40 dark:bg-[#120F17]/40 text-gray-400 dark:text-gray-500 italic"
-                : "bg-gray-50 dark:bg-[#161220] text-gray-800 dark:text-gray-200"
+              ? "bg-gray-100/40 dark:bg-[#120F17]/40 text-gray-400 dark:text-gray-500 italic"
+              : "bg-gray-50 dark:bg-[#161220] text-gray-800 dark:text-gray-200"
           }`}
         >
           {match.teamB.name === "BYE" ? (
             <span className="text-[11px] font-mono text-gray-400 italic">BYE (Lolos Otomatis)</span>
           ) : (
-            <button
-              type="button"
-              onClick={() => teamBData && onTeamClick(teamBData)}
-              className="text-xs truncate max-w-[150px] text-left hover:underline"
-              title={teamBData ? "Klik untuk melihat susunan pemain" : undefined}
-            >
-              {match.teamB.name || "TBD"}
-            </button>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <button
+                type="button"
+                onClick={() => teamBData && onTeamClick(teamBData)}
+                className={`text-xs truncate max-w-[135px] text-left hover:underline ${
+                  isWinnerB ? "text-white font-bold" : isLoserB ? "text-zinc-500" : ""
+                }`}
+                title={teamBData ? "Klik untuk melihat susunan pemain" : undefined}
+              >
+                {match.teamB.name || "TBD"}
+              </button>
+              {isWinnerB && (
+                <span className="text-[9px] font-mono font-bold text-emerald-400 shrink-0">
+                  ✓ LOLOS
+                </span>
+              )}
+            </div>
           )}
-          <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-black/20 font-bold ml-2">
+          <span
+            className={`text-xs font-mono px-1.5 py-0.5 rounded ml-2 ${
+              isWinnerB
+                ? "bg-emerald-500/30 text-white font-black"
+                : isLoserB
+                ? "bg-black/20 text-zinc-500"
+                : "bg-black/20 font-bold"
+            }`}
+          >
             {match.teamB.name === "BYE" ? "-" : match.teamB.score}
           </span>
         </div>
       </div>
+
+      {/* Admin Quick Control Toolbar on Match Card */}
+      {isAdminOrMod && onAdminQuickUpdate && !hasWinner && (
+        <div className="pt-2 mt-2 border-t border-gray-100 dark:border-white/5 flex items-center justify-between gap-1 text-[10px]">
+          {match.matchStatus !== "LIVE" ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAdminQuickUpdate(match.matchId, "SET_LIVE");
+              }}
+              className="px-2 py-0.5 rounded bg-red-500/15 text-red-400 hover:bg-red-500/30 font-bold flex items-center gap-1 transition"
+              title="Set status pertandingan ke LIVE"
+            >
+              🔴 Set LIVE
+            </button>
+          ) : (
+            <span className="text-red-400 font-bold flex items-center gap-1 text-[9px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
+              LIVE
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAdminQuickUpdate(match.matchId, "FINISH_MATCH");
+            }}
+            className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 hover:bg-purple-500/30 font-bold ml-auto transition"
+            title="Update skor & tentukan pemenang pertandingan"
+          >
+            ⚡ Update Skor
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -3291,16 +3577,75 @@ function RightElbowConnectorColumn({
 // =========================================================================
 // SUB-KOMPONEN: BAGAN SIMETRIS SPLIT DUAL-WING (SAYAP KIRI - TENGAH - SAYAP KANAN)
 // =========================================================================
+export function ChampionCelebrationCard({
+  winnerName,
+  teams,
+}: {
+  winnerName: string;
+  teams: TournamentTeam[];
+}) {
+  const winningTeam = teams.find(
+    (t) => t.teamName.toLowerCase() === winnerName.toLowerCase() || t.id === winnerName
+  );
+  const playersList =
+    winningTeam?.mainPlayers?.map((p) => (typeof p === "string" ? p : p.name)).filter(Boolean) ||
+    winningTeam?.players?.map((p) => p.replace(/\s*\(.*?\)$/, "")).filter(Boolean) ||
+    [];
+
+  return (
+    <div className="p-4 rounded-xl border-2 border-amber-500/80 bg-gradient-to-b from-amber-500/25 via-[#1a1424] to-amber-950/40 text-center shadow-[0_0_25px_rgba(234,179,8,0.25)] animate-in zoom-in-95 duration-300 space-y-2">
+      <div className="w-10 h-10 mx-auto rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-400/60 shadow-[0_0_15px_rgba(234,179,8,0.4)]">
+        <Trophy size={20} className="text-amber-300 animate-pulse" />
+      </div>
+      <div>
+        <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-extrabold block">
+          🏆 JUARA 1 TURNAMEN 🏆
+        </span>
+        <h4 className="text-base sm:text-lg font-black text-amber-200 mt-0.5 tracking-wide drop-shadow-[0_2px_10px_rgba(234,179,8,0.5)] truncate">
+          {winnerName}
+        </h4>
+        {winningTeam?.captainName && (
+          <p className="text-[11px] text-amber-300/80 font-mono mt-0.5">
+            Kapten: <span className="text-white font-bold">{winningTeam.captainName}</span>
+          </p>
+        )}
+      </div>
+
+      {playersList.length > 0 && (
+        <div className="pt-2 border-t border-amber-500/20">
+          <p className="text-[9px] font-mono uppercase text-amber-400/70 tracking-wider mb-1.5 font-bold">
+            Roster Pemenang:
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-1 max-h-24 overflow-y-auto">
+            {playersList.map((pName, pIdx) => (
+              <span
+                key={pIdx}
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/15 border border-amber-500/30 text-amber-200"
+              >
+                {pName}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DualWingBracketView({
   sortedRoundNumbers,
   roundsMap,
   teams,
   onTeamClick,
+  isAdminOrMod = false,
+  onAdminQuickUpdate,
 }: {
   sortedRoundNumbers: number[];
   roundsMap: Map<number, TournamentMatch[]>;
   teams: TournamentTeam[];
   onTeamClick: (team: TournamentTeam) => void;
+  isAdminOrMod?: boolean;
+  onAdminQuickUpdate?: (matchId: string, action: "SET_LIVE" | "FINISH_MATCH") => void;
 }) {
   const totalRounds = sortedRoundNumbers.length;
 
@@ -3315,17 +3660,17 @@ export function DualWingBracketView({
             Grand Final 🏆
           </p>
           {gfMatch && (
-            <MatchCard match={gfMatch} teams={teams} isFinal={true} onTeamClick={onTeamClick} />
+            <MatchCard
+              match={gfMatch}
+              teams={teams}
+              isFinal={true}
+              onTeamClick={onTeamClick}
+              isAdminOrMod={isAdminOrMod}
+              onAdminQuickUpdate={onAdminQuickUpdate}
+            />
           )}
           {gfMatch?.winner && (
-            <div className="p-3.5 rounded-xl border border-amber-500/60 bg-amber-500/10 text-center">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold block">
-                👑 JUARA 1 TURNAMEN
-              </span>
-              <span className="text-sm font-black text-white mt-0.5 block truncate">
-                {gfMatch.winner}
-              </span>
-            </div>
+            <ChampionCelebrationCard winnerName={gfMatch.winner} teams={teams} />
           )}
         </div>
       </div>
@@ -3383,6 +3728,8 @@ export function DualWingBracketView({
                     teams={teams}
                     isFinal={false}
                     onTeamClick={onTeamClick}
+                    isAdminOrMod={isAdminOrMod}
+                    onAdminQuickUpdate={onAdminQuickUpdate}
                   />
                 ))}
               </div>
@@ -3417,6 +3764,8 @@ export function DualWingBracketView({
               teams={teams}
               isFinal={true}
               onTeamClick={onTeamClick}
+              isAdminOrMod={isAdminOrMod}
+              onAdminQuickUpdate={onAdminQuickUpdate}
             />
           ) : (
             <p className="text-xs text-gray-500 text-center py-4">Menunggu babak final</p>
@@ -3424,17 +3773,7 @@ export function DualWingBracketView({
 
           {/* Podium Juara 1 */}
           {gfMatch?.winner && (
-            <div className="p-3 rounded-xl border border-amber-500/60 bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-amber-500/20 text-center shadow-lg shadow-amber-950/30 animate-in zoom-in-95 duration-200">
-              <div className="w-8 h-8 mx-auto mb-1 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/50">
-                <Crown size={16} />
-              </div>
-              <span className="text-[9px] font-mono uppercase tracking-widest text-amber-300 font-extrabold block">
-                👑 JUARA 1 TURNAMEN
-              </span>
-              <span className="text-xs sm:text-sm font-black text-white block mt-0.5 truncate">
-                {gfMatch.winner}
-              </span>
-            </div>
+            <ChampionCelebrationCard winnerName={gfMatch.winner} teams={teams} />
           )}
         </div>
       </div>
@@ -3472,6 +3811,8 @@ export function DualWingBracketView({
                     teams={teams}
                     isFinal={false}
                     onTeamClick={onTeamClick}
+                    isAdminOrMod={isAdminOrMod}
+                    onAdminQuickUpdate={onAdminQuickUpdate}
                   />
                 ))}
               </div>

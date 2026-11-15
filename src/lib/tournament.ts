@@ -37,6 +37,7 @@ export type TournamentMatch = {
   teamB: { id?: string; name: string; score: number };
   winner: string | null;
   winnerId?: string | null;
+  matchStatus?: "UPCOMING" | "LIVE" | "FINISHED";
   schedule?: string;
   nextMatchId?: string;
   nextSlot?: "teamA" | "teamB";
@@ -259,6 +260,7 @@ export function advanceMatchWinner(
 
   current.winner = winnerName;
   current.winnerId = winnerId;
+  current.matchStatus = "FINISHED";
   if (scoreA !== undefined) current.teamA = { ...current.teamA, score: scoreA };
   if (scoreB !== undefined) current.teamB = { ...current.teamB, score: scoreB };
 
@@ -274,4 +276,12 @@ export function advanceMatchWinner(
   }
 
   return updatedMatches;
+}
+
+export function updateMatchStatus(
+  matches: TournamentMatch[],
+  matchId: string,
+  status: "UPCOMING" | "LIVE" | "FINISHED"
+): TournamentMatch[] {
+  return matches.map((m) => (m.matchId === matchId ? { ...m, matchStatus: status } : m));
 }

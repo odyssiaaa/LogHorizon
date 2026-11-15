@@ -25,13 +25,14 @@ import {
   X,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
-import { TournamentMatch, TournamentTeam, TournamentRosterPlayer } from "@/lib/tournament";
+import { advanceMatchWinner, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { DualWingBracketView } from "@/components/events-board";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 import { RosterPlayerRow } from "@/components/roster-player-row";
+import { QuickMatchScoreModal } from "@/components/quick-match-score-modal";
 
 type TournamentData = {
   id: string;
@@ -251,6 +252,116 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       active = false;
     };
   }, [tournamentId]);
+
+  // Live Auto-Refresh & Real-Time Sync State
+  const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
+  const [syncSecondsAgo, setSyncSecondsAgo] = useState<number>(0);
+  const [quickScoreModalMatch, setQuickScoreModalMatch] = useState<TournamentMatch | null>(null);
+
+  // SMART AUTO-POLLING (Setiap 4 Detik saat tab browser aktif)
+  useEffect(() => {
+    const tickInterval = setInterval(() => {
+      setSyncSecondsAgo(Math.max(0, Math.floor((Date.now() - lastSyncTime) / 1000)));
+    }, 1000);
+
+    const pollInterval = setInterval(async () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        return;
+      }
+      if (!tournament || (tournament.status !== "ONGOING" && tournament.status !== "REGISTRATION")) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/tournaments/${tournamentId}?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
+        if (!res.ok) return;
+        const fresh = await res.json();
+        if (fresh?.tournament) {
+          setTournament(fresh.tournament);
+          setLastSyncTime(Date.now());
+          setSyncSecondsAgo(0);
+        }
+      } catch {
+        // Silently skip transient network failure during background polling
+      }
+    }, 4000);
+
+    return () => {
+      clearInterval(tickInterval);
+      clearInterval(pollInterval);
+    };
+  }, [tournamentId, tournament, lastSyncTime]);
+
+  // Optimistic Quick Update handler for bracket cards
+  function handleAdminQuickUpdate(matchId: string, action: "SET_LIVE" | "FINISH_MATCH") {
+    if (!tournament) return;
+    const match = tournament.matches?.find((m) => m.matchId === matchId);
+    if (!match) return;
+
+    if (action === "SET_LIVE") {
+      // 0ms Optimistic UI update
+      const updatedMatches = updateMatchStatus(tournament.matches || [], matchId, "LIVE");
+      setTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
+      setNotice(`Match ${match.roundName} #${match.matchId} diset ke status LIVE!`);
+
+      // Background DB Sync
+      fetch(`/api/tournaments/${tournament.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId, matchStatus: "LIVE" }),
+      }).catch((err) => {
+        console.error("Gagal sync match status LIVE:", err);
+      });
+    } else if (action === "FINISH_MATCH") {
+      setQuickScoreModalMatch(match);
+    }
+  }
+
+  // Handle saving score from QuickMatchScoreModal with 0ms Optimistic UI
+  async function handleSaveQuickScore(
+    matchId: string,
+    winnerName: string,
+    winnerId?: string,
+    scoreA?: number,
+    scoreB?: number
+  ) {
+    if (!quickScoreModalMatch || !tournament) return;
+
+    // 0ms Optimistic local update
+    const updatedMatches = advanceMatchWinner(
+      tournament.matches || [],
+      matchId,
+      winnerName,
+      winnerId,
+      scoreA,
+      scoreB
+    );
+
+    setTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
+    setQuickScoreModalMatch(null);
+    setNotice(`Skor tersimpan! ${winnerName} lolos ke babak berikutnya.`);
+
+    // Background DB Sync
+    try {
+      await fetch(`/api/tournaments/${tournament.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matchId,
+          winner: winnerName,
+          winnerId,
+          scoreA,
+          scoreB,
+        }),
+      });
+    } catch (err) {
+      console.error("Gagal sync skor match:", err);
+      setError("Gagal menyinkronkan skor ke database. Mohon periksa koneksi.");
+    }
+  }
 
   const mainCount = tournament?.mainPlayersCount ?? 5;
   const subCount = tournament?.subPlayersCount ?? 2;
@@ -565,11 +676,22 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       {/* Bracket Tree Section */}
       <section className="p-5 sm:p-7 rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] shadow-xl mb-10">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <Flame size={20} className="text-[#9D4EDD]" />
             <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
               Pohon Bagan Pertandingan (Bracket Tree Simetris)
             </h2>
+            {/* 🔴 LIVE SYNC AKTIF BADGE */}
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              LIVE SYNC AKTIF
+              <span className="text-emerald-500/70 font-normal">
+                ({syncSecondsAgo <= 1 ? "baru saja" : `${syncSecondsAgo}d lalu`})
+              </span>
+            </span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && tournament.status !== "COMPLETED" && (
@@ -600,6 +722,8 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               roundsMap={roundsMap}
               teams={teams}
               onTeamClick={(team) => setViewingRoster(team)}
+              isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
+              onAdminQuickUpdate={handleAdminQuickUpdate}
             />
           </DragScrollContainer>
         ) : (
@@ -1148,6 +1272,13 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           onAgree={handleProceedToRegistration}
         />
       )}
+      {/* QUICK MATCH SCORE & FINISH MODAL */}
+      <QuickMatchScoreModal
+        isOpen={Boolean(quickScoreModalMatch)}
+        match={quickScoreModalMatch}
+        onClose={() => setQuickScoreModalMatch(null)}
+        onSave={handleSaveQuickScore}
+      />
     </main>
   );
 }
