@@ -113,6 +113,85 @@ function formatGeminiContents(history: ChatMessage[], currentMessage: string): G
   }));
 }
 
+/**
+ * Accurately calculates registered teams for a tournament by filtering out
+ * empty bracket skeleton placeholders (such as "Tim 1", "Slot 1", "TBD", "BYE").
+ */
+function countRegisteredTournamentTeams(tournament: {
+  maxSlots: number;
+  teams?: unknown;
+  _count?: { participants?: number };
+}): { registeredCount: number; remainingSlots: number } {
+  // 1. If explicit Participant records exist in the database, prioritize this official count
+  const officialParticipantCount = Number(tournament._count?.participants ?? 0);
+  if (officialParticipantCount > 0) {
+    const remaining = Math.max(0, tournament.maxSlots - officialParticipantCount);
+    return { registeredCount: officialParticipantCount, remainingSlots: remaining };
+  }
+
+  // 2. If teams array is populated, filter out empty slots and skeleton placeholders
+  if (Array.isArray(tournament.teams) && tournament.teams.length > 0) {
+    const realTeams = (tournament.teams as Array<Record<string, unknown>>).filter((team) => {
+      if (!team || typeof team !== "object") return false;
+      const rawName = String(team.teamName || team.name || "").trim();
+      const rawCaptain = String(team.captainName || team.captainId || "").trim();
+      const rawId = String(team.id || "").trim();
+
+      if (!rawName) return false;
+
+      const lowerName = rawName.toLowerCase();
+      const lowerCaptain = rawCaptain.toLowerCase();
+      const lowerId = rawId.toLowerCase();
+
+      // Filter obvious placeholder text
+      if (
+        lowerName === "tbd" ||
+        lowerName === "bye" ||
+        lowerName === "-" ||
+        lowerName === "empty" ||
+        lowerName === "slot kosong" ||
+        lowerName === "menunggu lawan" ||
+        lowerName === "placeholder" ||
+        lowerName === "belum ada tim"
+      ) {
+        return false;
+      }
+
+      // Filter "Slot 1", "Slot 2", "Slot A", "Slot #1"
+      if (/^slot\s*#?\d+/i.test(lowerName) || /^slot\s+[a-z]$/i.test(lowerName)) {
+        return false;
+      }
+
+      // Filter auto-generated skeleton bracket placeholders like "Tim 1" with "Kapten 1" and id "team-1"
+      if (
+        (/^tim\s*#?\d+$/i.test(lowerName) || /^team\s*#?\d+$/i.test(lowerName)) &&
+        (lowerId.startsWith("team-") || !lowerCaptain || /^kapten\s*#?\d+$/i.test(lowerCaptain))
+      ) {
+        return false;
+      }
+
+      // Valid registered team must have a custom name or verified captain/roster
+      const isCustomTeamName = !/^tim\s*\d+$/i.test(lowerName) && !/^team\s*\d+$/i.test(lowerName);
+      const hasRealCaptain = rawCaptain.length > 0 && !/^kapten\s*#?\d+$/i.test(lowerCaptain);
+      const hasRealRoster =
+        (Array.isArray(team.players) &&
+          team.players.length > 0 &&
+          !team.players.every((p: unknown) => String(p).startsWith("Pemain "))) ||
+        (Array.isArray(team.mainPlayers) && team.mainPlayers.length > 0) ||
+        (Array.isArray(team.roster) && team.roster.length > 0);
+      const hasContact = Boolean(team.representativeDiscord || team.representativePhone || team.representativeDiscordId);
+
+      return isCustomTeamName || hasRealCaptain || hasRealRoster || hasContact;
+    });
+
+    const registered = realTeams.length;
+    const remaining = Math.max(0, tournament.maxSlots - registered);
+    return { registeredCount: registered, remainingSlots: remaining };
+  }
+
+  return { registeredCount: 0, remainingSlots: tournament.maxSlots };
+}
+
 async function getLiveDatabaseContext(userId: string) {
   try {
     const [
@@ -164,6 +243,11 @@ async function getLiveDatabaseContext(userId: string) {
       prisma.tournament.findMany({
         where: {
           status: { in: ["OPEN", "REGISTRATION", "ONGOING", "COMPLETED"] },
+          NOT: [
+            { title: { equals: "test", mode: "insensitive" } },
+            { title: { startsWith: "test ", mode: "insensitive" } },
+            { title: { startsWith: "test -", mode: "insensitive" } },
+          ],
         },
         orderBy: [{ eventDate: "asc" }, { createdAt: "desc" }],
         take: 6,
@@ -231,7 +315,7 @@ async function getLiveDatabaseContext(userId: string) {
     const tournamentSummary = openTournaments.length
       ? openTournaments
           .map((t) => {
-            const registeredCount = t._count?.participants || (Array.isArray(t.teams) ? (t.teams as unknown[]).length : 0);
+            const { registeredCount, remainingSlots } = countRegisteredTournamentTeams(t);
             const statusText =
               t.status === "REGISTRATION"
                 ? "Pendaftaran Dibuka"
@@ -240,13 +324,20 @@ async function getLiveDatabaseContext(userId: string) {
                   : t.status === "COMPLETED"
                     ? "Selesai"
                     : "Buka";
-            return `"${t.title}" [Game: ${t.game}, Status: ${statusText}, Format: ${t.format || t.maxSlots + " Tim"}, Terisi: ${registeredCount}/${t.maxSlots} tim, Hadiah: ${t.prizePool || "Prizepool Komunitas"}]`;
+            const slotDetail =
+              remainingSlots === 0
+                ? `Terdaftar: ${registeredCount} / ${t.maxSlots} tim (Penuh)`
+                : `Terdaftar: ${registeredCount} / ${t.maxSlots} tim (Sisa slot: ${remainingSlots})`;
+            return `"${t.title}" [Game: ${t.game}, Status: ${statusText}, Format: ${t.format || t.maxSlots + " Tim"}, ${slotDetail}, Hadiah: ${t.prizePool || "Prizepool Komunitas"}]`;
           })
           .join(" | ")
       : "Belum ada turnamen resmi yang dijadwalkan di /events?view=turnamen.";
 
     const eventList = [
-      ...openTournaments.map((t) => `Turnamen ${t.title || t.game} (${t.game}, Slot: ${t.maxSlots})`),
+      ...openTournaments.map((t) => {
+        const { registeredCount, remainingSlots } = countRegisteredTournamentTeams(t);
+        return `Turnamen ${t.title || t.game} (${t.game}, Terdaftar: ${registeredCount}/${t.maxSlots}, Sisa: ${remainingSlots} slot)`;
+      }),
       ...openLfg.map((l) => `Party ${l.game} (${l.description.slice(0, 30)}...)`),
     ];
     const eventSummary = eventList.length
@@ -345,7 +436,8 @@ export async function POST(request: Request) {
     "",
     "INSTRUKSI KHUSUS TURNAMEN & BAGAN:",
     "- Jika user bertanya tentang turnamen, bagan, atau pertandingan, jawablah secara akurat sesuai data 'Turnamen Resmi & Bracket Aktif' di atas.",
-    "- Sebutkan nama turnamen, game, format tim, status pendaftaran, dan prizepool-nya, lalu arahkan user untuk melihat bagan visual interaktif atau mendaftar di halaman /events?view=turnamen.",
+    "- Perhatikan jumlah tim terdaftar dan sisa slot: Jika terdaftar 0 tim, berarti slot masih kosong dan pendaftaran terbuka penuh (BUKAN penuh!). Jangan pernah menganggap turnamen penuh kecuali jika sisa slot tertulis 0 (Penuh).",
+    "- Sebutkan nama turnamen, game, format tim, status pendaftaran, sisa slot yang tersedia, dan prizepool-nya, lalu arahkan user untuk melihat bagan visual interaktif atau mendaftar di halaman /events?view=turnamen.",
     "",
     "PENGETAHUAN LENGKAP FITUR & STRUKTUR WEBSITE LOGHORIZON:",
     "1. Navigasi Utama: Beranda (/), Forum Komunitas (/forum), Marketplace Jual-Beli (/marketplace), Leaderboard (/leaderboard), Warta Berita (/news), Turnamen & LFG Party Finder (/events), Kas Donasi (/donate), Aturan & Hierarki (/rules), dan Pengaturan Profil (/profile).",
