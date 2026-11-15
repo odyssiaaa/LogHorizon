@@ -68,9 +68,18 @@ export function createSingleEliminationBracket(participants: BracketSlot[]) {
   return rounds;
 }
 
+export function shuffleArray<T>(items: T[]): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 /**
  * Generate dynamic single-elimination tournament bracket from 2 up to 128 teams.
- * Supports arbitrary team count with dynamic Auto-BYE seeding.
+ * Supports arbitrary team count with dynamic, balanced Auto-BYE seeding across Left & Right wings.
  */
 export function generateTemplateBracket(
   teamCountOrFormat: number | string = 8,
@@ -138,29 +147,38 @@ export function generateTemplateBracket(
     matchesByRound.push(roundList);
   }
 
-  // Populate Round 1 with teams and Auto-BYE
+  // Populate Round 1 with teams and balanced Auto-BYE across Left & Right wings
   const round1Matches = matchesByRound[0];
+  const numByes = Math.max(0, bracketSize - teamCount);
+  const byeMatchIndices = new Set<number>();
+
+  // Distribute BYE matches alternately between Left Wing (0..) and Right Wing (..matchesInRound-1)
+  let leftByePtr = 0;
+  let rightByePtr = round1Matches.length - 1;
+  while (byeMatchIndices.size < numByes && leftByePtr <= rightByePtr) {
+    if (byeMatchIndices.size < numByes) {
+      byeMatchIndices.add(leftByePtr);
+      leftByePtr++;
+    }
+    if (byeMatchIndices.size < numByes && rightByePtr >= leftByePtr) {
+      byeMatchIndices.add(rightByePtr);
+      rightByePtr--;
+    }
+  }
+
+  let teamIdx = 0;
   for (let m = 0; m < round1Matches.length; m++) {
     const match = round1Matches[m];
-    const teamAIndex = m;
-    const teamBIndex = bracketSize - 1 - m;
+    const isByeMatch = byeMatchIndices.has(m);
 
-    const teamAObj = teams[teamAIndex];
+    const teamAObj = teams[teamIdx++];
     match.teamA = {
       id: teamAObj?.id,
-      name: teamAObj?.teamName || `Tim ${teamAIndex + 1}`,
+      name: teamAObj?.teamName || `Tim ${teamIdx}`,
       score: 0,
     };
 
-    if (teamBIndex < teamCount) {
-      // Real opponent team
-      const teamBObj = teams[teamBIndex];
-      match.teamB = {
-        id: teamBObj?.id,
-        name: teamBObj?.teamName || `Tim ${teamBIndex + 1}`,
-        score: 0,
-      };
-    } else {
+    if (isByeMatch) {
       // Auto-BYE slot!
       match.teamB = {
         id: undefined,
@@ -182,6 +200,16 @@ export function generateTemplateBracket(
           }
         }
       }
+    } else {
+      // Real opponent team
+      const teamBObj = teams[teamIdx++];
+      match.teamB = {
+        id: teamBObj?.id,
+        name: teamBObj?.teamName || `Tim ${teamIdx}`,
+        score: 0,
+      };
+      match.winner = null;
+      match.winnerId = null;
     }
   }
 

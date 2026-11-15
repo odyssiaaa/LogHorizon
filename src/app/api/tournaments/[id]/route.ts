@@ -1,7 +1,7 @@
 import { Prisma, TournamentStatus } from "@prisma/client";
 import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { advanceMatchWinner, generateTemplateBracket, TournamentMatch, TournamentTeam } from "@/lib/tournament";
+import { advanceMatchWinner, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -94,6 +94,74 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const scoreB = typeof data.scoreB === "number" ? data.scoreB : undefined;
 
     updatedMatches = advanceMatchWinner(updatedMatches, matchId, winnerName, winnerId, scoreA, scoreB);
+  }
+
+  // Gacha / Fisher-Yates Random Bracket Seeding (with balanced Auto-BYE)
+  if (data.shuffleBracket === true || data.randomizeBracket === true) {
+    const approvedParticipants = await prisma.participant.findMany({
+      where: { tournamentId: id, paymentStatus: "APPROVED" },
+      include: {
+        leader: {
+          select: { id: true, username: true, discordId: true, name: true, image: true },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    let realTeams: TournamentTeam[] = [];
+
+    if (approvedParticipants.length > 0) {
+      realTeams = approvedParticipants.map((p) => {
+        const roster = (p.roster as unknown as TournamentRosterPlayer[]) || [];
+        const mainPlayers = roster.filter((r) => r.role === "MAIN");
+        const subPlayers = roster.filter((r) => r.role === "SUB");
+        const legacyPlayerStrings = roster.map((r) => `${r.name} (${r.inGameId})`);
+        return {
+          id: p.id,
+          teamName: p.teamName,
+          captainName: p.leader?.username ?? p.leader?.name ?? "Kapten Party",
+          representativeDiscord: p.leader?.username ?? p.leader?.name ?? "Gamer",
+          representativeDiscordId: p.leader?.discordId ?? undefined,
+          representativePhone: p.phone ?? undefined,
+          players: legacyPlayerStrings,
+          mainPlayers,
+          subPlayers,
+          roster,
+          paymentStatus: "APPROVED",
+        };
+      });
+    } else {
+      // Use existing non-placeholder teams in tournament.teams if any
+      const rawTeams = (tournament.teams as unknown as TournamentTeam[]) || [];
+      const nonPlaceholders = rawTeams.filter(
+        (t) => t.teamName && !t.teamName.startsWith("Tim ") && t.teamName !== "BYE" && t.teamName !== "TBD"
+      );
+      realTeams = nonPlaceholders.length > 0 ? [...nonPlaceholders] : [...rawTeams];
+    }
+
+    // Apply Fisher-Yates (Knuth) Shuffle
+    realTeams = shuffleArray(realTeams);
+
+    // Determine target slot count:
+    const effectiveCount = typeof data.totalSlots === "number"
+      ? data.totalSlots
+      : (approvedParticipants.length >= 2 ? approvedParticipants.length : tournament.maxSlots);
+    const bracketSize = Math.pow(2, Math.ceil(Math.log2(effectiveCount)));
+
+    // Pad realTeams with placeholders up to effectiveCount so generateTemplateBracket has all items
+    const seededTeams: TournamentTeam[] = [...realTeams];
+    for (let i = seededTeams.length; i < effectiveCount; i++) {
+      seededTeams.push({
+        id: `team-${i + 1}`,
+        teamName: `Tim ${i + 1}`,
+        captainName: `Kapten ${i + 1}`,
+        players: [`Pemain 1`, `Pemain 2`, `Pemain 3`, `Pemain 4`, `Pemain 5`],
+      });
+    }
+
+    const template = generateTemplateBracket(effectiveCount, seededTeams);
+    updatedTeams = template.teams;
+    updatedMatches = template.matches;
   }
 
   // Slot resizing & regeneration

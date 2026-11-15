@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Coins,
+  Dices,
   DollarSign,
   ExternalLink,
   Flag,
@@ -42,6 +43,7 @@ import { readApiResponse } from "@/lib/api-response";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { EscrowChatModal } from "@/components/escrow-chat-modal";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
+import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 
 type Role = "MEMBER" | "MODERATOR" | "ADMIN";
 
@@ -190,6 +192,67 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
   const [tournamentFilterStatus, setTournamentFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [adminProofLightbox, setAdminProofLightbox] = useState<string | null>(null);
   const [adminVerificationLoading, setAdminVerificationLoading] = useState<string | null>(null);
+
+  // Admin Gacha Bracket Modal State
+  const [adminGachaModalState, setAdminGachaModalState] = useState<{
+    isOpen: boolean;
+    isRolling: boolean;
+    tournamentTitle: string;
+    teamsList: string[];
+  }>({
+    isOpen: false,
+    isRolling: false,
+    tournamentTitle: "",
+    teamsList: [],
+  });
+
+  async function handleAdminGachaBracket(tournament: any) {
+    if (!tournament) return;
+
+    const hasScores = tournament.matches?.some(
+      (m: any) => (m.teamA?.score > 0 || m.teamB?.score > 0 || (m.winner && m.round > 1))
+    );
+
+    if (hasScores) {
+      const confirmShuffle = window.confirm(
+        "⚠️ Peringatan: Beberapa pertandingan di turnamen ini sudah memiliki skor atau pemenang!\n\nMengacak bagan sekarang akan mereset bagan Ronde 1 dan menghapus skor yang sudah tercatat.\n\nApakah kamu yakin ingin tetap mengacak susunan lawan?"
+      );
+      if (!confirmShuffle) return;
+    }
+
+    const existingTeamNames = (tournament.teams || [])
+      .map((t: any) => t.teamName)
+      .filter((n: any) => n && !n.startsWith("Tim ") && n !== "BYE" && n !== "TBD");
+
+    setAdminGachaModalState({
+      isOpen: true,
+      isRolling: true,
+      tournamentTitle: tournament.title,
+      teamsList: existingTeamNames,
+    });
+
+    const startTime = Date.now();
+    try {
+      const response = await fetch(`/api/tournaments/${tournament.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shuffleBracket: true }),
+      });
+      await readApiResponse(response, "Gagal mengacak bagan.");
+
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 750) {
+        await new Promise((r) => setTimeout(r, 750 - elapsed));
+      }
+
+      await fetchTournaments();
+      setAdminGachaModalState((prev) => ({ ...prev, isRolling: false }));
+      setNotice("🎲 Bagan berhasil diacak! Susunan pertandingan baru telah disimpan.");
+    } catch (err) {
+      setAdminGachaModalState({ isOpen: false, isRolling: false, tournamentTitle: "", teamsList: [] });
+      setError(err instanceof Error ? err.message : "Gagal mengacak bagan turnamen.");
+    }
+  }
 
   const fetchTournaments = async () => {
     try {
@@ -1266,6 +1329,20 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
+                    {(() => {
+                      const cur = tournamentsList.find((t) => t.id === selectedTournamentId) || tournamentsList[0];
+                      return cur && cur.status !== "COMPLETED" ? (
+                        <button
+                          type="button"
+                          onClick={() => handleAdminGachaBracket(cur)}
+                          className="button button-quiet text-xs font-bold inline-flex items-center gap-1.5 border border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 shadow-xs"
+                          title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
+                        >
+                          <Dices size={13} className="text-amber-400" />
+                          <span>🎲 Gacha Bagan (Acak Lawan)</span>
+                        </button>
+                      ) : null;
+                    })()}
                     <button
                       type="button"
                       onClick={fetchTournaments}
@@ -1370,6 +1447,17 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             </div>
 
                             <div className="flex items-center gap-3">
+                              {curTournament.status !== "COMPLETED" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleAdminGachaBracket(curTournament)}
+                                  className="px-3.5 py-2 rounded-xl text-xs font-bold border border-amber-500/50 bg-gradient-to-r from-amber-500/20 to-purple-500/20 text-amber-300 hover:from-amber-500/30 hover:to-purple-500/30 flex items-center gap-2 transition shadow-sm shadow-amber-500/10 hover:scale-105"
+                                  title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
+                                >
+                                  <Dices size={15} className="text-amber-400" />
+                                  <span>🎲 Gacha Bagan (Acak Lawan)</span>
+                                </button>
+                              )}
                               <div className="text-right">
                                 <span className="text-[10px] uppercase tracking-wider text-gray-400 block font-bold">
                                   Slot Bagan Terisi
@@ -2418,6 +2506,15 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
           </div>
         </div>
       )}
+
+      {/* GACHA / RANDOMIZE BRACKET VISUAL DRAW MODAL */}
+      <GachaBracketModal
+        isOpen={adminGachaModalState.isOpen}
+        tournamentTitle={adminGachaModalState.tournamentTitle}
+        isRolling={adminGachaModalState.isRolling}
+        teamsList={adminGachaModalState.teamsList}
+        onFinish={() => setAdminGachaModalState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </main>
   );
 }

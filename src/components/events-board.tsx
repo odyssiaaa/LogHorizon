@@ -14,6 +14,7 @@ import {
   Clock,
   Copy,
   Crown,
+  Dices,
   Edit3,
   ExternalLink,
   Eye,
@@ -42,6 +43,7 @@ import { readApiResponse } from "@/lib/api-response";
 import { advanceMatchWinner, TournamentMatch, TournamentTeam, TournamentRosterPlayer } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
+import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 
 type Participant = {
   id: string;
@@ -182,6 +184,19 @@ export function EventsBoard() {
   const [savingManage, setSavingManage] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState<string | null>(null);
   const [selectedProofModal, setSelectedProofModal] = useState<string | null>(null);
+
+  // Gacha Bracket Modal State
+  const [gachaModalState, setGachaModalState] = useState<{
+    isOpen: boolean;
+    isRolling: boolean;
+    tournamentTitle: string;
+    teamsList: string[];
+  }>({
+    isOpen: false,
+    isRolling: false,
+    tournamentTitle: "",
+    teamsList: [],
+  });
 
   // Team Registration Modal State (Structured Form)
   const [registeringTournament, setRegisteringTournament] = useState<Tournament | null>(null);
@@ -368,6 +383,69 @@ export function EventsBoard() {
       setError(err instanceof Error ? err.message : "Gagal menyesuaikan bagan.");
     } finally {
       setIsResizingBracket(false);
+    }
+  }
+
+  // Gacha / Fisher-Yates Random Bracket Seeding
+  async function handleGachaBracket(tournament: Tournament) {
+    const hasScores = tournament.matches?.some(
+      (m: any) => (m.teamA?.score > 0 || m.teamB?.score > 0 || (m.winner && m.round > 1))
+    );
+
+    if (hasScores) {
+      const confirmShuffle = window.confirm(
+        "⚠️ Peringatan: Beberapa pertandingan di turnamen ini sudah memiliki skor atau pemenang!\n\nMengacak bagan sekarang akan mereset bagan Ronde 1 dan menghapus skor yang sudah tercatat.\n\nApakah kamu yakin ingin tetap mengacak susunan lawan?"
+      );
+      if (!confirmShuffle) return;
+    }
+
+    const existingTeamNames = (tournament.teams || [])
+      .map((t) => t.teamName)
+      .filter((n) => n && !n.startsWith("Tim ") && n !== "BYE" && n !== "TBD");
+
+    setGachaModalState({
+      isOpen: true,
+      isRolling: true,
+      tournamentTitle: tournament.title,
+      teamsList: existingTeamNames,
+    });
+
+    const startTime = Date.now();
+    try {
+      const response = await fetch(`/api/tournaments/${tournament.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shuffleBracket: true }),
+      });
+      const data = await readApiResponse<{
+        tournament: { teams: TournamentTeam[]; matches: TournamentMatch[]; maxSlots: number; format: string };
+      }>(response, "Gagal mengacak bagan.");
+
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 750) {
+        await new Promise((r) => setTimeout(r, 750 - elapsed));
+      }
+
+      if (managingTournament && managingTournament.id === tournament.id) {
+        setManageMatches(data.tournament.matches);
+        setManageTeams(data.tournament.teams);
+        setManagingTournament((prev) =>
+          prev
+            ? {
+                ...prev,
+                teams: data.tournament.teams,
+                matches: data.tournament.matches,
+              }
+            : prev
+        );
+      }
+
+      setRefreshKey((k) => k + 1);
+      setGachaModalState((prev) => ({ ...prev, isRolling: false }));
+      setNotice("🎲 Bagan berhasil diacak! Susunan pertandingan baru telah disimpan.");
+    } catch (err) {
+      setGachaModalState({ isOpen: false, isRolling: false, tournamentTitle: "", teamsList: [] });
+      setError(err instanceof Error ? err.message : "Gagal mengacak bagan turnamen.");
     }
   }
 
@@ -908,6 +986,19 @@ export function EventsBoard() {
                         <ExternalLink size={13} />
                         <span>Halaman Khusus</span>
                       </Link>
+
+                      {/* Gacha / Randomize Bracket Button (Admin / Mod) */}
+                      {isAdminOrMod && tournament.status !== "COMPLETED" && (
+                        <button
+                          type="button"
+                          onClick={() => handleGachaBracket(tournament)}
+                          className="button button-quiet text-xs font-bold inline-flex items-center gap-1.5 border border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all hover:scale-105"
+                          title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
+                        >
+                          <Dices size={14} className="text-amber-400" />
+                          <span>🎲 Gacha Bagan</span>
+                        </button>
+                      )}
 
                       {/* Manage Tournament Button (Admin / Mod) */}
                       {isAdminOrMod && (
@@ -1563,61 +1654,76 @@ export function EventsBoard() {
             </div>
 
             {/* TAB SELECTOR DALAM MODAL */}
-            <div className="flex items-center gap-2 border-b border-gray-200 dark:border-[#211C2B] pb-2 mb-4 overflow-x-auto scrollbar-none">
-              <button
-                type="button"
-                onClick={() => setManageTab("scores")}
-                className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 ${
-                  manageTab === "scores"
-                    ? "bg-[#9D4EDD] text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                1. Atur Skor &amp; Pemenang Match
-              </button>
-              <button
-                type="button"
-                onClick={() => setManageTab("teams")}
-                className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 ${
-                  manageTab === "teams"
-                    ? "bg-[#9D4EDD] text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                2. Daftar Tim &amp; Roster Pemain
-              </button>
-              <button
-                type="button"
-                onClick={() => setManageTab("settings")}
-                className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 flex items-center gap-1.5 ${
-                  manageTab === "settings"
-                    ? "bg-[#9D4EDD] text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                <Settings size={13} />
-                <span>3. Pengaturan Slot &amp; Biaya</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setManageTab("verifications")}
-                className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 flex items-center gap-1.5 ${
-                  manageTab === "verifications"
-                    ? "bg-[#9D4EDD] text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                <ShieldCheck size={13} />
-                <span>4. Verifikasi Tim ({managingTournament.participants?.length || 0})</span>
-                {(() => {
-                  const pendingCount = managingTournament.participants?.filter((p) => p.paymentStatus === "PENDING_PAYMENT").length || 0;
-                  return pendingCount > 0 ? (
-                    <span className="ml-1 px-1.5 py-0.2 rounded-full text-[9px] font-black bg-amber-400 text-black">
-                      {pendingCount} PENDING
-                    </span>
-                  ) : null;
-                })()}
-              </button>
+            <div className="flex items-center justify-between gap-2 border-b border-gray-200 dark:border-[#211C2B] pb-2 mb-4 overflow-x-auto scrollbar-none">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+                <button
+                  type="button"
+                  onClick={() => setManageTab("scores")}
+                  className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 ${
+                    manageTab === "scores"
+                      ? "bg-[#9D4EDD] text-white"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  1. Atur Skor &amp; Pemenang Match
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManageTab("teams")}
+                  className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 ${
+                    manageTab === "teams"
+                      ? "bg-[#9D4EDD] text-white"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  2. Daftar Tim &amp; Roster Pemain
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManageTab("settings")}
+                  className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 flex items-center gap-1.5 ${
+                    manageTab === "settings"
+                      ? "bg-[#9D4EDD] text-white"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <Settings size={13} />
+                  <span>3. Pengaturan Slot &amp; Biaya</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManageTab("verifications")}
+                  className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 flex items-center gap-1.5 ${
+                    manageTab === "verifications"
+                      ? "bg-[#9D4EDD] text-white"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <ShieldCheck size={13} />
+                  <span>4. Verifikasi Tim ({managingTournament.participants?.length || 0})</span>
+                  {(() => {
+                    const pendingCount = managingTournament.participants?.filter((p) => p.paymentStatus === "PENDING_PAYMENT").length || 0;
+                    return pendingCount > 0 ? (
+                      <span className="ml-1 px-1.5 py-0.2 rounded-full text-[9px] font-black bg-amber-400 text-black">
+                        {pendingCount} PENDING
+                      </span>
+                    ) : null;
+                  })()}
+                </button>
+              </div>
+
+              {/* Gacha / Randomize Bracket Button */}
+              {managingTournament.status !== "COMPLETED" && (
+                <button
+                  type="button"
+                  onClick={() => handleGachaBracket(managingTournament)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold border border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 shrink-0 flex items-center gap-1.5 transition ml-2 shadow-xs"
+                  title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
+                >
+                  <Dices size={13} className="text-amber-400" />
+                  <span>🎲 Gacha Bagan (Acak Lawan)</span>
+                </button>
+              )}
             </div>
 
             {/* SUB-PANEL 1: SKOR & PEMENANG (AUTO ADVANCE) */}
@@ -2743,6 +2849,15 @@ export function EventsBoard() {
           </div>
         </div>
       )}
+
+      {/* GACHA / RANDOMIZE BRACKET VISUAL DRAW MODAL */}
+      <GachaBracketModal
+        isOpen={gachaModalState.isOpen}
+        tournamentTitle={gachaModalState.tournamentTitle}
+        isRolling={gachaModalState.isRolling}
+        teamsList={gachaModalState.teamsList}
+        onFinish={() => setGachaModalState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </main>
   );
 }

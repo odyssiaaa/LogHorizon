@@ -9,6 +9,7 @@ import {
   Calendar,
   CheckCircle2,
   Crown,
+  Dices,
   Edit3,
   ExternalLink,
   Flame,
@@ -28,6 +29,7 @@ import { TournamentMatch, TournamentTeam, TournamentRosterPlayer } from "@/lib/t
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { DualWingBracketView } from "@/components/events-board";
+import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 
 type TournamentData = {
   id: string;
@@ -74,6 +76,71 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   const [registerMainPlayers, setRegisterMainPlayers] = useState<string[]>([]);
   const [registerSubPlayers, setRegisterSubPlayers] = useState<string[]>([]);
   const [registering, setRegistering] = useState(false);
+
+  // Detail Gacha Bracket Modal State
+  const [detailGachaModalState, setDetailGachaModalState] = useState<{
+    isOpen: boolean;
+    isRolling: boolean;
+    tournamentTitle: string;
+    teamsList: string[];
+  }>({
+    isOpen: false,
+    isRolling: false,
+    tournamentTitle: "",
+    teamsList: [],
+  });
+
+  async function handleDetailGachaBracket() {
+    if (!tournament) return;
+
+    const hasScores = tournament.matches?.some(
+      (m: any) => (m.teamA?.score > 0 || m.teamB?.score > 0 || (m.winner && m.round > 1))
+    );
+
+    if (hasScores) {
+      const confirmShuffle = window.confirm(
+        "⚠️ Peringatan: Beberapa pertandingan di turnamen ini sudah memiliki skor atau pemenang!\n\nMengacak bagan sekarang akan mereset bagan Ronde 1 dan menghapus skor yang sudah tercatat.\n\nApakah kamu yakin ingin tetap mengacak susunan lawan?"
+      );
+      if (!confirmShuffle) return;
+    }
+
+    const existingTeamNames = (tournament.teams || [])
+      .map((t) => t.teamName)
+      .filter((n) => n && !n.startsWith("Tim ") && n !== "BYE" && n !== "TBD");
+
+    setDetailGachaModalState({
+      isOpen: true,
+      isRolling: true,
+      tournamentTitle: tournament.title,
+      teamsList: existingTeamNames,
+    });
+
+    const startTime = Date.now();
+    try {
+      const response = await fetch(`/api/tournaments/${tournament.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shuffleBracket: true }),
+      });
+      const data = await readApiResponse<{
+        tournament: TournamentData;
+      }>(response, "Gagal mengacak bagan.");
+
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 750) {
+        await new Promise((r) => setTimeout(r, 750 - elapsed));
+      }
+
+      if (data.tournament) {
+        setTournament(data.tournament);
+      }
+      setDetailGachaModalState((prev) => ({ ...prev, isRolling: false }));
+      setNotice("🎲 Bagan berhasil diacak! Susunan pertandingan baru telah disimpan.");
+    } catch (err) {
+      setDetailGachaModalState({ isOpen: false, isRolling: false, tournamentTitle: "", teamsList: [] });
+      setError(err instanceof Error ? err.message : "Gagal mengacak bagan turnamen.");
+    }
+  }
 
   // Canvas Image Compression Helper for Payment Proof
   function handleProofFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -431,9 +498,22 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               Pohon Bagan Pertandingan (Bracket Tree Simetris)
             </h2>
           </div>
-          <span className="text-xs text-gray-400">
-            💡 Geser ke samping (Drag) atau gunakan tombol navigasi untuk melihat seluruh babak
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && tournament.status !== "COMPLETED" && (
+              <button
+                type="button"
+                onClick={handleDetailGachaBracket}
+                className="button button-quiet text-xs font-bold inline-flex items-center gap-1.5 border border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 shadow-xs hover:scale-105 transition-all"
+                title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
+              >
+                <Dices size={14} className="text-amber-400" />
+                <span>🎲 Gacha Bagan (Acak Lawan)</span>
+              </button>
+            )}
+            <span className="text-xs text-gray-400">
+              💡 Geser ke samping (Drag) atau gunakan tombol navigasi
+            </span>
+          </div>
         </div>
 
         {matches.length > 0 ? (
@@ -893,6 +973,15 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           </div>
         </div>
       )}
+
+      {/* GACHA / RANDOMIZE BRACKET VISUAL DRAW MODAL */}
+      <GachaBracketModal
+        isOpen={detailGachaModalState.isOpen}
+        tournamentTitle={detailGachaModalState.tournamentTitle}
+        isRolling={detailGachaModalState.isRolling}
+        teamsList={detailGachaModalState.teamsList}
+        onFinish={() => setDetailGachaModalState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </main>
   );
 }
