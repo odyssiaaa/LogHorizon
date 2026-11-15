@@ -1,7 +1,7 @@
 import { TournamentStatus, Prisma } from "@prisma/client";
 import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { generateTemplateBracket, TournamentTeam, TournamentMatch } from "@/lib/tournament";
+import { generateTemplateBracket, TournamentTeam, TournamentMatch, DEFAULT_TOURNAMENT_RULES } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
 
 export async function GET() {
@@ -34,6 +34,7 @@ export async function GET() {
 
     return {
       ...tournament,
+      rules: tournament.rules || DEFAULT_TOURNAMENT_RULES,
       mainPlayersCount: tournament.mainPlayersCount ?? 5,
       subPlayersCount: tournament.subPlayersCount ?? 2,
       entryFee: tournament.entryFee ?? 0,
@@ -83,6 +84,7 @@ export async function POST(request: Request) {
 
   const isFreeEntry = typeof data.isFreeEntry === "boolean" ? data.isFreeEntry : (Number(data.entryFee || 0) <= 0);
   const entryFee = isFreeEntry ? 0 : Math.max(0, Math.min(100_000_000, Number(data.entryFee || 0)));
+  const rules = typeof data.rules === "string" && data.rules.trim() ? data.rules.trim() : DEFAULT_TOURNAMENT_RULES;
 
   const eventDate = typeof data.eventDate === "string" ? new Date(data.eventDate) : new Date(Date.now() + 86400000 * 3);
   if (!game || game.length > 80 || Number.isNaN(eventDate.getTime())) {
@@ -116,6 +118,7 @@ export async function POST(request: Request) {
       subPlayersCount,
       entryFee,
       isFreeEntry,
+      rules,
       eventDate,
       status,
       teams: template.teams as unknown as Prisma.InputJsonValue,

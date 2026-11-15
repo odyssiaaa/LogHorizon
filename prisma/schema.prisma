@@ -116,6 +116,7 @@ model Tournament {
   subPlayersCount  Int              @default(2)
   entryFee         Int              @default(0)
   isFreeEntry      Boolean          @default(true)
+  rules            String?          @db.Text
   eventDate        DateTime
   status           TournamentStatus @default(OPEN)
   bracket          Json?

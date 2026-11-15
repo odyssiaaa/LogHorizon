@@ -40,10 +40,11 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { readApiResponse } from "@/lib/api-response";
-import { advanceMatchWinner, TournamentMatch, TournamentTeam, TournamentRosterPlayer } from "@/lib/tournament";
+import { advanceMatchWinner, TournamentMatch, TournamentTeam, TournamentRosterPlayer, DEFAULT_TOURNAMENT_RULES } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
+import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 
 type Participant = {
   id: string;
@@ -74,6 +75,7 @@ type Tournament = {
   subPlayersCount?: number;
   entryFee?: number;
   isFreeEntry?: boolean;
+  rules?: string | null;
   eventDate: string;
   status: string;
   teams?: TournamentTeam[];
@@ -166,6 +168,7 @@ export function EventsBoard() {
   const [templateSubPlayers, setTemplateSubPlayers] = useState<number>(2);
   const [templateIsFree, setTemplateIsFree] = useState<boolean>(true);
   const [templateEntryFee, setTemplateEntryFee] = useState<number>(0);
+  const [templateRules, setTemplateRules] = useState<string>(DEFAULT_TOURNAMENT_RULES);
   const [templateDate, setTemplateDate] = useState("");
   const [templateStatus, setTemplateStatus] = useState<"REGISTRATION" | "ONGOING">("REGISTRATION");
   const [creatingTournament, setCreatingTournament] = useState(false);
@@ -180,6 +183,7 @@ export function EventsBoard() {
   const [manageSubPlayers, setManageSubPlayers] = useState<number>(2);
   const [manageIsFree, setManageIsFree] = useState<boolean>(true);
   const [manageEntryFee, setManageEntryFee] = useState<number>(0);
+  const [manageRules, setManageRules] = useState<string>(DEFAULT_TOURNAMENT_RULES);
   const [isResizingBracket, setIsResizingBracket] = useState(false);
   const [savingManage, setSavingManage] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState<string | null>(null);
@@ -199,6 +203,7 @@ export function EventsBoard() {
   });
 
   // Team Registration Modal State (Structured Form)
+  const [rulesGateTournament, setRulesGateTournament] = useState<Tournament | null>(null);
   const [registeringTournament, setRegisteringTournament] = useState<Tournament | null>(null);
   const [registerTeamName, setRegisterTeamName] = useState("");
   const [registerPhone, setRegisterPhone] = useState("");
@@ -295,7 +300,24 @@ export function EventsBoard() {
     setManageSubPlayers(tournament.subPlayersCount ?? 2);
     setManageIsFree(tournament.isFreeEntry ?? (tournament.entryFee === 0));
     setManageEntryFee(tournament.entryFee ?? 0);
+    setManageRules(tournament.rules || DEFAULT_TOURNAMENT_RULES);
     setManageTab("scores");
+  }
+
+  // Open Tournament Rules Gate before Registration Form
+  function handlePromptRulesAndRegister(t: Tournament) {
+    if (!session?.user) {
+      void signIn("discord");
+      return;
+    }
+    setRulesGateTournament(t);
+  }
+
+  function handleRulesAgreed() {
+    if (!rulesGateTournament) return;
+    const target = rulesGateTournament;
+    setRulesGateTournament(null);
+    openRegisterModal(target);
   }
 
   // Open Structured Registration Modal
@@ -470,6 +492,7 @@ export function EventsBoard() {
           subPlayersCount: templateSubPlayers,
           isFreeEntry: templateIsFree,
           entryFee: templateIsFree ? 0 : templateEntryFee,
+          rules: templateRules.trim() || DEFAULT_TOURNAMENT_RULES,
           format: `${templateTeamCount} Tim`,
           eventDate: templateDate ? new Date(templateDate).toISOString() : new Date(Date.now() + 86400000 * 3).toISOString(),
           status: templateStatus,
@@ -507,6 +530,7 @@ export function EventsBoard() {
           subPlayersCount: manageSubPlayers,
           isFreeEntry: manageIsFree,
           entryFee: manageIsFree ? 0 : manageEntryFee,
+          rules: manageRules.trim() || DEFAULT_TOURNAMENT_RULES,
         }),
       });
       await readApiResponse(response, "Gagal memperbarui turnamen.");
@@ -951,7 +975,7 @@ export function EventsBoard() {
                       {(tournament.status === "OPEN" || tournament.status === "REGISTRATION") && (
                         <button
                           type="button"
-                          onClick={() => openRegisterModal(tournament)}
+                          onClick={() => handlePromptRulesAndRegister(tournament)}
                           className="button button-primary text-xs font-bold inline-flex items-center gap-1.5"
                         >
                           <Plus size={14} />
@@ -1594,6 +1618,22 @@ export function EventsBoard() {
 
               <div>
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+                  Peraturan Resmi Turnamen (Rules Agreement)
+                </label>
+                <textarea
+                  rows={4}
+                  value={templateRules}
+                  onChange={(e) => setTemplateRules(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                  placeholder="Peraturan resmi turnamen..."
+                />
+                <span className="text-[10px] text-gray-400 mt-0.5 block">
+                  Peraturan ini wajib dibaca &amp; disetujui peserta melalui pop-up sebelum formulir pendaftaran tim dapat diisi.
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
                   Status Turnamen
                 </label>
                 <select
@@ -2131,6 +2171,23 @@ export function EventsBoard() {
                         </div>
                       </div>
                     )}
+                  </div>
+
+                  {/* Edit Rules per Tournament */}
+                  <div className="pt-1">
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+                      Peraturan Resmi Turnamen (Rules Agreement)
+                    </label>
+                    <textarea
+                      rows={5}
+                      value={manageRules}
+                      onChange={(e) => setManageRules(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                      placeholder="Tuliskan peraturan turnamen di sini..."
+                    />
+                    <span className="text-[10px] text-gray-400 mt-0.5 block">
+                      Admin dapat menyesuaikan peraturan spesifik game untuk turnamen ini (muncul di pop-up pendaftaran peserta).
+                    </span>
                   </div>
 
                   {/* Warning Box */}
@@ -2858,6 +2915,18 @@ export function EventsBoard() {
         teamsList={gachaModalState.teamsList}
         onFinish={() => setGachaModalState((prev) => ({ ...prev, isOpen: false }))}
       />
+
+      {/* MANDATORY TOURNAMENT RULES AGREEMENT MODAL */}
+      {rulesGateTournament && (
+        <TournamentRulesModal
+          isOpen={Boolean(rulesGateTournament)}
+          tournamentTitle={rulesGateTournament.title}
+          game={rulesGateTournament.game}
+          rules={rulesGateTournament.rules}
+          onClose={() => setRulesGateTournament(null)}
+          onAgree={handleRulesAgreed}
+        />
+      )}
     </main>
   );
 }

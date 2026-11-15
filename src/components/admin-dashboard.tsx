@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Ban,
+  BookOpen,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -44,6 +45,7 @@ import { DiscordAvatar } from "@/components/discord-avatar";
 import { EscrowChatModal } from "@/components/escrow-chat-modal";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
+import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 
 type Role = "MEMBER" | "MODERATOR" | "ADMIN";
 
@@ -192,6 +194,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
   const [tournamentFilterStatus, setTournamentFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [adminProofLightbox, setAdminProofLightbox] = useState<string | null>(null);
   const [adminVerificationLoading, setAdminVerificationLoading] = useState<string | null>(null);
+  const [adminRulesViewModal, setAdminRulesViewModal] = useState<any | null>(null);
 
   // Admin Gacha Bracket Modal State
   const [adminGachaModalState, setAdminGachaModalState] = useState<{
@@ -1446,7 +1449,16 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               </p>
                             </div>
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => setAdminRulesViewModal(curTournament)}
+                                className="px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] text-gray-700 dark:text-gray-300 hover:text-white flex items-center gap-1.5 transition"
+                                title="Lihat Peraturan Resmi Turnamen"
+                              >
+                                <BookOpen size={13} className="text-[#9D4EDD]" />
+                                <span>Peraturan</span>
+                              </button>
                               {curTournament.status !== "COMPLETED" && (
                                 <button
                                   type="button"
@@ -2515,6 +2527,18 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
         teamsList={adminGachaModalState.teamsList}
         onFinish={() => setAdminGachaModalState((prev) => ({ ...prev, isOpen: false }))}
       />
+
+      {/* TOURNAMENT RULES PREVIEW MODAL FOR ADMIN */}
+      {adminRulesViewModal && (
+        <TournamentRulesModal
+          isOpen={Boolean(adminRulesViewModal)}
+          tournamentTitle={adminRulesViewModal.title}
+          game={adminRulesViewModal.game}
+          rules={adminRulesViewModal.rules}
+          onClose={() => setAdminRulesViewModal(null)}
+          onAgree={() => setAdminRulesViewModal(null)}
+        />
+      )}
     </main>
   );
 }

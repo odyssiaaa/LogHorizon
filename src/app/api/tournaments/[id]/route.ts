@@ -1,7 +1,7 @@
 import { Prisma, TournamentStatus } from "@prisma/client";
 import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { advanceMatchWinner, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam } from "@/lib/tournament";
+import { advanceMatchWinner, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -37,6 +37,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     success: true,
     tournament: {
       ...tournament,
+      rules: tournament.rules || DEFAULT_TOURNAMENT_RULES,
       entryFee: tournament.entryFee ?? 0,
       isFreeEntry: tournament.isFreeEntry ?? (tournament.entryFee === 0),
       mainPlayersCount: tournament.mainPlayersCount ?? 5,
@@ -197,6 +198,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       ...(typeof data.title === "string" ? { title: data.title.trim() } : {}),
       ...(typeof data.game === "string" ? { game: data.game.trim() } : {}),
       ...(typeof data.prizePool === "string" ? { prizePool: data.prizePool.trim() } : {}),
+      ...(typeof data.rules === "string" ? { rules: data.rules.trim() } : {}),
       ...(typeof data.mainPlayersCount === "number" ? { mainPlayersCount: Math.max(1, Math.min(10, data.mainPlayersCount)) } : {}),
       ...(typeof data.subPlayersCount === "number" ? { subPlayersCount: Math.max(0, Math.min(5, data.subPlayersCount)) } : {}),
       ...(typeof data.isFreeEntry === "boolean" ? { isFreeEntry: data.isFreeEntry } : {}),

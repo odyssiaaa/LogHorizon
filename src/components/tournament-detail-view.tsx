@@ -30,6 +30,7 @@ import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { DualWingBracketView } from "@/components/events-board";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
+import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 
 type TournamentData = {
   id: string;
@@ -42,6 +43,7 @@ type TournamentData = {
   subPlayersCount?: number;
   entryFee?: number;
   isFreeEntry?: boolean;
+  rules?: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -63,6 +65,9 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [viewingRoster, setViewingRoster] = useState<TournamentTeam | null>(null);
+
+  // Tournament Rules Gate Modal state
+  const [showRulesModal, setShowRulesModal] = useState(false);
 
   // Registration modal state
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -224,6 +229,12 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       void signIn("discord");
       return;
     }
+    // Show mandatory tournament rules agreement first
+    setShowRulesModal(true);
+  }
+
+  function handleProceedToRegistration() {
+    setShowRulesModal(false);
     // Initialize roster inputs based on tournament settings
     setRegisterTeamName("");
     setRegisterCaptainIgn("");
@@ -982,6 +993,18 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         teamsList={detailGachaModalState.teamsList}
         onFinish={() => setDetailGachaModalState((prev) => ({ ...prev, isOpen: false }))}
       />
+
+      {/* MANDATORY TOURNAMENT RULES AGREEMENT MODAL */}
+      {tournament && (
+        <TournamentRulesModal
+          isOpen={showRulesModal}
+          tournamentTitle={tournament.title}
+          game={tournament.game}
+          rules={tournament.rules}
+          onClose={() => setShowRulesModal(false)}
+          onAgree={handleProceedToRegistration}
+        />
+      )}
     </main>
   );
 }

@@ -42,6 +42,28 @@ export type TournamentMatch = {
   nextSlot?: "teamA" | "teamB";
 };
 
+export const DEFAULT_TOURNAMENT_RULES = `### 1. MASALAH RADIO & CHAT ALL
+- Jika ada lawan yang melakukan *Radio All* atau *Chat All*, harap segera ambil *screenshot* dan langsung lakukan *surrender* (menyerah), kemudian lapor ke Admin saat itu juga. **(Laporan tidak diterima apabila match sudah selesai dimainkan).**
+- *Contoh Kasus:* Tim A vs Tim B. Tim A melakukan *Radio All / Chat All* dan Tim B tidak langsung melapor (melanjutkan game hingga kalah), maka laporan setelah match selesai tidak diterima dan kemenangan tetap sah milik Tim A.
+
+### 2. TENTANG JADWAL PERTANDINGAN
+- Dilarang memainkan pertandingan di luar jadwal yang ditentukan (misal jadwal pukul 20:00 WIB, kedua tim sepakat mundur ke pukul 20:20 WIB tanpa izin panitia, maka **kedua tim didiskualifikasi**). *(Pertandingan boleh dipercepat asalkan kedua tim sepakat dan melapor ke panitia).*
+- Toleransi keterlambatan maksimal **12 menit** dari jadwal resmi.
+- Untuk tim yang mengalami *late game* pada pertandingan sebelumnya, Admin memberikan toleransi waktu setelah game sebelumnya selesai.
+
+### 3. DETAIL PERATURAN TOURNAMENT LOGHORIZON
+- Jaringan / koneksi internet dan kondisi *device* sepenuhnya menjadi tanggung jawab masing-masing pemain.
+- Dilarang keras menggunakan *cheat* dalam bentuk apa pun (*maphack*, *drone view*, script ilegal, dll.).
+- Dilarang melakukan *Radio All* (*GG*, *Well played*, *Mainnya hebat*, dsb.) maupun *Chat All* kepada lawan.
+- *Emote* dan *recall-recall* **diperbolehkan**.
+- Pelanggaran terhadap aturan di atas (dengan bukti valid ke Admin) berakibat **diskualifikasi mutlak** tanpa pengecualian. Pastikan aturan ini dibagikan ke seluruh anggota tim.
+
+### 4. SISTEM MATCH TOURNAMENT LOGHORIZON
+- **Kualifikasi:** BO1 (*Best of 1*: kalah langsung gugur)
+- **Semifinal:** BO3 (*Best of 3*: kalah langsung gugur)
+- **Bronze Match (Perebutan Juara 3):** BO3
+- **Grand Final:** BO3`;
+
 export function createSingleEliminationBracket(participants: BracketSlot[]) {
   let size = 1;
   while (size < participants.length) size *= 2;
