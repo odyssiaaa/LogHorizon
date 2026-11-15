@@ -225,20 +225,20 @@ function cleanDiscordText(text: string): string {
 }
 
 // 2. Tarik Pesan Resmi dari Channel Discord LogHorizon (ID: 1547566856196329543)
-async function fetchDiscordGuildNews(): Promise<NormalizedArticle[]> {
+async function fetchDiscordGuildNews(): Promise<{ items: NormalizedArticle[]; debug: string }> {
   const token = process.env.DISCORD_BOT_TOKEN?.trim();
   const channelId = process.env.DISCORD_NEWS_CHANNEL_ID || "1547566856196329543";
   const guildId = process.env.DISCORD_GUILD_ID || "1297594957417938994";
 
-  // Fallback ke tabel Announcement di database jika token belum dikonfigurasi
-  async function getDbFallback(): Promise<NormalizedArticle[]> {
+  // Fallback ke tabel Announcement di database jika token belum dikonfigurasi / Discord gagal
+  async function getDbFallback(reason: string): Promise<{ items: NormalizedArticle[]; debug: string }> {
     try {
       const announcements = await prisma.announcement.findMany({
         take: 8,
         orderBy: { createdAt: "desc" },
         include: { author: { select: { username: true, avatar: true } } },
       });
-      return announcements.map((a, idx) => ({
+      const dbItems = announcements.map((a, idx) => ({
         id: `guild-db-${a.id}`,
         title: cleanDiscordText(a.title),
         description: cleanDiscordText(a.content),
@@ -246,39 +246,55 @@ async function fetchDiscordGuildNews(): Promise<NormalizedArticle[]> {
         imageUrl: resolveImage(null, "Turnamen & Guild", idx),
         publishedAt: a.createdAt.toISOString(),
         sourceName: "Discord Official",
-        category: "Turnamen & Guild",
+        category: "Turnamen & Guild" as const,
         isGuildInfo: true,
         authorName: a.author.username ?? "Council LogHorizon",
         authorAvatar: a.author.avatar ?? null,
       }));
+      return {
+        items: dbItems,
+        debug: dbItems.length > 0 ? `${reason} (Menggunakan ${dbItems.length} arsip warta database)` : reason,
+      };
     } catch {
-      return [];
+      return { items: [], debug: reason };
     }
   }
 
   if (!token) {
-    return await getDbFallback();
+    return await getDbFallback("Token DISCORD_BOT_TOKEN belum diset di environment server");
   }
 
   try {
-    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=20`, {
+    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=15`, {
       headers: {
         Authorization: `Bot ${token}`,
         "Content-Type": "application/json",
         "User-Agent": "LogHorizonGuild/1.0",
       },
-      next: { revalidate: 300 },
+      cache: "no-store",
       signal: AbortSignal.timeout(8000),
     });
 
     if (!res.ok) {
-      console.warn(`[discord-news] Discord API returned ${res.status}: ${res.statusText}`);
-      return await getDbFallback();
+      let errorReason = `Discord API mengembalikan HTTP ${res.status}: ${res.statusText}`;
+      if (res.status === 401) {
+        errorReason = "Token DISCORD_BOT_TOKEN tidak valid atau kedaluwarsa (HTTP 401 Unauthorized)";
+      } else if (res.status === 403) {
+        errorReason = `Bot Discord tidak memiliki izin baca channel #${channelId} (HTTP 403 Forbidden)`;
+      } else if (res.status === 404) {
+        errorReason = `Channel ID ${channelId} tidak ditemukan di Discord (HTTP 404 Not Found)`;
+      }
+      console.warn(`[discord-news] ${errorReason}`);
+      return await getDbFallback(errorReason);
     }
 
     const messages = await res.json();
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return await getDbFallback();
+    if (!Array.isArray(messages)) {
+      return await getDbFallback("Format respon Discord tidak valid (bukan array pesan)");
+    }
+
+    if (messages.length === 0) {
+      return await getDbFallback(`Channel Discord #${channelId} aktif tetapi belum ada pesan (0 pesan)`);
     }
 
     const mapped: NormalizedArticle[] = [];
@@ -288,7 +304,15 @@ async function fetchDiscordGuildNews(): Promise<NormalizedArticle[]> {
       const attachments = Array.isArray(msg.attachments) ? msg.attachments : [];
       const embeds = Array.isArray(msg.embeds) ? msg.embeds : [];
 
-      if (!content && attachments.length === 0 && embeds.length === 0) continue;
+      const firstEmbed = embeds[0];
+      const embedDesc = typeof firstEmbed?.description === "string" ? firstEmbed.description.trim() : "";
+      const embedTitle = typeof firstEmbed?.title === "string" ? firstEmbed.title.trim() : "";
+
+      // Gabungkan sumber teks pesan
+      const rawText = content || embedDesc || embedTitle || (attachments.length > 0 ? "Lampiran Pengumuman Guild" : "");
+
+      // Jangan buang pesan jika ada embeds atau attachments meskipun content teks utama kosong!
+      if (!rawText && attachments.length === 0 && embeds.length === 0) continue;
 
       // Ambil gambar dari attachment atau embed
       let imageUrl: string | null = null;
@@ -302,35 +326,45 @@ async function fetchDiscordGuildNews(): Promise<NormalizedArticle[]> {
         }
       }
       if (!imageUrl && embeds.length > 0) {
-        imageUrl = embeds[0]?.image?.url || embeds[0]?.thumbnail?.url || null;
+        for (const emb of embeds) {
+          if (emb?.image?.url) { imageUrl = emb.image.url; break; }
+          if (emb?.thumbnail?.url) { imageUrl = emb.thumbnail.url; break; }
+        }
       }
 
-      // Format judul dan teks pengumuman
-      const lines = content.split("\n").map((l: string) => l.trim()).filter(Boolean);
+      // Format judul dan deskripsi warta
       let title = "";
-      let description = content;
+      let description = "";
 
-      if (embeds[0]?.title) {
-        title = embeds[0].title;
-        description = embeds[0].description || content || title;
-      } else if (lines.length > 0) {
-        const firstLine = lines[0].replace(/^[#*_\s]+|[#*_\s]+$/g, "");
+      if (embedTitle) {
+        title = embedTitle;
+        description = content || embedDesc || embedTitle;
+      } else if (content) {
+        const lines = content.split("\n").map((l: string) => l.trim()).filter(Boolean);
+        const firstLine = lines[0]?.replace(/^[#*_\s]+|[#*_\s]+$/g, "") || "";
         if (firstLine.length > 0 && firstLine.length <= 120) {
           title = firstLine;
-          description = lines.slice(1).join("\n") || firstLine;
+          description = lines.slice(1).join("\n") || embedDesc || firstLine;
         } else {
-          title = firstLine.slice(0, 80) + "...";
+          title = (firstLine.slice(0, 80) || "Warta Resmi Guild") + "...";
           description = content;
         }
+      } else if (embedDesc) {
+        title = embedDesc.slice(0, 80) + (embedDesc.length > 80 ? "..." : "");
+        description = embedDesc;
       } else {
-        title = "Warta & Pengumuman Resmi Guild";
-        description = "Transmisi warta resmi dari channel Discord LogHorizon.";
+        title = "Pengumuman Resmi Guild";
+        description = "Transmisi warta dan lampiran resmi dari channel Discord LogHorizon.";
       }
 
       title = cleanDiscordText(title);
       description = cleanDiscordText(description);
 
-      const authorName = msg.author?.global_name || msg.author?.username || "Council LogHorizon";
+      const authorName =
+        msg.author?.global_name ||
+        msg.author?.username ||
+        (msg.webhook_id ? "Bot Pengumuman Guild" : "Council LogHorizon");
+
       const authorAvatar = msg.author?.avatar
         ? `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png?size=128`
         : null;
@@ -353,13 +387,17 @@ async function fetchDiscordGuildNews(): Promise<NormalizedArticle[]> {
     }
 
     if (mapped.length === 0) {
-      return await getDbFallback();
+      return await getDbFallback("Tidak ada pesan pengumuman valid yang dapat diparsing dari Discord");
     }
 
-    return mapped;
+    return {
+      items: mapped,
+      debug: `Tersinkronisasi ${mapped.length} pesan terbaru dari channel #${channelId}`,
+    };
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : "Koneksi ke Discord API gagal / timeout";
     console.error("[discord-news] Error fetching Discord messages:", error);
-    return await getDbFallback();
+    return await getDbFallback(errorMsg);
   }
 }
 
@@ -466,7 +504,7 @@ async function fetchGlobalArticles(): Promise<NormalizedArticle[]> {
 }
 
 export async function GET() {
-  const [guildNews, globalArticles] = await Promise.all([
+  const [discordResult, globalArticles] = await Promise.all([
     fetchDiscordGuildNews(),
     fetchGlobalArticles(),
   ]);
@@ -474,14 +512,15 @@ export async function GET() {
   return NextResponse.json(
     {
       ok: true,
-      guildNews,
+      guildNews: discordResult.items,
+      discordDebug: discordResult.debug,
       articles: globalArticles,
-      totalCount: guildNews.length + globalArticles.length,
+      totalCount: discordResult.items.length + globalArticles.length,
       provider: "LogHorizon Multi-Source Dispatch (Discord Guild, Gamebrott, Antara, NewsAPI)",
     },
     {
       headers: {
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
       },
     }
   );

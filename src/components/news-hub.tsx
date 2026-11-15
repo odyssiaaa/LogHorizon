@@ -26,6 +26,7 @@ const DEFAULT_THUMBNAIL = "https://images.unsplash.com/photo-1542751371-adc38448
 
 export function NewsHub() {
   const [guildNews, setGuildNews] = useState<NormalizedArticle[]>([]);
+  const [discordDebug, setDiscordDebug] = useState<string>("");
   const [articles, setArticles] = useState<NormalizedArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [provider, setProvider] = useState<string>("Multi-Source Dispatch");
@@ -51,6 +52,7 @@ export function NewsHub() {
       const data = await res.json();
       if (data.ok) {
         setGuildNews(Array.isArray(data.guildNews) ? data.guildNews : []);
+        setDiscordDebug(typeof data.discordDebug === "string" ? data.discordDebug : "");
         setArticles(Array.isArray(data.articles) ? data.articles : []);
         setProvider(data.provider ?? "LogHorizon Dispatch");
       }
@@ -204,13 +206,19 @@ export function NewsHub() {
         <section className="mb-14" aria-labelledby="guild-news-heading">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-3 border-b border-[#9D4EDD]/30">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold tracking-wider bg-[#9D4EDD] text-white uppercase">
                   [GUILD INFO]
                 </span>
                 <h2 id="guild-news-heading" className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
                   Info &amp; Berita Resmi Guild (Discord)
                 </h2>
+                {discordDebug && (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10.5px] font-mono bg-purple-500/10 text-purple-400 border border-purple-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {discordDebug}
+                  </span>
+                )}
               </div>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Transmisi langsung dari channel server Discord resmi LogHorizon.
@@ -260,15 +268,22 @@ export function NewsHub() {
               <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mt-1">
                 Kunjungi channel pengumuman di server Discord LogHorizon untuk melihat pesan dan informasi mabar terbaru.
               </p>
-              <a
-                href="https://discord.gg/aJvbVyTxNb"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold transition"
-              >
-                <span>Masuk Discord LogHorizon</span>
-                <ArrowUpRight size={14} />
-              </a>
+              {discordDebug && (
+                <div className="mt-3 inline-block px-3 py-1.5 rounded bg-black/40 dark:bg-black/60 border border-purple-500/30 text-[11px] font-mono text-purple-300 max-w-xl mx-auto break-words text-left">
+                  <span className="text-gray-400 font-semibold">Status Sinkronisasi:</span> {discordDebug}
+                </div>
+              )}
+              <div className="mt-4">
+                <a
+                  href="https://discord.gg/aJvbVyTxNb"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold transition"
+                >
+                  <span>Masuk Discord LogHorizon</span>
+                  <ArrowUpRight size={14} />
+                </a>
+              </div>
             </div>
           )}
         </section>
