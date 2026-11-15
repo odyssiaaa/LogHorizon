@@ -3017,12 +3017,15 @@ export function MatchCard({
 function LeftSemiToFinalConnector({ match }: { match?: TournamentMatch }) {
   const hasWinner = Boolean(match?.winner);
   return (
-    <div className="w-8 sm:w-11 shrink-0 flex flex-col justify-around">
-      <div className="pb-1.5 border-b border-transparent select-none opacity-0">
+    <div className="w-8 sm:w-11 shrink-0 flex flex-col">
+      <div
+        className="h-10 text-center pb-1.5 border-b border-transparent shrink-0 mb-3 select-none opacity-0 flex flex-col justify-center"
+        aria-hidden="true"
+      >
         <span className="text-[10px] block">Sayap</span>
         <p className="text-[11px]">Ronde</p>
       </div>
-      <div className="flex-1 flex items-center justify-center relative">
+      <div className="flex-1 flex items-center justify-center relative py-1">
         <svg className="w-full h-8 overflow-visible" viewBox="0 0 40 20" preserveAspectRatio="none">
           <defs>
             <filter id="bracketGlowLeftFinal" x="-30%" y="-30%" width="160%" height="160%">
@@ -3034,11 +3037,13 @@ function LeftSemiToFinalConnector({ match }: { match?: TournamentMatch }) {
             y1="10"
             x2="40"
             y2="10"
+            className={hasWinner ? "stroke-[#9D4EDD]" : "stroke-[#9D4EDD]/40"}
             stroke={hasWinner ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
             strokeWidth={hasWinner ? "2.5" : "1.5"}
+            vectorEffect="non-scaling-stroke"
             filter={hasWinner ? "url(#bracketGlowLeftFinal)" : undefined}
           />
-          {hasWinner && <circle cx="36" cy="10" r="2.5" fill="#C77DFF" />}
+          {hasWinner && <circle cx="37" cy="10" r="2.5" className="fill-[#C77DFF]" fill="#C77DFF" />}
         </svg>
       </div>
     </div>
@@ -3048,12 +3053,15 @@ function LeftSemiToFinalConnector({ match }: { match?: TournamentMatch }) {
 function RightFinalToSemiConnector({ match }: { match?: TournamentMatch }) {
   const hasWinner = Boolean(match?.winner);
   return (
-    <div className="w-8 sm:w-11 shrink-0 flex flex-col justify-around">
-      <div className="pb-1.5 border-b border-transparent select-none opacity-0">
+    <div className="w-8 sm:w-11 shrink-0 flex flex-col">
+      <div
+        className="h-10 text-center pb-1.5 border-b border-transparent shrink-0 mb-3 select-none opacity-0 flex flex-col justify-center"
+        aria-hidden="true"
+      >
         <span className="text-[10px] block">Sayap</span>
         <p className="text-[11px]">Ronde</p>
       </div>
-      <div className="flex-1 flex items-center justify-center relative">
+      <div className="flex-1 flex items-center justify-center relative py-1">
         <svg className="w-full h-8 overflow-visible" viewBox="0 0 40 20" preserveAspectRatio="none">
           <defs>
             <filter id="bracketGlowRightFinal" x="-30%" y="-30%" width="160%" height="160%">
@@ -3065,18 +3073,26 @@ function RightFinalToSemiConnector({ match }: { match?: TournamentMatch }) {
             y1="10"
             x2="40"
             y2="10"
+            className={hasWinner ? "stroke-[#9D4EDD]" : "stroke-[#9D4EDD]/40"}
             stroke={hasWinner ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
             strokeWidth={hasWinner ? "2.5" : "1.5"}
+            vectorEffect="non-scaling-stroke"
             filter={hasWinner ? "url(#bracketGlowRightFinal)" : undefined}
           />
-          {hasWinner && <circle cx="4" cy="10" r="2.5" fill="#C77DFF" />}
+          {hasWinner && <circle cx="3" cy="10" r="2.5" className="fill-[#C77DFF]" fill="#C77DFF" />}
         </svg>
       </div>
     </div>
   );
 }
 
-function LeftElbowConnectorColumn({ matches }: { matches: TournamentMatch[] }) {
+function LeftElbowConnectorColumn({
+  matches,
+  rNum,
+}: {
+  matches: TournamentMatch[];
+  rNum: number;
+}) {
   const pairCount = Math.max(1, Math.floor(matches.length / 2));
   const pairs = Array.from({ length: pairCount }, (_, i) => ({
     upper: matches[i * 2],
@@ -3084,53 +3100,60 @@ function LeftElbowConnectorColumn({ matches }: { matches: TournamentMatch[] }) {
   }));
 
   return (
-    <div className="w-8 sm:w-11 shrink-0 flex flex-col justify-around">
-      <div className="pb-1.5 border-b border-transparent select-none opacity-0">
+    <div className="w-8 sm:w-11 shrink-0 flex flex-col">
+      <div
+        className="h-10 text-center pb-1.5 border-b border-transparent shrink-0 mb-3 select-none opacity-0 flex flex-col justify-center"
+        aria-hidden="true"
+      >
         <span className="text-[10px] block">Sayap</span>
         <p className="text-[11px]">Ronde</p>
       </div>
-      <div className="flex-1 flex flex-col justify-around">
+      <div className="flex-1 flex flex-col justify-around py-1">
         {pairs.map((p, idx) => {
           const upperActive = Boolean(p.upper?.winner);
           const lowerActive = Boolean(p.lower?.winner);
           const stemActive = upperActive || lowerActive;
+          const filterId = `bracketGlowL-${rNum}-${idx}`;
 
           return (
-            <div key={idx} className="flex-1 flex flex-col justify-center relative min-h-[90px]">
+            <div key={idx} className="flex-1 flex flex-col justify-center relative min-h-[90px] w-full">
               <svg className="w-full h-full overflow-visible" viewBox="0 0 40 100" preserveAspectRatio="none">
                 <defs>
-                  <filter id={`bracketGlowL-${idx}`} x="-30%" y="-30%" width="160%" height="160%">
+                  <filter id={filterId} x="-30%" y="-30%" width="160%" height="160%">
                     <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#9D4EDD" floodOpacity="0.9" />
                   </filter>
                 </defs>
-                {/* Upper branch */}
+                {/* Cabang Atas */}
                 <path
-                  d="M 0 25 L 24 25 L 24 50"
+                  d="M 0 25 L 20 25 L 20 50"
                   fill="none"
+                  className={upperActive ? "stroke-[#9D4EDD]" : "stroke-[#9D4EDD]/40"}
                   stroke={upperActive ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
                   strokeWidth={upperActive ? "2.5" : "1.5"}
                   vectorEffect="non-scaling-stroke"
-                  filter={upperActive ? `url(#bracketGlowL-${idx})` : undefined}
+                  filter={upperActive ? `url(#${filterId})` : undefined}
                 />
-                {/* Lower branch */}
+                {/* Cabang Bawah */}
                 <path
-                  d="M 0 75 L 24 75 L 24 50"
+                  d="M 0 75 L 20 75 L 20 50"
                   fill="none"
+                  className={lowerActive ? "stroke-[#9D4EDD]" : "stroke-[#9D4EDD]/40"}
                   stroke={lowerActive ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
                   strokeWidth={lowerActive ? "2.5" : "1.5"}
                   vectorEffect="non-scaling-stroke"
-                  filter={lowerActive ? `url(#bracketGlowL-${idx})` : undefined}
+                  filter={lowerActive ? `url(#${filterId})` : undefined}
                 />
-                {/* Center Stem */}
+                {/* Tangkai Tengah Masuk ke Ronde Berikutnya */}
                 <path
-                  d="M 24 50 L 40 50"
+                  d="M 20 50 L 40 50"
                   fill="none"
+                  className={stemActive ? "stroke-[#9D4EDD]" : "stroke-[#9D4EDD]/40"}
                   stroke={stemActive ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
                   strokeWidth={stemActive ? "2.5" : "1.5"}
                   vectorEffect="non-scaling-stroke"
-                  filter={stemActive ? `url(#bracketGlowL-${idx})` : undefined}
+                  filter={stemActive ? `url(#${filterId})` : undefined}
                 />
-                {stemActive && <circle cx="37" cy="50" r="2.5" fill="#C77DFF" />}
+                {stemActive && <circle cx="37" cy="50" r="2.5" className="fill-[#C77DFF]" fill="#C77DFF" />}
               </svg>
             </div>
           );
@@ -3140,7 +3163,13 @@ function LeftElbowConnectorColumn({ matches }: { matches: TournamentMatch[] }) {
   );
 }
 
-function RightElbowConnectorColumn({ matches }: { matches: TournamentMatch[] }) {
+function RightElbowConnectorColumn({
+  matches,
+  rNum,
+}: {
+  matches: TournamentMatch[];
+  rNum: number;
+}) {
   const pairCount = Math.max(1, Math.floor(matches.length / 2));
   const pairs = Array.from({ length: pairCount }, (_, i) => ({
     upper: matches[i * 2],
@@ -3148,53 +3177,60 @@ function RightElbowConnectorColumn({ matches }: { matches: TournamentMatch[] }) 
   }));
 
   return (
-    <div className="w-8 sm:w-11 shrink-0 flex flex-col justify-around">
-      <div className="pb-1.5 border-b border-transparent select-none opacity-0">
+    <div className="w-8 sm:w-11 shrink-0 flex flex-col">
+      <div
+        className="h-10 text-center pb-1.5 border-b border-transparent shrink-0 mb-3 select-none opacity-0 flex flex-col justify-center"
+        aria-hidden="true"
+      >
         <span className="text-[10px] block">Sayap</span>
         <p className="text-[11px]">Ronde</p>
       </div>
-      <div className="flex-1 flex flex-col justify-around">
+      <div className="flex-1 flex flex-col justify-around py-1">
         {pairs.map((p, idx) => {
           const upperActive = Boolean(p.upper?.winner);
           const lowerActive = Boolean(p.lower?.winner);
           const stemActive = upperActive || lowerActive;
+          const filterId = `bracketGlowR-${rNum}-${idx}`;
 
           return (
-            <div key={idx} className="flex-1 flex flex-col justify-center relative min-h-[90px]">
+            <div key={idx} className="flex-1 flex flex-col justify-center relative min-h-[90px] w-full">
               <svg className="w-full h-full overflow-visible" viewBox="0 0 40 100" preserveAspectRatio="none">
                 <defs>
-                  <filter id={`bracketGlowR-${idx}`} x="-30%" y="-30%" width="160%" height="160%">
+                  <filter id={filterId} x="-30%" y="-30%" width="160%" height="160%">
                     <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#9D4EDD" floodOpacity="0.9" />
                   </filter>
                 </defs>
-                {/* Upper branch from right (40, 25) to (16, 25) down to (16, 50) */}
+                {/* Cabang Atas dari Kanan Masuk ke Tengah */}
                 <path
-                  d="M 40 25 L 16 25 L 16 50"
+                  d="M 40 25 L 20 25 L 20 50"
                   fill="none"
+                  className={upperActive ? "stroke-[#9D4EDD]" : "stroke-[#9D4EDD]/40"}
                   stroke={upperActive ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
                   strokeWidth={upperActive ? "2.5" : "1.5"}
                   vectorEffect="non-scaling-stroke"
-                  filter={upperActive ? `url(#bracketGlowR-${idx})` : undefined}
+                  filter={upperActive ? `url(#${filterId})` : undefined}
                 />
-                {/* Lower branch from right (40, 75) to (16, 75) up to (16, 50) */}
+                {/* Cabang Bawah dari Kanan Masuk ke Tengah */}
                 <path
-                  d="M 40 75 L 16 75 L 16 50"
+                  d="M 40 75 L 20 75 L 20 50"
                   fill="none"
+                  className={lowerActive ? "stroke-[#9D4EDD]" : "stroke-[#9D4EDD]/40"}
                   stroke={lowerActive ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
                   strokeWidth={lowerActive ? "2.5" : "1.5"}
                   vectorEffect="non-scaling-stroke"
-                  filter={lowerActive ? `url(#bracketGlowR-${idx})` : undefined}
+                  filter={lowerActive ? `url(#${filterId})` : undefined}
                 />
-                {/* Center Stem pointing left (16, 50) to (0, 50) */}
+                {/* Tangkai Tengah Masuk ke Kiri (Ronde Terdalam) */}
                 <path
-                  d="M 16 50 L 0 50"
+                  d="M 20 50 L 0 50"
                   fill="none"
+                  className={stemActive ? "stroke-[#9D4EDD]" : "stroke-[#9D4EDD]/40"}
                   stroke={stemActive ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
                   strokeWidth={stemActive ? "2.5" : "1.5"}
                   vectorEffect="non-scaling-stroke"
-                  filter={stemActive ? `url(#bracketGlowR-${idx})` : undefined}
+                  filter={stemActive ? `url(#${filterId})` : undefined}
                 />
-                {stemActive && <circle cx="3" cy="50" r="2.5" fill="#C77DFF" />}
+                {stemActive && <circle cx="3" cy="50" r="2.5" className="fill-[#C77DFF]" fill="#C77DFF" />}
               </svg>
             </div>
           );
@@ -3268,7 +3304,7 @@ export function DualWingBracketView({
 
   return (
     <div
-      className="flex items-stretch gap-2 sm:gap-3 pb-4 pt-2 select-none"
+      className="flex items-stretch gap-1 sm:gap-2 pb-4 pt-2 select-none"
       style={{ minWidth: `${minWidthPx}px` }}
     >
       {/* 1. SAYAP KIRI (LEFT WING): Ronde 1 -> Ronde 2 -> ... -> Semifinal Kiri */}
@@ -3282,8 +3318,8 @@ export function DualWingBracketView({
 
         return (
           <Fragment key={`left-group-${rNum}`}>
-            <div className="flex-1 flex flex-col justify-around space-y-4 min-w-[240px]">
-              <div className="text-center pb-1.5 border-b border-purple-500/30">
+            <div className="flex-1 flex flex-col min-w-[240px]">
+              <div className="h-10 text-center pb-1.5 border-b border-purple-500/30 shrink-0 mb-3 flex flex-col justify-center">
                 <span className="text-[10px] font-mono text-purple-400/70 uppercase tracking-widest block">
                   Sayap Kiri
                 </span>
@@ -3291,30 +3327,32 @@ export function DualWingBracketView({
                   {heading}
                 </p>
               </div>
-              {leftMatches.map((m) => (
-                <MatchCard
-                  key={m.matchId}
-                  match={m}
-                  teams={teams}
-                  isFinal={false}
-                  onTeamClick={onTeamClick}
-                />
-              ))}
+              <div className="flex-1 flex flex-col justify-around gap-4 py-1">
+                {leftMatches.map((m) => (
+                  <MatchCard
+                    key={m.matchId}
+                    match={m}
+                    teams={teams}
+                    isFinal={false}
+                    onTeamClick={onTeamClick}
+                  />
+                ))}
+              </div>
             </div>
 
             {/* Garis Penghubung Siku Keluar ke Kanan */}
             {isSemi ? (
               <LeftSemiToFinalConnector match={semiLeftMatch} />
             ) : (
-              <LeftElbowConnectorColumn matches={leftMatches} />
+              <LeftElbowConnectorColumn matches={leftMatches} rNum={rNum} />
             )}
           </Fragment>
         );
       })}
 
       {/* 2. TENGAH (CENTER STAGE): Kotak GRAND FINAL & PODIUM JUARA 1 */}
-      <div className="flex-1 flex flex-col justify-center space-y-4 min-w-[260px] max-w-[300px] px-3 py-4 rounded-2xl border-2 border-amber-500/40 bg-gradient-to-b from-amber-500/10 via-[#130F1A] to-purple-950/20 shadow-2xl shadow-amber-950/20">
-        <div className="text-center pb-2 border-b border-amber-500/30">
+      <div className="flex-1 flex flex-col min-w-[260px] max-w-[300px] px-3 py-4 rounded-2xl border-2 border-amber-500/40 bg-gradient-to-b from-amber-500/10 via-[#130F1A] to-purple-950/20 shadow-2xl shadow-amber-950/20">
+        <div className="h-10 text-center pb-2 border-b border-amber-500/30 shrink-0 mb-3 flex flex-col justify-center">
           <span className="text-[10px] font-mono text-amber-400/80 uppercase tracking-widest block font-bold">
             ⚔️ TITIK TEMU FINAL ⚔️
           </span>
@@ -3324,31 +3362,33 @@ export function DualWingBracketView({
           </p>
         </div>
 
-        {gfMatch ? (
-          <MatchCard
-            match={gfMatch}
-            teams={teams}
-            isFinal={true}
-            onTeamClick={onTeamClick}
-          />
-        ) : (
-          <p className="text-xs text-gray-500 text-center py-4">Menunggu babak final</p>
-        )}
+        <div className="flex-1 flex flex-col justify-center space-y-4 py-1">
+          {gfMatch ? (
+            <MatchCard
+              match={gfMatch}
+              teams={teams}
+              isFinal={true}
+              onTeamClick={onTeamClick}
+            />
+          ) : (
+            <p className="text-xs text-gray-500 text-center py-4">Menunggu babak final</p>
+          )}
 
-        {/* Podium Juara 1 */}
-        {gfMatch?.winner && (
-          <div className="p-3 rounded-xl border border-amber-500/60 bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-amber-500/20 text-center shadow-lg shadow-amber-950/30 animate-in zoom-in-95 duration-200">
-            <div className="w-8 h-8 mx-auto mb-1 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/50">
-              <Crown size={16} />
+          {/* Podium Juara 1 */}
+          {gfMatch?.winner && (
+            <div className="p-3 rounded-xl border border-amber-500/60 bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-amber-500/20 text-center shadow-lg shadow-amber-950/30 animate-in zoom-in-95 duration-200">
+              <div className="w-8 h-8 mx-auto mb-1 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/50">
+                <Crown size={16} />
+              </div>
+              <span className="text-[9px] font-mono uppercase tracking-widest text-amber-300 font-extrabold block">
+                👑 JUARA 1 TURNAMEN
+              </span>
+              <span className="text-xs sm:text-sm font-black text-white block mt-0.5 truncate">
+                {gfMatch.winner}
+              </span>
             </div>
-            <span className="text-[9px] font-mono uppercase tracking-widest text-amber-300 font-extrabold block">
-              👑 JUARA 1 TURNAMEN
-            </span>
-            <span className="text-xs sm:text-sm font-black text-white block mt-0.5 truncate">
-              {gfMatch.winner}
-            </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* 3. SAYAP KANAN (RIGHT WING): Semifinal Kanan <- ... <- Ronde 2 <- Ronde 1 (Mirrored) */}
@@ -3365,10 +3405,10 @@ export function DualWingBracketView({
         return (
           <Fragment key={`right-group-${rNum}`}>
             {/* Jika bukan semifinal (misal QF atau R1), render connector siku di sebelah kiri match card-nya */}
-            {!isSemi && <RightElbowConnectorColumn matches={rightMatches} />}
+            {!isSemi && <RightElbowConnectorColumn matches={rightMatches} rNum={rNum} />}
 
-            <div className="flex-1 flex flex-col justify-around space-y-4 min-w-[240px]">
-              <div className="text-center pb-1.5 border-b border-purple-500/30">
+            <div className="flex-1 flex flex-col min-w-[240px]">
+              <div className="h-10 text-center pb-1.5 border-b border-purple-500/30 shrink-0 mb-3 flex flex-col justify-center">
                 <span className="text-[10px] font-mono text-purple-400/70 uppercase tracking-widest block">
                   Sayap Kanan
                 </span>
@@ -3376,15 +3416,17 @@ export function DualWingBracketView({
                   {heading}
                 </p>
               </div>
-              {rightMatches.map((m) => (
-                <MatchCard
-                  key={m.matchId}
-                  match={m}
-                  teams={teams}
-                  isFinal={false}
-                  onTeamClick={onTeamClick}
-                />
-              ))}
+              <div className="flex-1 flex flex-col justify-around gap-4 py-1">
+                {rightMatches.map((m) => (
+                  <MatchCard
+                    key={m.matchId}
+                    match={m}
+                    teams={teams}
+                    isFinal={false}
+                    onTeamClick={onTeamClick}
+                  />
+                ))}
+              </div>
             </div>
           </Fragment>
         );
