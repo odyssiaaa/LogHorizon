@@ -233,7 +233,7 @@ export function Navbar() {
           scrolled ? "py-2.5 shadow-sm shadow-purple-950/5" : "py-3 sm:py-3.5"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
           {/* SISI KIRI: Logo & Nama Guild */}
           <Link href="/" className="flex items-center gap-2.5 group shrink-0" aria-label="LogHorizon Beranda">
             <div className="relative size-9 rounded-full overflow-hidden border border-[#9D4EDD]/40 group-hover:border-[#9D4EDD] transition-colors bg-[#171322] flex items-center justify-center shadow-sm">

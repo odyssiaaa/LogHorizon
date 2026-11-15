@@ -150,48 +150,50 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
   const qrisUrl = treasury?.qrisImageUrl || process.env.NEXT_PUBLIC_QRIS_IMAGE_URL || "/qris-guild.png";
 
   return (
-    <main className="page-shell donate-page treasury-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
-      <header className="treasury-hero mb-8">
+    <main className="donate-page treasury-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+      <header className="treasury-hero mb-8 text-left">
         <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">LOGHORIZON / COMMUNITY FUND</p>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
           GUILD TREASURY <span className="text-[#9D4EDD] dark:text-[#C77DFF]">&amp; BENEFACTOR</span>
         </h1>
-        <p className="muted-copy text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mt-2 leading-relaxed">
+        <p className="muted-copy text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-2xl mt-2 leading-relaxed">
           Dukung operasional server, kembangkan ekosistem, dan danai turnamen komunitas berhadiah massal. Setiap kontribusi kamu akan diverifikasi langsung oleh Admin untuk membuka kasta benefit eksklusif.
         </p>
 
-        <div className="treasury-progress mt-6">
-          <div>
-            <span>Kas terverifikasi</span>
-            <strong>{treasury ? formatMoney.format(treasury.total) : "Memuat…"}</strong>
+        <div className="treasury-progress mt-6 p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17]">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs mb-3">
+            <div>
+              <span className="text-gray-400 block text-[11px]">Kas terverifikasi:</span>
+              <strong className="text-lg sm:text-xl font-black text-gray-900 dark:text-white">{treasury ? formatMoney.format(treasury.total) : "Memuat…"}</strong>
+            </div>
+            <div className="text-right">
+              <span className="text-gray-400 block text-[11px]">Target kas bulanan:</span>
+              <strong className="text-lg sm:text-xl font-black text-purple-600 dark:text-purple-300">{treasury?.goal ? formatMoney.format(treasury.goal) : "Rp 5.000.000"}</strong>
+            </div>
           </div>
-          <div>
-            <span>Target kas komunitas</span>
-            <strong>{treasury?.goal ? formatMoney.format(treasury.goal) : "Rp 5.000.000"}</strong>
+          <div className="w-full h-2.5 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden" role="progressbar" aria-label="Progres kas komunitas" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
+            <div className="h-full rounded-full bg-gradient-to-r from-[#9D4EDD] to-[#C77DFF] transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
-          <div className="treasury-track" role="progressbar" aria-label="Progres kas komunitas" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
-            <span style={{ width: `${progress}%` }} />
-          </div>
-          <small>{treasury?.goal ? `${Math.round(progress)}% dari target bulanan` : "Target pendanaan operasional guild"}</small>
+          <small className="text-[11px] text-gray-500 dark:text-gray-400 mt-2 block">{treasury?.goal ? `${Math.round(progress)}% dari target bulanan guild` : "Target pendanaan operasional guild"}</small>
         </div>
       </header>
 
       {message && (
-        <div className="p-4 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-sm font-semibold mb-6 flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-sm font-semibold mb-6 flex items-center justify-between">
           <span>{message}</span>
           <button onClick={() => setMessage("")} aria-label="Tutup"><X size={16} /></button>
         </div>
       )}
       {error && (
-        <div className="p-4 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-sm font-semibold mb-6 flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-sm font-semibold mb-6 flex items-center justify-between">
           <span>{error}</span>
           <button onClick={() => setError("")} aria-label="Tutup"><X size={16} /></button>
         </div>
       )}
 
-      <div className="treasury-tier-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 my-6">
+      <div className="treasury-tier-grid grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 my-6">
         {tiers.map(({ id, name, icon: Icon, price, badge, benefits }, index) => (
-          <article className={`treasury-tier tier-${index + 1} p-5 sm:p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col justify-between`} key={id}>
+          <article className={`treasury-tier tier-${index + 1} p-5 sm:p-6 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] hover:border-[#9D4EDD]/40 transition-all flex flex-col justify-between`} key={id}>
             <div>
               <div className="treasury-tier-icon w-10 h-10 rounded bg-[#9D4EDD]/10 text-[#9D4EDD] dark:text-[#C77DFF] flex items-center justify-center mb-3">
                 <Icon size={20} />

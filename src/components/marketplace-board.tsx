@@ -273,91 +273,96 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
     }
   }
 
-  return <main className="community-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden"><div className="page-shell px-0 sm:px-0">
-    <div className="market-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  return (
+    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
       <div>
-        <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">MARKETPLACE KOMUNITAS</p>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Lapak <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Gamer</span></h1>
-        <p className="muted-copy text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mt-1 leading-relaxed">Jual beli akun, item, top-up, dan jasa gaming dengan komunitas LogHorizon. Transaksi dipantau oleh sistem keamanan guild.</p>
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap mt-2 live-status live-${liveState}`}>{liveState === "live" ? "Live" : liveState === "connecting" ? "Menghubungkan live…" : liveState === "stale" ? "Memperbarui…" : liveState === "error" ? "Live terputus" : "Live tidak aktif"}</span>
-      </div>
-      <div>{status === "loading" ? <span className="nav-loading" /> : <button className="button button-primary w-full sm:w-auto inline-flex items-center justify-center gap-2" onClick={createListing}><Plus size={17} /> <span>Buat Lapak</span></button>}</div>
-    </div>
-    <section className="market-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] mb-6" aria-label="Filter dan pencarian marketplace">
-      <div className="flex items-center gap-3 px-3.5 h-11 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors sm:col-span-2 lg:col-span-1">
-        <div className="shrink-0 text-gray-400 flex items-center">
-          {isSearching ? (
-            <Loader2 size={16} className="animate-spin text-[#9D4EDD]" />
-          ) : (
-            <Search size={16} />
-          )}
-        </div>
-        <input
-          value={searchValue}
-          onChange={(event) => setSearchValue(event.target.value)}
-          placeholder="Cari judul, game, atau penjual…"
-          aria-label="Cari lapak"
-          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
-        />
-        {searchValue && (
-          <button
-            type="button"
-            onClick={() => {
-              setSearchValue("");
-              setSearch("");
-            }}
-            aria-label="Hapus pencarian"
-            className="shrink-0 text-gray-400 hover:text-gray-900 dark:hover:text-white"
-          >
-            <X size={14} />
-          </button>
-        )}
-      </div>
-      <label>Tipe transaksi<select value={type} onChange={(event) => setType(event.target.value)}><option value="ALL">Semua</option><option value="WTS">WTS · Dijual</option><option value="WTB">WTB · Dicari</option></select></label>
-      <label>Nama game<input value={game} onChange={(event) => setGame(event.target.value)} placeholder="Semua game" /></label>
-      <label><ArrowDownUp size={14} /> Urutkan harga<select value={sort} onChange={(event) => setSort(event.target.value)}><option value="newest">Terbaru</option><option value="cheapest">Termurah</option><option value="expensive">Termahal</option></select></label>
-    </section>
-    {notice && <div className="inline-notice mb-4" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Tutup notifikasi"><X size={15} /></button></div>}
-    {error && <div className="inline-error mb-4" role="alert">{error}</div>}
-    {loading ? (
-      <div className="market-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        {[1, 2, 3, 4, 5, 6].map((key) => (
-          <SkeletonMarketCard key={key} />
-        ))}
-      </div>
-    ) : posts.length ? (
-      <section className="market-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-      {posts.map((post, index) => {
-        if (!isPublicMarketData(post.marketData)) return <article className="market-card" key={post.id}><p className="inline-error">Data lapak tidak valid.</p></article>;
-        const market = post.marketData;
-        return <motion.article className={`market-card ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
-          <div className="market-listing-labels flex flex-wrap gap-1.5 mb-3">
-            {post.isPinned && <span className="pinned-label">PINNED</span>}
-            {(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") && (
-              <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                ✦ PREMIUM SELLER / VERIFIED
-              </span>
-            )}
-            <span className={market.type === "WTS" ? "trade-badge wts" : "trade-badge wtb"}>{market.type}</span>
-            <span className="market-label-game">{market.game}</span>
-            <span className="market-label-price">{money.format(market.price)}</span>
-            <span className={`status-badge ${market.status === "AVAILABLE" ? "available" : market.status === "IN_ESCROW" ? "in-escrow" : "sold"}`}>
-              {market.status === "IN_ESCROW" ? "IN ESCROW" : market.status}
-            </span>
+        <div className="market-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="text-left">
+            <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">MARKETPLACE KOMUNITAS</p>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Lapak <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Gamer</span></h1>
+            <p className="muted-copy text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-2xl mt-1 leading-relaxed">Jual beli akun, item, top-up, dan jasa gaming dengan komunitas LogHorizon. Transaksi dipantau oleh sistem keamanan guild.</p>
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap mt-2 live-status live-${liveState}`}>{liveState === "live" ? "Live" : liveState === "connecting" ? "Menghubungkan live…" : liveState === "stale" ? "Memperbarui…" : liveState === "error" ? "Live terputus" : "Live tidak aktif"}</span>
           </div>
-          <div className="market-image"><MarketImage src={market.imageUrl} alt={`Bukti lapak ${post.title}`} /></div>
-          <div className="market-card-body"><h2 className="text-lg sm:text-xl font-bold break-words text-gray-900 dark:text-white">{post.title}</h2><p className="market-game">{market.game}</p><p className="market-price">{money.format(market.price)}</p><p className="market-description break-words text-xs sm:text-sm">{post.content}</p>
-            <div className="market-card-meta flex flex-wrap items-center justify-between gap-2">
-              <span className="post-author flex items-center gap-2">
-                <DiscordAvatar src={post.author.avatar} username={post.author.username} size={28} />
-                <span>
-                  oleh{" "}
-                  <Link
-                    href={`/u/${post.author.username ?? "user"}`}
-                    className={`font-semibold hover:underline ${(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") ? "premium-username" : ""}`}
-                  >
-                    {post.author.username ?? "Gamer"}
-                  </Link>
+          <div>{status === "loading" ? <span className="nav-loading" /> : <button className="button button-primary w-full sm:w-auto inline-flex items-center justify-center gap-2" onClick={createListing}><Plus size={17} /> <span>Buat Lapak</span></button>}</div>
+        </div>
+
+        <section className="market-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] mb-6" aria-label="Filter dan pencarian marketplace">
+          <div className="flex items-center gap-3 px-3.5 h-11 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors sm:col-span-2 lg:col-span-1">
+            <div className="shrink-0 text-gray-400 flex items-center">
+              {isSearching ? (
+                <Loader2 size={16} className="animate-spin text-[#9D4EDD]" />
+              ) : (
+                <Search size={16} />
+              )}
+            </div>
+            <input
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.target.value)}
+              placeholder="Cari judul, game, atau penjual…"
+              aria-label="Cari lapak"
+              className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
+            />
+            {searchValue && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchValue("");
+                  setSearch("");
+                }}
+                aria-label="Hapus pencarian"
+                className="shrink-0 text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <label>Tipe transaksi<select value={type} onChange={(event) => setType(event.target.value)}><option value="ALL">Semua</option><option value="WTS">WTS · Dijual</option><option value="WTB">WTB · Dicari</option></select></label>
+          <label>Nama game<input value={game} onChange={(event) => setGame(event.target.value)} placeholder="Semua game" /></label>
+          <label><ArrowDownUp size={14} /> Urutkan harga<select value={sort} onChange={(event) => setSort(event.target.value)}><option value="newest">Terbaru</option><option value="cheapest">Termurah</option><option value="expensive">Termahal</option></select></label>
+        </section>
+
+        {notice && <div className="inline-notice mb-4" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Tutup notifikasi"><X size={15} /></button></div>}
+        {error && <div className="inline-error mb-4" role="alert">{error}</div>}
+
+        {loading ? (
+          <div className="market-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            {[1, 2, 3, 4, 5, 6].map((key) => (
+              <SkeletonMarketCard key={key} />
+            ))}
+          </div>
+        ) : posts.length ? (
+          <section className="market-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+          {posts.map((post, index) => {
+            if (!isPublicMarketData(post.marketData)) return <article className="market-card" key={post.id}><p className="inline-error">Data lapak tidak valid.</p></article>;
+            const market = post.marketData;
+            return <motion.article className={`market-card rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] hover:border-[#9D4EDD]/40 transition-all ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
+              <div className="market-listing-labels flex flex-wrap gap-1.5 mb-3">
+                {post.isPinned && <span className="pinned-label">PINNED</span>}
+                {(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                    ✦ PREMIUM SELLER / VERIFIED
+                  </span>
+                )}
+                <span className={market.type === "WTS" ? "trade-badge wts" : "trade-badge wtb"}>{market.type}</span>
+                <span className="market-label-game">{market.game}</span>
+                <span className="market-label-price">{money.format(market.price)}</span>
+                <span className={`status-badge ${market.status === "AVAILABLE" ? "available" : market.status === "IN_ESCROW" ? "in-escrow" : "sold"}`}>
+                  {market.status === "IN_ESCROW" ? "IN ESCROW" : market.status}
+                </span>
+              </div>
+              <div className="market-image"><MarketImage src={market.imageUrl} alt={`Bukti lapak ${post.title}`} /></div>
+              <div className="market-card-body text-left"><h2 className="text-base sm:text-lg font-bold break-words text-gray-900 dark:text-white">{post.title}</h2><p className="market-game">{market.game}</p><p className="market-price">{money.format(market.price)}</p><p className="market-description break-words text-xs sm:text-sm line-clamp-2">{post.content}</p>
+                <div className="market-card-meta flex flex-wrap items-center justify-between gap-2">
+                  <span className="post-author flex items-center gap-2">
+                    <DiscordAvatar src={post.author.avatar} username={post.author.username} size={24} />
+                    <span>
+                      oleh{" "}
+                      <Link
+                        href={`/u/${post.author.username ?? "user"}`}
+                        className={`font-semibold hover:underline ${(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") ? "premium-username" : ""}`}
+                      >
+                        {post.author.username ?? "Gamer"}
+                      </Link>
                 </span>
               </span>
               <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded text-[11px]">
@@ -424,7 +429,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               )}
             </div>
           </div>
-        </motion.article>;
+        </motion.article>
       })}
     </section>
     ) : (
@@ -445,7 +450,8 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
     )}
     <LoginPrompt open={Boolean(loginAction)} action={loginAction} onClose={() => setLoginAction("")} />
     <ReportDialog postId={reportId} open={Boolean(reportId)} onClose={() => setReportId(null)} onSuccess={setNotice} />
-  </main>;
+  </main>
+  );
 }
 
 function MarketModal({ canPin, onClose, onCreated }: { canPin: boolean; onClose: () => void; onCreated: () => void }) {

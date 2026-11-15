@@ -530,15 +530,15 @@ export function EventsBoard() {
   const isAdminOrMod = session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR";
 
   return (
-    <main className="page-shell events-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
-      <header className="events-heading mb-6">
+    <main className="events-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+      <header className="events-heading mb-6 text-left">
         <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">
           GUILD ARENA &amp; OPERATIONS
         </p>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
           Arena &amp; <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Mabar Guild</span>
         </h1>
-        <p className="muted-copy text-base md:text-lg text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
+        <p className="muted-copy text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
           Koordinasikan jadwal mabar cepat atau berkompetisi di turnamen resmi dengan bagan terstruktur.
         </p>
       </header>
@@ -547,14 +547,14 @@ export function EventsBoard() {
       {notice && <p className="inline-notice mb-4" role="status">{notice}</p>}
 
       {/* TOP FILTER NAVIGATION: ALL / MABAR / TURNAMEN */}
-      <div className="flex items-center gap-2 mb-6 border-b border-gray-200 dark:border-[#211C2B] pb-2 overflow-x-auto scrollbar-none">
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-gray-100 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 overflow-x-auto scrollbar-none mb-6">
         <button
           type="button"
           onClick={() => setActiveTab("all")}
-          className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
             activeTab === "all"
-              ? "bg-[#9D4EDD] text-white shadow-sm shadow-purple-950/20"
-              : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-300 hover:text-white border border-gray-200 dark:border-[#211C2B]"
+              ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
           }`}
         >
           Semua Kegiatan
@@ -562,31 +562,31 @@ export function EventsBoard() {
         <button
           type="button"
           onClick={() => setActiveTab("turnamen")}
-          className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 shrink-0 ${
             activeTab === "turnamen"
-              ? "bg-[#9D4EDD] text-white shadow-sm shadow-purple-950/20"
-              : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-300 hover:text-white border border-gray-200 dark:border-[#211C2B]"
+              ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
           }`}
         >
-          <Trophy size={15} />
+          <Trophy size={14} />
           <span>Turnamen &amp; Bagan</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("mabar")}
-          className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 shrink-0 ${
             activeTab === "mabar"
-              ? "bg-[#9D4EDD] text-white shadow-sm shadow-purple-950/20"
-              : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-300 hover:text-white border border-gray-200 dark:border-[#211C2B]"
+              ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
           }`}
         >
-          <Swords size={15} />
+          <Swords size={14} />
           <span>Cari Teman Mabar (LFG)</span>
         </button>
       </div>
 
       {/* QUICK SEARCH BAR */}
-      <div className="flex items-center gap-3 px-3.5 h-11 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors mb-6" role="search">
+      <div className="flex items-center gap-3 px-3.5 h-11 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors mb-6" role="search">
         <Search size={16} className="shrink-0 text-gray-400 pointer-events-none" />
         <input
           type="search"
@@ -594,7 +594,7 @@ export function EventsBoard() {
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Cari turnamen, tim, game, atau ajakan mabar…"
           aria-label="Cari turnamen dan jadwal party"
-          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
+          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
         />
         {search && (
           <button
@@ -613,7 +613,7 @@ export function EventsBoard() {
       {(activeTab === "all" || activeTab === "turnamen") && (
         <section className="events-section mb-12">
           <div className="events-section-heading flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-            <div>
+            <div className="text-left">
               <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">
                 COMPETITIVE ARENA
               </p>
@@ -636,13 +636,13 @@ export function EventsBoard() {
           </div>
 
           {/* CONTACT PERSON PROPOSAL BANNER */}
-          <div className="mb-6 rounded-lg border border-purple-500/20 bg-purple-950/20 p-4 text-xs leading-relaxed text-gray-300">
+          <div className="mb-6 rounded-xl border border-purple-500/15 bg-purple-950/15 p-4 text-xs leading-relaxed text-gray-300 text-left">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <p className="font-bold text-sm text-purple-300 mb-1 flex items-center gap-1.5">
+                <p className="font-bold text-xs sm:text-sm text-purple-300 mb-0.5 flex items-center gap-1.5">
                   <Award size={15} /> Prizepool Terjamin &amp; Transparansi Bracket
                 </p>
-                <p className="text-gray-400">
+                <p className="text-gray-400 text-[11px] sm:text-xs">
                   Turnamen resmi LogHorizon divalidasi langsung oleh High Council / Emperor untuk memastikan prizepool dan penjadwalan berjalan fair play. Ingin menyelenggarakan turnamen divisi game komunitasmu?
                 </p>
               </div>
@@ -650,7 +650,7 @@ export function EventsBoard() {
                 href="https://discord.com/users/706661230835925042"
                 target="_blank"
                 rel="noreferrer"
-                className="button button-discord text-xs font-semibold whitespace-nowrap self-start sm:self-center flex items-center gap-1.5"
+                className="button button-discord text-xs font-semibold whitespace-nowrap self-start sm:self-center flex items-center gap-1.5 py-2 px-3"
                 title="Hubungi CP Owner (.odyssia)"
               >
                 <span>Hubungi CP Owner (.odyssia)</span> <ExternalLink size={12} />
@@ -952,9 +952,9 @@ export function EventsBoard() {
           )}
 
           {/* LIST POSTINGAN MABAR */}
-          <div className="lfg-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="lfg-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {visibleLfgPosts.length === 0 && (
-              <p className="empty-state sm:col-span-2 lg:col-span-3">
+              <p className="empty-state sm:col-span-2 lg:col-span-3 xl:col-span-4">
                 {search ? "Tidak ada party yang cocok dengan pencarian." : "Belum ada ajakan mabar aktif. Jadilah yang pertama membuat party!"}
               </p>
             )}

@@ -45,21 +45,21 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
   );
 
   return (
-    <main className="page-shell leaderboard-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
-      <header className="leaderboard-heading mb-6">
+    <main className="leaderboard-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+      <header className="leaderboard-heading mb-6 text-left">
         <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">KOMPETISI GUILD</p>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Leaderboard</span></h1>
-        <p className="muted-copy text-base md:text-lg text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">Peringkat petualang aktif dan benefactor berdasarkan dukungan terverifikasi.</p>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Leaderboard</span></h1>
+        <p className="muted-copy text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">Peringkat petualang aktif dan benefactor berdasarkan dukungan terverifikasi.</p>
       </header>
 
-      <div className="flex items-center gap-3 px-3.5 h-11 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors my-4">
+      <div className="flex items-center gap-3 px-3.5 h-11 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors mb-4">
         <Search size={16} className="shrink-0 text-gray-400 pointer-events-none" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari petualang atau donatur…"
           aria-label="Cari petualang atau donatur"
-          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
+          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
         />
         {search && (
           <button
@@ -72,38 +72,32 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
         )}
       </div>
 
-      <div className="leaderboard-tabs relative flex overflow-x-auto scrollbar-none gap-2 border-b border-gray-200 dark:border-[#211C2B] pb-1 -mx-4 px-4 sm:mx-0 sm:px-0" role="tablist" aria-label="Papan peringkat">
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-gray-100 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 overflow-x-auto scrollbar-none mb-4" role="tablist" aria-label="Papan peringkat">
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "adventurers"}
-          className={`relative ${activeTab === "adventurers" ? "active" : ""}`}
+          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeTab === "adventurers"
+              ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          }`}
           onClick={() => setActiveTab("adventurers")}
         >
           <span>⚔️ Petualang Teraktif</span>
-          {activeTab === "adventurers" && (
-            <motion.div
-              layoutId="activeLeaderboardIndicator"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#9D4EDD]"
-              transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            />
-          )}
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "benefactors"}
-          className={`relative ${activeTab === "benefactors" ? "active" : ""}`}
+          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeTab === "benefactors"
+              ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          }`}
           onClick={() => setActiveTab("benefactors")}
         >
           <span>💎 Donatur Guild</span>
-          {activeTab === "benefactors" && (
-            <motion.div
-              layoutId="activeLeaderboardIndicator"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#9D4EDD]"
-              transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            />
-          )}
         </button>
       </div>
 

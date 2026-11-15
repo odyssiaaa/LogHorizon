@@ -557,8 +557,8 @@ export function AdminDashboard({ role }: { role: Role }) {
   const processedDonationsList = data?.donations?.filter((d) => d.status !== "PENDING") ?? [];
 
   return (
-    <main className="community-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
-      <div className="page-shell admin-page px-0 sm:px-0">
+    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+      <div>
         <Link href="/" className="back-link inline-flex items-center gap-1.5 text-xs font-bold text-[#9D4EDD] mb-4">
           <ArrowLeft size={15} /> Kembali ke situs
         </Link>

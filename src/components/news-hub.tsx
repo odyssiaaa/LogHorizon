@@ -95,21 +95,21 @@ export function NewsHub() {
   });
 
   return (
-    <main className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
+    <main className="min-h-screen py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
       {/* ========================================================================= */}
       {/* 1. HEADER SECTION & STATUS SINKRONISASI */}
       {/* ========================================================================= */}
-      <header className="mb-8 border-b border-gray-200 dark:border-[#211C2B] pb-8">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+      <header className="mb-8 border-b border-gray-200 dark:border-[#211C2B] pb-6">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 text-left">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-[#9D4EDD]/10 border border-[#9D4EDD]/30 text-[#9D4EDD] dark:text-[#C77DFF] text-xs font-bold tracking-widest uppercase mb-3">
               <Rss size={13} className="animate-pulse" />
               <span>LOGHORIZON DISPATCH NETWORK</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white uppercase font-sans break-words">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white uppercase font-sans break-words">
               Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">News Hub</span>
             </h1>
-            <p className="mt-2 text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
+            <p className="mt-2 text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
               Feed berita terpadu: pengumuman resmi server Discord LogHorizon bersanding dengan warta gaming, esports, dan teknologi global secara kronologis.
             </p>
           </div>
@@ -139,15 +139,15 @@ export function NewsHub() {
         {/* ========================================================================= */}
         {/* 2. FILTER PILLS: SEMUA BERITA / INFO GUILD / GLOBAL NEWS + SEARCH BAR */}
         {/* ========================================================================= */}
-        <div className="mt-8 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 border-t border-gray-200 dark:border-[#211C2B] pt-6">
+        <div className="mt-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 border-t border-gray-200 dark:border-[#211C2B] pt-5">
           {/* Main Filter Pills (ALL / GUILD / GLOBAL) */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-gray-100 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 overflow-x-auto scrollbar-none">
             <button
               onClick={() => setFilterType("ALL")}
-              className={`px-3.5 py-2 rounded text-xs font-bold transition-all whitespace-nowrap border flex items-center gap-2 ${
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
                 filterType === "ALL"
-                  ? "bg-[#9D4EDD] text-white border-[#9D4EDD] shadow-sm shadow-[#9D4EDD]/25"
-                  : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-[#211C2B] hover:text-gray-900 dark:hover:text-white"
+                  ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               <span>⚡ Semua Berita</span>
@@ -158,10 +158,10 @@ export function NewsHub() {
 
             <button
               onClick={() => setFilterType("GUILD")}
-              className={`px-3.5 py-2 rounded text-xs font-bold transition-all whitespace-nowrap border flex items-center gap-2 ${
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
                 filterType === "GUILD"
-                  ? "bg-[#9D4EDD] text-white border-[#9D4EDD] shadow-sm shadow-[#9D4EDD]/25"
-                  : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-[#211C2B] hover:text-gray-900 dark:hover:text-white"
+                  ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               <span>🛡️ Info Guild</span>
@@ -172,10 +172,10 @@ export function NewsHub() {
 
             <button
               onClick={() => setFilterType("GLOBAL")}
-              className={`px-3.5 py-2 rounded text-xs font-bold transition-all whitespace-nowrap border flex items-center gap-2 ${
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
                 filterType === "GLOBAL"
-                  ? "bg-[#9D4EDD] text-white border-[#9D4EDD] shadow-sm shadow-[#9D4EDD]/25"
-                  : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-[#211C2B] hover:text-gray-900 dark:hover:text-white"
+                  ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               <span>🎮 Global News</span>
@@ -186,7 +186,7 @@ export function NewsHub() {
           </div>
 
           {/* Quick Search Bar */}
-          <div className="flex items-center gap-2.5 px-3.5 h-10 w-full lg:w-80 shrink-0 rounded bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] focus-within:border-[#9D4EDD] transition-colors">
+          <div className="flex items-center gap-2.5 px-3.5 h-11 w-full lg:w-80 shrink-0 rounded-xl bg-white dark:bg-[#120F17] border border-gray-200 dark:border-white/5 focus-within:border-[#9D4EDD] transition-colors">
             <Search size={15} className="shrink-0 text-gray-400 pointer-events-none" />
             <input
               type="text"
@@ -208,7 +208,7 @@ export function NewsHub() {
         </div>
 
         {/* Secondary Category Filter Pills (Global Category filter) */}
-        <div className="mt-4 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           <span className="text-[11px] font-mono text-gray-400 uppercase tracking-wider mr-1 hidden sm:inline">
             Kategori:
           </span>
@@ -222,10 +222,10 @@ export function NewsHub() {
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`px-2.5 py-1 rounded text-[11px] font-bold transition whitespace-nowrap border ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap border ${
                 activeCategory === cat.id
                   ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] border-[#9D4EDD]"
-                  : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-[#211C2B] hover:text-white"
+                  : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/5 hover:text-white"
               }`}
             >
               {cat.label}
@@ -238,7 +238,7 @@ export function NewsHub() {
       {/* 3. SATU GRID BERITA TERPADU (KRONOLOGIS DARI WAKTU TERBARU) */}
       {/* ========================================================================= */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
@@ -258,7 +258,7 @@ export function NewsHub() {
           ))}
         </div>
       ) : filteredFeed.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredFeed.map((article, index) => (
             <UnifiedNewsCard key={article.id} article={article} index={index} />
           ))}

@@ -150,10 +150,10 @@ export function HorizonChatWidget() {
   return (
     <>
       {/* Floating Circle Button */}
-      <div className="fixed bottom-5 right-5 z-50">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
         <button
           onClick={() => setIsOpen((prev) => !prev)}
-          className={`relative group w-13 h-13 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-200 shadow-xl focus:outline-none ${
+          className={`relative group w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-200 shadow-xl focus:outline-none ${
             isOpen
               ? "bg-[#211C2B] text-white border border-[#9D4EDD]/50 hover:bg-[#2A2338]"
               : "bg-[#9D4EDD] text-white hover:bg-[#8338EC] shadow-[#9D4EDD]/35 hover:scale-105 active:scale-95"
@@ -162,12 +162,12 @@ export function HorizonChatWidget() {
           title={isOpen ? "Tutup Chat" : "Tanya Satpam Horizon (Aura AI Guard)"}
         >
           {isOpen ? (
-            <X size={22} className="transition-transform group-hover:rotate-90 duration-200" />
+            <X className="size-5 sm:size-6 transition-transform group-hover:rotate-90 duration-200" />
           ) : (
             <>
-              <Shield size={24} className="animate-pulse" />
+              <Shield className="size-5 sm:size-6 animate-pulse" />
               {/* Online indicator dot */}
-              <span className="absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#120F17] shadow-sm animate-pulse" />
+              <span className="absolute top-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-400 border-2 border-[#120F17] shadow-sm animate-pulse" />
             </>
           )}
         </button>

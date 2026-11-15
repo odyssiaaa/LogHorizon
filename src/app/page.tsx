@@ -87,20 +87,20 @@ export default async function Home() {
       {/* HERO SECTION */}
       <section className="hero-section relative py-12 sm:py-16 md:py-20 lg:py-24 border-b border-gray-200 dark:border-[#211C2B]">
         <div className="hero-glow" aria-hidden="true" />
-        <div className="page-shell px-4 sm:px-6 lg:px-8">
+        <div className="page-shell px-4 sm:px-6 lg:px-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            <div className="hero-copy lg:col-span-7">
+            <div className="hero-copy lg:col-span-7 text-left">
               <p className="eyebrow inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#9D4EDD] dark:text-[#C77DFF] uppercase mb-2">
                 <span className="status-dot w-2 h-2 rounded-full bg-[#42d99b] inline-block animate-pulse" />
                 MULTI-GAME COMMUNITY
               </p>
-              <h1 className="hero-title text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white whitespace-nowrap leading-none select-none">
+              <h1 className="hero-title text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight text-gray-900 dark:text-white whitespace-nowrap leading-none select-none">
                 LOG<span className="text-[#9D4EDD] dark:text-[#C77DFF]">HORIZON</span>
               </h1>
               <p className="hero-tagline text-lg sm:text-xl md:text-2xl font-extrabold tracking-wider text-gray-800 dark:text-gray-100 mt-4 leading-snug">
                 FIND YOUR PARTY.<br className="hidden sm:inline" /> BEYOND THE HORIZON.
               </p>
-              <p className="hero-description text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-lg mt-3 leading-relaxed">
+              <p className="hero-description text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-xl mt-3 leading-relaxed">
                 Satu guild untuk semua petualang. Temukan rekan mabar sefrekuensi di PC, konsol,
                 dan mobile, apa pun genre dan game favoritmu.
               </p>
@@ -113,18 +113,18 @@ export default async function Home() {
                   Jelajahi Komunitas
                 </a>
               </div>
-              <div className="grid grid-cols-3 gap-2 sm:gap-6 mt-8 pt-6 border-t border-gray-200 dark:border-[#211C2B] max-w-lg">
-                <div>
-                  <strong className="block text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{statMembers}</strong>
-                  <span className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">Anggota Guild</span>
+              <div className="grid grid-cols-3 divide-x divide-gray-200 dark:divide-white/10 text-center py-3 px-2 sm:px-4 mt-8 bg-gray-100/60 dark:bg-[#120F17]/60 rounded-xl border border-gray-200 dark:border-white/5 max-w-lg">
+                <div className="px-2">
+                  <strong className="block text-lg sm:text-2xl font-black text-gray-900 dark:text-white">{statMembers}</strong>
+                  <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium">Anggota Guild</span>
                 </div>
-                <div>
-                  <strong className="block text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{statParties}</strong>
-                  <span className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">Party Terbentuk</span>
+                <div className="px-2">
+                  <strong className="block text-lg sm:text-2xl font-black text-gray-900 dark:text-white">{statParties}</strong>
+                  <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium">Party Terbentuk</span>
                 </div>
-                <div>
-                  <strong className="block text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{statVoice}</strong>
-                  <span className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">Voice Aktif</span>
+                <div className="px-2">
+                  <strong className="block text-lg sm:text-2xl font-black text-gray-900 dark:text-white">{statVoice}</strong>
+                  <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium">Voice Aktif</span>
                 </div>
               </div>
             </div>
@@ -136,9 +136,9 @@ export default async function Home() {
       </section>
 
       {/* 01 / TENTANG GUILD */}
-      <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-200 dark:border-[#211C2B]" id="about-section">
+      <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-10 border-b border-gray-200 dark:border-[#211C2B]" id="about-section">
         <div className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-2">01 / TENTANG GUILD</div>
-        <div className="about-content mt-2 max-w-3xl">
+        <div className="about-content mt-2 max-w-3xl text-left">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
             Tak perlu menjelajah <span className="text-[#9D4EDD] dark:text-[#C77DFF]">sendirian.</span>
           </h2>
@@ -150,8 +150,8 @@ export default async function Home() {
       </section>
 
       {/* 02 / DIVISI GAME */}
-      <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-200 dark:border-[#211C2B]">
-        <div className="mb-8">
+      <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-10 border-b border-gray-200 dark:border-[#211C2B]">
+        <div className="mb-8 text-left">
           <div className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-2">02 / PILIH PETUALANGANMU</div>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
             Satu guild. Banyak dunia.
@@ -159,7 +159,7 @@ export default async function Home() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {divisions.map(({ title, games, icon: Icon }, index) => (
-            <article className="division-card relative p-5 sm:p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] hover:border-[#9D4EDD]/60 transition-all flex flex-col justify-between" key={title}>
+            <article className="division-card relative p-4 sm:p-6 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] hover:border-[#9D4EDD]/60 transition-all flex flex-col justify-between" key={title}>
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-10 h-10 rounded bg-[#9D4EDD]/10 text-[#9D4EDD] dark:text-[#C77DFF] flex items-center justify-center">
@@ -197,14 +197,14 @@ export default async function Home() {
       </section>
 
       {/* 03 / KEUNTUNGAN GUILD */}
-      <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-200 dark:border-[#211C2B]">
+      <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-10 border-b border-gray-200 dark:border-[#211C2B]">
         <div className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-2">03 / KENAPA LOGHORIZON</div>
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words text-left">
           Party yang baik mengubah <span className="text-[#9D4EDD] dark:text-[#C77DFF]">segalanya.</span>
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-8">
           {benefits.map(({ title, copy, icon: Icon }) => (
-            <article className="benefit-card p-5 sm:p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] hover:border-[#9D4EDD]/60 transition-all" key={title}>
+            <article className="benefit-card p-4 sm:p-6 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] hover:border-[#9D4EDD]/60 transition-all" key={title}>
               <div className="w-10 h-10 rounded bg-[#9D4EDD]/10 text-[#9D4EDD] dark:text-[#C77DFF] flex items-center justify-center mb-4">
                 <Icon size={20} />
               </div>
@@ -216,28 +216,28 @@ export default async function Home() {
       </section>
 
       {/* 04 / ATURAN KOMUNITAS */}
-      <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-200 dark:border-[#211C2B]" id="rules">
+      <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-10 border-b border-gray-200 dark:border-[#211C2B]" id="rules">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-          <div>
+          <div className="text-left">
             <div className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-2">04 / MAIN BARENG, TETAP NYAMAN</div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
               Petualangan seru dimulai dari <span className="text-[#9D4EDD] dark:text-[#C77DFF]">saling menghargai.</span>
             </h2>
           </div>
-          <ul className="rules-list space-y-4">
-            <li className="flex items-start gap-3 p-4 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+          <ul className="rules-list space-y-3">
+            <li className="flex items-start gap-3 p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17]">
               <ShieldCheck size={20} className="text-[#9D4EDD] shrink-0 mt-0.5" />
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                <strong className="text-gray-900 dark:text-white">Fair Play & No Toxic</strong>: Junjung tinggi sportivitas dan saling menghormati rekan party.
+                <strong className="text-gray-900 dark:text-white">Fair Play &amp; No Toxic</strong>: Junjung tinggi sportivitas dan saling menghormati rekan party.
               </span>
             </li>
-            <li className="flex items-start gap-3 p-4 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+            <li className="flex items-start gap-3 p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17]">
               <UsersRound size={20} className="text-[#9D4EDD] shrink-0 mt-0.5" />
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                 <strong className="text-gray-900 dark:text-white">Solidaritas Tinggi</strong>: Bantu anggota guild yang membutuhkan, jangan tinggalkan tim di tengah pertempuran.
               </span>
             </li>
-            <li className="flex items-start gap-3 p-4 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+            <li className="flex items-start gap-3 p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17]">
               <Compass size={20} className="text-[#9D4EDD] shrink-0 mt-0.5" />
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                 <strong className="text-gray-900 dark:text-white">Keamanan Bersama</strong>: Nol toleransi terhadap penipuan (scam) maupun cheat ilegal.
@@ -248,9 +248,9 @@ export default async function Home() {
       </section>
 
       {/* 05 / STRUKTUR KASTA & HIERARKI KOMUNITAS */}
-      <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-8 border-b border-gray-200 dark:border-[#211C2B]" id="roles">
+      <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-10 border-b border-gray-200 dark:border-[#211C2B]" id="roles">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-          <div>
+          <div className="text-left">
             <div className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-2">05 / STRUKTUR KOMUNITAS</div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
               Hierarki &amp; Peran di dalam Guild.
@@ -262,7 +262,7 @@ export default async function Home() {
         </div>
         <div className="role-grid grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {roleGroups.map((group) => (
-            <article className="role-card rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-4 sm:p-6 shadow-sm" key={group.title}>
+            <article className="role-card rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] p-4 sm:p-6 shadow-sm" key={group.title}>
               <div className="role-card-header pb-3 mb-4 border-b border-gray-100 dark:border-[#211C2B]">
                 <h3 className="text-base font-extrabold text-gray-900 dark:text-white tracking-tight break-words">{group.title}</h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{group.subtitle}</p>
@@ -285,8 +285,8 @@ export default async function Home() {
       </section>
 
       {/* 06 / SPONSOR RESMI */}
-      <section className="section-shell py-12 md:py-16 px-4 sm:px-6 lg:px-8 border-b border-gray-200 dark:border-[#211C2B]">
-        <div>
+      <section className="section-shell py-12 md:py-16 px-4 sm:px-6 lg:px-10 border-b border-gray-200 dark:border-[#211C2B]">
+        <div className="text-left">
           <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-2">06 / SPONSOR RESMI</p>
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
             Dukungan yang menjaga guild terus bergerak.
@@ -301,7 +301,7 @@ export default async function Home() {
             {sponsors.map((sp) => (
               <div
                 key={sp.id}
-                className="p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col items-center text-center justify-between gap-3"
+                className="p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] flex flex-col items-center text-center justify-between gap-3"
               >
                 {sp.logoUrl ? (
                   <div className="relative w-16 h-16 rounded overflow-hidden">
@@ -333,7 +333,7 @@ export default async function Home() {
           </div>
         )}
 
-        <div className="mt-6 p-6 sm:p-8 rounded-lg border border-dashed border-gray-300 dark:border-[#2A2438] bg-white/40 dark:bg-[#120F17]/50 flex flex-col sm:flex-row items-center justify-between gap-5 text-center sm:text-left">
+        <div className="mt-6 p-6 sm:p-8 rounded-xl border border-dashed border-gray-300 dark:border-[#2A2438] bg-white/40 dark:bg-[#120F17]/50 flex flex-col sm:flex-row items-center justify-between gap-5 text-left">
           <div className="space-y-1">
             <p className="text-sm font-bold text-gray-900 dark:text-white">
               Ingin Menjadi Mitra Resmi atau Sponsor Turnamen Guild?
@@ -352,7 +352,7 @@ export default async function Home() {
       </section>
 
       {/* 07 / CTA BANNER */}
-      <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-8" id="join">
+      <section className="section-shell py-12 md:py-20 px-4 sm:px-6 lg:px-10" id="join">
         <div className="p-6 sm:p-10 rounded-xl bg-gradient-to-r from-purple-950/40 via-neutral-900/60 to-purple-950/30 border border-purple-500/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div>
             <p className="text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">07 / GABUNG GUILD</p>

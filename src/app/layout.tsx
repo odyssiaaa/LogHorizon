@@ -57,7 +57,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             {children}
           </div>
           <footer className="border-t border-gray-200 dark:border-[#211C2B] bg-white/50 dark:bg-[#0A0710]/80 py-8 mt-auto">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-5 text-center md:text-left pr-4 sm:pr-20">
+            <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 flex flex-col md:flex-row items-center justify-between gap-5 text-center md:text-left pr-4 sm:pr-20">
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                   © 2026 LogHorizon. All rights reserved.
