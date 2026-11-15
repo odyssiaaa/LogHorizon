@@ -11,6 +11,7 @@ export type NormalizedArticle = {
   imageUrl: string | null;
   publishedAt: string;
   sourceName: string;
+  sourceType: "GUILD" | "GLOBAL";
   category: "Game & Esports" | "Hardware & Tech" | "Konsol & Rilis" | "Turnamen & Guild";
   isGuildInfo?: boolean;
   authorName?: string;
@@ -71,6 +72,7 @@ const CURATED_ARTICLES: NormalizedArticle[] = [
     imageUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80",
     publishedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
     sourceName: "Valve Steam",
+    sourceType: "GLOBAL",
     category: "Game & Esports",
   },
   {
@@ -81,6 +83,7 @@ const CURATED_ARTICLES: NormalizedArticle[] = [
     imageUrl: "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1200&q=80",
     publishedAt: new Date(Date.now() - 3600000 * 4).toISOString(),
     sourceName: "Riot Esports",
+    sourceType: "GLOBAL",
     category: "Turnamen & Guild",
   },
   {
@@ -91,6 +94,7 @@ const CURATED_ARTICLES: NormalizedArticle[] = [
     imageUrl: "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=1200&q=80",
     publishedAt: new Date(Date.now() - 3600000 * 6).toISOString(),
     sourceName: "GeForce Tech",
+    sourceType: "GLOBAL",
     category: "Hardware & Tech",
   },
   {
@@ -101,6 +105,7 @@ const CURATED_ARTICLES: NormalizedArticle[] = [
     imageUrl: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=1200&q=80",
     publishedAt: new Date(Date.now() - 3600000 * 9).toISOString(),
     sourceName: "Moonton MLBB",
+    sourceType: "GLOBAL",
     category: "Game & Esports",
   },
   {
@@ -111,6 +116,7 @@ const CURATED_ARTICLES: NormalizedArticle[] = [
     imageUrl: "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=1200&q=80",
     publishedAt: new Date(Date.now() - 3600000 * 11).toISOString(),
     sourceName: "PlayStation Blog",
+    sourceType: "GLOBAL",
     category: "Konsol & Rilis",
   },
   {
@@ -121,6 +127,7 @@ const CURATED_ARTICLES: NormalizedArticle[] = [
     imageUrl: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80",
     publishedAt: new Date(Date.now() - 3600000 * 14).toISOString(),
     sourceName: "HoYoLAB",
+    sourceType: "GLOBAL",
     category: "Game & Esports",
   },
   {
@@ -131,6 +138,7 @@ const CURATED_ARTICLES: NormalizedArticle[] = [
     imageUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80",
     publishedAt: new Date(Date.now() - 3600000 * 18).toISOString(),
     sourceName: "Valve Dota 2",
+    sourceType: "GLOBAL",
     category: "Game & Esports",
   },
   {
@@ -141,6 +149,7 @@ const CURATED_ARTICLES: NormalizedArticle[] = [
     imageUrl: "https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=1200&q=80",
     publishedAt: new Date(Date.now() - 3600000 * 22).toISOString(),
     sourceName: "Warta Hardware",
+    sourceType: "GLOBAL",
     category: "Hardware & Tech",
   },
   {
@@ -151,6 +160,7 @@ const CURATED_ARTICLES: NormalizedArticle[] = [
     imageUrl: "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1200&q=80",
     publishedAt: new Date(Date.now() - 3600000 * 26).toISOString(),
     sourceName: "Rockstar Newswire",
+    sourceType: "GLOBAL",
     category: "Konsol & Rilis",
   },
   {
@@ -161,6 +171,7 @@ const CURATED_ARTICLES: NormalizedArticle[] = [
     imageUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80",
     publishedAt: new Date(Date.now() - 3600000 * 30).toISOString(),
     sourceName: "LogHorizon Official",
+    sourceType: "GLOBAL",
     category: "Turnamen & Guild",
   },
 ];
@@ -204,6 +215,7 @@ async function fetchRssArticles(url: string, sourceName: string): Promise<Normal
         imageUrl,
         publishedAt,
         sourceName,
+        sourceType: "GLOBAL",
         category,
       });
     }
@@ -246,6 +258,7 @@ async function fetchDiscordGuildNews(): Promise<{ items: NormalizedArticle[]; de
         imageUrl: resolveImage(null, "Turnamen & Guild", idx),
         publishedAt: a.createdAt.toISOString(),
         sourceName: "Discord Official",
+        sourceType: "GUILD" as const,
         category: "Turnamen & Guild" as const,
         isGuildInfo: true,
         authorName: a.author.username ?? "Council LogHorizon",
@@ -379,6 +392,7 @@ async function fetchDiscordGuildNews(): Promise<{ items: NormalizedArticle[]; de
         imageUrl: imageUrl || resolveImage(null, "Turnamen & Guild", mapped.length),
         publishedAt: msg.timestamp || new Date().toISOString(),
         sourceName: "Discord Official",
+        sourceType: "GUILD",
         category: "Turnamen & Guild",
         isGuildInfo: true,
         authorName,
@@ -446,6 +460,7 @@ async function fetchGlobalArticles(): Promise<NormalizedArticle[]> {
                 imageUrl: resolveImage(item.urlToImage, category, idx),
                 publishedAt: item.publishedAt ?? new Date().toISOString(),
                 sourceName: item.source?.name ?? "Warta Gamer",
+                sourceType: "GLOBAL",
                 category,
               });
             }
@@ -479,6 +494,7 @@ async function fetchGlobalArticles(): Promise<NormalizedArticle[]> {
                 imageUrl: resolveImage(item.image, category, idx),
                 publishedAt: item.published_at ?? new Date().toISOString(),
                 sourceName: item.source?.domain ?? "APITube Dispatch",
+                sourceType: "GLOBAL",
                 category,
               });
             }
@@ -509,13 +525,27 @@ export async function GET() {
     fetchGlobalArticles(),
   ]);
 
+  // Gabungkan kedua sumber menjadi satu daftar tunggal
+  const combinedFeed: NormalizedArticle[] = [
+    ...discordResult.items,
+    ...globalArticles,
+  ];
+
+  // Urutkan berdasarkan waktu terbaru (publishedAt descending)
+  combinedFeed.sort((a, b) => {
+    const timeA = Date.parse(a.publishedAt) || 0;
+    const timeB = Date.parse(b.publishedAt) || 0;
+    return timeB - timeA;
+  });
+
   return NextResponse.json(
     {
       ok: true,
+      feed: combinedFeed,
       guildNews: discordResult.items,
-      discordDebug: discordResult.debug,
       articles: globalArticles,
-      totalCount: discordResult.items.length + globalArticles.length,
+      discordDebug: discordResult.debug,
+      totalCount: combinedFeed.length,
       provider: "LogHorizon Multi-Source Dispatch (Discord Guild, Gamebrott, Antara, NewsAPI)",
     },
     {

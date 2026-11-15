@@ -9,14 +9,12 @@ import {
   Globe,
   Loader2,
   Megaphone,
-  MessageSquare,
   Newspaper,
   RefreshCw,
   Rss,
   Search,
-  ShieldAlert,
+  Shield,
   Sparkles,
-  Users,
   X,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -25,16 +23,14 @@ import type { NormalizedArticle } from "@/app/api/news/route";
 const DEFAULT_THUMBNAIL = "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80";
 
 export function NewsHub() {
-  const [guildNews, setGuildNews] = useState<NormalizedArticle[]>([]);
+  const [feed, setFeed] = useState<NormalizedArticle[]>([]);
   const [discordDebug, setDiscordDebug] = useState<string>("");
-  const [articles, setArticles] = useState<NormalizedArticle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [provider, setProvider] = useState<string>("Multi-Source Dispatch");
-  const [mainTab, setMainTab] = useState<"all" | "guild" | "global">("all");
+  const [refreshing, setRefreshing] = useState(false);
+  const [filterType, setFilterType] = useState<"ALL" | "GUILD" | "GLOBAL">("ALL");
   const [activeCategory, setActiveCategory] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
 
   // Debounce search query
   useEffect(() => {
@@ -51,10 +47,12 @@ export function NewsHub() {
       if (!res.ok) throw new Error("Gagal mengambil transmisi berita");
       const data = await res.json();
       if (data.ok) {
-        setGuildNews(Array.isArray(data.guildNews) ? data.guildNews : []);
+        const combined: NormalizedArticle[] = Array.isArray(data.feed)
+          ? data.feed
+          : [...(data.guildNews || []), ...(data.articles || [])];
+
+        setFeed(combined);
         setDiscordDebug(typeof data.discordDebug === "string" ? data.discordDebug : "");
-        setArticles(Array.isArray(data.articles) ? data.articles : []);
-        setProvider(data.provider ?? "LogHorizon Dispatch");
       }
     } catch (err) {
       console.error("[NewsHub] Error fetching news:", err);
@@ -68,37 +66,39 @@ export function NewsHub() {
     void fetchNews();
   }, []);
 
-  const filteredGlobalArticles = articles.filter((article) => {
-    if (activeCategory !== "ALL" && article.category !== activeCategory) {
+  const guildCount = feed.filter((i) => i.sourceType === "GUILD").length;
+  const globalCount = feed.filter((i) => i.sourceType === "GLOBAL").length;
+
+  const filteredFeed = feed.filter((item) => {
+    // 1. Filter tipe sumber: ALL | GUILD | GLOBAL
+    if (filterType === "GUILD" && item.sourceType !== "GUILD") return false;
+    if (filterType === "GLOBAL" && item.sourceType !== "GLOBAL") return false;
+
+    // 2. Filter kategori topik jika dipilih
+    if (activeCategory !== "ALL" && item.category !== activeCategory) {
       return false;
     }
+
+    // 3. Pencarian teks
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
       const match =
-        article.title.toLowerCase().includes(q) ||
-        article.description.toLowerCase().includes(q) ||
-        article.sourceName.toLowerCase().includes(q) ||
-        article.category.toLowerCase().includes(q);
-      if (!match) return false;
-    }
-    return true;
-  });
-
-  const filteredGuildNews = guildNews.filter((item) => {
-    if (debouncedSearch.trim()) {
-      const q = debouncedSearch.toLowerCase();
-      return (
         item.title.toLowerCase().includes(q) ||
         item.description.toLowerCase().includes(q) ||
-        (item.authorName && item.authorName.toLowerCase().includes(q))
-      );
+        item.sourceName.toLowerCase().includes(q) ||
+        (item.authorName && item.authorName.toLowerCase().includes(q)) ||
+        item.category.toLowerCase().includes(q);
+      if (!match) return false;
     }
+
     return true;
   });
 
   return (
     <main className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
-      {/* Header Section */}
+      {/* ========================================================================= */}
+      {/* 1. HEADER SECTION & STATUS SINKRONISASI */}
+      {/* ========================================================================= */}
       <header className="mb-8 border-b border-gray-200 dark:border-[#211C2B] pb-8">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
           <div>
@@ -110,13 +110,19 @@ export function NewsHub() {
               Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">News Hub</span>
             </h1>
             <p className="mt-2 text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
-              Pusat informasi dan pengumuman resmi server Discord LogHorizon serta transmisi berita gaming, esports, dan teknologi global.
+              Feed berita terpadu: pengumuman resmi server Discord LogHorizon bersanding dengan warta gaming, esports, dan teknologi global secara kronologis.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {discordDebug && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-mono bg-purple-500/10 text-purple-400 border border-purple-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="truncate max-w-[240px] sm:max-w-xs">{discordDebug}</span>
+              </span>
+            )}
             <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-[#16121F] px-3 py-1.5 rounded border border-gray-200 dark:border-[#262033]">
-              Transmisi: <strong className="text-purple-600 dark:text-purple-400 font-bold">{guildNews.length + articles.length} Warta Aktif</strong>
+              Transmisi: <strong className="text-purple-600 dark:text-purple-400 font-bold">{feed.length} Warta</strong>
             </span>
             <button
               onClick={() => void fetchNews()}
@@ -125,67 +131,68 @@ export function NewsHub() {
               title="Segarkan transmisi warta"
             >
               <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
-              <span>{refreshing ? "Memuat…" : "Segarkan Warta"}</span>
+              <span>{refreshing ? "Memuat…" : "Segarkan"}</span>
             </button>
           </div>
         </div>
 
-        {/* Tactical Main Tab Selector */}
-        <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-t border-gray-200 dark:border-[#211C2B] pt-6">
+        {/* ========================================================================= */}
+        {/* 2. FILTER PILLS: SEMUA BERITA / INFO GUILD / GLOBAL NEWS + SEARCH BAR */}
+        {/* ========================================================================= */}
+        <div className="mt-8 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 border-t border-gray-200 dark:border-[#211C2B] pt-6">
+          {/* Main Filter Pills (ALL / GUILD / GLOBAL) */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
             <button
-              onClick={() => setMainTab("all")}
-              className={`px-4 py-2 rounded text-xs font-bold transition-all whitespace-nowrap border flex items-center gap-2 ${
-                mainTab === "all"
+              onClick={() => setFilterType("ALL")}
+              className={`px-3.5 py-2 rounded text-xs font-bold transition-all whitespace-nowrap border flex items-center gap-2 ${
+                filterType === "ALL"
                   ? "bg-[#9D4EDD] text-white border-[#9D4EDD] shadow-sm shadow-[#9D4EDD]/25"
                   : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-[#211C2B] hover:text-gray-900 dark:hover:text-white"
               }`}
             >
-              <span>⚡ Semua Warta</span>
+              <span>⚡ Semua Berita</span>
               <span className="px-1.5 py-0.2 rounded text-[10px] bg-black/20 dark:bg-white/20">
-                {guildNews.length + articles.length}
+                {feed.length}
               </span>
             </button>
 
             <button
-              onClick={() => setMainTab("guild")}
-              className={`px-4 py-2 rounded text-xs font-bold transition-all whitespace-nowrap border flex items-center gap-2 ${
-                mainTab === "guild"
+              onClick={() => setFilterType("GUILD")}
+              className={`px-3.5 py-2 rounded text-xs font-bold transition-all whitespace-nowrap border flex items-center gap-2 ${
+                filterType === "GUILD"
                   ? "bg-[#9D4EDD] text-white border-[#9D4EDD] shadow-sm shadow-[#9D4EDD]/25"
                   : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-[#211C2B] hover:text-gray-900 dark:hover:text-white"
               }`}
             >
-              <Megaphone size={14} className="text-[#C77DFF]" />
-              <span>Info &amp; Berita Resmi Guild (Discord)</span>
+              <span>🛡️ Info Guild</span>
               <span className="px-1.5 py-0.2 rounded text-[10px] bg-black/20 dark:bg-white/20">
-                {guildNews.length}
+                {guildCount}
               </span>
             </button>
 
             <button
-              onClick={() => setMainTab("global")}
-              className={`px-4 py-2 rounded text-xs font-bold transition-all whitespace-nowrap border flex items-center gap-2 ${
-                mainTab === "global"
+              onClick={() => setFilterType("GLOBAL")}
+              className={`px-3.5 py-2 rounded text-xs font-bold transition-all whitespace-nowrap border flex items-center gap-2 ${
+                filterType === "GLOBAL"
                   ? "bg-[#9D4EDD] text-white border-[#9D4EDD] shadow-sm shadow-[#9D4EDD]/25"
                   : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-[#211C2B] hover:text-gray-900 dark:hover:text-white"
               }`}
             >
-              <Globe size={14} />
-              <span>Berita Gaming &amp; Tech (Global)</span>
+              <span>🎮 Global News</span>
               <span className="px-1.5 py-0.2 rounded text-[10px] bg-black/20 dark:bg-white/20">
-                {articles.length}
+                {globalCount}
               </span>
             </button>
           </div>
 
           {/* Quick Search Bar */}
-          <div className="flex items-center gap-2.5 px-3.5 h-10 w-full sm:w-72 shrink-0 rounded bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] focus-within:border-[#9D4EDD] transition-colors">
+          <div className="flex items-center gap-2.5 px-3.5 h-10 w-full lg:w-80 shrink-0 rounded bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] focus-within:border-[#9D4EDD] transition-colors">
             <Search size={15} className="shrink-0 text-gray-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari pengumuman atau warta…"
+              placeholder="Cari berita guild, game, atau hardware…"
               className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
             />
             {searchQuery && (
@@ -199,181 +206,88 @@ export function NewsHub() {
             )}
           </div>
         </div>
+
+        {/* Secondary Category Filter Pills (Global Category filter) */}
+        <div className="mt-4 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          <span className="text-[11px] font-mono text-gray-400 uppercase tracking-wider mr-1 hidden sm:inline">
+            Kategori:
+          </span>
+          {[
+            { id: "ALL", label: "Semua Kategori" },
+            { id: "Game & Esports", label: "🎮 Game & Esports" },
+            { id: "Hardware & Tech", label: "⚡ Hardware & Tech" },
+            { id: "Konsol & Rilis", label: "🕹️ Konsol & Rilis" },
+            { id: "Turnamen & Guild", label: "🏆 Turnamen & Guild" },
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`px-2.5 py-1 rounded text-[11px] font-bold transition whitespace-nowrap border ${
+                activeCategory === cat.id
+                  ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] border-[#9D4EDD]"
+                  : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-[#211C2B] hover:text-white"
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
       </header>
 
-      {/* SEKSI 1: INFO & BERITA RESMI GUILD (DARI SERVER DISCORD) */}
-      {(mainTab === "all" || mainTab === "guild") && (
-        <section className="mb-14" aria-labelledby="guild-news-heading">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-3 border-b border-[#9D4EDD]/30">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold tracking-wider bg-[#9D4EDD] text-white uppercase">
-                  [GUILD INFO]
-                </span>
-                <h2 id="guild-news-heading" className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-                  Info &amp; Berita Resmi Guild (Discord)
-                </h2>
-                {discordDebug && (
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10.5px] font-mono bg-purple-500/10 text-purple-400 border border-purple-500/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    {discordDebug}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Transmisi langsung dari channel server Discord resmi LogHorizon.
-              </p>
-            </div>
-
-            <a
-              href="https://discord.gg/aJvbVyTxNb"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] hover:underline self-start sm:self-auto"
+      {/* ========================================================================= */}
+      {/* 3. SATU GRID BERITA TERPADU (KRONOLOGIS DARI WAKTU TERBARU) */}
+      {/* ========================================================================= */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] overflow-hidden animate-pulse flex flex-col h-[420px]"
             >
-              <span>Buka Server Discord</span>
-              <ExternalLink size={13} />
-            </a>
-          </div>
-
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="rounded-lg border border-[#9D4EDD]/20 bg-white dark:bg-[#120F17] p-5 h-64 animate-pulse space-y-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-[#1E1A3A]" />
-                    <div className="space-y-1.5 flex-1">
-                      <div className="h-4 w-28 bg-neutral-200 dark:bg-[#1E1A3A] rounded" />
-                      <div className="h-3 w-20 bg-neutral-200 dark:bg-[#1E1A3A] rounded" />
-                    </div>
-                  </div>
-                  <div className="h-5 w-5/6 bg-neutral-200 dark:bg-[#1E1A3A] rounded" />
-                  <div className="h-16 w-full bg-neutral-200 dark:bg-[#1E1A3A] rounded" />
+              <div className="h-48 w-full bg-neutral-200 dark:bg-[#1E1A3A]" />
+              <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                <div className="space-y-2">
+                  <div className="h-3 w-24 rounded bg-neutral-200 dark:bg-[#1E1A3A]" />
+                  <div className="h-5 w-5/6 rounded bg-neutral-200 dark:bg-[#1E1A3A]" />
+                  <div className="h-3.5 w-full rounded bg-neutral-200 dark:bg-[#1E1A3A]" />
+                  <div className="h-3.5 w-4/5 rounded bg-neutral-200 dark:bg-[#1E1A3A]" />
                 </div>
-              ))}
-            </div>
-          ) : filteredGuildNews.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {filteredGuildNews.map((item, index) => (
-                <GuildNewsCard key={item.id} article={item} index={index} />
-              ))}
-            </div>
-          ) : (
-            <div className="p-8 rounded-lg border border-dashed border-[#9D4EDD]/30 bg-[#9D4EDD]/5 text-center">
-              <Megaphone size={36} className="mx-auto text-[#9D4EDD] mb-2 opacity-70" />
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Belum Ada Transmisi Pengumuman Discord</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mt-1">
-                Kunjungi channel pengumuman di server Discord LogHorizon untuk melihat pesan dan informasi mabar terbaru.
-              </p>
-              {discordDebug && (
-                <div className="mt-3 inline-block px-3 py-1.5 rounded bg-black/40 dark:bg-black/60 border border-purple-500/30 text-[11px] font-mono text-purple-300 max-w-xl mx-auto break-words text-left">
-                  <span className="text-gray-400 font-semibold">Status Sinkronisasi:</span> {discordDebug}
-                </div>
-              )}
-              <div className="mt-4">
-                <a
-                  href="https://discord.gg/aJvbVyTxNb"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold transition"
-                >
-                  <span>Masuk Discord LogHorizon</span>
-                  <ArrowUpRight size={14} />
-                </a>
+                <div className="h-9 w-full rounded bg-neutral-200 dark:bg-[#1E1A3A]" />
               </div>
             </div>
-          )}
-        </section>
-      )}
-
-      {/* SEKSI 2: BERITA GAME & TEKNOLOGI (GLOBAL NEWS) */}
-      {(mainTab === "all" || mainTab === "global") && (
-        <section aria-labelledby="global-news-heading">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-3 border-b border-gray-200 dark:border-[#211C2B]">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold tracking-wider bg-gray-200 dark:bg-[#262033] text-gray-700 dark:text-gray-300 uppercase">
-                  GLOBAL DISPATCH
-                </span>
-                <h2 id="global-news-heading" className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-                  Berita Game &amp; Teknologi Global
-                </h2>
-              </div>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Update terkini dari Gamebrott, Antara Tekno, NewsAPI, dan analis industri esports.
-              </p>
-            </div>
-
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none self-start sm:self-auto">
-              {[
-                { id: "ALL", label: "Semua Kategori" },
-                { id: "Game & Esports", label: "🎮 Game" },
-                { id: "Hardware & Tech", label: "⚡ Hardware" },
-                { id: "Konsol & Rilis", label: "🕹️ Konsol" },
-                { id: "Turnamen & Guild", label: "🏆 Turnamen" },
-              ].map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`px-2.5 py-1 rounded text-[11px] font-bold transition whitespace-nowrap border ${
-                    activeCategory === cat.id
-                      ? "bg-[#9D4EDD] text-white border-[#9D4EDD]"
-                      : "bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-[#211C2B]"
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div
-                  key={i}
-                  className="rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] overflow-hidden animate-pulse flex flex-col h-[410px]"
-                >
-                  <div className="h-48 w-full bg-neutral-200 dark:bg-[#1E1A3A]" />
-                  <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
-                    <div className="space-y-2">
-                      <div className="h-3 w-20 rounded bg-neutral-200 dark:bg-[#1E1A3A]" />
-                      <div className="h-5 w-5/6 rounded bg-neutral-200 dark:bg-[#1E1A3A]" />
-                      <div className="h-3.5 w-full rounded bg-neutral-200 dark:bg-[#1E1A3A]" />
-                    </div>
-                    <div className="h-8 w-28 rounded bg-neutral-200 dark:bg-[#1E1A3A] pt-2" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredGlobalArticles.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {filteredGlobalArticles.map((article, index) => (
-                <NewsCard key={article.id} article={article} index={index} />
-              ))}
-            </div>
-          ) : (
-            <div className="py-16 text-center border border-dashed border-gray-300 dark:border-[#211C2B] rounded-lg p-8">
-              <Newspaper size={36} className="mx-auto text-gray-400 mb-2 opacity-60" />
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Tidak ada warta global yang cocok</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Coba ganti kata kunci pencarian atau pilih kategori &quot;Semua Kategori&quot;.
-              </p>
+          ))}
+        </div>
+      ) : filteredFeed.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredFeed.map((article, index) => (
+            <UnifiedNewsCard key={article.id} article={article} index={index} />
+          ))}
+        </div>
+      ) : (
+        <div className="py-16 text-center border border-dashed border-gray-300 dark:border-[#211C2B] rounded-xl p-8 max-w-xl mx-auto">
+          <Newspaper size={40} className="mx-auto text-gray-400 mb-3 opacity-60" />
+          <h3 className="text-base font-bold text-gray-900 dark:text-white">Tidak ada warta yang cocok</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-md mx-auto">
+            Coba sesuaikan kata kunci pencarian atau ubah filter sumber ke &quot;Semua Berita&quot;.
+          </p>
+          {discordDebug && (
+            <div className="mt-4 inline-block px-3 py-1.5 rounded bg-black/40 dark:bg-black/60 border border-purple-500/30 text-[11px] font-mono text-purple-300 max-w-md mx-auto break-words">
+              <span className="text-gray-400 font-semibold">Status Sinkronisasi Discord:</span> {discordDebug}
             </div>
           )}
-        </section>
+        </div>
       )}
     </main>
   );
 }
 
-// Kartu Warta Resmi Guild (Dari Discord)
-function GuildNewsCard({ article, index }: { article: NormalizedArticle; index: number }) {
-  const [imgSrc, setImgSrc] = useState(article.imageUrl || null);
+// =========================================================================
+// KARTU BERITA TERPADU (UNIFIED NEWS CARD)
+// Membedakan sumber GUILD (Discord) vs GLOBAL (Gaming/Tech) secara visual
+// =========================================================================
+function UnifiedNewsCard({ article, index }: { article: NormalizedArticle; index: number }) {
+  const isGuild = article.sourceType === "GUILD";
+  const [imgSrc, setImgSrc] = useState(article.imageUrl || (isGuild ? null : DEFAULT_THUMBNAIL));
   const [imgError, setImgError] = useState(false);
 
   const formattedDate = new Date(article.publishedAt).toLocaleString("id-ID", {
@@ -388,149 +302,103 @@ function GuildNewsCard({ article, index }: { article: NormalizedArticle; index: 
     <motion.article
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, delay: Math.min(index * 0.04, 0.35) }}
-      className="group rounded-lg border border-[#9D4EDD]/35 hover:border-[#9D4EDD] bg-white dark:bg-[#120F17] overflow-hidden flex flex-col justify-between transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-[#9D4EDD]/10"
+      transition={{ duration: 0.22, delay: Math.min(index * 0.03, 0.35) }}
+      className={`group rounded-xl overflow-hidden flex flex-col justify-between transition-all duration-200 bg-white dark:bg-[#120F17] ${
+        isGuild
+          ? "border border-[#9D4EDD]/45 hover:border-[#9D4EDD] shadow-sm hover:shadow-lg hover:shadow-[#9D4EDD]/15"
+          : "border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD]/60 hover:shadow-lg hover:shadow-[#9D4EDD]/5"
+      }`}
     >
       <div>
-        {/* Header Kartu Discord */}
-        <div className="p-4 bg-[#9D4EDD]/10 border-b border-[#9D4EDD]/20 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            {article.authorAvatar ? (
-              <Image
-                src={article.authorAvatar}
-                alt={article.authorName ?? "Council"}
-                width={32}
-                height={32}
-                unoptimized
-                className="w-8 h-8 rounded-full border border-[#9D4EDD]/50 object-cover shrink-0"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-[#5865F2] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                LH
-              </div>
-            )}
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-gray-900 dark:text-white truncate">
-                {article.authorName ?? "Council LogHorizon"}
-              </p>
-              <p className="text-[10px] font-mono text-purple-600 dark:text-[#C77DFF]">
-                Server Discord • #pengumuman
-              </p>
-            </div>
-          </div>
-          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider bg-[#9D4EDD] text-white shrink-0">
-            [GUILD INFO]
-          </span>
-        </div>
-
-        {/* Thumbnail / Image Attachment jika ada */}
-        {imgSrc && !imgError && (
-          <div className="relative h-44 w-full overflow-hidden bg-neutral-100 dark:bg-[#181422]">
+        {/* Gambar Thumbnail Warta */}
+        {imgSrc && !imgError ? (
+          <div className="relative h-48 w-full overflow-hidden bg-neutral-100 dark:bg-[#181422]">
             <Image
               src={imgSrc}
               alt={article.title}
               fill
               loading="lazy"
               unoptimized
-              onError={() => setImgError(true)}
+              onError={() => {
+                if (isGuild) {
+                  setImgError(true);
+                } else {
+                  setImgSrc(DEFAULT_THUMBNAIL);
+                }
+              }}
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
+
+            {/* Badge Kategori di Pojok Gambar */}
+            <div className="absolute top-3 left-3 z-10">
+              {isGuild ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[10.5px] font-black uppercase tracking-wider bg-[#9D4EDD] text-white shadow-md shadow-[#9D4EDD]/40">
+                  <span>🛡️</span>
+                  <span>INFO GUILD</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-mono font-extrabold uppercase tracking-wider bg-black/80 backdrop-blur-md text-[#C77DFF] border border-[#9D4EDD]/40 shadow-sm">
+                  <span>🎮</span>
+                  <span>{article.category || "GAMING / TECH"}</span>
+                </span>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Header Banner jika warta Discord tidak memiliki gambar */
+          <div className="p-4 bg-[#9D4EDD]/10 border-b border-[#9D4EDD]/20 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {article.authorAvatar ? (
+                <Image
+                  src={article.authorAvatar}
+                  alt={article.authorName ?? "Council"}
+                  width={28}
+                  height={28}
+                  unoptimized
+                  className="w-7 h-7 rounded-full border border-[#9D4EDD]/50 object-cover shrink-0"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-[#5865F2] text-white flex items-center justify-center text-[11px] font-bold shrink-0">
+                  LH
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                  {article.authorName ?? "Council LogHorizon"}
+                </p>
+                <p className="text-[10px] font-mono text-purple-600 dark:text-[#C77DFF]">
+                  Discord • #pengumuman
+                </p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-[#9D4EDD] text-white shrink-0">
+              <span>🛡️</span>
+              <span>INFO GUILD</span>
+            </span>
           </div>
         )}
 
-        {/* Content Body */}
+        {/* Isi Teks Konten */}
         <div className="p-5">
-          <p className="text-[11px] font-mono text-gray-400 mb-1.5 flex items-center gap-1.5">
-            <Calendar size={12} className="text-[#9D4EDD]" />
-            <span>{formattedDate}</span>
-          </p>
-
-          <h3 className="text-base font-extrabold text-gray-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#9D4EDD] dark:group-hover:text-[#C77DFF] transition-colors break-words">
-            {article.title}
-          </h3>
-
-          <p className="mt-2.5 text-xs text-gray-600 dark:text-gray-300 line-clamp-4 leading-relaxed whitespace-pre-wrap break-words">
-            {article.description}
-          </p>
-        </div>
-      </div>
-
-      {/* Footer Kartu Discord */}
-      <div className="p-5 pt-0">
-        <a
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-xs font-bold text-white bg-[#5865F2] hover:bg-[#4752C4] shadow-sm transition-all duration-150"
-        >
-          <span>Buka di Discord</span>
-          <ArrowUpRight size={14} />
-        </a>
-      </div>
-    </motion.article>
-  );
-}
-
-// Kartu Warta Berita Game & Tech Global
-function NewsCard({ article, index }: { article: NormalizedArticle; index: number }) {
-  const [imgSrc, setImgSrc] = useState(article.imageUrl || DEFAULT_THUMBNAIL);
-  const [imgLoaded, setImgLoaded] = useState(false);
-
-  const formattedDate = new Date(article.publishedAt).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-
-  return (
-    <motion.article
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, delay: Math.min(index * 0.03, 0.35) }}
-      className="group rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] overflow-hidden flex flex-col justify-between transition-all duration-200 hover:border-[#9D4EDD]/60 hover:shadow-lg hover:shadow-[#9D4EDD]/5"
-    >
-      <div>
-        {/* Thumbnail Image Container */}
-        <div className="relative h-48 w-full overflow-hidden bg-neutral-100 dark:bg-[#181422]">
-          {!imgLoaded && (
-            <div className="absolute inset-0 animate-pulse bg-neutral-200 dark:bg-[#1E1A3A]" />
-          )}
-          <Image
-            src={imgSrc}
-            alt={article.title}
-            fill
-            loading="lazy"
-            unoptimized
-            onLoad={() => setImgLoaded(true)}
-            onError={() => {
-              setImgSrc(DEFAULT_THUMBNAIL);
-              setImgLoaded(true);
-            }}
-            className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
-              imgLoaded ? "opacity-100" : "opacity-0"
-            }`}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-
-          {/* Badge Kategori */}
-          <div className="absolute top-3 left-3 z-10">
-            <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider bg-black/75 backdrop-blur-md text-[#C77DFF] border border-[#9D4EDD]/40 shadow-sm">
-              {article.category}
-            </span>
-          </div>
-        </div>
-
-        {/* Content Body */}
-        <div className="p-5">
+          {/* Metadata Bar (Tanggal & Sumber) */}
           <div className="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 mb-2 font-mono">
-            <span className="flex items-center gap-1.5 text-[#9D4EDD] dark:text-purple-300 font-bold truncate max-w-[160px]">
-              <Globe size={11} className="shrink-0" />
-              {article.sourceName}
+            <span className="flex items-center gap-1.5 text-[#9D4EDD] dark:text-purple-300 font-bold truncate max-w-[170px]">
+              {isGuild ? (
+                <>
+                  <Shield size={12} className="shrink-0 text-[#9D4EDD]" />
+                  <span>{article.authorName ?? "Discord Guild"}</span>
+                </>
+              ) : (
+                <>
+                  <Globe size={11} className="shrink-0" />
+                  <span>{article.sourceName}</span>
+                </>
+              )}
             </span>
-            <span className="flex items-center gap-1 shrink-0">
+            <span className="flex items-center gap-1 shrink-0 text-gray-400">
               <Calendar size={11} />
-              {formattedDate}
+              <span>{formattedDate}</span>
             </span>
           </div>
 
@@ -538,23 +406,35 @@ function NewsCard({ article, index }: { article: NormalizedArticle; index: numbe
             {article.title}
           </h3>
 
-          <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 line-clamp-3 leading-relaxed break-words">
+          <p className="mt-2.5 text-xs text-gray-600 dark:text-gray-300 line-clamp-3 leading-relaxed break-words whitespace-pre-wrap">
             {article.description}
           </p>
         </div>
       </div>
 
-      {/* Card Footer */}
-      <div className="p-5 pt-0 mt-1">
-        <a
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-xs font-bold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-[#1A1524] border border-gray-200 dark:border-[#262033] hover:bg-[#9D4EDD] hover:text-white hover:border-[#9D4EDD] transition-all duration-150 group/btn"
-        >
-          <span>Baca Selengkapnya</span>
-          <ArrowUpRight size={14} className="transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
-        </a>
+      {/* Footer Aksi Kartu */}
+      <div className="p-5 pt-0">
+        {isGuild ? (
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-xs font-bold text-white bg-[#5865F2] hover:bg-[#4752C4] shadow-sm transition-all duration-150"
+          >
+            <span>Buka di Discord</span>
+            <ArrowUpRight size={14} />
+          </a>
+        ) : (
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-xs font-bold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-[#1A1524] border border-gray-200 dark:border-[#262033] hover:bg-[#9D4EDD] hover:text-white hover:border-[#9D4EDD] transition-all duration-150 group/btn"
+          >
+            <span>Baca Selengkapnya</span>
+            <ArrowUpRight size={14} className="transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
+          </a>
+        )}
       </div>
     </motion.article>
   );
