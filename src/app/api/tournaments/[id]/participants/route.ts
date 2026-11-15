@@ -32,12 +32,29 @@ export async function POST(request: Request, { params }: RouteContext) {
   // Parse Pemain Inti
   let mainPlayers: { name: string; inGameId: string; role: "MAIN" }[] = [];
   if (Array.isArray(data.mainPlayers)) {
-    mainPlayers = (data.mainPlayers as Array<{ name?: unknown; inGameId?: unknown }>)
-      .map((p) => ({
-        name: sanitizePlainText(typeof p.name === "string" ? p.name.trim() : ""),
-        inGameId: sanitizePlainText(typeof p.inGameId === "string" ? p.inGameId.trim() : ""),
-        role: "MAIN" as const,
-      }))
+    mainPlayers = (data.mainPlayers as Array<{ name?: unknown; nickname?: unknown; inGameId?: unknown; gameId?: unknown }>)
+      .map((p) => {
+        const nameVal = typeof p.nickname === "string" ? p.nickname : typeof p.name === "string" ? p.name : "";
+        const idVal = typeof p.gameId === "string" ? p.gameId : typeof p.inGameId === "string" ? p.inGameId : "";
+        return {
+          name: sanitizePlainText(nameVal.trim()),
+          inGameId: sanitizePlainText(idVal.trim()),
+          role: "MAIN" as const,
+        };
+      })
+      .filter((p) => p.name.length > 0 && p.inGameId.length > 0);
+  } else if (Array.isArray(data.roster)) {
+    mainPlayers = (data.roster as Array<{ name?: unknown; nickname?: unknown; inGameId?: unknown; gameId?: unknown; role?: unknown }>)
+      .filter((p) => p.role !== "SUB")
+      .map((p) => {
+        const nameVal = typeof p.nickname === "string" ? p.nickname : typeof p.name === "string" ? p.name : "";
+        const idVal = typeof p.gameId === "string" ? p.gameId : typeof p.inGameId === "string" ? p.inGameId : "";
+        return {
+          name: sanitizePlainText(nameVal.trim()),
+          inGameId: sanitizePlainText(idVal.trim()),
+          role: "MAIN" as const,
+        };
+      })
       .filter((p) => p.name.length > 0 && p.inGameId.length > 0);
   } else if (Array.isArray(data.players)) {
     mainPlayers = (data.players as string[])
@@ -56,12 +73,29 @@ export async function POST(request: Request, { params }: RouteContext) {
   // Parse Pemain Cadangan (Opsional)
   let subPlayers: { name: string; inGameId: string; role: "SUB" }[] = [];
   if (Array.isArray(data.subPlayers)) {
-    subPlayers = (data.subPlayers as Array<{ name?: unknown; inGameId?: unknown }>)
-      .map((p) => ({
-        name: typeof p.name === "string" ? p.name.trim() : "",
-        inGameId: typeof p.inGameId === "string" ? p.inGameId.trim() : "",
-        role: "SUB" as const,
-      }))
+    subPlayers = (data.subPlayers as Array<{ name?: unknown; nickname?: unknown; inGameId?: unknown; gameId?: unknown }>)
+      .map((p) => {
+        const nameVal = typeof p.nickname === "string" ? p.nickname : typeof p.name === "string" ? p.name : "";
+        const idVal = typeof p.gameId === "string" ? p.gameId : typeof p.inGameId === "string" ? p.inGameId : "";
+        return {
+          name: sanitizePlainText(nameVal.trim()),
+          inGameId: sanitizePlainText(idVal.trim()),
+          role: "SUB" as const,
+        };
+      })
+      .filter((p) => p.name.length > 0 && p.inGameId.length > 0);
+  } else if (Array.isArray(data.roster)) {
+    subPlayers = (data.roster as Array<{ name?: unknown; nickname?: unknown; inGameId?: unknown; gameId?: unknown; role?: unknown }>)
+      .filter((p) => p.role === "SUB")
+      .map((p) => {
+        const nameVal = typeof p.nickname === "string" ? p.nickname : typeof p.name === "string" ? p.name : "";
+        const idVal = typeof p.gameId === "string" ? p.gameId : typeof p.inGameId === "string" ? p.inGameId : "";
+        return {
+          name: sanitizePlainText(nameVal.trim()),
+          inGameId: sanitizePlainText(idVal.trim()),
+          role: "SUB" as const,
+        };
+      })
       .filter((p) => p.name.length > 0 && p.inGameId.length > 0);
   }
 

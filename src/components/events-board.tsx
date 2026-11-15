@@ -211,10 +211,40 @@ export function EventsBoard() {
   const [registerSenderName, setRegisterSenderName] = useState("");
   const [registerPaymentProof, setRegisterPaymentProof] = useState<string>("");
   const [compressingProof, setCompressingProof] = useState(false);
-  const [registerMainPlayers, setRegisterMainPlayers] = useState<{ name: string; inGameId: string }[]>([]);
-  const [registerSubPlayers, setRegisterSubPlayers] = useState<{ name: string; inGameId: string }[]>([]);
+  const [registerMainPlayers, setRegisterMainPlayers] = useState<{ nickname: string; gameId: string }[]>([]);
+  const [registerSubPlayers, setRegisterSubPlayers] = useState<{ nickname: string; gameId: string }[]>([]);
   const [submittingRegistration, setSubmittingRegistration] = useState(false);
   const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  // Inisialisasi Otomatis Roster Pemain saat Modal Registrasi Terbuka
+  useEffect(() => {
+    if (registeringTournament) {
+      const mainCount = registeringTournament.mainPlayersCount ?? 5;
+      const subCount = registeringTournament.subPlayersCount ?? 2;
+      setRegisterMainPlayers((prev) => {
+        if (prev.length === mainCount && prev.some((p) => p.nickname || p.gameId)) return prev;
+        const mains: { nickname: string; gameId: string }[] = [];
+        for (let i = 0; i < mainCount; i++) {
+          mains.push({
+            nickname: i === 0 ? (session?.user?.username ?? session?.user?.name ?? "") : (prev[i]?.nickname ?? ""),
+            gameId: prev[i]?.gameId ?? "",
+          });
+        }
+        return mains;
+      });
+      setRegisterSubPlayers((prev) => {
+        if (prev.length === subCount && prev.some((p) => p.nickname || p.gameId)) return prev;
+        const subs: { nickname: string; gameId: string }[] = [];
+        for (let i = 0; i < subCount; i++) {
+          subs.push({
+            nickname: prev[i]?.nickname ?? "",
+            gameId: prev[i]?.gameId ?? "",
+          });
+        }
+        return subs;
+      });
+    }
+  }, [registeringTournament, session]);
 
   // Canvas Image Compression Helper for Payment Proof
   function handleProofFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -335,18 +365,18 @@ export function EventsBoard() {
     const mainCount = t.mainPlayersCount ?? 5;
     const subCount = t.subPlayersCount ?? 2;
 
-    const mains: { name: string; inGameId: string }[] = [];
+    const mains: { nickname: string; gameId: string }[] = [];
     for (let i = 0; i < mainCount; i++) {
       mains.push({
-        name: i === 0 ? (session.user.username ?? session.user.name ?? "") : "",
-        inGameId: "",
+        nickname: i === 0 ? (session.user.username ?? session.user.name ?? "") : "",
+        gameId: "",
       });
     }
     setRegisterMainPlayers(mains);
 
-    const subs: { name: string; inGameId: string }[] = [];
+    const subs: { nickname: string; gameId: string }[] = [];
     for (let i = 0; i < subCount; i++) {
-      subs.push({ name: "", inGameId: "" });
+      subs.push({ nickname: "", gameId: "" });
     }
     setRegisterSubPlayers(subs);
   }
@@ -623,8 +653,8 @@ export function EventsBoard() {
 
     for (let i = 0; i < registerMainPlayers.length; i++) {
       const p = registerMainPlayers[i];
-      if (!p.name.trim() || !p.inGameId.trim()) {
-        setError(`Pemain Inti #${i + 1} wajib diisi lengkap (Nickname dan ID/Tag In-Game).`);
+      if (!p.nickname.trim() || !p.gameId.trim()) {
+        setError(`Pemain Inti #${i + 1} wajib diisi lengkap (Nickname dan ID / Tag Game).`);
         return;
       }
     }
@@ -640,14 +670,18 @@ export function EventsBoard() {
           senderName: isPaid ? registerSenderName.trim() : undefined,
           paymentProof: isPaid ? registerPaymentProof : undefined,
           mainPlayers: registerMainPlayers.map((p) => ({
-            name: p.name.trim(),
-            inGameId: p.inGameId.trim(),
+            name: p.nickname.trim(),
+            nickname: p.nickname.trim(),
+            inGameId: p.gameId.trim(),
+            gameId: p.gameId.trim(),
           })),
           subPlayers: registerSubPlayers
-            .filter((p) => p.name.trim() && p.inGameId.trim())
+            .filter((p) => p.nickname.trim() && p.gameId.trim())
             .map((p) => ({
-              name: p.name.trim(),
-              inGameId: p.inGameId.trim(),
+              name: p.nickname.trim(),
+              nickname: p.nickname.trim(),
+              inGameId: p.gameId.trim(),
+              gameId: p.gameId.trim(),
             })),
         }),
       });
@@ -2523,33 +2557,40 @@ export function EventsBoard() {
                         <span className="text-[10px] text-gray-400 font-mono">Slot Wajib</span>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input
-                          required
-                          type="text"
-                          value={player.name}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setRegisterMainPlayers((prev) =>
-                              prev.map((p, i) => (i === idx ? { ...p, name: val } : p))
-                            );
-                          }}
-                          placeholder={idx === 0 ? "Nickname In-Game Kapten *" : `Nickname Pemain #${idx + 1} *`}
-                          className="w-full px-3 py-1.5 rounded bg-gray-50 dark:bg-[#181324] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                        />
-                        <input
-                          required
-                          type="text"
-                          value={player.inGameId}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setRegisterMainPlayers((prev) =>
-                              prev.map((p, i) => (i === idx ? { ...p, inGameId: val } : p))
-                            );
-                          }}
-                          placeholder="ID / Tag In-Game (contoh: #1234 / UID: 9988) *"
-                          className="w-full px-3 py-1.5 rounded bg-gray-50 dark:bg-[#181324] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                        />
+                      <div className="grid grid-cols-12 gap-2">
+                        {/* Kotak Kiri (col-span-7): Nickname In-Game */}
+                        <div className="col-span-7">
+                          <input
+                            required
+                            type="text"
+                            value={player.nickname}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setRegisterMainPlayers((prev) =>
+                                prev.map((p, i) => (i === idx ? { ...p, nickname: val } : p))
+                              );
+                            }}
+                            placeholder={idx === 0 ? "Nickname In-Game Kapten *" : `Nickname Pemain #${idx + 1} *`}
+                            className="w-full px-3 py-2 rounded-md bg-white/[0.03] border border-[#211C2B] text-xs font-bold text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
+                          />
+                        </div>
+
+                        {/* Kotak Kanan (col-span-5): ID / Tag Game */}
+                        <div className="col-span-5">
+                          <input
+                            required
+                            type="text"
+                            value={player.gameId}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setRegisterMainPlayers((prev) =>
+                                prev.map((p, i) => (i === idx ? { ...p, gameId: val } : p))
+                              );
+                            }}
+                            placeholder="ID / Tag Game *"
+                            className="w-full px-3 py-2 rounded-md bg-[#9D4EDD]/10 border border-[#9D4EDD]/30 font-mono text-xs text-right text-purple-400 placeholder:text-purple-400/50 focus:outline-none focus:border-[#9D4EDD]"
+                          />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -2583,31 +2624,38 @@ export function EventsBoard() {
                           <span className="text-[10px] text-gray-400 font-mono">Opsional</span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            value={sub.name}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setRegisterSubPlayers((prev) =>
-                                prev.map((p, i) => (i === idx ? { ...p, name: val } : p))
-                              );
-                            }}
-                            placeholder={`Nickname Cadangan #${idx + 1} (Opsional)`}
-                            className="w-full px-3 py-1.5 rounded bg-gray-50 dark:bg-[#181324] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                          />
-                          <input
-                            type="text"
-                            value={sub.inGameId}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setRegisterSubPlayers((prev) =>
-                                prev.map((p, i) => (i === idx ? { ...p, inGameId: val } : p))
-                              );
-                            }}
-                            placeholder="ID / Tag In-Game (Opsional)"
-                            className="w-full px-3 py-1.5 rounded bg-gray-50 dark:bg-[#181324] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                          />
+                        <div className="grid grid-cols-12 gap-2">
+                          {/* Kotak Kiri (col-span-7): Nickname In-Game */}
+                          <div className="col-span-7">
+                            <input
+                              type="text"
+                              value={sub.nickname}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setRegisterSubPlayers((prev) =>
+                                  prev.map((p, i) => (i === idx ? { ...p, nickname: val } : p))
+                                );
+                              }}
+                              placeholder={`Nickname Cadangan #${idx + 1} (Opsional)`}
+                              className="w-full px-3 py-2 rounded-md bg-white/[0.03] border border-[#211C2B] text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          {/* Kotak Kanan (col-span-5): ID / Tag Game */}
+                          <div className="col-span-5">
+                            <input
+                              type="text"
+                              value={sub.gameId}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setRegisterSubPlayers((prev) =>
+                                  prev.map((p, i) => (i === idx ? { ...p, gameId: val } : p))
+                                );
+                              }}
+                              placeholder="ID Game (Opsional)"
+                              className="w-full px-3 py-2 rounded-md bg-[#9D4EDD]/10 border border-[#9D4EDD]/30 font-mono text-xs text-right text-purple-400 placeholder:text-purple-400/50 focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}

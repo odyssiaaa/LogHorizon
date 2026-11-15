@@ -79,9 +79,39 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   const [registerPaymentProof, setRegisterPaymentProof] = useState<string>("");
   const [compressingProof, setCompressingProof] = useState(false);
   const [selectedProofModal, setSelectedProofModal] = useState<string | null>(null);
-  const [registerMainPlayers, setRegisterMainPlayers] = useState<string[]>([]);
-  const [registerSubPlayers, setRegisterSubPlayers] = useState<string[]>([]);
+  const [registerMainPlayers, setRegisterMainPlayers] = useState<{ nickname: string; gameId: string }[]>([]);
+  const [registerSubPlayers, setRegisterSubPlayers] = useState<{ nickname: string; gameId: string }[]>([]);
   const [registering, setRegistering] = useState(false);
+
+  // Inisialisasi Otomatis Roster Pemain saat Modal Registrasi Terbuka
+  useEffect(() => {
+    if (showRegisterModal && tournament) {
+      const mainC = tournament.mainPlayersCount ?? 5;
+      const subC = tournament.subPlayersCount ?? 2;
+      setRegisterMainPlayers((prev) => {
+        if (prev.length === mainC && prev.some((p) => p.nickname || p.gameId)) return prev;
+        const mains: { nickname: string; gameId: string }[] = [];
+        for (let i = 0; i < mainC; i++) {
+          mains.push({
+            nickname: i === 0 ? (session?.user?.username ?? session?.user?.name ?? "") : (prev[i]?.nickname ?? ""),
+            gameId: prev[i]?.gameId ?? "",
+          });
+        }
+        return mains;
+      });
+      setRegisterSubPlayers((prev) => {
+        if (prev.length === subC && prev.some((p) => p.nickname || p.gameId)) return prev;
+        const subs: { nickname: string; gameId: string }[] = [];
+        for (let i = 0; i < subC; i++) {
+          subs.push({
+            nickname: prev[i]?.nickname ?? "",
+            gameId: prev[i]?.gameId ?? "",
+          });
+        }
+        return subs;
+      });
+    }
+  }, [showRegisterModal, tournament, session]);
 
   // Detail Gacha Bracket Modal State
   const [detailGachaModalState, setDetailGachaModalState] = useState<{
@@ -238,12 +268,26 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
     setShowRulesModal(false);
     // Initialize roster inputs based on tournament settings
     setRegisterTeamName("");
-    setRegisterCaptainIgn("");
+    setRegisterCaptainIgn(session?.user?.username ?? session?.user?.name ?? "");
     setRegisterPhone("");
     setRegisterSenderName("");
     setRegisterPaymentProof("");
-    setRegisterMainPlayers(Array(mainCount).fill(""));
-    setRegisterSubPlayers(Array(subCount).fill(""));
+
+    const mains: { nickname: string; gameId: string }[] = [];
+    for (let i = 0; i < mainCount; i++) {
+      mains.push({
+        nickname: i === 0 ? (session?.user?.username ?? session?.user?.name ?? "") : "",
+        gameId: "",
+      });
+    }
+    setRegisterMainPlayers(mains);
+
+    const subs: { nickname: string; gameId: string }[] = [];
+    for (let i = 0; i < subCount; i++) {
+      subs.push({ nickname: "", gameId: "" });
+    }
+    setRegisterSubPlayers(subs);
+
     setShowRegisterModal(true);
   }
 
@@ -268,30 +312,33 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       }
     }
 
+    // Validasi Seluruh Pemain Inti Wajib Terisi Lengkap
+    for (let i = 0; i < registerMainPlayers.length; i++) {
+      const p = registerMainPlayers[i];
+      if (!p.nickname.trim() || !p.gameId.trim()) {
+        setError(`Pemain Inti #${i + 1} wajib diisi lengkap (Nickname dan ID / Tag Game).`);
+        return;
+      }
+    }
+
     setRegistering(true);
     setError("");
 
     // Prepare roster array
-    const roster: TournamentRosterPlayer[] = [];
-    registerMainPlayers.forEach((ign) => {
-      if (ign.trim()) {
-        roster.push({
-          name: ign.trim(),
-          inGameId: ign.trim(),
-          role: "MAIN",
-        });
-      }
-    });
-
-    registerSubPlayers.forEach((ign) => {
-      if (ign.trim()) {
-        roster.push({
-          name: ign.trim(),
-          inGameId: ign.trim(),
-          role: "SUB",
-        });
-      }
-    });
+    const roster: TournamentRosterPlayer[] = [
+      ...registerMainPlayers.map((p) => ({
+        name: p.nickname.trim(),
+        inGameId: p.gameId.trim(),
+        role: "MAIN" as const,
+      })),
+      ...registerSubPlayers
+        .filter((p) => p.nickname.trim() && p.gameId.trim())
+        .map((p) => ({
+          name: p.nickname.trim(),
+          inGameId: p.gameId.trim(),
+          role: "SUB" as const,
+        })),
+    ];
 
     try {
       const res = await fetch(`/api/tournaments/${tournament.id}/participants`, {
@@ -300,9 +347,23 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         body: JSON.stringify({
           teamName: registerTeamName.trim(),
           phone: registerPhone.trim(),
-          captainIgn: registerCaptainIgn.trim(),
+          captainIgn: registerMainPlayers[0]?.nickname.trim() || registerCaptainIgn.trim(),
           senderName: isPaid ? registerSenderName.trim() : undefined,
           paymentProof: isPaid ? registerPaymentProof : undefined,
+          mainPlayers: registerMainPlayers.map((p) => ({
+            name: p.nickname.trim(),
+            nickname: p.nickname.trim(),
+            inGameId: p.gameId.trim(),
+            gameId: p.gameId.trim(),
+          })),
+          subPlayers: registerSubPlayers
+            .filter((p) => p.nickname.trim() && p.gameId.trim())
+            .map((p) => ({
+              name: p.nickname.trim(),
+              nickname: p.nickname.trim(),
+              inGameId: p.gameId.trim(),
+              gameId: p.gameId.trim(),
+            })),
           roster,
         }),
       });
@@ -788,27 +849,64 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
               {/* Roster Inti */}
               <div className="pt-2 border-t border-gray-100 dark:border-[#211C2B]">
-                <label className="font-bold text-gray-800 dark:text-gray-200 block mb-2">
-                  ⚔️ Pemain Inti (Wajib Diisi {mainCount} Pemain):
-                </label>
-                <div className="space-y-2">
-                  {registerMainPlayers.map((val, idx) => (
-                    <div key={`main-${idx}`} className="flex items-center gap-2">
-                      <span className="w-6 text-gray-400 font-mono text-[11px] shrink-0">
-                        #{idx + 1}
-                      </span>
-                      <input
-                        required={idx < mainCount}
-                        type="text"
-                        value={val}
-                        onChange={(e) => {
-                          const updated = [...registerMainPlayers];
-                          updated[idx] = e.target.value;
-                          setRegisterMainPlayers(updated);
-                        }}
-                        placeholder={`IGN Pemain Inti ${idx + 1}`}
-                        className="flex-1 h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E] text-xs"
-                      />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="font-bold text-xs text-gray-800 dark:text-gray-200 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Users size={14} className="text-[#9D4EDD]" />
+                    <span>⚔️ Pemain Inti (Wajib Diisi {mainCount} Pemain):</span>
+                  </label>
+                  <span className="text-[10px] font-mono text-purple-400">Slot Wajib</span>
+                </div>
+                <div className="space-y-2.5">
+                  {registerMainPlayers.map((player, idx) => (
+                    <div
+                      key={`main-${idx}`}
+                      className="p-3 rounded-lg bg-gray-50 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 space-y-2"
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-purple-500/20 text-[#9D4EDD] inline-flex items-center justify-center text-[10px] font-mono font-bold">
+                            {idx + 1}
+                          </span>
+                          <span>{idx === 0 ? "Pemain #1 (Kapten Tim) *" : `Pemain Inti #${idx + 1} *`}</span>
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-mono">Wajib Diisi</span>
+                      </div>
+
+                      <div className="grid grid-cols-12 gap-2">
+                        {/* Kotak Kiri (col-span-7): Nickname In-Game */}
+                        <div className="col-span-7">
+                          <input
+                            required
+                            type="text"
+                            value={player.nickname}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setRegisterMainPlayers((prev) =>
+                                prev.map((p, i) => (i === idx ? { ...p, nickname: val } : p))
+                              );
+                            }}
+                            placeholder={idx === 0 ? "Nickname In-Game Kapten *" : `Nickname Pemain #${idx + 1} *`}
+                            className="w-full px-3 py-2 rounded-md bg-white/[0.03] border border-[#211C2B] text-xs font-bold text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
+                          />
+                        </div>
+
+                        {/* Kotak Kanan (col-span-5): ID / Tag Game */}
+                        <div className="col-span-5">
+                          <input
+                            required
+                            type="text"
+                            value={player.gameId}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setRegisterMainPlayers((prev) =>
+                                prev.map((p, i) => (i === idx ? { ...p, gameId: val } : p))
+                              );
+                            }}
+                            placeholder="ID / Tag Game *"
+                            className="w-full px-3 py-2 rounded-md bg-[#9D4EDD]/10 border border-[#9D4EDD]/30 font-mono text-xs text-right text-purple-400 placeholder:text-purple-400/50 focus:outline-none focus:border-[#9D4EDD]"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -817,26 +915,62 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               {/* Roster Cadangan */}
               {subCount > 0 && (
                 <div className="pt-2 border-t border-gray-100 dark:border-[#211C2B]">
-                  <label className="font-bold text-gray-800 dark:text-gray-200 block mb-2">
-                    🛡️ Pemain Cadangan (Opsional, Maks {subCount} Pemain):
-                  </label>
-                  <div className="space-y-2">
-                    {registerSubPlayers.map((val, idx) => (
-                      <div key={`sub-${idx}`} className="flex items-center gap-2">
-                        <span className="w-6 text-gray-400 font-mono text-[11px] shrink-0">
-                          Sub {idx + 1}
-                        </span>
-                        <input
-                          type="text"
-                          value={val}
-                          onChange={(e) => {
-                            const updated = [...registerSubPlayers];
-                            updated[idx] = e.target.value;
-                            setRegisterSubPlayers(updated);
-                          }}
-                          placeholder={`IGN Cadangan ${idx + 1} (opsional)`}
-                          className="flex-1 h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E] text-xs"
-                        />
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="font-bold text-xs text-amber-500 dark:text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
+                      <Shield size={14} className="text-amber-400" />
+                      <span>🛡️ Pemain Cadangan (Opsional, Maks {subCount} Pemain):</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-amber-400">Substitute</span>
+                  </div>
+                  <div className="space-y-2.5">
+                    {registerSubPlayers.map((player, idx) => (
+                      <div
+                        key={`sub-${idx}`}
+                        className="p-3 rounded-lg bg-gray-50 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 space-y-2"
+                      >
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                            <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-500 inline-flex items-center justify-center text-[10px] font-mono font-bold">
+                              C{idx + 1}
+                            </span>
+                            <span>Cadangan #{idx + 1} (Opsional)</span>
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-mono">Cadangan</span>
+                        </div>
+
+                        <div className="grid grid-cols-12 gap-2">
+                          {/* Kotak Kiri (col-span-7): Nickname In-Game */}
+                          <div className="col-span-7">
+                            <input
+                              type="text"
+                              value={player.nickname}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setRegisterSubPlayers((prev) =>
+                                  prev.map((p, i) => (i === idx ? { ...p, nickname: val } : p))
+                                );
+                              }}
+                              placeholder={`Nickname Cadangan #${idx + 1}`}
+                              className="w-full px-3 py-2 rounded-md bg-white/[0.03] border border-[#211C2B] text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          {/* Kotak Kanan (col-span-5): ID / Tag Game */}
+                          <div className="col-span-5">
+                            <input
+                              type="text"
+                              value={player.gameId}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setRegisterSubPlayers((prev) =>
+                                  prev.map((p, i) => (i === idx ? { ...p, gameId: val } : p))
+                                );
+                              }}
+                              placeholder="ID Game (Opsional)"
+                              className="w-full px-3 py-2 rounded-md bg-[#9D4EDD]/10 border border-[#9D4EDD]/30 font-mono text-xs text-right text-purple-400 placeholder:text-purple-400/50 focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
