@@ -12,9 +12,9 @@ type LeaderboardMember = LeaderboardAdventurer;
 type Benefactor = LeaderboardBenefactor;
 
 const roleLabels: Record<LeaderboardMember["role"], string> = {
-  MEMBER: "Member",
-  MODERATOR: "Moderator",
-  ADMIN: "Admin",
+  MEMBER: "Adventurer",
+  MODERATOR: "⚔️ Lord Commander",
+  ADMIN: "✨ Prince / Princess",
 };
 
 const rankIcons = [Trophy, Medal, Award] as const;
@@ -109,9 +109,17 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
               {filteredMembers.map((member, index) => {
                 const RankIcon = rankIcons[index];
                 const iconSize = topIconSizes[index] ?? 16;
-                const isOwner = member.username === ".odyssia" || member.role === "ADMIN";
+                const isOwner = member.username?.toLowerCase() === ".odyssia" || member.username?.toLowerCase() === "odyssia";
                 const isUserPremium = member.isPremium || isOwner;
-                const badge = isOwner ? "👑 Emperor" : member.badges.length ? member.badges[0] : roleLabels[member.role];
+                const badge = isOwner
+                  ? "👑 Emperor"
+                  : member.role === "ADMIN"
+                    ? "✨ Prince / Princess"
+                    : member.role === "MODERATOR"
+                      ? "⚔️ Lord Commander"
+                      : member.badges.length
+                        ? member.badges[0].replace("👑 Emperor", "✨ Prince / Princess")
+                        : roleLabels[member.role];
                 return (
                   <motion.div
                     key={member.id}
@@ -203,9 +211,17 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                                 <span className="leaderboard-badge">👑 Emperor</span>
                                 <span className="leaderboard-badge">💎 Noble Patron</span>
                               </>
-                            ) : (member.badges.length ? member.badges.slice(0, 2) : [roleLabels[member.role]]).map((badge) => (
-                              <span className="leaderboard-badge" key={badge}>{badge}</span>
-                            ))}
+                            ) : member.role === "ADMIN" ? (
+                              <span className="leaderboard-badge">✨ Prince / Princess</span>
+                            ) : member.role === "MODERATOR" ? (
+                              <span className="leaderboard-badge">⚔️ Lord Commander</span>
+                            ) : (
+                              (member.badges.length ? member.badges.slice(0, 2) : [roleLabels[member.role]])
+                                .map((b) => b.replace("👑 Emperor", "✨ Prince / Princess"))
+                                .map((badge) => (
+                                  <span className="leaderboard-badge" key={badge}>{badge}</span>
+                                ))
+                            )}
                           </div>
                         </td>
                       </motion.tr>

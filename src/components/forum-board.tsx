@@ -362,6 +362,19 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                           >
                             {post.author.username ?? "Gamer"}
                           </Link>
+                          {post.author.username?.toLowerCase() === ".odyssia" || post.author.username?.toLowerCase() === "odyssia" ? (
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0">
+                              👑 Emperor
+                            </span>
+                          ) : post.author.role === "ADMIN" ? (
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-400 border border-purple-500/30 shrink-0">
+                              ✨ Prince
+                            </span>
+                          ) : post.author.role === "MODERATOR" ? (
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 shrink-0">
+                              ⚔️ Mod
+                            </span>
+                          ) : null}
                         </span>
                         <span>•</span>
                         <span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span>

@@ -1,6 +1,7 @@
 import { Prisma, Role } from "@prisma/client";
 import { requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { isGuildOwner } from "@/lib/caste";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -18,9 +19,17 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   const existing = await prisma.user.findUnique({
     where: { id },
-    select: { id: true, role: true, isBanned: true, xp: true, level: true, isPremium: true },
+    select: { id: true, username: true, name: true, discordId: true, role: true, isBanned: true, xp: true, level: true, isPremium: true },
   });
   if (!existing) return Response.json({ error: "Member tidak ditemukan." }, { status: 404 });
+
+  // Absolute Owner Protection: .odyssia can never be modified, demoted, or banned
+  if (isGuildOwner(existing)) {
+    return Response.json(
+      { error: "Akun Guild Owner (.odyssia / 👑 Emperor) memiliki hak istimewa mutlak dan tidak dapat diubah atau diban oleh siapapun." },
+      { status: 403 }
+    );
+  }
 
   const updateData: Prisma.UserUpdateInput = {};
 

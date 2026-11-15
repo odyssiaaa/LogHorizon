@@ -4,6 +4,7 @@ import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { Navbar } from "@/components/navbar";
 import { Providers } from "@/components/providers";
 import { HorizonChatWidget } from "@/components/horizon-chat-widget";
+import { WelcomeOnboardingModal } from "@/components/welcome-onboarding-modal";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full w-full max-w-full overflow-x-hidden flex flex-col bg-[#F8F9FA] text-[#111827] dark:bg-[#08060B] dark:text-white">
         <Providers>
           <Navbar />
+          <WelcomeOnboardingModal />
           <div className="flex-1 w-full max-w-full overflow-x-hidden">
             {children}
           </div>

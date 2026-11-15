@@ -168,7 +168,7 @@ type Tab = "overview" | "settings" | "treasury" | "members" | "moderation";
 
 const formatMoney = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
-export function AdminDashboard({ role }: { role: Role }) {
+export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?: boolean }) {
   const isAdmin = role === "ADMIN";
   const [tab, setTab] = useState<Tab>("overview");
   const [data, setData] = useState<DashboardData | null>(null);
@@ -585,8 +585,21 @@ export function AdminDashboard({ role }: { role: Role }) {
             >
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
             </button>
-            <span className="admin-role-badge inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-[#9D4EDD]/10 text-[#9D4EDD] border border-[#9D4EDD]/30">
-              <Shield size={14} /> {role === "ADMIN" ? "Emperor / Admin" : "Lord Commander / Mod"}
+            <span
+              className={`admin-role-badge inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold border ${
+                isOwner
+                  ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                  : role === "ADMIN"
+                    ? "bg-purple-500/15 text-purple-400 border-purple-500/30"
+                    : "bg-blue-500/15 text-blue-400 border-blue-500/30"
+              }`}
+            >
+              <Shield size={14} />{" "}
+              {isOwner
+                ? "👑 Emperor (Owner)"
+                : role === "ADMIN"
+                  ? "✨ Prince / Princess (Admin)"
+                  : "⚔️ Lord Commander (Mod)"}
             </span>
           </div>
         </div>
@@ -1553,6 +1566,10 @@ export function AdminDashboard({ role }: { role: Role }) {
                       <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
                         {data?.users.map((member) => {
                           const isSelf = member.id === data.currentUserId;
+                          const isOwnerMember =
+                            member.username?.toLowerCase() === ".odyssia" ||
+                            member.username?.toLowerCase() === "odyssia" ||
+                            member.discordId === "706661230835925042";
                           return (
                             <tr key={member.id}>
                               <td className="py-3">
@@ -1568,16 +1585,22 @@ export function AdminDashboard({ role }: { role: Role }) {
                               </td>
 
                               <td className="py-3">
-                                <select
-                                  disabled={!isAdmin || isSelf || busyId === member.id}
-                                  value={member.role}
-                                  onChange={(e) => void updateMember(member, { role: e.target.value as Role })}
-                                  className="px-2 py-1 rounded text-xs border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none"
-                                >
-                                  <option value="MEMBER">MEMBER</option>
-                                  <option value="MODERATOR">MODERATOR</option>
-                                  <option value="ADMIN">ADMIN</option>
-                                </select>
+                                {isOwnerMember ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                    👑 Emperor (Owner)
+                                  </span>
+                                ) : (
+                                  <select
+                                    disabled={!isAdmin || isSelf || busyId === member.id}
+                                    value={member.role}
+                                    onChange={(e) => void updateMember(member, { role: e.target.value as Role })}
+                                    className="px-2 py-1 rounded text-xs border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none"
+                                  >
+                                    <option value="MEMBER">MEMBER (Adventurer)</option>
+                                    <option value="MODERATOR">MODERATOR (⚔️ Lord Commander)</option>
+                                    <option value="ADMIN">ADMIN (✨ Prince / Princess)</option>
+                                  </select>
+                                )}
                               </td>
 
                               <td className="py-3">
@@ -1603,7 +1626,11 @@ export function AdminDashboard({ role }: { role: Role }) {
                               </td>
 
                               <td className="py-3 text-right">
-                                {!isSelf && (
+                                {isOwnerMember ? (
+                                  <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20">
+                                    👑 Owner Mutlak
+                                  </span>
+                                ) : !isSelf ? (
                                   <button
                                     type="button"
                                     disabled={busyId === member.id}
@@ -1616,7 +1643,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                                   >
                                     {member.isBanned ? "Buka Ban (Unban)" : "Ban Member"}
                                   </button>
-                                )}
+                                ) : null}
                               </td>
                             </tr>
                           );

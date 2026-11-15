@@ -77,7 +77,12 @@ export default async function PublicProfilePage({ params }: PageProps) {
     prisma.lfgPost.count({ where: { authorId: user.id } }),
   ]);
 
-  const isOwner = user.username?.toLowerCase() === ".odyssia" || user.name?.toLowerCase() === ".odyssia";
+  const isOwner =
+    user.username?.toLowerCase() === ".odyssia" ||
+    user.username?.toLowerCase() === "odyssia" ||
+    user.name?.toLowerCase() === ".odyssia" ||
+    user.name?.toLowerCase() === "odyssia" ||
+    user.discordId === "706661230835925042";
   const xpNeeded = user.level * 100;
   const xpProgress = Math.min(100, Math.round(((user.xp % 100) / 100) * 100));
 
@@ -154,9 +159,9 @@ export default async function PublicProfilePage({ params }: PageProps) {
                 <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white break-words">
                   {user.username ?? "Petualang"}
                 </h1>
-                {(user.isPremium || isOwner) && (
+                {(user.isPremium || isOwner || user.role === "ADMIN") && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30">
-                    <Sparkles size={12} /> {isOwner ? "👑 Guild Emperor / Noble Patron" : "✦ Elite Member"}
+                    <Sparkles size={12} /> {isOwner ? "👑 Guild Emperor / Noble Patron" : user.role === "ADMIN" ? "✨ Prince / Princess (Admin)" : "✦ Elite Member"}
                   </span>
                 )}
               </div>
@@ -166,7 +171,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
                 {isOwner
                   ? "👑 Guild Owner (Emperor)"
                   : user.role === "ADMIN"
-                    ? "🛡️ High Council (Admin)"
+                    ? "✨ Prince / Princess (Admin)"
                     : user.role === "MODERATOR"
                       ? "⚔️ Lord Commander (Moderator)"
                       : "🎮 Guild Adventurer"}
@@ -310,7 +315,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
               <div className="flex justify-between py-1">
                 <span className="text-gray-500">Benefit Guild:</span>
                 <span className="text-gray-800 dark:text-gray-200 font-medium">
-                  {isOwner ? "👑 Guild Emperor / Noble Patron (Tier Tertinggi)" : user.isPremium ? "Elite Party Member" : "Adventurer"}
+                  {isOwner ? "👑 Guild Emperor / Noble Patron (Tier Tertinggi)" : user.role === "ADMIN" ? "✨ Prince / Princess (Admin Privileges)" : user.isPremium ? "Elite Party Member" : "Adventurer"}
                 </span>
               </div>
             </div>

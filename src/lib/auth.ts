@@ -46,10 +46,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const moderatorRoleId = process.env.DISCORD_ROLE_LORD_COMMANDER_ID;
       let role: "ADMIN" | "MODERATOR" | "MEMBER" | undefined;
 
-      // Special bypass for owner / emperor
+      // Special bypass for owner / emperor (.odyssia only)
       const isOwner =
         account.providerAccountId === "706661230835925042" ||
-        user.name?.toLowerCase().includes("odyssia") ||
+        user.name?.toLowerCase() === ".odyssia" ||
+        user.name?.toLowerCase() === "odyssia" ||
         user.email === "farrel.andhikapratama0905@gmail.com";
 
       if (isOwner) {
@@ -104,9 +105,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         const isOwner =
           user.username === ".odyssia" ||
+          user.username === "odyssia" ||
           user.name === ".odyssia" ||
+          user.name === "odyssia" ||
           user.discordId === "706661230835925042" ||
-          user.role === "ADMIN";
+          user.email === "farrel.andhikapratama0905@gmail.com";
         session.user.id = user.id;
         session.user.role = isOwner ? "ADMIN" : user.role;
         session.user.isBanned = user.isBanned;

@@ -355,15 +355,28 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                 <div className="market-card-meta flex flex-wrap items-center justify-between gap-2">
                   <span className="post-author flex items-center gap-2">
                     <DiscordAvatar src={post.author.avatar} username={post.author.username} size={24} />
-                    <span>
-                      oleh{" "}
+                    <span className="flex items-center gap-1.5 flex-wrap">
+                      <span>oleh{" "}</span>
                       <Link
                         href={`/u/${post.author.username ?? "user"}`}
                         className={`font-semibold hover:underline ${(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") ? "premium-username" : ""}`}
                       >
                         {post.author.username ?? "Gamer"}
                       </Link>
-                </span>
+                      {(post.author.username?.toLowerCase() === ".odyssia" || post.author.username?.toLowerCase() === "odyssia") ? (
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                          👑 Emperor
+                        </span>
+                      ) : post.author.role === "ADMIN" ? (
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                          ✨ Prince
+                        </span>
+                      ) : post.author.role === "MODERATOR" ? (
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                          ⚔️ Mod
+                        </span>
+                      ) : null}
+                    </span>
               </span>
               <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded text-[11px]">
                 ✔ {post.author.successfulSales ?? 0} Transaksi Sukses

@@ -275,9 +275,9 @@ export function SettingsDashboard() {
           <dl className="settings-profile-grid">
             <div><dt>Discord ID</dt><dd>{profile?.discordId ?? "Belum tersedia"}</dd></div>
             <div><dt>Username</dt><dd>{profile?.username ?? "Gamer"}</dd></div>
-            <div><dt>Role komunitas</dt><dd>{profile?.role ?? session.user.role}</dd></div>
+            <div><dt>Role komunitas</dt><dd>{(profile?.username === ".odyssia" || profile?.username === "odyssia") ? "👑 Emperor (Owner)" : (profile?.role === "ADMIN" || session.user.role === "ADMIN") ? "✨ Prince / Princess (Admin)" : (profile?.role === "MODERATOR" || session.user.role === "MODERATOR") ? "⚔️ Lord Commander (Moderator)" : (profile?.role ?? session.user.role)}</dd></div>
             <div><dt>Level / XP</dt><dd>Lv. {profile?.level ?? 1} · {profile?.xp ?? 0} XP</dd></div>
-            <div><dt>Benefit</dt><dd>{(profile?.username === ".odyssia" || profile?.role === "ADMIN") ? "👑 Guild Emperor / Noble Patron (Full Perks)" : profile?.isPremium ? "Elite Party Member (Premium)" : "Adventurer"}</dd></div>
+            <div><dt>Benefit</dt><dd>{(profile?.username === ".odyssia" || profile?.username === "odyssia") ? "👑 Guild Emperor / Noble Patron (Full Perks)" : (profile?.role === "ADMIN" || session.user.role === "ADMIN") ? "✨ Prince / Princess (Admin Privileges)" : profile?.isPremium ? "Elite Party Member (Premium)" : "Adventurer"}</dd></div>
           </dl>
         </section>
 

@@ -214,7 +214,7 @@ export function Navbar() {
   };
 
   const isStaff = user && (user.role === "ADMIN" || user.role === "MODERATOR");
-  const isOwner = user?.role === "ADMIN" && (user.username === ".odyssia" || user.discordId === "706661230835925042");
+  const isOwner = Boolean(user && (user.username === ".odyssia" || user.username === "odyssia" || user.name === ".odyssia" || user.discordId === "706661230835925042"));
 
   // Determine active states for top nav items
   const isHomeActive = pathname === "/";
@@ -507,12 +507,12 @@ export function Navbar() {
                             <div className="flex items-center justify-between mt-1">
                               <p className="text-[11px] font-mono text-[#9D4EDD] dark:text-[#C77DFF]">
                                 {isOwner
-                                  ? "👑 Guild Owner"
+                                  ? "👑 Emperor"
                                   : user.role === "ADMIN"
-                                    ? "🛡️ Guild Admin"
+                                    ? "✨ Prince / Princess"
                                     : user.role === "MODERATOR"
                                       ? "⚔️ Lord Commander"
-                                      : "🎮 Guild Member"}
+                                      : "🎮 Adventurer"}
                               </p>
                               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400">
                                 Lv. {user.level ?? 1}
@@ -665,12 +665,12 @@ export function Navbar() {
                         </div>
                         <p className="text-[11px] font-mono text-[#9D4EDD] dark:text-[#C77DFF]">
                           {isOwner
-                            ? "👑 Guild Owner"
+                            ? "👑 Emperor"
                             : user.role === "ADMIN"
-                              ? "🛡️ Guild Admin"
+                              ? "✨ Prince / Princess"
                               : user.role === "MODERATOR"
                                 ? "⚔️ Lord Commander"
-                                : "🎮 Member"}
+                                : "🎮 Adventurer"}
                         </p>
                         <div className="mt-1 flex items-center gap-1.5 text-[10px] font-mono text-gray-500 dark:text-gray-400">
                           <span className="px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400 font-bold">

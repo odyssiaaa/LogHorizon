@@ -992,6 +992,9 @@ export function EventsBoard() {
                     <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1 mb-4">
                       <p>
                         Host: <strong className="text-gray-800 dark:text-gray-200">{post.author.username ?? "Gamer"}</strong>
+                        {(post.author.username?.toLowerCase() === ".odyssia" || post.author.username?.toLowerCase() === "odyssia") && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 ml-1">👑 Emperor</span>
+                        )}
                         {post.author.inGameName && ` (IGN: ${post.author.inGameName})`}
                       </p>
                       {post.joins.length > 0 && (
