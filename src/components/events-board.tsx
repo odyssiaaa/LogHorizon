@@ -136,6 +136,8 @@ export function EventsBoard() {
   const [manageTab, setManageTab] = useState<"scores" | "teams" | "settings">("scores");
   const [manageMatches, setManageMatches] = useState<TournamentMatch[]>([]);
   const [manageTeams, setManageTeams] = useState<TournamentTeam[]>([]);
+  const [manageSlotCount, setManageSlotCount] = useState<number>(8);
+  const [isResizingBracket, setIsResizingBracket] = useState(false);
   const [savingManage, setSavingManage] = useState(false);
 
   // Team Registration Modal State
@@ -172,7 +174,59 @@ export function EventsBoard() {
     setManagingTournament(tournament);
     setManageMatches(tournament.matches || []);
     setManageTeams(tournament.teams || []);
+    setManageSlotCount(tournament.maxSlots || tournament.teams?.length || 8);
     setManageTab("scores");
+  }
+
+  // Resize slot count & regenerate bracket structure while preserving teams
+  async function handleResizeAndRegenerate(newCount: number) {
+    if (!managingTournament) return;
+    const clamped = Math.min(128, Math.max(2, newCount));
+
+    if (managingTournament.status === "ONGOING") {
+      const confirmReset = window.confirm(
+        "Peringatan: Turnamen ini sedang berstatus ONGOING (Sedang Berlangsung). Mengubah jumlah slot dan me-regenerate bagan akan mereset skor dan progres babak saat ini. Yakin ingin melanjutkan?"
+      );
+      if (!confirmReset) return;
+    }
+
+    setIsResizingBracket(true);
+    try {
+      const response = await fetch(`/api/tournaments/${managingTournament.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teamCount: clamped,
+          maxSlots: clamped,
+          regenerateBracket: true,
+          teams: manageTeams,
+        }),
+      });
+      const data = await readApiResponse<{
+        tournament: { teams: TournamentTeam[]; matches: TournamentMatch[]; maxSlots: number; format: string };
+      }>(response, "Gagal mengubah ukuran bagan.");
+
+      setManageMatches(data.tournament.matches);
+      setManageTeams(data.tournament.teams);
+      setManageSlotCount(clamped);
+      setManagingTournament((prev) =>
+        prev
+          ? {
+              ...prev,
+              maxSlots: clamped,
+              format: data.tournament.format,
+              matches: data.tournament.matches,
+              teams: data.tournament.teams,
+            }
+          : prev
+      );
+      setNotice(`Bagan turnamen berhasil disesuaikan ulang menjadi ${clamped} Tim!`);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menyesuaikan bagan.");
+    } finally {
+      setIsResizingBracket(false);
+    }
   }
 
   // Create Tournament from Template
@@ -634,45 +688,15 @@ export function EventsBoard() {
                     {matches.length > 0 ? (
                       <DragScrollContainer
                         buttonPosition="top"
-                        label="🖱️ Geser mouse / tombol ◀ ▶ untuk menjelajah seluruh ronde bagan"
+                        label="🖱️ Drag mouse / tombol ◀ ▶: Sayap Kiri ➔ GRAND FINAL 🏆 ⬅ Sayap Kanan"
                         className="pt-1 pb-3"
                       >
-                        <div
-                          className="flex items-stretch gap-6 sm:gap-8 pb-3 pt-2"
-                          style={{ minWidth: `${Math.max(680, sortedRoundNumbers.length * 270)}px` }}
-                        >
-                          {sortedRoundNumbers.map((rNum, idx) => {
-                            const roundMatches = roundsMap.get(rNum) || [];
-                            const isFinal = idx === sortedRoundNumbers.length - 1;
-                            const sampleName = roundMatches[0]?.roundName || "";
-                            const roundHeading = isFinal
-                              ? "Grand Final 🏆"
-                              : sampleName.replace(/\s*\d+$/, "") || `Ronde ${rNum}`;
-
-                            return (
-                              <div key={rNum} className="flex-1 flex flex-col justify-around space-y-4 min-w-[240px]">
-                                <p
-                                  className={`text-[11px] font-mono font-bold uppercase tracking-wider text-center pb-1 border-b ${
-                                    isFinal
-                                      ? "text-amber-400 border-amber-500/20"
-                                      : "text-purple-400 border-purple-500/20"
-                                  }`}
-                                >
-                                  {roundHeading}
-                                </p>
-                                {roundMatches.map((m) => (
-                                  <MatchCard
-                                    key={m.matchId}
-                                    match={m}
-                                    teams={teams}
-                                    isFinal={isFinal}
-                                    onTeamClick={(team) => setViewingRoster(team)}
-                                  />
-                                ))}
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <DualWingBracketView
+                          sortedRoundNumbers={sortedRoundNumbers}
+                          roundsMap={roundsMap}
+                          teams={teams}
+                          onTeamClick={(team) => setViewingRoster(team)}
+                        />
                       </DragScrollContainer>
                     ) : (
                       <p className="text-xs text-gray-500 text-center py-6">
@@ -1159,11 +1183,11 @@ export function EventsBoard() {
             </div>
 
             {/* TAB SELECTOR DALAM MODAL */}
-            <div className="flex items-center gap-2 border-b border-gray-200 dark:border-[#211C2B] pb-2 mb-4">
+            <div className="flex items-center gap-2 border-b border-gray-200 dark:border-[#211C2B] pb-2 mb-4 overflow-x-auto scrollbar-none">
               <button
                 type="button"
                 onClick={() => setManageTab("scores")}
-                className={`px-3 py-1.5 rounded text-xs font-bold ${
+                className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 ${
                   manageTab === "scores"
                     ? "bg-[#9D4EDD] text-white"
                     : "text-gray-400 hover:text-white"
@@ -1174,13 +1198,25 @@ export function EventsBoard() {
               <button
                 type="button"
                 onClick={() => setManageTab("teams")}
-                className={`px-3 py-1.5 rounded text-xs font-bold ${
+                className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 ${
                   manageTab === "teams"
                     ? "bg-[#9D4EDD] text-white"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
                 2. Daftar Tim &amp; Roster Pemain
+              </button>
+              <button
+                type="button"
+                onClick={() => setManageTab("settings")}
+                className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 flex items-center gap-1.5 ${
+                  manageTab === "settings"
+                    ? "bg-[#9D4EDD] text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <Settings size={13} />
+                <span>3. Ubah Ukuran Slot ({manageSlotCount} Tim)</span>
               </button>
             </div>
 
@@ -1332,6 +1368,104 @@ export function EventsBoard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* SUB-PANEL 3: UBAH / RESIZE JUMLAH SLOT TIM & REGENERATE */}
+            {manageTab === "settings" && (
+              <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
+                <div className="p-4 sm:p-5 rounded-xl border border-purple-500/30 bg-purple-950/15 space-y-4">
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Settings size={16} className="text-[#9D4EDD]" />
+                      <span>Ubah Jumlah Slot Tim &amp; Sesuaikan Bagan</span>
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Tambah atau kurangi kapasitas peserta turnamen (2 s/d 128 tim). Nama tim dan susunan pemain yang sudah terisi akan otomatis dipertahankan.
+                    </p>
+                  </div>
+
+                  {/* Kontrol Tambah & Kurangi Slot */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                    <div>
+                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">
+                        Kapasitas Slot Turnamen:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setManageSlotCount((c) => Math.max(2, c - 1))}
+                          className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#1C1726] border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-white text-xs font-black hover:border-[#9D4EDD] active:scale-95 transition"
+                          title="Kurangi 1 Slot"
+                        >
+                          - Kurangi
+                        </button>
+                        <input
+                          type="number"
+                          min={2}
+                          max={128}
+                          value={manageSlotCount}
+                          onChange={(e) => setManageSlotCount(Math.min(128, Math.max(2, parseInt(e.target.value, 10) || 2)))}
+                          className="w-20 text-center py-1.5 rounded-lg bg-gray-50 dark:bg-[#181324] border border-gray-300 dark:border-gray-700 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setManageSlotCount((c) => Math.min(128, c + 1))}
+                          className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#1C1726] border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-white text-xs font-black hover:border-[#9D4EDD] active:scale-95 transition"
+                          title="Tambah 1 Slot"
+                        >
+                          + Tambah
+                        </button>
+                      </div>
+                      <span className="text-[10px] text-purple-400 font-mono mt-1 block">
+                        Pohon Bagan: {Math.pow(2, Math.ceil(Math.log2(Math.max(2, manageSlotCount))))} Slot
+                        {Math.pow(2, Math.ceil(Math.log2(Math.max(2, manageSlotCount)))) > manageSlotCount ? " (Auto-BYE Otomatis)" : ""}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[11px] font-mono text-gray-400 block mb-1.5">Preset Cepat:</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {[4, 6, 8, 10, 12, 16, 24, 32, 64].map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setManageSlotCount(n)}
+                            className={`px-2.5 py-1 rounded text-xs font-mono font-bold transition ${
+                              manageSlotCount === n
+                                ? "bg-[#9D4EDD] text-white shadow-xs"
+                                : "bg-gray-100 dark:bg-[#1C1726] text-gray-700 dark:text-gray-300 hover:text-white"
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Warning Box */}
+                  <div className="p-3.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs text-amber-300 space-y-1">
+                    <p className="font-bold flex items-center gap-1.5">
+                      ⚠️ Informasi Penting Penyesuaian Bagan:
+                    </p>
+                    <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                      Mengubah jumlah slot akan menyusun ulang pohon pertandingan ({manageSlotCount} Tim menuju Grand Final) dan mereset skor ronde ke awal. Daftar nama tim dan roster pemain yang sudah diinput sebelumnya akan tetap dipertahankan.
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="button"
+                      disabled={isResizingBracket}
+                      onClick={() => handleResizeAndRegenerate(manageSlotCount)}
+                      className="button button-primary text-xs font-bold inline-flex items-center gap-2"
+                    >
+                      <RefreshCw size={14} className={isResizingBracket ? "animate-spin" : ""} />
+                      <span>{isResizingBracket ? "Menyesuaikan Bagan…" : "Regenerate / Sesuaikan Ulang Bagan"}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1581,6 +1715,170 @@ function MatchCard({
           </span>
         </div>
       </div>
+    </div>
+  );
+}
+
+// =========================================================================
+// SUB-KOMPONEN: BAGAN SIMETRIS SPLIT DUAL-WING (SAYAP KIRI - TENGAH - SAYAP KANAN)
+// =========================================================================
+function DualWingBracketView({
+  sortedRoundNumbers,
+  roundsMap,
+  teams,
+  onTeamClick,
+}: {
+  sortedRoundNumbers: number[];
+  roundsMap: Map<number, TournamentMatch[]>;
+  teams: TournamentTeam[];
+  onTeamClick: (team: TournamentTeam) => void;
+}) {
+  const totalRounds = sortedRoundNumbers.length;
+
+  // Format tunggal di tengah untuk 1 ronde saja (2-3 tim)
+  if (totalRounds <= 1) {
+    const gfMatches = roundsMap.get(1) || [];
+    const gfMatch = gfMatches[0];
+    return (
+      <div className="flex justify-center py-6">
+        <div className="w-full max-w-sm space-y-4">
+          <p className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider text-center pb-1 border-b border-amber-500/30">
+            Grand Final 🏆
+          </p>
+          {gfMatch && (
+            <MatchCard match={gfMatch} teams={teams} isFinal={true} onTeamClick={onTeamClick} />
+          )}
+          {gfMatch?.winner && (
+            <div className="p-3.5 rounded-xl border border-amber-500/60 bg-amber-500/10 text-center">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-bold block">
+                👑 JUARA 1 TURNAMEN
+              </span>
+              <span className="text-sm font-black text-white mt-0.5 block truncate">
+                {gfMatch.winner}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Format Bagan Simetris Dua Sayap (Left Wing - Center Final - Right Wing)
+  const finalRoundNum = sortedRoundNumbers[sortedRoundNumbers.length - 1];
+  const gfMatches = roundsMap.get(finalRoundNum) || [];
+  const gfMatch = gfMatches[0];
+
+  // Ronde sebelum final: 1, 2, ..., finalRoundNum - 1
+  const preliminaryRounds = sortedRoundNumbers.slice(0, -1);
+  const totalCols = preliminaryRounds.length * 2 + 1;
+
+  return (
+    <div
+      className="flex items-stretch gap-5 sm:gap-7 pb-4 pt-2 select-none"
+      style={{ minWidth: `${Math.max(860, totalCols * 265)}px` }}
+    >
+      {/* 1. SAYAP KIRI (LEFT WING): Ronde 1 -> Ronde 2 -> ... -> Semifinal Kiri */}
+      {preliminaryRounds.map((rNum) => {
+        const roundMatches = roundsMap.get(rNum) || [];
+        const half = Math.ceil(roundMatches.length / 2);
+        const leftMatches = roundMatches.slice(0, half);
+        const isSemi = rNum === finalRoundNum - 1;
+        const baseName = roundMatches[0]?.roundName?.replace(/\s*\d+$/, "") || `Ronde ${rNum}`;
+        const heading = isSemi ? "Semifinal Kiri ➔" : `${baseName} (Kiri) ➔`;
+
+        return (
+          <div key={`left-r-${rNum}`} className="flex-1 flex flex-col justify-around space-y-4 min-w-[240px]">
+            <div className="text-center pb-1.5 border-b border-purple-500/30">
+              <span className="text-[10px] font-mono text-purple-400/70 uppercase tracking-widest block">
+                Sayap Kiri
+              </span>
+              <p className="text-[11px] font-mono font-bold text-purple-300 uppercase tracking-wider">
+                {heading}
+              </p>
+            </div>
+            {leftMatches.map((m) => (
+              <MatchCard
+                key={m.matchId}
+                match={m}
+                teams={teams}
+                isFinal={false}
+                onTeamClick={onTeamClick}
+              />
+            ))}
+          </div>
+        );
+      })}
+
+      {/* 2. TENGAH (CENTER STAGE): Kotak GRAND FINAL & PODIUM JUARA 1 */}
+      <div className="flex-1 flex flex-col justify-center space-y-4 min-w-[260px] max-w-[300px] px-3 py-4 rounded-2xl border-2 border-amber-500/40 bg-gradient-to-b from-amber-500/10 via-[#130F1A] to-purple-950/20 shadow-2xl shadow-amber-950/20">
+        <div className="text-center pb-2 border-b border-amber-500/30">
+          <span className="text-[10px] font-mono text-amber-400/80 uppercase tracking-widest block font-bold">
+            ⚔️ TITIK TEMU FINAL ⚔️
+          </span>
+          <p className="text-xs sm:text-sm font-mono font-black text-amber-400 uppercase tracking-wider flex items-center justify-center gap-1.5 mt-0.5">
+            <Crown size={15} className="text-amber-400 animate-bounce" />
+            <span>GRAND FINAL 🏆</span>
+          </p>
+        </div>
+
+        {gfMatch ? (
+          <MatchCard
+            match={gfMatch}
+            teams={teams}
+            isFinal={true}
+            onTeamClick={onTeamClick}
+          />
+        ) : (
+          <p className="text-xs text-gray-500 text-center py-4">Menunggu babak final</p>
+        )}
+
+        {/* Podium Juara 1 */}
+        {gfMatch?.winner && (
+          <div className="p-3 rounded-xl border border-amber-500/60 bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-amber-500/20 text-center shadow-lg shadow-amber-950/30 animate-in zoom-in-95 duration-200">
+            <div className="w-8 h-8 mx-auto mb-1 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/50">
+              <Crown size={16} />
+            </div>
+            <span className="text-[9px] font-mono uppercase tracking-widest text-amber-300 font-extrabold block">
+              👑 JUARA 1 TURNAMEN
+            </span>
+            <span className="text-xs sm:text-sm font-black text-white block mt-0.5 truncate">
+              {gfMatch.winner}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* 3. SAYAP KANAN (RIGHT WING): Semifinal Kanan <- ... <- Ronde 2 <- Ronde 1 (Mirrored) */}
+      {[...preliminaryRounds].reverse().map((rNum) => {
+        const roundMatches = roundsMap.get(rNum) || [];
+        const half = Math.ceil(roundMatches.length / 2);
+        const rightMatches = roundMatches.slice(half);
+        const isSemi = rNum === finalRoundNum - 1;
+        const baseName = roundMatches[0]?.roundName?.replace(/\s*\d+$/, "") || `Ronde ${rNum}`;
+        const heading = isSemi ? "⬅ Semifinal Kanan" : `⬅ ${baseName} (Kanan)`;
+
+        return (
+          <div key={`right-r-${rNum}`} className="flex-1 flex flex-col justify-around space-y-4 min-w-[240px]">
+            <div className="text-center pb-1.5 border-b border-purple-500/30">
+              <span className="text-[10px] font-mono text-purple-400/70 uppercase tracking-widest block">
+                Sayap Kanan
+              </span>
+              <p className="text-[11px] font-mono font-bold text-purple-300 uppercase tracking-wider">
+                {heading}
+              </p>
+            </div>
+            {rightMatches.map((m) => (
+              <MatchCard
+                key={m.matchId}
+                match={m}
+                teams={teams}
+                isFinal={false}
+                onTeamClick={onTeamClick}
+              />
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

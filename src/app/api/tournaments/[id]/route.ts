@@ -1,7 +1,7 @@
 import { Prisma, TournamentStatus } from "@prisma/client";
 import { jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { advanceMatchWinner, TournamentMatch, TournamentTeam } from "@/lib/tournament";
+import { advanceMatchWinner, generateTemplateBracket, TournamentMatch, TournamentTeam } from "@/lib/tournament";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -38,6 +38,25 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     updatedMatches = advanceMatchWinner(updatedMatches, matchId, winnerName, winnerId, scoreA, scoreB);
   }
 
+  // Slot resizing & regeneration
+  let nextMaxSlots = tournament.maxSlots;
+  let nextFormat = tournament.format;
+  if (typeof data.teamCount === "number" || typeof data.maxSlots === "number") {
+    const rawCount = typeof data.teamCount === "number" ? data.teamCount : (data.maxSlots as number);
+    const newTeamCount = Math.min(128, Math.max(2, rawCount));
+    nextMaxSlots = newTeamCount;
+    nextFormat = `${newTeamCount} Tim`;
+
+    if (data.regenerateBracket === true) {
+      // Regenerate template bracket while preserving existing teams
+      const template = generateTemplateBracket(newTeamCount, updatedTeams);
+      updatedTeams = template.teams;
+      updatedMatches = template.matches;
+    }
+  } else if (typeof data.format === "string") {
+    nextFormat = data.format;
+  }
+
   // Optional status update
   let nextStatus: TournamentStatus | undefined = undefined;
   if (typeof data.status === "string") {
@@ -52,6 +71,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       ...(typeof data.title === "string" ? { title: data.title.trim() } : {}),
       ...(typeof data.game === "string" ? { game: data.game.trim() } : {}),
       ...(typeof data.prizePool === "string" ? { prizePool: data.prizePool.trim() } : {}),
+      ...(nextMaxSlots !== tournament.maxSlots ? { maxSlots: nextMaxSlots } : {}),
+      ...(nextFormat !== tournament.format ? { format: nextFormat } : {}),
       ...(nextStatus ? { status: nextStatus } : {}),
       teams: updatedTeams as unknown as Prisma.InputJsonValue,
       matches: updatedMatches as unknown as Prisma.InputJsonValue,
