@@ -36,11 +36,18 @@ export async function GET() {
       ...tournament,
       mainPlayersCount: tournament.mainPlayersCount ?? 5,
       subPlayersCount: tournament.subPlayersCount ?? 2,
+      entryFee: tournament.entryFee ?? 0,
+      isFreeEntry: tournament.isFreeEntry ?? (tournament.entryFee === 0),
       participants: tournament.participants.map((participant) => ({
         id: participant.id,
         teamName: participant.teamName,
         phone: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.phone ?? null : null,
         roster: participant.roster ?? [],
+        paymentStatus: participant.paymentStatus ?? "APPROVED",
+        senderName: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.senderName ?? null : null,
+        paymentProof: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.paymentProof ?? null : null,
+        rejectionReason: participant.rejectionReason ?? null,
+        createdAt: participant.createdAt.toISOString(),
         leader: {
           id: participant.leader.id,
           username: participant.leader.username,
@@ -74,6 +81,9 @@ export async function POST(request: Request) {
   const mainPlayersCount = typeof data.mainPlayersCount === "number" ? Math.max(1, Math.min(10, data.mainPlayersCount)) : 5;
   const subPlayersCount = typeof data.subPlayersCount === "number" ? Math.max(0, Math.min(5, data.subPlayersCount)) : 2;
 
+  const isFreeEntry = typeof data.isFreeEntry === "boolean" ? data.isFreeEntry : (Number(data.entryFee || 0) <= 0);
+  const entryFee = isFreeEntry ? 0 : Math.max(0, Math.min(100_000_000, Number(data.entryFee || 0)));
+
   const eventDate = typeof data.eventDate === "string" ? new Date(data.eventDate) : new Date(Date.now() + 86400000 * 3);
   if (!game || game.length > 80 || Number.isNaN(eventDate.getTime())) {
     return jsonError("Nama game dan tanggal turnamen wajib diisi.", 400);
@@ -104,6 +114,8 @@ export async function POST(request: Request) {
       maxSlots,
       mainPlayersCount,
       subPlayersCount,
+      entryFee,
+      isFreeEntry,
       eventDate,
       status,
       teams: template.teams as unknown as Prisma.InputJsonValue,

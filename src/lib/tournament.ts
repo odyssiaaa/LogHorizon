@@ -24,6 +24,9 @@ export type TournamentTeam = {
   mainPlayers?: TournamentRosterPlayer[];
   subPlayers?: TournamentRosterPlayer[];
   roster?: TournamentRosterPlayer[];
+  paymentStatus?: "APPROVED" | "PENDING_PAYMENT" | "REJECTED";
+  senderName?: string;
+  paymentProof?: string;
 };
 
 export type TournamentMatch = {

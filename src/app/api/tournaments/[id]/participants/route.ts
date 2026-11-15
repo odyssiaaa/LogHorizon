@@ -1,7 +1,7 @@
 import { Prisma, TournamentStatus } from "@prisma/client";
-import { activeUser, jsonError } from "@/lib/http";
+import { activeUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { createSingleEliminationBracket, TournamentTeam, TournamentMatch } from "@/lib/tournament";
+import { createSingleEliminationBracket, TournamentTeam, TournamentMatch, TournamentRosterPlayer } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -22,6 +22,12 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (!rawPhone || rawPhone.replace(/\D/g, "").length < 8) {
     return jsonError("Nomor WhatsApp/telepon perwakilan wajib diisi (minimal 8 angka).", 400);
   }
+
+  // Payment proof & sender name
+  const rawSender = typeof data.senderName === "string" ? data.senderName.trim() : "";
+  const senderName = sanitizePlainText(rawSender);
+  const rawProof = typeof data.paymentProof === "string" ? data.paymentProof.trim() : "";
+  const paymentProof = rawProof.length > 0 ? rawProof : null;
 
   // Parse Pemain Inti
   let mainPlayers: { name: string; inGameId: string; role: "MAIN" }[] = [];
@@ -63,13 +69,42 @@ export async function POST(request: Request, { params }: RouteContext) {
   const legacyPlayerStrings = roster.map((p) => `${p.name} (${p.inGameId})`);
 
   try {
-    const participant = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const tournament = await tx.tournament.findUnique({ where: { id } });
       if (!tournament || (tournament.status !== TournamentStatus.OPEN && tournament.status !== TournamentStatus.REGISTRATION)) {
         throw new Error("TOURNAMENT_CLOSED");
       }
-      const count = await tx.participant.count({ where: { tournamentId: id } });
+
+      const isPaid = !tournament.isFreeEntry && tournament.entryFee > 0;
+      if (isPaid) {
+        if (!senderName || senderName.length < 2) {
+          throw new Error("MISSING_SENDER_NAME");
+        }
+        if (!paymentProof) {
+          throw new Error("MISSING_PAYMENT_PROOF");
+        }
+      }
+
+      // Check existing registration
+      const existing = await tx.participant.findUnique({
+        where: { tournamentId_leaderId: { tournamentId: id, leaderId: user.id } },
+      });
+      if (existing) {
+        if (existing.paymentStatus === "REJECTED") {
+          await tx.participant.delete({ where: { id: existing.id } });
+        } else if (existing.paymentStatus === "PENDING_PAYMENT") {
+          throw new Error("PENDING_VERIFICATION");
+        } else {
+          throw new Error("ALREADY_REGISTERED");
+        }
+      }
+
+      const count = await tx.participant.count({
+        where: { tournamentId: id, paymentStatus: "APPROVED" },
+      });
       if (count >= tournament.maxSlots) throw new Error("TOURNAMENT_FULL");
+
+      const paymentStatus = isPaid ? "PENDING_PAYMENT" : "APPROVED";
 
       const created = await tx.participant.create({
         data: {
@@ -78,10 +113,23 @@ export async function POST(request: Request, { params }: RouteContext) {
           teamName,
           phone: rawPhone,
           roster: roster as unknown as Prisma.InputJsonValue,
+          paymentStatus,
+          senderName: isPaid ? senderName : null,
+          paymentProof: isPaid ? paymentProof : null,
         },
       });
 
-      // Update tournament teams array
+      // If Paid Entry, team is not placed into active bracket until approved by staff
+      if (isPaid) {
+        return {
+          success: true,
+          status: "PENDING_PAYMENT",
+          message: "Pendaftaran & bukti pembayaran terkirim! Menunggu verifikasi Admin sebelum tim resmi masuk ke dalam bagan.",
+          participant: created,
+        };
+      }
+
+      // Free Entry: Immediately enter team into tournament bracket
       const existingTeams = (tournament.teams as unknown as TournamentTeam[]) || [];
       const newTeamObj: TournamentTeam = {
         id: created.id,
@@ -94,6 +142,7 @@ export async function POST(request: Request, { params }: RouteContext) {
         mainPlayers,
         subPlayers,
         roster,
+        paymentStatus: "APPROVED",
       };
 
       // Replace placeholder or push
@@ -105,7 +154,7 @@ export async function POST(request: Request, { params }: RouteContext) {
         updatedTeams.push(newTeamObj);
       }
 
-      // Also update slot in round 1 matches if still TBD / placeholder
+      // Update slot in round 1 matches if placeholder
       let updatedMatches = (tournament.matches as unknown as TournamentMatch[]) || [];
       if (updatedMatches.length > 0) {
         updatedMatches = updatedMatches.map((match) => {
@@ -123,7 +172,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
       const isFullNow = count + 1 >= tournament.maxSlots;
       const participants = await tx.participant.findMany({
-        where: { tournamentId: id },
+        where: { tournamentId: id, paymentStatus: "APPROVED" },
         orderBy: { createdAt: "asc" },
         select: { id: true, teamName: true },
       });
@@ -143,15 +192,161 @@ export async function POST(request: Request, { params }: RouteContext) {
         },
       });
 
-      return created;
+      return {
+        success: true,
+        status: "APPROVED",
+        message: "Tim berhasil didaftarkan ke turnamen!",
+        participant: created,
+      };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
-    return Response.json(participant, { status: 201 });
+    return Response.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "TOURNAMENT_CLOSED") return jsonError("Pendaftaran turnamen sudah ditutup.", 409);
     if (error instanceof Error && error.message === "TOURNAMENT_FULL") return jsonError("Slot turnamen sudah penuh.", 409);
+    if (error instanceof Error && error.message === "MISSING_SENDER_NAME") return jsonError("Nama pengirim / pemilik rekening transfer wajib diisi.", 400);
+    if (error instanceof Error && error.message === "MISSING_PAYMENT_PROOF") return jsonError("Upload bukti pembayaran QRIS wajib dilampirkan.", 400);
+    if (error instanceof Error && error.message === "PENDING_VERIFICATION") return jsonError("Pendaftaran tim kamu sedang dalam antrean verifikasi pembayaran oleh Admin.", 409);
+    if (error instanceof Error && error.message === "ALREADY_REGISTERED") return jsonError("Party kamu sudah terdaftar di turnamen ini.", 409);
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return jsonError("Party kamu sudah terdaftar di turnamen ini.", 409);
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") return jsonError("Pendaftaran berubah bersamaan. Coba lagi.", 409);
+    throw error;
+  }
+}
+
+export async function PATCH(request: Request, { params }: RouteContext) {
+  const access = await requireStaff(["ADMIN", "MODERATOR"]);
+  if (access.response) return access.response;
+
+  const { id } = await params;
+  const payload: unknown = await request.json();
+  const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+  const participantId = typeof data.participantId === "string" ? data.participantId : "";
+  const action = typeof data.action === "string" ? data.action.toUpperCase() : "";
+  const reason = sanitizePlainText(typeof data.reason === "string" ? data.reason.trim() : "");
+
+  if (!participantId || !["APPROVE", "REJECT"].includes(action)) {
+    return jsonError("ID pendaftar dan aksi (APPROVE / REJECT) wajib disertakan.", 400);
+  }
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const tournament = await tx.tournament.findUnique({ where: { id } });
+      if (!tournament) throw new Error("TOURNAMENT_NOT_FOUND");
+
+      const participant = await tx.participant.findUnique({
+        where: { id: participantId },
+        include: { leader: true },
+      });
+      if (!participant || participant.tournamentId !== id) throw new Error("PARTICIPANT_NOT_FOUND");
+
+      if (action === "APPROVE") {
+        if (participant.paymentStatus === "APPROVED") {
+          return { success: true, message: "Tim ini sudah berstatus disetujui." };
+        }
+
+        // Update participant status
+        await tx.participant.update({
+          where: { id: participantId },
+          data: { paymentStatus: "APPROVED", rejectionReason: null },
+        });
+
+        // Add team to bracket
+        const existingTeams = (tournament.teams as unknown as TournamentTeam[]) || [];
+        const roster = (participant.roster as unknown as TournamentRosterPlayer[]) || [];
+        const mainPlayers = roster.filter((r) => r.role === "MAIN");
+        const subPlayers = roster.filter((r) => r.role === "SUB");
+        const legacyPlayerStrings = roster.map((p) => `${p.name} (${p.inGameId})`);
+
+        const newTeamObj: TournamentTeam = {
+          id: participant.id,
+          teamName: participant.teamName,
+          captainName: participant.leader.username ?? participant.leader.name ?? "Kapten Party",
+          representativeDiscord: participant.leader.username ?? participant.leader.name ?? "Gamer",
+          representativeDiscordId: participant.leader.discordId ?? undefined,
+          representativePhone: participant.phone ?? undefined,
+          players: legacyPlayerStrings,
+          mainPlayers,
+          subPlayers,
+          roster,
+          paymentStatus: "APPROVED",
+          senderName: participant.senderName ?? undefined,
+        };
+
+        let updatedTeams = [...existingTeams];
+        const placeholderIdx = updatedTeams.findIndex((t) => t.teamName.startsWith("Tim ") && t.id.startsWith("team-"));
+        if (placeholderIdx !== -1) {
+          updatedTeams[placeholderIdx] = newTeamObj;
+        } else {
+          updatedTeams.push(newTeamObj);
+        }
+
+        // Update round 1 match slot if placeholder
+        let updatedMatches = (tournament.matches as unknown as TournamentMatch[]) || [];
+        if (updatedMatches.length > 0) {
+          updatedMatches = updatedMatches.map((match) => {
+            if (match.round === 1) {
+              if (placeholderIdx !== -1 && match.teamA.name === `Tim ${placeholderIdx + 1}`) {
+                return { ...match, teamA: { ...match.teamA, id: participant.id, name: participant.teamName } };
+              }
+              if (placeholderIdx !== -1 && match.teamB.name === `Tim ${placeholderIdx + 1}`) {
+                return { ...match, teamB: { ...match.teamB, id: participant.id, name: participant.teamName } };
+              }
+            }
+            return match;
+          });
+        }
+
+        const approvedCount = await tx.participant.count({
+          where: { tournamentId: id, paymentStatus: "APPROVED" },
+        });
+        const isFullNow = approvedCount >= tournament.maxSlots;
+
+        await tx.tournament.update({
+          where: { id },
+          data: {
+            status: isFullNow ? TournamentStatus.FULL : tournament.status,
+            teams: updatedTeams as unknown as Prisma.InputJsonValue,
+            matches: updatedMatches as unknown as Prisma.InputJsonValue,
+          },
+        });
+
+        // Notify team leader
+        await tx.notification.create({
+          data: {
+            userId: participant.leaderId,
+            type: "SYSTEM",
+            message: `Pendaftaran tim "${participant.teamName}" di turnamen "${tournament.title}" telah disetujui Admin! Tim resmi masuk ke dalam bagan pertandingan.`,
+            link: `/events/turnamen/${tournament.id}`,
+          },
+        });
+
+        return { success: true, message: `Tim "${participant.teamName}" berhasil di-ACC dan masuk ke bagan turnamen!` };
+      } else {
+        // REJECT
+        await tx.participant.update({
+          where: { id: participantId },
+          data: { paymentStatus: "REJECTED", rejectionReason: reason || "Bukti transfer tidak valid/sesuai" },
+        });
+
+        // Notify team leader
+        await tx.notification.create({
+          data: {
+            userId: participant.leaderId,
+            type: "SYSTEM",
+            message: `Pendaftaran tim "${participant.teamName}" di turnamen "${tournament.title}" ditolak oleh Admin. Alasan: ${reason || "Bukti transfer tidak valid atau belum masuk ke rekening kas guild."}`,
+            link: `/events/turnamen/${tournament.id}`,
+          },
+        });
+
+        return { success: true, message: `Pendaftaran tim "${participant.teamName}" telah ditolak.` };
+      }
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+    return Response.json(result);
+  } catch (error) {
+    if (error instanceof Error && error.message === "TOURNAMENT_NOT_FOUND") return jsonError("Turnamen tidak ditemukan.", 404);
+    if (error instanceof Error && error.message === "PARTICIPANT_NOT_FOUND") return jsonError("Data pendaftar tidak ditemukan.", 404);
     throw error;
   }
 }

@@ -258,6 +258,8 @@ async function getLiveDatabaseContext(userId: string) {
           prizePool: true,
           format: true,
           maxSlots: true,
+          entryFee: true,
+          isFreeEntry: true,
           status: true,
           eventDate: true,
           teams: true,
@@ -328,7 +330,10 @@ async function getLiveDatabaseContext(userId: string) {
               remainingSlots === 0
                 ? `Terdaftar: ${registeredCount} / ${t.maxSlots} tim (Penuh)`
                 : `Terdaftar: ${registeredCount} / ${t.maxSlots} tim (Sisa slot: ${remainingSlots})`;
-            return `"${t.title}" [Game: ${t.game}, Status: ${statusText}, Format: ${t.format || t.maxSlots + " Tim"}, ${slotDetail}, Hadiah: ${t.prizePool || "Prizepool Komunitas"}]`;
+            const feeText = t.isFreeEntry || !t.entryFee
+              ? "Biaya: Free Entry (Gratis)"
+              : `Biaya: Berbayar Rp ${Number(t.entryFee).toLocaleString("id-ID")} via QRIS`;
+            return `"${t.title}" [Game: ${t.game}, Status: ${statusText}, Format: ${t.format || t.maxSlots + " Tim"}, ${feeText}, ${slotDetail}, Hadiah: ${t.prizePool || "Prizepool Komunitas"}]`;
           })
           .join(" | ")
       : "Belum ada turnamen resmi yang dijadwalkan di /events?view=turnamen.";

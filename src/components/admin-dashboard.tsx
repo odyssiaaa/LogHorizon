@@ -19,7 +19,9 @@ import {
   Megaphone,
   Pin,
   PinOff,
+  Phone,
   Plus,
+  QrCode,
   RefreshCw,
   RotateCcw,
   Search,
@@ -32,6 +34,8 @@ import {
   Trash2,
   Trophy,
   Users,
+  CheckCircle,
+  Eye,
   X,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
@@ -164,7 +168,7 @@ type DashboardData = {
   currentUserId: string;
 };
 
-type Tab = "overview" | "settings" | "treasury" | "members" | "moderation";
+type Tab = "overview" | "settings" | "tournaments" | "treasury" | "members" | "moderation";
 
 const formatMoney = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
@@ -179,6 +183,52 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState("");
+
+  // Tournament Management State
+  const [tournamentsList, setTournamentsList] = useState<any[]>([]);
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string>("");
+  const [tournamentFilterStatus, setTournamentFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
+  const [adminProofLightbox, setAdminProofLightbox] = useState<string | null>(null);
+  const [adminVerificationLoading, setAdminVerificationLoading] = useState<string | null>(null);
+
+  const fetchTournaments = async () => {
+    try {
+      const res = await fetch("/api/tournaments");
+      const list = await res.json();
+      if (Array.isArray(list)) {
+        setTournamentsList(list);
+        if (!selectedTournamentId && list.length > 0) {
+          setSelectedTournamentId(list[0].id);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  async function handleAdminVerification(tournamentId: string, participantId: string, action: "APPROVE" | "REJECT") {
+    let reason = "";
+    if (action === "REJECT") {
+      const promptReason = window.prompt("Masukkan alasan penolakan (opsional):", "Bukti transfer tidak valid atau belum masuk ke rekening kas guild.");
+      if (promptReason === null) return;
+      reason = promptReason;
+    }
+    setAdminVerificationLoading(participantId);
+    try {
+      const response = await fetch(`/api/tournaments/${tournamentId}/participants`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participantId, action, reason }),
+      });
+      const res = await readApiResponse<{ message: string }>(response, "Gagal memproses verifikasi.");
+      setNotice(res.message);
+      await fetchTournaments();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal memproses verifikasi.");
+    } finally {
+      setAdminVerificationLoading(null);
+    }
+  }
 
   // Site Config CMS Form State
   const [configForm, setConfigForm] = useState<SiteConfig>({
@@ -224,6 +274,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
   useEffect(() => {
     loadDashboard();
+    fetchTournaments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search]);
 
@@ -666,6 +717,32 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             <button
               type="button"
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                tab === "tournaments"
+                  ? "bg-[#9D4EDD] text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+              }`}
+              onClick={() => {
+                setTab("tournaments");
+                fetchTournaments();
+              }}
+            >
+              <div className="flex items-center gap-2.5">
+                <Trophy size={16} />
+                <span>Kelola Turnamen</span>
+              </div>
+              {(() => {
+                const totalPending = tournamentsList.reduce((acc, t) => acc + (t.participants?.filter((p: any) => p.paymentStatus === "PENDING_PAYMENT").length || 0), 0);
+                return totalPending > 0 ? (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${tab === "tournaments" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                    {totalPending}
+                  </span>
+                ) : null;
+              })()}
+            </button>
+
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
                 tab === "treasury"
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -752,6 +829,26 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                 <Settings size={14} /> Web CMS
               </button>
             )}
+            <button
+              type="button"
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "tournaments" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+              }`}
+              onClick={() => {
+                setTab("tournaments");
+                fetchTournaments();
+              }}
+            >
+              <Trophy size={14} /> Turnamen
+              {(() => {
+                const totalPending = tournamentsList.reduce((acc, t) => acc + (t.participants?.filter((p: any) => p.paymentStatus === "PENDING_PAYMENT").length || 0), 0);
+                return totalPending > 0 ? (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500 text-black font-extrabold">
+                    {totalPending}
+                  </span>
+                ) : null;
+              })()}
+            </button>
             <button
               type="button"
               className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
@@ -1148,6 +1245,365 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     </div>
                   </form>
                 </div>
+              </section>
+            )}
+
+            {/* ========================================================================= */}
+            {/* TAB: KELOLA TURNAMEN & ANTREAN VERIFIKASI QRIS */}
+            {/* ========================================================================= */}
+            {tab === "tournaments" && (
+              <section className="space-y-6" role="tabpanel">
+                {/* TOOLBAR TURNAMEN */}
+                <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Trophy size={18} className="text-[#9D4EDD]" />
+                      <span>Manajemen Turnamen &amp; Verifikasi Peserta QRIS</span>
+                    </h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Verifikasi bukti transfer QRIS pendaftar turnamen berbayar, masukkan tim ke slot bagan, atau tolak pendaftaran yang tidak valid.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={fetchTournaments}
+                      className="button button-quiet text-xs font-bold inline-flex items-center gap-1.5"
+                    >
+                      <RefreshCw size={13} />
+                      <span>Refresh Data</span>
+                    </button>
+                    <Link
+                      href="/events?view=turnamen"
+                      className="button button-primary text-xs font-bold inline-flex items-center gap-1.5"
+                    >
+                      <ExternalLink size={13} />
+                      <span>Bagan Pertandingan &amp; Template</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* DAFTAR PILIHAN TURNAMEN */}
+                {tournamentsList.length === 0 ? (
+                  <div className="p-8 text-center border border-dashed border-gray-300 dark:border-gray-800 rounded-xl bg-white dark:bg-[#120F17] text-xs text-gray-400">
+                    Belum ada data turnamen dibuat. Buat turnamen baru melalui tombol di atas atau di halaman Events.
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Horizontal Tournament Selector Pills */}
+                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
+                      {tournamentsList.map((t) => {
+                        const isSelected = selectedTournamentId === t.id;
+                        const pendingInThis = t.participants?.filter((p: any) => p.paymentStatus === "PENDING_PAYMENT").length || 0;
+                        return (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setSelectedTournamentId(t.id)}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition shrink-0 flex items-center gap-2 ${
+                              isSelected
+                                ? "bg-[#9D4EDD] text-white border-[#9D4EDD] shadow-sm shadow-[#9D4EDD]/25"
+                                : "bg-white dark:bg-[#120F17] border-gray-200 dark:border-[#211C2B] text-gray-700 dark:text-gray-300 hover:border-[#9D4EDD]"
+                            }`}
+                          >
+                            <span>{t.title}</span>
+                            <span className="font-mono text-[10px] opacity-75">({t.game})</span>
+                            {pendingInThis > 0 && (
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-amber-400 text-black">
+                                {pendingInThis} PENDING
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* DETAIL TURNAMEN TERPILIH & ANTREAN PESERTA */}
+                    {(() => {
+                      const curTournament = tournamentsList.find((t) => t.id === selectedTournamentId) || tournamentsList[0];
+                      if (!curTournament) return null;
+
+                      const participants: any[] = curTournament.participants || [];
+                      const pendingCount = participants.filter((p) => p.paymentStatus === "PENDING_PAYMENT").length;
+                      const approvedCount = participants.filter((p) => p.paymentStatus === "APPROVED").length;
+                      const rejectedCount = participants.filter((p) => p.paymentStatus === "REJECTED").length;
+
+                      const filteredParticipants = participants.filter((p) => {
+                        if (tournamentFilterStatus === "PENDING") return p.paymentStatus === "PENDING_PAYMENT";
+                        if (tournamentFilterStatus === "APPROVED") return p.paymentStatus === "APPROVED";
+                        if (tournamentFilterStatus === "REJECTED") return p.paymentStatus === "REJECTED";
+                        return true;
+                      });
+
+                      return (
+                        <div className="space-y-4">
+                          {/* Info Ringkas Turnamen */}
+                          <div className="p-4 sm:p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#9D4EDD] text-white uppercase">
+                                  {curTournament.game}
+                                </span>
+                                <span className="text-xs font-mono text-gray-500">
+                                  {curTournament.format} ({curTournament.maxSlots} Slot)
+                                </span>
+                                <span className="text-[10px] font-mono text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                                  👥 {curTournament.mainPlayersCount ?? 5} Inti {curTournament.subPlayersCount ? `+ ${curTournament.subPlayersCount} Cad` : ""}
+                                </span>
+                                {curTournament.isFreeEntry || !curTournament.entryFee ? (
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">
+                                    FREE ENTRY
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase">
+                                    BIAYA REGIST: Rp {curTournament.entryFee.toLocaleString("id-ID")}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className="text-base sm:text-lg font-black text-gray-900 dark:text-white">
+                                {curTournament.title}
+                              </h3>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                Hadiah: <strong className="text-purple-400">{curTournament.prizePool || "Prizepool Resmi"}</strong> • Pelaksanaan: {new Date(curTournament.eventDate).toLocaleString("id-ID")}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <span className="text-[10px] uppercase tracking-wider text-gray-400 block font-bold">
+                                  Slot Bagan Terisi
+                                </span>
+                                <strong className="text-base sm:text-lg font-black text-gray-900 dark:text-white">
+                                  {approvedCount} / {curTournament.maxSlots}
+                                </strong>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Filter Tabs Antrean */}
+                          <div className="flex items-center justify-between gap-3 flex-wrap">
+                            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-gray-100 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 overflow-x-auto">
+                              <button
+                                type="button"
+                                onClick={() => setTournamentFilterStatus("ALL")}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                                  tournamentFilterStatus === "ALL"
+                                    ? "bg-[#9D4EDD] text-white shadow-xs"
+                                    : "text-gray-600 dark:text-gray-400 hover:text-white"
+                                }`}
+                              >
+                                Semua ({participants.length})
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setTournamentFilterStatus("PENDING")}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                                  tournamentFilterStatus === "PENDING"
+                                    ? "bg-amber-500 text-black shadow-xs font-black"
+                                    : "text-amber-400 hover:text-amber-300"
+                                }`}
+                              >
+                                ⏳ Menunggu Verifikasi ({pendingCount})
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setTournamentFilterStatus("APPROVED")}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                                  tournamentFilterStatus === "APPROVED"
+                                    ? "bg-emerald-600 text-white shadow-xs"
+                                    : "text-emerald-400 hover:text-emerald-300"
+                                }`}
+                              >
+                                ✅ Disetujui ({approvedCount})
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setTournamentFilterStatus("REJECTED")}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                                  tournamentFilterStatus === "REJECTED"
+                                    ? "bg-rose-600 text-white shadow-xs"
+                                    : "text-rose-400 hover:text-rose-300"
+                                }`}
+                              >
+                                ❌ Ditolak ({rejectedCount})
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* List Pendaftar */}
+                          <div className="space-y-3">
+                            {filteredParticipants.length === 0 ? (
+                              <div className="p-8 text-center border border-dashed border-gray-300 dark:border-gray-800 rounded-xl bg-white dark:bg-[#120F17] text-xs text-gray-400">
+                                Tidak ada pendaftar dengan filter status ini.
+                              </div>
+                            ) : (
+                              filteredParticipants.map((p) => {
+                                const isPending = p.paymentStatus === "PENDING_PAYMENT";
+                                const isApproved = p.paymentStatus === "APPROVED";
+                                const roster = p.roster || [];
+                                const mains = roster.filter((r: any) => r.role === "MAIN");
+                                const subs = roster.filter((r: any) => r.role === "SUB");
+
+                                return (
+                                  <div
+                                    key={p.id}
+                                    className={`p-4 sm:p-5 rounded-xl border bg-white dark:bg-[#120F17] shadow-sm transition-all ${
+                                      isPending
+                                        ? "border-amber-500/40"
+                                        : isApproved
+                                          ? "border-emerald-500/30"
+                                          : "border-rose-500/30"
+                                    } space-y-3.5`}
+                                  >
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                      <div>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <h4 className="font-black text-base text-gray-900 dark:text-white">
+                                            {p.teamName}
+                                          </h4>
+                                          <span
+                                            className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                                              isPending
+                                                ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                                                : isApproved
+                                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                                                  : "bg-rose-500/20 text-rose-400 border border-rose-500/40"
+                                            }`}
+                                          >
+                                            {isPending ? "⏳ MENUNGGU VERIFIKASI" : isApproved ? "✅ APPROVED" : "❌ REJECTED"}
+                                          </span>
+                                        </div>
+
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
+                                          <span>Kapten: <strong>@{p.leader?.username || p.leader?.name || "Member"}</strong></span>
+                                          {p.phone && (
+                                            <>
+                                              <span>•</span>
+                                              <a
+                                                href={`https://wa.me/${p.phone.replace(/\D/g, "")}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-emerald-500 hover:underline flex items-center gap-1 font-semibold"
+                                              >
+                                                <Phone size={12} />
+                                                <span>{p.phone}</span>
+                                              </a>
+                                            </>
+                                          )}
+                                          {p.createdAt && (
+                                            <>
+                                              <span>•</span>
+                                              <span>{new Date(p.createdAt).toLocaleString("id-ID")}</span>
+                                            </>
+                                          )}
+                                        </p>
+                                      </div>
+
+                                      {/* Tombol Aksi Admin */}
+                                      {isPending && (
+                                        <div className="flex items-center gap-2 shrink-0">
+                                          <button
+                                            type="button"
+                                            disabled={adminVerificationLoading === p.id}
+                                            onClick={() => handleAdminVerification(curTournament.id, p.id, "APPROVE")}
+                                            className="px-3.5 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm transition"
+                                          >
+                                            <CheckCircle size={15} />
+                                            <span>{adminVerificationLoading === p.id ? "Memproses..." : "ACC & Masukkan ke Bagan"}</span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            disabled={adminVerificationLoading === p.id}
+                                            onClick={() => handleAdminVerification(curTournament.id, p.id, "REJECT")}
+                                            className="px-3 py-2 rounded-lg text-xs font-bold bg-rose-600/80 hover:bg-rose-600 text-white flex items-center gap-1 shadow-sm transition"
+                                          >
+                                            <X size={15} />
+                                            <span>Tolak Pendaftaran</span>
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Data Verifikasi Pembayaran & Roster */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-gray-100 dark:border-white/5 text-xs">
+                                      {/* Data Pembayaran */}
+                                      <div className="p-3 rounded-xl bg-gray-50 dark:bg-[#181324] border border-gray-200 dark:border-white/5 space-y-2">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                                          DATA BUKTI TRANSFER PEMBAYARAN
+                                        </span>
+                                        <p className="text-gray-700 dark:text-gray-300">
+                                          Nama Pengirim / Pemilik Rekening:{" "}
+                                          <strong className="text-purple-400">{p.senderName || "- (Free Entry)"}</strong>
+                                        </p>
+                                        {p.rejectionReason && (
+                                          <p className="text-rose-400 text-xs">
+                                            Alasan Penolakan: <em>{p.rejectionReason}</em>
+                                          </p>
+                                        )}
+
+                                        {p.paymentProof ? (
+                                          <div className="pt-1">
+                                            <span className="text-[11px] font-semibold text-gray-400 block mb-1">
+                                              Bukti Transfer (Klik untuk perbesar):
+                                            </span>
+                                            <button
+                                              type="button"
+                                              onClick={() => setAdminProofLightbox(p.paymentProof)}
+                                              className="group relative inline-block rounded-lg overflow-hidden border border-purple-500/30 hover:border-purple-500 transition"
+                                            >
+                                              <img
+                                                src={p.paymentProof}
+                                                alt="Bukti Transfer"
+                                                className="w-32 h-24 object-cover group-hover:scale-105 transition-transform"
+                                              />
+                                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Eye size={18} className="text-white" />
+                                              </div>
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <span className="text-[11px] text-gray-400 italic block">
+                                            Tidak ada bukti transfer (Turnamen Free Entry)
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {/* Data Roster Pemain */}
+                                      <div className="p-3 rounded-xl bg-gray-50 dark:bg-[#181324] border border-gray-200 dark:border-white/5 space-y-2">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                                          SUSUNAN PEMAIN TIM ({mains.length} Inti {subs.length ? `+ ${subs.length} Cad` : ""})
+                                        </span>
+                                        <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                                          {mains.map((m: any, idx: number) => (
+                                            <span
+                                              key={idx}
+                                              className="px-2 py-0.5 rounded text-[10.5px] font-mono bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                                            >
+                                              {m.name} ({m.inGameId})
+                                            </span>
+                                          ))}
+                                          {subs.map((s: any, idx: number) => (
+                                            <span
+                                              key={idx}
+                                              className="px-2 py-0.5 rounded text-[10.5px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                                            >
+                                              [Cad] {s.name} ({s.inGameId})
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </section>
             )}
 
@@ -1929,6 +2385,38 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
           onClose={() => setSelectedEscrowId(null)}
           onStatusChange={loadDashboard}
         />
+      )}
+
+      {/* LIGHTBOX BUKTI TRANSFER QRIS ADMIN */}
+      {adminProofLightbox && (
+        <div
+          className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setAdminProofLightbox(null)}
+        >
+          <div
+            className="relative max-w-xl max-h-[90vh] bg-white dark:bg-[#120F17] border border-gray-300 dark:border-white/20 rounded-2xl p-4 shadow-2xl flex flex-col items-center my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setAdminProofLightbox(null)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-white bg-black/40 rounded-full p-1.5 transition"
+            >
+              <X size={18} />
+            </button>
+            <p className="text-xs font-bold text-gray-800 dark:text-gray-200 mb-3 self-start flex items-center gap-2">
+              <QrCode size={16} className="text-[#9D4EDD]" />
+              <span>Bukti Transfer QRIS Pendaftaran Turnamen</span>
+            </p>
+            <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 max-h-[72vh] flex items-center justify-center bg-black/50">
+              <img
+                src={adminProofLightbox}
+                alt="Bukti Transfer QRIS"
+                className="max-h-[70vh] w-auto object-contain"
+              />
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

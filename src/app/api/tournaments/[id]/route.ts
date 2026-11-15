@@ -12,6 +12,16 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const { id } = await params;
   const tournament = await prisma.tournament.findUnique({
     where: { id },
+    include: {
+      participants: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          leader: {
+            select: { id: true, username: true, discordId: true, name: true, image: true },
+          },
+        },
+      },
+    },
   });
   if (!tournament) return jsonError("Turnamen tidak ditemukan.", 404);
 
@@ -27,6 +37,27 @@ export async function GET(_request: Request, { params }: RouteContext) {
     success: true,
     tournament: {
       ...tournament,
+      entryFee: tournament.entryFee ?? 0,
+      isFreeEntry: tournament.isFreeEntry ?? (tournament.entryFee === 0),
+      mainPlayersCount: tournament.mainPlayersCount ?? 5,
+      subPlayersCount: tournament.subPlayersCount ?? 2,
+      participants: tournament.participants.map((p) => ({
+        id: p.id,
+        teamName: p.teamName,
+        phone: isStaff || (viewer && viewer.id === p.leader.id) ? p.phone ?? null : null,
+        roster: p.roster ?? [],
+        paymentStatus: p.paymentStatus ?? "APPROVED",
+        senderName: isStaff || (viewer && viewer.id === p.leader.id) ? p.senderName ?? null : null,
+        paymentProof: isStaff || (viewer && viewer.id === p.leader.id) ? p.paymentProof ?? null : null,
+        rejectionReason: p.rejectionReason ?? null,
+        createdAt: p.createdAt.toISOString(),
+        leader: {
+          id: p.leader.id,
+          username: p.leader.username,
+          discordId: p.leader.discordId ?? null,
+          name: p.leader.name,
+        },
+      })),
       teams: sanitizedTeams,
     },
   });
@@ -100,6 +131,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       ...(typeof data.prizePool === "string" ? { prizePool: data.prizePool.trim() } : {}),
       ...(typeof data.mainPlayersCount === "number" ? { mainPlayersCount: Math.max(1, Math.min(10, data.mainPlayersCount)) } : {}),
       ...(typeof data.subPlayersCount === "number" ? { subPlayersCount: Math.max(0, Math.min(5, data.subPlayersCount)) } : {}),
+      ...(typeof data.isFreeEntry === "boolean" ? { isFreeEntry: data.isFreeEntry } : {}),
+      ...(typeof data.entryFee === "number" ? { entryFee: Math.max(0, Math.min(100_000_000, data.entryFee)) } : {}),
       ...(nextMaxSlots !== tournament.maxSlots ? { maxSlots: nextMaxSlots } : {}),
       ...(nextFormat !== tournament.format ? { format: nextFormat } : {}),
       ...(nextStatus ? { status: nextStatus } : {}),

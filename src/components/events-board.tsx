@@ -5,32 +5,39 @@ import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import {
+  AlertCircle,
   Award,
   CalendarDays,
   Check,
+  CheckCircle,
   CheckCircle2,
   Clock,
   Copy,
   Crown,
   Edit3,
   ExternalLink,
+  Eye,
   Flame,
   Headphones,
+  ImageIcon,
   LogOut,
   Medal,
   MessageSquare,
   Phone,
   Plus,
+  QrCode,
   RefreshCw,
   Search,
   Settings,
   Shield,
+  ShieldCheck,
   Swords,
   Trash2,
   Trophy,
   Users,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import { readApiResponse } from "@/lib/api-response";
 import { advanceMatchWinner, TournamentMatch, TournamentTeam, TournamentRosterPlayer } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
@@ -41,6 +48,11 @@ type Participant = {
   teamName: string;
   phone?: string | null;
   roster?: TournamentRosterPlayer[];
+  paymentStatus?: string;
+  senderName?: string | null;
+  paymentProof?: string | null;
+  rejectionReason?: string | null;
+  createdAt?: string;
   leader: {
     id?: string;
     username: string | null;
@@ -58,6 +70,8 @@ type Tournament = {
   maxSlots: number;
   mainPlayersCount?: number;
   subPlayersCount?: number;
+  entryFee?: number;
+  isFreeEntry?: boolean;
   eventDate: string;
   status: string;
   teams?: TournamentTeam[];
@@ -148,29 +162,90 @@ export function EventsBoard() {
   const [templateTeamCount, setTemplateTeamCount] = useState<number>(8);
   const [templateMainPlayers, setTemplateMainPlayers] = useState<number>(5);
   const [templateSubPlayers, setTemplateSubPlayers] = useState<number>(2);
+  const [templateIsFree, setTemplateIsFree] = useState<boolean>(true);
+  const [templateEntryFee, setTemplateEntryFee] = useState<number>(0);
   const [templateDate, setTemplateDate] = useState("");
   const [templateStatus, setTemplateStatus] = useState<"REGISTRATION" | "ONGOING">("REGISTRATION");
   const [creatingTournament, setCreatingTournament] = useState(false);
 
   // Manage Tournament Modal State (Admin / Mod)
   const [managingTournament, setManagingTournament] = useState<Tournament | null>(null);
-  const [manageTab, setManageTab] = useState<"scores" | "teams" | "settings">("scores");
+  const [manageTab, setManageTab] = useState<"scores" | "teams" | "settings" | "verifications">("scores");
   const [manageMatches, setManageMatches] = useState<TournamentMatch[]>([]);
   const [manageTeams, setManageTeams] = useState<TournamentTeam[]>([]);
   const [manageSlotCount, setManageSlotCount] = useState<number>(8);
   const [manageMainPlayers, setManageMainPlayers] = useState<number>(5);
   const [manageSubPlayers, setManageSubPlayers] = useState<number>(2);
+  const [manageIsFree, setManageIsFree] = useState<boolean>(true);
+  const [manageEntryFee, setManageEntryFee] = useState<number>(0);
   const [isResizingBracket, setIsResizingBracket] = useState(false);
   const [savingManage, setSavingManage] = useState(false);
+  const [verificationLoading, setVerificationLoading] = useState<string | null>(null);
+  const [selectedProofModal, setSelectedProofModal] = useState<string | null>(null);
 
   // Team Registration Modal State (Structured Form)
   const [registeringTournament, setRegisteringTournament] = useState<Tournament | null>(null);
   const [registerTeamName, setRegisterTeamName] = useState("");
   const [registerPhone, setRegisterPhone] = useState("");
+  const [registerSenderName, setRegisterSenderName] = useState("");
+  const [registerPaymentProof, setRegisterPaymentProof] = useState<string>("");
+  const [compressingProof, setCompressingProof] = useState(false);
   const [registerMainPlayers, setRegisterMainPlayers] = useState<{ name: string; inGameId: string }[]>([]);
   const [registerSubPlayers, setRegisterSubPlayers] = useState<{ name: string; inGameId: string }[]>([]);
   const [submittingRegistration, setSubmittingRegistration] = useState(false);
   const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  // Canvas Image Compression Helper for Payment Proof
+  function handleProofFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("File bukti transfer harus berupa gambar (JPG, PNG, atau WebP).");
+      return;
+    }
+    setCompressingProof(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const maxWidth = 800;
+        const maxHeight = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          setCompressingProof(false);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        setRegisterPaymentProof(compressedDataUrl);
+        setCompressingProof(false);
+      };
+      img.onerror = () => {
+        setError("Gagal memproses gambar bukti pembayaran.");
+        setCompressingProof(false);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
 
   // View Team Roster Popup
   const [viewingRoster, setViewingRoster] = useState<TournamentTeam | null>(null);
@@ -203,6 +278,8 @@ export function EventsBoard() {
     setManageSlotCount(tournament.maxSlots || tournament.teams?.length || 8);
     setManageMainPlayers(tournament.mainPlayersCount ?? 5);
     setManageSubPlayers(tournament.subPlayersCount ?? 2);
+    setManageIsFree(tournament.isFreeEntry ?? (tournament.entryFee === 0));
+    setManageEntryFee(tournament.entryFee ?? 0);
     setManageTab("scores");
   }
 
@@ -215,6 +292,8 @@ export function EventsBoard() {
     setRegisteringTournament(t);
     setRegisterTeamName("");
     setRegisterPhone("");
+    setRegisterSenderName("");
+    setRegisterPaymentProof("");
     const mainCount = t.mainPlayersCount ?? 5;
     const subCount = t.subPlayersCount ?? 2;
 
@@ -311,6 +390,8 @@ export function EventsBoard() {
           teamCount: templateTeamCount,
           mainPlayersCount: templateMainPlayers,
           subPlayersCount: templateSubPlayers,
+          isFreeEntry: templateIsFree,
+          entryFee: templateIsFree ? 0 : templateEntryFee,
           format: `${templateTeamCount} Tim`,
           eventDate: templateDate ? new Date(templateDate).toISOString() : new Date(Date.now() + 86400000 * 3).toISOString(),
           status: templateStatus,
@@ -346,16 +427,51 @@ export function EventsBoard() {
           teams: manageTeams,
           mainPlayersCount: manageMainPlayers,
           subPlayersCount: manageSubPlayers,
+          isFreeEntry: manageIsFree,
+          entryFee: manageIsFree ? 0 : manageEntryFee,
         }),
       });
       await readApiResponse(response, "Gagal memperbarui turnamen.");
-      setNotice("Bagan turnamen, tim, dan pengaturan slot pemain berhasil disimpan!");
+      setNotice("Bagan turnamen, tim, dan pengaturan biaya berhasil disimpan!");
       setManagingTournament(null);
       setRefreshKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal menyimpan bagan.");
     } finally {
       setSavingManage(false);
+    }
+  }
+
+  // Admin Verification Action (ACC / Reject Team Registration)
+  async function handleVerificationAction(participantId: string, action: "APPROVE" | "REJECT") {
+    if (!managingTournament) return;
+    let reason = "";
+    if (action === "REJECT") {
+      const inputReason = window.prompt("Masukkan alasan penolakan (opsional):", "Bukti transfer tidak valid atau belum masuk ke rekening kas guild.");
+      if (inputReason === null) return;
+      reason = inputReason;
+    }
+    setVerificationLoading(participantId);
+    try {
+      const response = await fetch(`/api/tournaments/${managingTournament.id}/participants`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participantId, action, reason }),
+      });
+      const result = await readApiResponse<{ message: string }>(response, "Gagal memproses verifikasi.");
+      setNotice(result.message);
+      // Refresh tournament data in manage modal
+      const refreshed = await fetch(`/api/tournaments/${managingTournament.id}`).then((r) => r.json());
+      if (refreshed?.tournament) {
+        setManagingTournament(refreshed.tournament);
+        setManageTeams(refreshed.tournament.teams || []);
+        setManageMatches(refreshed.tournament.matches || []);
+      }
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal memproses verifikasi.");
+    } finally {
+      setVerificationLoading(null);
     }
   }
 
@@ -390,6 +506,18 @@ export function EventsBoard() {
       return;
     }
 
+    const isPaid = !registeringTournament.isFreeEntry && (registeringTournament.entryFee ?? 0) > 0;
+    if (isPaid) {
+      if (!registerSenderName.trim()) {
+        setError("Nama pengirim / pemilik rekening transfer wajib diisi.");
+        return;
+      }
+      if (!registerPaymentProof) {
+        setError("Upload bukti transfer pembayaran QRIS wajib dilampirkan.");
+        return;
+      }
+    }
+
     for (let i = 0; i < registerMainPlayers.length; i++) {
       const p = registerMainPlayers[i];
       if (!p.name.trim() || !p.inGameId.trim()) {
@@ -406,6 +534,8 @@ export function EventsBoard() {
         body: JSON.stringify({
           teamName: registerTeamName.trim(),
           phone: cleanPhone,
+          senderName: isPaid ? registerSenderName.trim() : undefined,
+          paymentProof: isPaid ? registerPaymentProof : undefined,
           mainPlayers: registerMainPlayers.map((p) => ({
             name: p.name.trim(),
             inGameId: p.inGameId.trim(),
@@ -418,11 +548,13 @@ export function EventsBoard() {
             })),
         }),
       });
-      await readApiResponse(response, "Pendaftaran turnamen gagal.");
-      setNotice(`Party "${registerTeamName}" berhasil didaftarkan ke turnamen!`);
+      const result = await readApiResponse<{ message?: string; status?: string }>(response, "Pendaftaran turnamen gagal.");
+      setNotice(result.message || `Party "${registerTeamName}" berhasil didaftarkan ke turnamen!`);
       setRegisteringTournament(null);
       setRegisterTeamName("");
       setRegisterPhone("");
+      setRegisterSenderName("");
+      setRegisterPaymentProof("");
       setRegisterMainPlayers([]);
       setRegisterSubPlayers([]);
       setRefreshKey((k) => k + 1);
@@ -714,6 +846,15 @@ export function EventsBoard() {
                               ? "Selesai"
                               : "Pendaftaran Dibuka"}
                         </span>
+                        {tournament.isFreeEntry || !tournament.entryFee ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase tracking-wide">
+                            FREE ENTRY
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wide">
+                            BIAYA REGIST: Rp {tournament.entryFee.toLocaleString("id-ID")}
+                          </span>
+                        )}
                       </div>
                       <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mt-1">
                         {tournament.title || `${tournament.game} Community Tournament`}
@@ -1299,6 +1440,67 @@ export function EventsBoard() {
                 </div>
               </div>
 
+              {/* Pengaturan Biaya Pendaftaran (Gratis vs Berbayar QRIS) */}
+              <div className="p-3 sm:p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-gray-50/50 dark:bg-[#16121E]/60 space-y-3">
+                <label className="text-xs font-bold text-gray-800 dark:text-gray-200 block">
+                  Mode Biaya Pendaftaran Tim
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTemplateIsFree(true);
+                      setTemplateEntryFee(0);
+                    }}
+                    className={`px-3 py-2 rounded-lg text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
+                      templateIsFree
+                        ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-400"
+                        : "border-gray-200 dark:border-[#211C2B] text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    <span>🟢 Free Entry (Gratis)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTemplateIsFree(false);
+                      if (templateEntryFee === 0) setTemplateEntryFee(25000);
+                    }}
+                    className={`px-3 py-2 rounded-lg text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
+                      !templateIsFree
+                        ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
+                        : "border-gray-200 dark:border-[#211C2B] text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    <span>💰 Berbayar (QRIS)</span>
+                  </button>
+                </div>
+
+                {!templateIsFree && (
+                  <div className="pt-1">
+                    <label className="text-[11px] font-semibold text-gray-400 block mb-1">
+                      Nominal Biaya Pendaftaran per Tim (Rupiah) *
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-xs font-bold text-gray-400">Rp</span>
+                      <input
+                        type="number"
+                        min={1000}
+                        step={1000}
+                        value={templateEntryFee || ""}
+                        onChange={(e) => setTemplateEntryFee(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        placeholder="Contoh: 25000 atau 50000"
+                        className="w-full pl-10 pr-3 py-2 rounded-lg bg-white dark:bg-[#1A1624] border border-amber-500/40 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-amber-400"
+                        required
+                      />
+                    </div>
+                    <span className="text-[10px] text-amber-400/80 mt-1 block">
+                      Peserta turnamen ini wajib mentransfer biaya via QRIS dan mengupload bukti transfer sebelum di-ACC panitia.
+                    </span>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
                   Status Turnamen
@@ -1394,7 +1596,27 @@ export function EventsBoard() {
                 }`}
               >
                 <Settings size={13} />
-                <span>3. Ubah Ukuran Slot ({manageSlotCount} Tim)</span>
+                <span>3. Pengaturan Slot &amp; Biaya</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setManageTab("verifications")}
+                className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 flex items-center gap-1.5 ${
+                  manageTab === "verifications"
+                    ? "bg-[#9D4EDD] text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <ShieldCheck size={13} />
+                <span>4. Verifikasi Tim ({managingTournament.participants?.length || 0})</span>
+                {(() => {
+                  const pendingCount = managingTournament.participants?.filter((p) => p.paymentStatus === "PENDING_PAYMENT").length || 0;
+                  return pendingCount > 0 ? (
+                    <span className="ml-1 px-1.5 py-0.2 rounded-full text-[9px] font-black bg-amber-400 text-black">
+                      {pendingCount} PENDING
+                    </span>
+                  ) : null;
+                })()}
               </button>
             </div>
 
@@ -1747,6 +1969,64 @@ export function EventsBoard() {
                     </div>
                   </div>
 
+                  {/* Mode Biaya Pendaftaran (Gratis vs Berbayar) */}
+                  <div className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] space-y-3">
+                    <label className="text-xs font-bold text-gray-800 dark:text-gray-200 block">
+                      Mode Biaya Pendaftaran Turnamen
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setManageIsFree(true);
+                          setManageEntryFee(0);
+                        }}
+                        className={`px-3 py-2 rounded-lg text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
+                          manageIsFree
+                            ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-400"
+                            : "border-gray-200 dark:border-[#211C2B] text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        <span>🟢 Free Entry (Gratis)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setManageIsFree(false);
+                          if (manageEntryFee === 0) setManageEntryFee(25000);
+                        }}
+                        className={`px-3 py-2 rounded-lg text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
+                          !manageIsFree
+                            ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
+                            : "border-gray-200 dark:border-[#211C2B] text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        <span>💰 Berbayar (QRIS)</span>
+                      </button>
+                    </div>
+
+                    {!manageIsFree && (
+                      <div className="pt-1">
+                        <label className="text-[11px] font-semibold text-gray-400 block mb-1">
+                          Nominal Biaya Pendaftaran per Tim (Rupiah) *
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2 text-xs font-bold text-gray-400">Rp</span>
+                          <input
+                            type="number"
+                            min={1000}
+                            step={1000}
+                            value={manageEntryFee || ""}
+                            onChange={(e) => setManageEntryFee(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                            placeholder="Contoh: 25000 atau 50000"
+                            className="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-amber-500/40 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-amber-400"
+                            required
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Warning Box */}
                   <div className="p-3.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs text-amber-300 space-y-1">
                     <p className="font-bold flex items-center gap-1.5">
@@ -1769,6 +2049,176 @@ export function EventsBoard() {
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* SUB-PANEL 4: ANTREAN VERIFIKASI PENDAFTARAN TIM */}
+            {manageTab === "verifications" && (
+              <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+                {(!managingTournament.participants || managingTournament.participants.length === 0) ? (
+                  <div className="p-8 text-center border border-dashed border-gray-300 dark:border-gray-800 rounded-xl text-xs text-gray-400">
+                    Belum ada tim yang mendaftar ke turnamen ini.
+                  </div>
+                ) : (
+                  managingTournament.participants.map((p) => {
+                    const isPending = p.paymentStatus === "PENDING_PAYMENT";
+                    const isApproved = p.paymentStatus === "APPROVED";
+                    const roster = p.roster || [];
+                    const mains = roster.filter((r) => r.role === "MAIN");
+                    const subs = roster.filter((r) => r.role === "SUB");
+
+                    return (
+                      <div
+                        key={p.id}
+                        className={`p-4 rounded-xl border transition-all ${
+                          isPending
+                            ? "border-amber-500/40 bg-amber-500/5 dark:bg-amber-950/10"
+                            : isApproved
+                              ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/10"
+                              : "border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/10"
+                        } space-y-3`}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h5 className="font-black text-sm text-gray-900 dark:text-white">
+                                {p.teamName}
+                              </h5>
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+                                  isPending
+                                    ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                                    : isApproved
+                                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                                      : "bg-rose-500/20 text-rose-400 border border-rose-500/40"
+                                }`}
+                              >
+                                {isPending ? "⏳ MENUNGGU VERIFIKASI" : isApproved ? "✅ APPROVED" : "❌ REJECTED"}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2 flex-wrap">
+                              <span>Kapten: <strong>@{p.leader.username || p.leader.name}</strong></span>
+                              {p.phone && (
+                                <>
+                                  <span>•</span>
+                                  <a
+                                    href={`https://wa.me/${p.phone.replace(/\D/g, "")}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-emerald-400 hover:underline flex items-center gap-1"
+                                  >
+                                    <Phone size={11} />
+                                    <span>{p.phone}</span>
+                                  </a>
+                                </>
+                              )}
+                              {p.createdAt && (
+                                <>
+                                  <span>•</span>
+                                  <span>{new Date(p.createdAt).toLocaleString("id-ID")}</span>
+                                </>
+                              )}
+                            </p>
+                          </div>
+
+                          {/* Tombol Aksi Verifikasi */}
+                          {isPending && (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                disabled={verificationLoading === p.id}
+                                onClick={() => handleVerificationAction(p.id, "APPROVE")}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1 shadow-xs transition"
+                              >
+                                <CheckCircle size={14} />
+                                <span>{verificationLoading === p.id ? "Memproses..." : "ACC & Masukkan ke Bagan"}</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={verificationLoading === p.id}
+                                onClick={() => handleVerificationAction(p.id, "REJECT")}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600/80 hover:bg-rose-600 text-white flex items-center gap-1 shadow-xs transition"
+                              >
+                                <X size={14} />
+                                <span>Tolak</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Roster & Info Pembayaran */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-gray-200/40 dark:border-white/5 text-xs">
+                          {/* Info Pembayaran */}
+                          <div className="space-y-1.5 p-2.5 rounded-lg bg-white/60 dark:bg-[#120F17]/60 border border-gray-200 dark:border-white/5">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                              DATA PEMBAYARAN TRANSFER
+                            </span>
+                            <p className="text-gray-700 dark:text-gray-300">
+                              Nama Pengirim / Pemilik Rekening:{" "}
+                              <strong className="text-purple-400">{p.senderName || "- (Free Entry)"}</strong>
+                            </p>
+                            {p.rejectionReason && (
+                              <p className="text-rose-400 text-[11px]">
+                                Alasan Ditolak: <em>{p.rejectionReason}</em>
+                              </p>
+                            )}
+
+                            {p.paymentProof ? (
+                              <div className="pt-1.5">
+                                <span className="text-[11px] font-semibold text-gray-400 block mb-1">
+                                  Bukti Transfer (Klik untuk perbesar):
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedProofModal(p.paymentProof || null)}
+                                  className="group relative inline-block rounded-lg overflow-hidden border border-purple-500/30 hover:border-purple-500 transition"
+                                >
+                                  <img
+                                    src={p.paymentProof}
+                                    alt="Bukti Transfer"
+                                    className="w-28 h-20 object-cover group-hover:scale-105 transition-transform"
+                                  />
+                                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Eye size={16} className="text-white" />
+                                  </div>
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-gray-400 italic block">
+                                Tidak ada lampiran gambar bukti (Turnamen Free Entry)
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Susunan Pemain / Roster */}
+                          <div className="space-y-1.5 p-2.5 rounded-lg bg-white/60 dark:bg-[#120F17]/60 border border-gray-200 dark:border-white/5">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                              SUSUNAN PEMAIN ({mains.length} Inti {subs.length ? `+ ${subs.length} Cad` : ""})
+                            </span>
+                            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                              {mains.map((m, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                                >
+                                  {m.name} ({m.inGameId})
+                                </span>
+                              ))}
+                              {subs.map((s, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                                >
+                                  [Cad] {s.name} ({s.inGameId})
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             )}
 
@@ -2005,6 +2455,100 @@ export function EventsBoard() {
                 </div>
               )}
 
+              {/* BAGIAN D: PEMBAYARAN QRIS (KHUSUS TURNAMEN BERBAYAR) */}
+              {!registeringTournament.isFreeEntry && (registeringTournament.entryFee ?? 0) > 0 && (
+                <div className="space-y-4 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/15">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <QrCode size={15} />
+                      <span>Bagian D: Pembayaran Biaya Pendaftaran (QRIS)</span>
+                    </h4>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-400 text-black">
+                      Rp {registeringTournament.entryFee?.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+
+                  {/* QRIS Official Box */}
+                  <div className="p-4 rounded-xl bg-white dark:bg-[#120F17] border border-amber-500/20 text-center flex flex-col items-center">
+                    <p className="text-xs font-bold text-gray-800 dark:text-gray-200 mb-1">
+                      Scan QRIS Resmi Kas Guild LogHorizon
+                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-3 max-w-sm">
+                      Dukung operasional &amp; prizepool turnamen. Transfer tepat sejumlah <strong>Rp {registeringTournament.entryFee?.toLocaleString("id-ID")}</strong> melalui e-wallet atau m-banking.
+                    </p>
+                    <div className="relative w-44 h-56 sm:w-52 sm:h-64 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 shadow-md bg-white">
+                      <Image
+                        src="/qris-guild.png"
+                        alt="QRIS Resmi Guild LogHorizon"
+                        fill
+                        className="object-contain"
+                        unoptimized
+                      />
+                    </div>
+                  </div>
+
+                  {/* 2 Kolom Verifikasi Pembayaran */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {/* Kolom 1: Nama Pengirim */}
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+                        1. Nama Pengirim / Pemilik Rekening *
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        value={registerSenderName}
+                        onChange={(e) => setRegisterSenderName(e.target.value)}
+                        placeholder="Contoh: Budi Santoso / Akun Dana"
+                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-amber-400"
+                      />
+                      <span className="text-[10px] text-gray-400 mt-0.5 block">
+                        Nama yang tertera pada mutasi transfer
+                      </span>
+                    </div>
+
+                    {/* Kolom 2: Upload Gambar Bukti Bayar */}
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+                        2. Upload Bukti Transfer (JPG/PNG/WebP) *
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleProofFileSelect}
+                        className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#9D4EDD] file:text-white hover:file:bg-[#8637c7] cursor-pointer"
+                        required={!registerPaymentProof}
+                      />
+                      {compressingProof && (
+                        <span className="text-[10px] text-purple-400 animate-pulse mt-1 block">
+                          Mengompresi gambar bukti...
+                        </span>
+                      )}
+                      {registerPaymentProof && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <img
+                            src={registerPaymentProof}
+                            alt="Preview Bukti"
+                            className="w-16 h-12 object-cover rounded border border-amber-400/50"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setRegisterPaymentProof("")}
+                            className="text-[11px] text-rose-400 hover:underline"
+                          >
+                            Hapus &amp; Ganti
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300/90 leading-relaxed">
+                    ℹ️ <strong>Catatan:</strong> Pendaftaran turnamen berbayar akan masuk status antrean <em>Menunggu Verifikasi</em>. Tim kamu akan resmi dimasukkan ke bagan turnamen setelah panitia mengecek bukti transfer kas.
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-2 pt-3 border-t border-gray-200 dark:border-[#211C2B]">
                 <button
                   type="button"
@@ -2015,10 +2559,14 @@ export function EventsBoard() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submittingRegistration}
+                  disabled={submittingRegistration || compressingProof}
                   className="button button-primary text-xs font-bold"
                 >
-                  {submittingRegistration ? "Mendaftarkan Tim…" : "Konfirmasi & Daftarkan Tim"}
+                  {submittingRegistration
+                    ? "Mengirim Pendaftaran…"
+                    : registeringTournament.isFreeEntry || !registeringTournament.entryFee
+                      ? "Konfirmasi & Daftarkan Tim"
+                      : "Kirim Pendaftaran & Bukti Transfer"}
                 </button>
               </div>
             </form>
@@ -2163,6 +2711,38 @@ export function EventsBoard() {
           </div>
         );
       })()}
+
+      {/* LIGHTBOX BUKTI PEMBAYARAN QRIS */}
+      {selectedProofModal && (
+        <div
+          className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setSelectedProofModal(null)}
+        >
+          <div
+            className="relative max-w-xl max-h-[90vh] bg-white dark:bg-[#120F17] border border-gray-300 dark:border-white/20 rounded-2xl p-4 shadow-2xl flex flex-col items-center my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedProofModal(null)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-white bg-black/40 rounded-full p-1.5 transition"
+            >
+              <X size={18} />
+            </button>
+            <p className="text-xs font-bold text-gray-800 dark:text-gray-200 mb-3 self-start flex items-center gap-2">
+              <QrCode size={16} className="text-[#9D4EDD]" />
+              <span>Bukti Transfer QRIS Pendaftaran Turnamen</span>
+            </p>
+            <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 max-h-[72vh] flex items-center justify-center bg-black/50">
+              <img
+                src={selectedProofModal}
+                alt="Bukti Transfer QRIS"
+                className="max-h-[70vh] w-auto object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

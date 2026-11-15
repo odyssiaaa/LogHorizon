@@ -114,6 +114,8 @@ model Tournament {
   maxSlots         Int              @default(8)
   mainPlayersCount Int              @default(5)
   subPlayersCount  Int              @default(2)
+  entryFee         Int              @default(0)
+  isFreeEntry      Boolean          @default(true)
   eventDate        DateTime
   status           TournamentStatus @default(OPEN)
   bracket          Json?
@@ -126,15 +128,19 @@ model Tournament {
 }
 
 model Participant {
-  id           String     @id @default(cuid())
-  tournamentId String
-  leaderId     String
-  teamName     String
-  phone        String?
-  roster       Json?      @default("[]")
-  createdAt    DateTime   @default(now())
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  leader       User       @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+  id              String     @id @default(cuid())
+  tournamentId    String
+  leaderId        String
+  teamName        String
+  phone           String?
+  roster          Json?      @default("[]")
+  paymentStatus   String     @default("APPROVED")
+  senderName      String?
+  paymentProof    String?    @db.Text
+  rejectionReason String?
+  createdAt       DateTime   @default(now())
+  tournament      Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  leader          User       @relation(fields: [leaderId], references: [id], onDelete: Cascade)
 
   @@unique([tournamentId, leaderId])
   @@index([tournamentId, createdAt])
