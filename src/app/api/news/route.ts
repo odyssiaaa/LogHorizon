@@ -214,6 +214,16 @@ async function fetchRssArticles(url: string, sourceName: string): Promise<Normal
   }
 }
 
+function cleanDiscordText(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/<@&(\d+)>/g, "@role")
+    .replace(/<@!?(\d+)>/g, "@user")
+    .replace(/<#(\d+)>/g, "#channel")
+    .replace(/<a?:(\w+):(\d+)>/g, ":$1:")
+    .trim();
+}
+
 // 2. Tarik Pesan Resmi dari Channel Discord LogHorizon (ID: 1547566856196329543)
 async function fetchDiscordGuildNews(): Promise<NormalizedArticle[]> {
   const token = process.env.DISCORD_BOT_TOKEN?.trim();
@@ -230,8 +240,8 @@ async function fetchDiscordGuildNews(): Promise<NormalizedArticle[]> {
       });
       return announcements.map((a, idx) => ({
         id: `guild-db-${a.id}`,
-        title: a.title,
-        description: a.content,
+        title: cleanDiscordText(a.title),
+        description: cleanDiscordText(a.content),
         url: `https://discord.com/channels/${guildId}/${channelId}`,
         imageUrl: resolveImage(null, "Turnamen & Guild", idx),
         publishedAt: a.createdAt.toISOString(),
@@ -257,7 +267,7 @@ async function fetchDiscordGuildNews(): Promise<NormalizedArticle[]> {
         "Content-Type": "application/json",
         "User-Agent": "LogHorizonGuild/1.0",
       },
-      next: { revalidate: 60 },
+      next: { revalidate: 300 },
       signal: AbortSignal.timeout(8000),
     });
 
@@ -316,6 +326,9 @@ async function fetchDiscordGuildNews(): Promise<NormalizedArticle[]> {
         title = "Warta & Pengumuman Resmi Guild";
         description = "Transmisi warta resmi dari channel Discord LogHorizon.";
       }
+
+      title = cleanDiscordText(title);
+      description = cleanDiscordText(description);
 
       const authorName = msg.author?.global_name || msg.author?.username || "Council LogHorizon";
       const authorAvatar = msg.author?.avatar

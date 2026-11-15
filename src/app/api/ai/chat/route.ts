@@ -1,12 +1,21 @@
 import { authenticatedUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 
-const GEMINI_ENDPOINTS = [
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
+export const maxDuration = 30;
+
+const GEMINI_MODELS = [
+  "gemini-3.5-flash-lite",
+  "gemini-3.8-flash-lite",
+  "gemini-3.8-flash",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-flash-latest",
 ];
+
+const GEMINI_ENDPOINTS = GEMINI_MODELS.map(
+  (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+);
 
 const COOLDOWN_MS = 2_500;
 const MAX_INPUT_LENGTH = 300;
@@ -331,7 +340,7 @@ export async function POST(request: Request) {
             temperature: 0.7,
           },
         }),
-        signal: AbortSignal.timeout(12_000),
+        signal: AbortSignal.timeout(20_000),
       });
 
       if (response.ok) {

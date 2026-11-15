@@ -2,8 +2,21 @@ import { PostCategory } from "@prisma/client";
 import { authenticatedUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 
-const GEMINI_ENDPOINT_PRIMARY = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
-const GEMINI_ENDPOINT_FALLBACK = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
+export const maxDuration = 30;
+
+const GEMINI_MODELS = [
+  "gemini-3.5-flash-lite",
+  "gemini-3.8-flash-lite",
+  "gemini-3.8-flash",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-flash-latest",
+];
+
+const GEMINI_ENDPOINTS = GEMINI_MODELS.map(
+  (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
+);
 
 type GeminiResponse = {
   candidates?: {
@@ -43,9 +56,7 @@ export async function POST(request: Request) {
     return jsonError("Google Gemini API (GEMINI_API_KEY) belum dikonfigurasi.", 503);
   }
 
-  const endpoints = [GEMINI_ENDPOINT_PRIMARY, GEMINI_ENDPOINT_FALLBACK];
-
-  for (const endpoint of endpoints) {
+  for (const endpoint of GEMINI_ENDPOINTS) {
     try {
       const response = await fetch(endpoint, {
         method: "POST",
@@ -68,7 +79,7 @@ export async function POST(request: Request) {
             temperature: 0.5,
           },
         }),
-        signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(20_000),
       });
 
       if (response.ok) {

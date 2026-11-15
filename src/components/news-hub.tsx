@@ -154,7 +154,7 @@ export function NewsHub() {
               }`}
             >
               <Megaphone size={14} className="text-[#C77DFF]" />
-              <span>Warta Resmi Guild (Discord)</span>
+              <span>Info &amp; Berita Resmi Guild (Discord)</span>
               <span className="px-1.5 py-0.2 rounded text-[10px] bg-black/20 dark:bg-white/20">
                 {guildNews.length}
               </span>
@@ -209,7 +209,7 @@ export function NewsHub() {
                   [GUILD INFO]
                 </span>
                 <h2 id="guild-news-heading" className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-                  Info &amp; Pengumuman Resmi Guild
+                  Info &amp; Berita Resmi Guild (Discord)
                 </h2>
               </div>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
