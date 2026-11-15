@@ -191,6 +191,13 @@ export function EventsBoard() {
   const [verificationLoading, setVerificationLoading] = useState<string | null>(null);
   const [selectedProofModal, setSelectedProofModal] = useState<string | null>(null);
 
+  // Search & Filter State for Manage Tournament Modal
+  const [adminMatchSearch, setAdminMatchSearch] = useState("");
+  const [adminMatchFilter, setAdminMatchFilter] = useState<"ALL" | "LIVE" | "UNFINISHED">("ALL");
+
+  // Search State for Public Bracket Tree (per tournamentId)
+  const [bracketSearchQueries, setBracketSearchQueries] = useState<Record<string, string>>({});
+
   // Gacha Bracket Modal State
   const [gachaModalState, setGachaModalState] = useState<{
     isOpen: boolean;
@@ -473,6 +480,8 @@ export function EventsBoard() {
     setManageEntryFee(tournament.entryFee ?? 0);
     setManageRules(tournament.rules || DEFAULT_TOURNAMENT_RULES);
     setManageTab("scores");
+    setAdminMatchSearch("");
+    setAdminMatchFilter("ALL");
   }
 
   // Open Tournament Rules Gate before Registration Form
@@ -1246,9 +1255,46 @@ export function EventsBoard() {
                           </span>
                         </span>
                       </div>
-                      <span className="text-[11px] text-gray-400">
-                        Klik nama tim untuk melihat susunan pemain (roster)
-                      </span>
+
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        {/* INSTANT SEARCH BAR DI POHON BAGAN */}
+                        <div className="relative w-64 sm:w-72">
+                          <div className="flex items-center gap-2 px-3 h-8 rounded-lg border border-gray-300 dark:border-[#211C2B] bg-gray-50 dark:bg-[#120F17] focus-within:border-[#9D4EDD] focus-within:ring-1 focus-within:ring-[#9D4EDD] transition-all">
+                            <Search size={13} className="text-gray-400 shrink-0" />
+                            <input
+                              type="text"
+                              value={bracketSearchQueries[tournament.id] || ""}
+                              onChange={(e) =>
+                                setBracketSearchQueries((prev) => ({
+                                  ...prev,
+                                  [tournament.id]: e.target.value,
+                                }))
+                              }
+                              placeholder="Cari tim kamu atau kode #R1-M12 di bagan..."
+                              className="w-full bg-transparent text-[11px] text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none"
+                            />
+                            {bracketSearchQueries[tournament.id] && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setBracketSearchQueries((prev) => ({
+                                    ...prev,
+                                    [tournament.id]: "",
+                                  }))
+                                }
+                                className="p-0.5 rounded text-gray-400 hover:text-white"
+                                title="Reset pencarian"
+                              >
+                                <X size={12} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <span className="text-[11px] text-gray-400 hidden lg:inline">
+                          Klik nama tim untuk melihat susunan pemain (roster)
+                        </span>
+                      </div>
                     </div>
 
                     {matches.length > 0 ? (
@@ -1264,6 +1310,7 @@ export function EventsBoard() {
                           onTeamClick={(team) => setViewingRoster(team)}
                           isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
                           onAdminQuickUpdate={(matchId, action) => handleAdminQuickUpdate(tournament.id, matchId, action)}
+                          searchQuery={bracketSearchQueries[tournament.id] || ""}
                         />
                       </DragScrollContainer>
                     ) : (
@@ -1957,113 +2004,207 @@ export function EventsBoard() {
             </div>
 
             {/* SUB-PANEL 1: SKOR & PEMENANG (AUTO ADVANCE) */}
-            {manageTab === "scores" && (
-              <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
-                {manageMatches.map((m) => (
-                  <div
-                    key={m.matchId}
-                    className="p-3.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-gray-50 dark:bg-[#181324] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div>
-                      <span className="text-[10px] font-mono text-purple-400 font-bold uppercase">
-                        {m.roundName} (Match #{m.matchId})
-                      </span>
-                      <div className="flex items-center gap-3 text-sm font-bold text-gray-900 dark:text-white mt-1">
-                        <span className={m.winner === m.teamA.name ? "text-emerald-400 font-black" : ""}>
-                          {m.teamA.name || "TBD"}
-                        </span>
-                        <span className="text-xs text-gray-400">VS</span>
-                        <span className={m.winner === m.teamB.name ? "text-emerald-400 font-black" : ""}>
-                          {m.teamB.name || "TBD"}
-                        </span>
+            {manageTab === "scores" && (() => {
+              const q = adminMatchSearch.trim().toLowerCase();
+              const cleanQ = q.replace(/^#/, "");
+              const filteredMatches = manageMatches.filter((m) => {
+                // Filter status
+                if (adminMatchFilter === "LIVE" && m.matchStatus !== "LIVE") return false;
+                if (adminMatchFilter === "UNFINISHED" && Boolean(m.winner)) return false;
+                // Search keyword
+                if (!q) return true;
+                return (
+                  m.matchId.toLowerCase().includes(cleanQ) ||
+                  (m.teamA?.name || "").toLowerCase().includes(q) ||
+                  (m.teamB?.name || "").toLowerCase().includes(q) ||
+                  (m.roundName || "").toLowerCase().includes(q)
+                );
+              });
+
+              const liveCount = manageMatches.filter((m) => m.matchStatus === "LIVE").length;
+              const unfinishedCount = manageMatches.filter((m) => !m.winner).length;
+
+              return (
+                <div className="space-y-3">
+                  {/* SEARCH & QUICK FILTER BAR */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-200 dark:border-[#211C2B]">
+                    <div className="relative flex-1">
+                      <div className="flex items-center gap-2.5 px-3.5 h-10 rounded-xl border border-gray-300 dark:border-[#211C2B] bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] focus-within:ring-1 focus-within:ring-[#9D4EDD] transition-all">
+                        <Search size={15} className="text-gray-400 shrink-0" />
+                        <input
+                          type="text"
+                          value={adminMatchSearch}
+                          onChange={(e) => setAdminMatchSearch(e.target.value)}
+                          placeholder="Cari nama tim atau kode match (contoh: TeamGuard atau R1-M12)..."
+                          className="w-full bg-transparent text-xs text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none"
+                        />
+                        {adminMatchSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setAdminMatchSearch("")}
+                            className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/10"
+                            title="Reset pencarian"
+                          >
+                            <X size={13} />
+                          </button>
+                        )}
                       </div>
-                      {m.winner && (
-                        <p className="text-[11px] text-emerald-400 font-mono mt-0.5">
-                          ✔ Pemenang: {m.winner}
-                        </p>
-                      )}
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded">
-                        <input
-                          type="number"
-                          min={0}
-                          max={99}
-                          value={m.teamA.score}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setManageMatches((prev) =>
-                              prev.map((match) =>
-                                match.matchId === m.matchId
-                                  ? { ...match, teamA: { ...match.teamA, score: val } }
-                                  : match
-                              )
-                            );
-                          }}
-                          className="w-10 text-center py-1 rounded bg-white dark:bg-[#120F17] text-xs font-bold border border-gray-300 dark:border-gray-700"
-                        />
-                        <span className="text-xs text-gray-400">-</span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={99}
-                          value={m.teamB.score}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setManageMatches((prev) =>
-                              prev.map((match) =>
-                                match.matchId === m.matchId
-                                  ? { ...match, teamB: { ...match.teamB, score: val } }
-                                  : match
-                              )
-                            );
-                          }}
-                          className="w-10 text-center py-1 rounded bg-white dark:bg-[#120F17] text-xs font-bold border border-gray-300 dark:border-gray-700"
-                        />
-                      </div>
-
+                    {/* QUICK FILTERS */}
+                    <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl shrink-0 overflow-x-auto scrollbar-none">
                       <button
                         type="button"
-                        onClick={() => {
-                          const nextStatus = m.matchStatus === "LIVE" ? "UPCOMING" : "LIVE";
-                          const updated = updateMatchStatus(manageMatches, m.matchId, nextStatus);
-                          setManageMatches(updated);
-                          if (managingTournament) {
-                            fetch(`/api/tournaments/${managingTournament.id}`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ matchId: m.matchId, matchStatus: nextStatus }),
-                            }).catch(() => {});
-                          }
-                        }}
-                        className={`px-2.5 py-1.5 rounded text-[11px] font-bold transition flex items-center gap-1 ${
-                          m.matchStatus === "LIVE"
-                            ? "bg-red-500/20 text-red-300 border border-red-500/40"
-                            : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30"
+                        onClick={() => setAdminMatchFilter("ALL")}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                          adminMatchFilter === "ALL"
+                            ? "bg-[#9D4EDD] text-white shadow-xs"
+                            : "text-gray-400 hover:text-white"
                         }`}
                       >
-                        {m.matchStatus === "LIVE" ? "⏹ Set Selesai/Upcoming" : "🔴 Mulai Match (Set LIVE)"}
+                        Semua Match ({manageMatches.length})
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score)}
-                        className="px-2.5 py-1.5 rounded text-[11px] font-bold bg-purple-500/20 text-purple-300 hover:bg-purple-500/40 transition"
+                        onClick={() => setAdminMatchFilter("LIVE")}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                          adminMatchFilter === "LIVE"
+                            ? "bg-red-500 text-white shadow-xs"
+                            : "text-gray-400 hover:text-red-400"
+                        }`}
                       >
-                        Menangkan Tim A ➔
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
+                        <span>Sedang Live ({liveCount})</span>
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleSelectWinner(m.matchId, m.teamB.name, m.teamB.id, m.teamA.score, m.teamB.score)}
-                        className="px-2.5 py-1.5 rounded text-[11px] font-bold bg-purple-500/20 text-purple-300 hover:bg-purple-500/40 transition"
+                        onClick={() => setAdminMatchFilter("UNFINISHED")}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                          adminMatchFilter === "UNFINISHED"
+                            ? "bg-amber-500 text-black shadow-xs font-black"
+                            : "text-gray-400 hover:text-amber-400"
+                        }`}
                       >
-                        Menangkan Tim B ➔
+                        Belum Selesai ({unfinishedCount})
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+
+                  {/* MATCHES LIST */}
+                  <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
+                    {filteredMatches.length === 0 ? (
+                      <div className="p-8 text-center text-xs text-gray-400 rounded-xl border border-dashed border-gray-300 dark:border-white/10">
+                        Tidak ada pertandingan yang cocok dengan filter atau kata kunci &quot;{adminMatchSearch}&quot;.
+                      </div>
+                    ) : (
+                      filteredMatches.map((m) => (
+                        <div
+                          key={m.matchId}
+                          className="p-3.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-gray-50 dark:bg-[#181324] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                        >
+                          <div>
+                            <span className="text-[10px] font-mono text-purple-400 font-bold uppercase">
+                              {m.roundName} (Match #{m.matchId})
+                            </span>
+                            <div className="flex items-center gap-3 text-sm font-bold text-gray-900 dark:text-white mt-1">
+                              <span className={m.winner === m.teamA.name ? "text-emerald-400 font-black" : ""}>
+                                {m.teamA.name || "TBD"}
+                              </span>
+                              <span className="text-xs text-gray-400">VS</span>
+                              <span className={m.winner === m.teamB.name ? "text-emerald-400 font-black" : ""}>
+                                {m.teamB.name || "TBD"}
+                              </span>
+                            </div>
+                            {m.winner && (
+                              <p className="text-[11px] text-emerald-400 font-mono mt-0.5">
+                                ✔ Pemenang: {m.winner}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded">
+                              <input
+                                type="number"
+                                min={0}
+                                max={99}
+                                value={m.teamA.score}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value);
+                                  setManageMatches((prev) =>
+                                    prev.map((match) =>
+                                      match.matchId === m.matchId
+                                        ? { ...match, teamA: { ...match.teamA, score: val } }
+                                        : match
+                                    )
+                                  );
+                                }}
+                                className="w-10 text-center py-1 rounded bg-white dark:bg-[#120F17] text-xs font-bold border border-gray-300 dark:border-gray-700"
+                              />
+                              <span className="text-xs text-gray-400">-</span>
+                              <input
+                                type="number"
+                                min={0}
+                                max={99}
+                                value={m.teamB.score}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value);
+                                  setManageMatches((prev) =>
+                                    prev.map((match) =>
+                                      match.matchId === m.matchId
+                                        ? { ...match, teamB: { ...match.teamB, score: val } }
+                                        : match
+                                    )
+                                  );
+                                }}
+                                className="w-10 text-center py-1 rounded bg-white dark:bg-[#120F17] text-xs font-bold border border-gray-300 dark:border-gray-700"
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextStatus = m.matchStatus === "LIVE" ? "UPCOMING" : "LIVE";
+                                const updated = updateMatchStatus(manageMatches, m.matchId, nextStatus);
+                                setManageMatches(updated);
+                                if (managingTournament) {
+                                  fetch(`/api/tournaments/${managingTournament.id}`, {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ matchId: m.matchId, matchStatus: nextStatus }),
+                                  }).catch(() => {});
+                                }
+                              }}
+                              className={`px-2.5 py-1.5 rounded text-[11px] font-bold transition flex items-center gap-1 ${
+                                m.matchStatus === "LIVE"
+                                  ? "bg-red-500/20 text-red-300 border border-red-500/40"
+                                  : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30"
+                              }`}
+                            >
+                              {m.matchStatus === "LIVE" ? "⏹ Set Selesai/Upcoming" : "🔴 Mulai Match (Set LIVE)"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score)}
+                              className="px-2.5 py-1.5 rounded text-[11px] font-bold bg-purple-500/20 text-purple-300 hover:bg-purple-500/40 transition"
+                            >
+                              Menangkan Tim A ➔
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectWinner(m.matchId, m.teamB.name, m.teamB.id, m.teamA.score, m.teamB.score)}
+                              className="px-2.5 py-1.5 rounded text-[11px] font-bold bg-purple-500/20 text-purple-300 hover:bg-purple-500/40 transition"
+                            >
+                              Menangkan Tim B ➔
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* SUB-PANEL 2: KELOLA NAMA TIM & ROSTER */}
             {manageTab === "teams" && (
@@ -3163,6 +3304,7 @@ export function MatchCard({
   onTeamClick,
   isAdminOrMod = false,
   onAdminQuickUpdate,
+  searchQuery = "",
 }: {
   match: TournamentMatch;
   teams: TournamentTeam[];
@@ -3170,6 +3312,7 @@ export function MatchCard({
   onTeamClick: (team: TournamentTeam) => void;
   isAdminOrMod?: boolean;
   onAdminQuickUpdate?: (matchId: string, action: "SET_LIVE" | "FINISH_MATCH") => void;
+  searchQuery?: string;
 }) {
   const teamAData = teams.find((t) => t.teamName.toLowerCase() === match.teamA.name.toLowerCase() || t.id === match.teamA.id);
   const teamBData = teams.find((t) => t.teamName.toLowerCase() === match.teamB.name.toLowerCase() || t.id === match.teamB.id);
@@ -3184,10 +3327,24 @@ export function MatchCard({
   const isFinished = match.matchStatus === "FINISHED" || hasWinner || (match.teamA.score > 0 || match.teamB.score > 0);
   const isUpcoming = !isLive && !isFinished;
 
+  // Search match highlight
+  const isSearchActive = Boolean(searchQuery && searchQuery.trim().length > 0);
+  const q = isSearchActive ? searchQuery.trim().toLowerCase() : "";
+  const cleanQ = q.replace(/^#/, "");
+  const matchIdMatched = cleanQ.length > 0 && match.matchId.toLowerCase().includes(cleanQ);
+  const teamAMatched = q.length > 0 && match.teamA.name.toLowerCase().includes(q);
+  const teamBMatched = q.length > 0 && match.teamB.name.toLowerCase().includes(q);
+  const isMatched = isSearchActive && (matchIdMatched || teamAMatched || teamBMatched);
+
   return (
     <div
-      className={`rounded-xl border transition-all ${
-        isLive
+      id={`bracket-match-${match.matchId}`}
+      className={`rounded-xl border transition-all duration-300 ${
+        isMatched
+          ? "ring-2 ring-[#9D4EDD] shadow-[0_0_25px_rgba(157,78,221,0.6)] border-[#9D4EDD] bg-[#9D4EDD]/15 scale-[1.03] z-20"
+          : isSearchActive
+          ? "opacity-35 grayscale-[50%] border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#0E0B14]"
+          : isLive
           ? "border-[#9D4EDD] shadow-[0_0_15px_rgba(157,78,221,0.35)] ring-1 ring-[#9D4EDD] bg-gradient-to-b from-purple-950/25 via-[#130F1A] to-[#0E0B14]"
           : isFinal
           ? "border-amber-500/40 bg-amber-950/10 shadow-amber-950/20 shadow-lg"
@@ -3195,9 +3352,18 @@ export function MatchCard({
       } p-3 relative overflow-hidden`}
     >
       <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-gray-100 dark:border-[#211C2B]/80 text-[10px] font-mono">
-        <span className="font-bold flex items-center gap-1 text-gray-400">
+        <span className="font-bold flex items-center gap-1.5 text-gray-400">
           {isFinal && <Crown size={12} className="text-amber-400" />}
           <span>{match.roundName}</span>
+          <span
+            className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
+              matchIdMatched
+                ? "bg-[#9D4EDD] text-white font-black ring-1 ring-[#9D4EDD]"
+                : "text-gray-500 bg-black/10 dark:bg-white/5"
+            }`}
+          >
+            #{match.matchId}
+          </span>
         </span>
 
         {/* Status Badge */}
@@ -3233,7 +3399,13 @@ export function MatchCard({
               type="button"
               onClick={() => teamAData && onTeamClick(teamAData)}
               className={`text-xs truncate max-w-[135px] text-left hover:underline ${
-                isWinnerA ? "text-white font-bold" : isLoserA ? "text-zinc-500" : ""
+                teamAMatched
+                  ? "text-amber-300 font-black underline underline-offset-2"
+                  : isWinnerA
+                  ? "text-white font-bold"
+                  : isLoserA
+                  ? "text-zinc-500"
+                  : ""
               }`}
               title={teamAData ? "Klik untuk melihat susunan pemain" : undefined}
             >
@@ -3278,7 +3450,13 @@ export function MatchCard({
                 type="button"
                 onClick={() => teamBData && onTeamClick(teamBData)}
                 className={`text-xs truncate max-w-[135px] text-left hover:underline ${
-                  isWinnerB ? "text-white font-bold" : isLoserB ? "text-zinc-500" : ""
+                  teamBMatched
+                    ? "text-amber-300 font-black underline underline-offset-2"
+                    : isWinnerB
+                    ? "text-white font-bold"
+                    : isLoserB
+                    ? "text-zinc-500"
+                    : ""
                 }`}
                 title={teamBData ? "Klik untuk melihat susunan pemain" : undefined}
               >
@@ -3639,6 +3817,7 @@ export function DualWingBracketView({
   onTeamClick,
   isAdminOrMod = false,
   onAdminQuickUpdate,
+  searchQuery = "",
 }: {
   sortedRoundNumbers: number[];
   roundsMap: Map<number, TournamentMatch[]>;
@@ -3646,8 +3825,38 @@ export function DualWingBracketView({
   onTeamClick: (team: TournamentTeam) => void;
   isAdminOrMod?: boolean;
   onAdminQuickUpdate?: (matchId: string, action: "SET_LIVE" | "FINISH_MATCH") => void;
+  searchQuery?: string;
 }) {
   const totalRounds = sortedRoundNumbers.length;
+
+  // Auto-scroll (Smooth Scroll & Jump) to first matching match
+  useEffect(() => {
+    if (!searchQuery || !searchQuery.trim()) return;
+    const q = searchQuery.trim().toLowerCase();
+    const cleanQ = q.replace(/^#/, "");
+
+    let targetMatchId: string | null = null;
+    for (const rNum of sortedRoundNumbers) {
+      const rMatches = roundsMap.get(rNum) || [];
+      const matched = rMatches.find(
+        (m) =>
+          (cleanQ.length > 0 && m.matchId.toLowerCase().includes(cleanQ)) ||
+          (q.length > 0 && (m.teamA?.name || "").toLowerCase().includes(q)) ||
+          (q.length > 0 && (m.teamB?.name || "").toLowerCase().includes(q))
+      );
+      if (matched) {
+        targetMatchId = matched.matchId;
+        break;
+      }
+    }
+
+    if (targetMatchId) {
+      const el = document.getElementById(`bracket-match-${targetMatchId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
+    }
+  }, [searchQuery, sortedRoundNumbers, roundsMap]);
 
   // Format tunggal di tengah untuk 1 ronde saja (2-3 tim)
   if (totalRounds <= 1) {
@@ -3667,6 +3876,7 @@ export function DualWingBracketView({
               onTeamClick={onTeamClick}
               isAdminOrMod={isAdminOrMod}
               onAdminQuickUpdate={onAdminQuickUpdate}
+              searchQuery={searchQuery}
             />
           )}
           {gfMatch?.winner && (
@@ -3730,6 +3940,7 @@ export function DualWingBracketView({
                     onTeamClick={onTeamClick}
                     isAdminOrMod={isAdminOrMod}
                     onAdminQuickUpdate={onAdminQuickUpdate}
+                    searchQuery={searchQuery}
                   />
                 ))}
               </div>
@@ -3766,6 +3977,7 @@ export function DualWingBracketView({
               onTeamClick={onTeamClick}
               isAdminOrMod={isAdminOrMod}
               onAdminQuickUpdate={onAdminQuickUpdate}
+              searchQuery={searchQuery}
             />
           ) : (
             <p className="text-xs text-gray-500 text-center py-4">Menunggu babak final</p>
@@ -3813,6 +4025,7 @@ export function DualWingBracketView({
                     onTeamClick={onTeamClick}
                     isAdminOrMod={isAdminOrMod}
                     onAdminQuickUpdate={onAdminQuickUpdate}
+                    searchQuery={searchQuery}
                   />
                 ))}
               </div>

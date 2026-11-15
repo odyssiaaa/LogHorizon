@@ -18,6 +18,7 @@ import {
   Plus,
   QrCode,
   RefreshCw,
+  Search,
   Shield,
   Swords,
   Trophy,
@@ -257,6 +258,9 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
   const [syncSecondsAgo, setSyncSecondsAgo] = useState<number>(0);
   const [quickScoreModalMatch, setQuickScoreModalMatch] = useState<TournamentMatch | null>(null);
+
+  // Search State for Public Bracket Tree
+  const [bracketSearchQuery, setBracketSearchQuery] = useState("");
 
   // SMART AUTO-POLLING (Setiap 4 Detik saat tab browser aktif)
   useEffect(() => {
@@ -693,7 +697,31 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               </span>
             </span>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* INSTANT SEARCH BAR DI POHON BAGAN */}
+            <div className="relative w-64 sm:w-72">
+              <div className="flex items-center gap-2 px-3 h-8 rounded-lg border border-gray-300 dark:border-[#211C2B] bg-gray-50 dark:bg-[#120F17] focus-within:border-[#9D4EDD] focus-within:ring-1 focus-within:ring-[#9D4EDD] transition-all">
+                <Search size={13} className="text-gray-400 shrink-0" />
+                <input
+                  type="text"
+                  value={bracketSearchQuery}
+                  onChange={(e) => setBracketSearchQuery(e.target.value)}
+                  placeholder="Cari tim kamu atau kode #R1-M12 di bagan..."
+                  className="w-full bg-transparent text-[11px] text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none"
+                />
+                {bracketSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setBracketSearchQuery("")}
+                    className="p-0.5 rounded text-gray-400 hover:text-white"
+                    title="Reset pencarian"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+
             {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && tournament.status !== "COMPLETED" && (
               <button
                 type="button"
@@ -705,7 +733,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                 <span>🎲 Gacha Bagan (Acak Lawan)</span>
               </button>
             )}
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-400 hidden xl:inline">
               💡 Geser ke samping (Drag) atau gunakan tombol navigasi
             </span>
           </div>
@@ -724,6 +752,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               onTeamClick={(team) => setViewingRoster(team)}
               isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
               onAdminQuickUpdate={handleAdminQuickUpdate}
+              searchQuery={bracketSearchQuery}
             />
           </DragScrollContainer>
         ) : (
