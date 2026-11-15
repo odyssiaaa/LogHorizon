@@ -46,6 +46,7 @@ import { EscrowChatModal } from "@/components/escrow-chat-modal";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
+import { RosterPlayerRow } from "@/components/roster-player-row";
 
 type Role = "MEMBER" | "MODERATOR" | "ADMIN";
 
@@ -1674,22 +1675,26 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
                                           SUSUNAN PEMAIN TIM ({mains.length} Inti {subs.length ? `+ ${subs.length} Cad` : ""})
                                         </span>
-                                        <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                                        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                                           {mains.map((m: any, idx: number) => (
-                                            <span
-                                              key={idx}
-                                              className="px-2 py-0.5 rounded text-[10.5px] font-mono bg-purple-500/10 text-purple-300 border border-purple-500/20"
-                                            >
-                                              {m.name} ({m.inGameId})
-                                            </span>
+                                            <RosterPlayerRow
+                                              key={`main-${idx}`}
+                                              index={idx + 1}
+                                              name={m.name || m.inGameId}
+                                              inGameId={m.inGameId || m.name}
+                                              isCaptain={idx === 0}
+                                              isSub={false}
+                                            />
                                           ))}
                                           {subs.map((s: any, idx: number) => (
-                                            <span
-                                              key={idx}
-                                              className="px-2 py-0.5 rounded text-[10.5px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/20"
-                                            >
-                                              [Cad] {s.name} ({s.inGameId})
-                                            </span>
+                                            <RosterPlayerRow
+                                              key={`sub-${idx}`}
+                                              index={idx + 1}
+                                              name={s.name || s.inGameId}
+                                              inGameId={s.inGameId || s.name}
+                                              isCaptain={false}
+                                              isSub={true}
+                                            />
                                           ))}
                                         </div>
                                       </div>

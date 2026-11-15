@@ -31,6 +31,7 @@ import { ShareButton } from "@/components/share-button";
 import { DualWingBracketView } from "@/components/events-board";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
+import { RosterPlayerRow } from "@/components/roster-player-row";
 
 type TournamentData = {
   id: string;
@@ -648,61 +649,69 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               </div>
             )}
 
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-              {/* Pemain Inti */}
-              <div>
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  ⚔️ Pemain Inti ({mainCount} Wajib)
-                </h4>
-                <div className="space-y-1.5">
-                  {(viewingRoster.roster as TournamentRosterPlayer[])
-                    ?.filter((p) => p.role !== "SUB")
-                    .map((p, i) => (
-                      <div
-                        key={i}
-                        className="p-2.5 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-[#16121E] flex items-center justify-between text-xs"
-                      >
-                        <span className="font-semibold text-gray-900 dark:text-white">
-                          {i + 1}. {p.inGameId || p.name}
-                        </span>
-                        <span className="text-[10px] font-mono text-purple-400 font-medium">
-                          {i === 0 ? "Kapten / Inti" : "Pemain Inti"}
-                        </span>
-                      </div>
-                    ))}
-                  {!(viewingRoster.roster as TournamentRosterPlayer[])?.filter((p) => p.role !== "SUB").length && (
-                    <p className="text-xs text-gray-500 italic">Belum ada pemain inti terdaftar.</p>
-                  )}
-                </div>
-              </div>
+            {(() => {
+              const mainList: TournamentRosterPlayer[] =
+                viewingRoster.mainPlayers && viewingRoster.mainPlayers.length > 0
+                  ? viewingRoster.mainPlayers
+                  : viewingRoster.roster && viewingRoster.roster.length > 0
+                  ? viewingRoster.roster.filter((p) => p.role !== "SUB")
+                  : (viewingRoster.players || []).map((name) => ({ name, inGameId: "-", role: "MAIN" }));
 
-              {/* Pemain Cadangan */}
-              <div>
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  🛡️ Pemain Cadangan (Maks {subCount})
-                </h4>
-                <div className="space-y-1.5">
-                  {(viewingRoster.roster as TournamentRosterPlayer[])
-                    ?.filter((p) => p.role === "SUB")
-                    .map((p, i) => (
-                      <div
-                        key={i}
-                        className="p-2.5 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-[#16121E] flex items-center justify-between text-xs"
-                      >
-                        <span className="font-medium text-gray-700 dark:text-gray-300">
-                          {i + 1}. {p.inGameId || p.name}
-                        </span>
-                        <span className="text-[10px] font-mono text-gray-400">
-                          Cadangan
-                        </span>
-                      </div>
-                    ))}
-                  {!(viewingRoster.roster as TournamentRosterPlayer[])?.filter((p) => p.role === "SUB").length && (
-                    <p className="text-xs text-gray-500 italic">Tidak ada pemain cadangan.</p>
-                  )}
+              const subList: TournamentRosterPlayer[] =
+                viewingRoster.subPlayers && viewingRoster.subPlayers.length > 0
+                  ? viewingRoster.subPlayers
+                  : viewingRoster.roster && viewingRoster.roster.length > 0
+                  ? viewingRoster.roster.filter((p) => p.role === "SUB")
+                  : [];
+
+              return (
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                  {/* Pemain Inti */}
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                      ⚔️ Pemain Inti ({mainCount} Wajib)
+                    </h4>
+                    <div className="space-y-2">
+                      {mainList.map((p, i) => (
+                        <RosterPlayerRow
+                          key={i}
+                          index={i + 1}
+                          name={p.name || p.inGameId}
+                          inGameId={p.inGameId || p.name}
+                          isCaptain={i === 0}
+                          isSub={false}
+                        />
+                      ))}
+                      {mainList.length === 0 && (
+                        <p className="text-xs text-gray-500 italic">Belum ada pemain inti terdaftar.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pemain Cadangan */}
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                      🛡️ Pemain Cadangan (Maks {subCount})
+                    </h4>
+                    <div className="space-y-2">
+                      {subList.map((p, i) => (
+                        <RosterPlayerRow
+                          key={i}
+                          index={i + 1}
+                          name={p.name || p.inGameId}
+                          inGameId={p.inGameId || p.name}
+                          isCaptain={false}
+                          isSub={true}
+                        />
+                      ))}
+                      {subList.length === 0 && (
+                        <p className="text-xs text-gray-500 italic">Tidak ada pemain cadangan.</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()}
 
             <button
               onClick={() => setViewingRoster(null)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
@@ -45,6 +45,7 @@ import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
+import { RosterPlayerRow } from "@/components/roster-player-row";
 
 type Participant = {
   id: string;
@@ -1958,20 +1959,16 @@ export function EventsBoard() {
                           <label className="text-[11px] font-semibold text-gray-400 block">
                             Susunan Pemain Terdaftar ({rosterList.length} Orang):
                           </label>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          <div className="space-y-1.5">
                             {rosterList.map((player, pIdx) => (
-                              <div
+                              <RosterPlayerRow
                                 key={pIdx}
-                                className="flex items-center justify-between px-2.5 py-1 rounded bg-black/30 border border-white/5 text-[11px]"
-                              >
-                                <span className="font-semibold text-gray-200">
-                                  {player.name}
-                                  {player.role === "SUB" && (
-                                    <span className="ml-1 px-1 py-0.2 text-[9px] rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Cad</span>
-                                  )}
-                                </span>
-                                <span className="text-[10px] font-mono text-purple-400">{player.inGameId}</span>
-                              </div>
+                                index={pIdx + 1}
+                                name={player.name}
+                                inGameId={player.inGameId}
+                                isCaptain={pIdx === 0 && player.role !== "SUB"}
+                                isSub={player.role === "SUB"}
+                              />
                             ))}
                           </div>
                         </div>
@@ -2791,25 +2788,16 @@ export function EventsBoard() {
                       </p>
                       <span className="text-[10px] font-mono text-purple-400">Roster Utama</span>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {mainList.map((player, idx) => (
-                        <div
+                        <RosterPlayerRow
                           key={idx}
-                          className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#181324] border border-gray-200 dark:border-[#211C2B] text-xs"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="w-4 h-4 rounded-full bg-purple-500/20 text-[#9D4EDD] inline-flex items-center justify-center text-[10px] font-mono font-bold">
-                              {idx + 1}
-                            </span>
-                            <span className="font-bold text-gray-900 dark:text-white">{player.name}</span>
-                            {idx === 0 && (
-                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/25">
-                                Kapten
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[11px] font-mono text-purple-400 font-semibold">{player.inGameId}</span>
-                        </div>
+                          index={idx + 1}
+                          name={player.name}
+                          inGameId={player.inGameId}
+                          isCaptain={idx === 0}
+                          isSub={false}
+                        />
                       ))}
                     </div>
                   </div>
@@ -2823,20 +2811,16 @@ export function EventsBoard() {
                         </p>
                         <span className="text-[10px] font-mono text-amber-400">Substitute</span>
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         {subList.map((player, idx) => (
-                          <div
+                          <RosterPlayerRow
                             key={idx}
-                            className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#181324] border border-gray-200 dark:border-[#211C2B] text-xs"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 inline-flex items-center justify-center text-[10px] font-mono font-bold">
-                                C{idx + 1}
-                              </span>
-                              <span className="font-medium text-gray-800 dark:text-gray-200">{player.name}</span>
-                            </div>
-                            <span className="text-[11px] font-mono text-gray-400">{player.inGameId}</span>
-                          </div>
+                            index={idx + 1}
+                            name={player.name}
+                            inGameId={player.inGameId}
+                            isCaptain={false}
+                            isSub={true}
+                          />
                         ))}
                       </div>
                     </div>
@@ -3021,6 +3005,200 @@ export function MatchCard({
 }
 
 // =========================================================================
+// SUB-KOMPONEN CONNECTOR: GARIS PENGHUBUNG SIKU SIMETRIS BAGAN TURNAMEN
+// =========================================================================
+
+function LeftSemiToFinalConnector({ match }: { match?: TournamentMatch }) {
+  const hasWinner = Boolean(match?.winner);
+  return (
+    <div className="w-8 sm:w-11 shrink-0 flex flex-col justify-around">
+      <div className="pb-1.5 border-b border-transparent select-none opacity-0">
+        <span className="text-[10px] block">Sayap</span>
+        <p className="text-[11px]">Ronde</p>
+      </div>
+      <div className="flex-1 flex items-center justify-center relative">
+        <svg className="w-full h-8 overflow-visible" viewBox="0 0 40 20" preserveAspectRatio="none">
+          <defs>
+            <filter id="bracketGlowLeftFinal" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#9D4EDD" floodOpacity="0.9" />
+            </filter>
+          </defs>
+          <line
+            x1="0"
+            y1="10"
+            x2="40"
+            y2="10"
+            stroke={hasWinner ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
+            strokeWidth={hasWinner ? "2.5" : "1.5"}
+            filter={hasWinner ? "url(#bracketGlowLeftFinal)" : undefined}
+          />
+          {hasWinner && <circle cx="36" cy="10" r="2.5" fill="#C77DFF" />}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function RightFinalToSemiConnector({ match }: { match?: TournamentMatch }) {
+  const hasWinner = Boolean(match?.winner);
+  return (
+    <div className="w-8 sm:w-11 shrink-0 flex flex-col justify-around">
+      <div className="pb-1.5 border-b border-transparent select-none opacity-0">
+        <span className="text-[10px] block">Sayap</span>
+        <p className="text-[11px]">Ronde</p>
+      </div>
+      <div className="flex-1 flex items-center justify-center relative">
+        <svg className="w-full h-8 overflow-visible" viewBox="0 0 40 20" preserveAspectRatio="none">
+          <defs>
+            <filter id="bracketGlowRightFinal" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#9D4EDD" floodOpacity="0.9" />
+            </filter>
+          </defs>
+          <line
+            x1="0"
+            y1="10"
+            x2="40"
+            y2="10"
+            stroke={hasWinner ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
+            strokeWidth={hasWinner ? "2.5" : "1.5"}
+            filter={hasWinner ? "url(#bracketGlowRightFinal)" : undefined}
+          />
+          {hasWinner && <circle cx="4" cy="10" r="2.5" fill="#C77DFF" />}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function LeftElbowConnectorColumn({ matches }: { matches: TournamentMatch[] }) {
+  const pairCount = Math.max(1, Math.floor(matches.length / 2));
+  const pairs = Array.from({ length: pairCount }, (_, i) => ({
+    upper: matches[i * 2],
+    lower: matches[i * 2 + 1],
+  }));
+
+  return (
+    <div className="w-8 sm:w-11 shrink-0 flex flex-col justify-around">
+      <div className="pb-1.5 border-b border-transparent select-none opacity-0">
+        <span className="text-[10px] block">Sayap</span>
+        <p className="text-[11px]">Ronde</p>
+      </div>
+      <div className="flex-1 flex flex-col justify-around">
+        {pairs.map((p, idx) => {
+          const upperActive = Boolean(p.upper?.winner);
+          const lowerActive = Boolean(p.lower?.winner);
+          const stemActive = upperActive || lowerActive;
+
+          return (
+            <div key={idx} className="flex-1 flex flex-col justify-center relative min-h-[90px]">
+              <svg className="w-full h-full overflow-visible" viewBox="0 0 40 100" preserveAspectRatio="none">
+                <defs>
+                  <filter id={`bracketGlowL-${idx}`} x="-30%" y="-30%" width="160%" height="160%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#9D4EDD" floodOpacity="0.9" />
+                  </filter>
+                </defs>
+                {/* Upper branch */}
+                <path
+                  d="M 0 25 L 24 25 L 24 50"
+                  fill="none"
+                  stroke={upperActive ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
+                  strokeWidth={upperActive ? "2.5" : "1.5"}
+                  vectorEffect="non-scaling-stroke"
+                  filter={upperActive ? `url(#bracketGlowL-${idx})` : undefined}
+                />
+                {/* Lower branch */}
+                <path
+                  d="M 0 75 L 24 75 L 24 50"
+                  fill="none"
+                  stroke={lowerActive ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
+                  strokeWidth={lowerActive ? "2.5" : "1.5"}
+                  vectorEffect="non-scaling-stroke"
+                  filter={lowerActive ? `url(#bracketGlowL-${idx})` : undefined}
+                />
+                {/* Center Stem */}
+                <path
+                  d="M 24 50 L 40 50"
+                  fill="none"
+                  stroke={stemActive ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
+                  strokeWidth={stemActive ? "2.5" : "1.5"}
+                  vectorEffect="non-scaling-stroke"
+                  filter={stemActive ? `url(#bracketGlowL-${idx})` : undefined}
+                />
+                {stemActive && <circle cx="37" cy="50" r="2.5" fill="#C77DFF" />}
+              </svg>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function RightElbowConnectorColumn({ matches }: { matches: TournamentMatch[] }) {
+  const pairCount = Math.max(1, Math.floor(matches.length / 2));
+  const pairs = Array.from({ length: pairCount }, (_, i) => ({
+    upper: matches[i * 2],
+    lower: matches[i * 2 + 1],
+  }));
+
+  return (
+    <div className="w-8 sm:w-11 shrink-0 flex flex-col justify-around">
+      <div className="pb-1.5 border-b border-transparent select-none opacity-0">
+        <span className="text-[10px] block">Sayap</span>
+        <p className="text-[11px]">Ronde</p>
+      </div>
+      <div className="flex-1 flex flex-col justify-around">
+        {pairs.map((p, idx) => {
+          const upperActive = Boolean(p.upper?.winner);
+          const lowerActive = Boolean(p.lower?.winner);
+          const stemActive = upperActive || lowerActive;
+
+          return (
+            <div key={idx} className="flex-1 flex flex-col justify-center relative min-h-[90px]">
+              <svg className="w-full h-full overflow-visible" viewBox="0 0 40 100" preserveAspectRatio="none">
+                <defs>
+                  <filter id={`bracketGlowR-${idx}`} x="-30%" y="-30%" width="160%" height="160%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#9D4EDD" floodOpacity="0.9" />
+                  </filter>
+                </defs>
+                {/* Upper branch from right (40, 25) to (16, 25) down to (16, 50) */}
+                <path
+                  d="M 40 25 L 16 25 L 16 50"
+                  fill="none"
+                  stroke={upperActive ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
+                  strokeWidth={upperActive ? "2.5" : "1.5"}
+                  vectorEffect="non-scaling-stroke"
+                  filter={upperActive ? `url(#bracketGlowR-${idx})` : undefined}
+                />
+                {/* Lower branch from right (40, 75) to (16, 75) up to (16, 50) */}
+                <path
+                  d="M 40 75 L 16 75 L 16 50"
+                  fill="none"
+                  stroke={lowerActive ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
+                  strokeWidth={lowerActive ? "2.5" : "1.5"}
+                  vectorEffect="non-scaling-stroke"
+                  filter={lowerActive ? `url(#bracketGlowR-${idx})` : undefined}
+                />
+                {/* Center Stem pointing left (16, 50) to (0, 50) */}
+                <path
+                  d="M 16 50 L 0 50"
+                  fill="none"
+                  stroke={stemActive ? "#9D4EDD" : "rgba(157, 78, 221, 0.4)"}
+                  strokeWidth={stemActive ? "2.5" : "1.5"}
+                  vectorEffect="non-scaling-stroke"
+                  filter={stemActive ? `url(#bracketGlowR-${idx})` : undefined}
+                />
+                {stemActive && <circle cx="3" cy="50" r="2.5" fill="#C77DFF" />}
+              </svg>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
 // SUB-KOMPONEN: BAGAN SIMETRIS SPLIT DUAL-WING (SAYAP KIRI - TENGAH - SAYAP KANAN)
 // =========================================================================
 export function DualWingBracketView({
@@ -3071,42 +3249,60 @@ export function DualWingBracketView({
 
   // Ronde sebelum final: 1, 2, ..., finalRoundNum - 1
   const preliminaryRounds = sortedRoundNumbers.slice(0, -1);
+  const semiRoundNum = finalRoundNum - 1;
+  const semiMatches = roundsMap.get(semiRoundNum) || [];
+  const semiHalf = Math.ceil(semiMatches.length / 2);
+  const semiLeftMatch = semiMatches.slice(0, semiHalf)[0];
+  const semiRightMatch = semiMatches.slice(semiHalf)[0] || semiMatches[1];
+
+  const reversedPreliminaryRounds = [...preliminaryRounds].reverse();
   const totalCols = preliminaryRounds.length * 2 + 1;
+  const totalConnectors = preliminaryRounds.length * 2;
+  const minWidthPx = Math.max(920, totalCols * 260 + totalConnectors * 40);
 
   return (
     <div
-      className="flex items-stretch gap-5 sm:gap-7 pb-4 pt-2 select-none"
-      style={{ minWidth: `${Math.max(860, totalCols * 265)}px` }}
+      className="flex items-stretch gap-2 sm:gap-3 pb-4 pt-2 select-none"
+      style={{ minWidth: `${minWidthPx}px` }}
     >
       {/* 1. SAYAP KIRI (LEFT WING): Ronde 1 -> Ronde 2 -> ... -> Semifinal Kiri */}
       {preliminaryRounds.map((rNum) => {
         const roundMatches = roundsMap.get(rNum) || [];
         const half = Math.ceil(roundMatches.length / 2);
         const leftMatches = roundMatches.slice(0, half);
-        const isSemi = rNum === finalRoundNum - 1;
+        const isSemi = rNum === semiRoundNum;
         const baseName = roundMatches[0]?.roundName?.replace(/\s*\d+$/, "") || `Ronde ${rNum}`;
         const heading = isSemi ? "Semifinal Kiri ➔" : `${baseName} (Kiri) ➔`;
 
         return (
-          <div key={`left-r-${rNum}`} className="flex-1 flex flex-col justify-around space-y-4 min-w-[240px]">
-            <div className="text-center pb-1.5 border-b border-purple-500/30">
-              <span className="text-[10px] font-mono text-purple-400/70 uppercase tracking-widest block">
-                Sayap Kiri
-              </span>
-              <p className="text-[11px] font-mono font-bold text-purple-300 uppercase tracking-wider">
-                {heading}
-              </p>
+          <Fragment key={`left-group-${rNum}`}>
+            <div className="flex-1 flex flex-col justify-around space-y-4 min-w-[240px]">
+              <div className="text-center pb-1.5 border-b border-purple-500/30">
+                <span className="text-[10px] font-mono text-purple-400/70 uppercase tracking-widest block">
+                  Sayap Kiri
+                </span>
+                <p className="text-[11px] font-mono font-bold text-purple-300 uppercase tracking-wider">
+                  {heading}
+                </p>
+              </div>
+              {leftMatches.map((m) => (
+                <MatchCard
+                  key={m.matchId}
+                  match={m}
+                  teams={teams}
+                  isFinal={false}
+                  onTeamClick={onTeamClick}
+                />
+              ))}
             </div>
-            {leftMatches.map((m) => (
-              <MatchCard
-                key={m.matchId}
-                match={m}
-                teams={teams}
-                isFinal={false}
-                onTeamClick={onTeamClick}
-              />
-            ))}
-          </div>
+
+            {/* Garis Penghubung Siku Keluar ke Kanan */}
+            {isSemi ? (
+              <LeftSemiToFinalConnector match={semiLeftMatch} />
+            ) : (
+              <LeftElbowConnectorColumn matches={leftMatches} />
+            )}
+          </Fragment>
         );
       })}
 
@@ -3150,34 +3346,41 @@ export function DualWingBracketView({
       </div>
 
       {/* 3. SAYAP KANAN (RIGHT WING): Semifinal Kanan <- ... <- Ronde 2 <- Ronde 1 (Mirrored) */}
-      {[...preliminaryRounds].reverse().map((rNum) => {
+      <RightFinalToSemiConnector match={semiRightMatch} />
+
+      {reversedPreliminaryRounds.map((rNum) => {
         const roundMatches = roundsMap.get(rNum) || [];
         const half = Math.ceil(roundMatches.length / 2);
         const rightMatches = roundMatches.slice(half);
-        const isSemi = rNum === finalRoundNum - 1;
+        const isSemi = rNum === semiRoundNum;
         const baseName = roundMatches[0]?.roundName?.replace(/\s*\d+$/, "") || `Ronde ${rNum}`;
         const heading = isSemi ? "⬅ Semifinal Kanan" : `⬅ ${baseName} (Kanan)`;
 
         return (
-          <div key={`right-r-${rNum}`} className="flex-1 flex flex-col justify-around space-y-4 min-w-[240px]">
-            <div className="text-center pb-1.5 border-b border-purple-500/30">
-              <span className="text-[10px] font-mono text-purple-400/70 uppercase tracking-widest block">
-                Sayap Kanan
-              </span>
-              <p className="text-[11px] font-mono font-bold text-purple-300 uppercase tracking-wider">
-                {heading}
-              </p>
+          <Fragment key={`right-group-${rNum}`}>
+            {/* Jika bukan semifinal (misal QF atau R1), render connector siku di sebelah kiri match card-nya */}
+            {!isSemi && <RightElbowConnectorColumn matches={rightMatches} />}
+
+            <div className="flex-1 flex flex-col justify-around space-y-4 min-w-[240px]">
+              <div className="text-center pb-1.5 border-b border-purple-500/30">
+                <span className="text-[10px] font-mono text-purple-400/70 uppercase tracking-widest block">
+                  Sayap Kanan
+                </span>
+                <p className="text-[11px] font-mono font-bold text-purple-300 uppercase tracking-wider">
+                  {heading}
+                </p>
+              </div>
+              {rightMatches.map((m) => (
+                <MatchCard
+                  key={m.matchId}
+                  match={m}
+                  teams={teams}
+                  isFinal={false}
+                  onTeamClick={onTeamClick}
+                />
+              ))}
             </div>
-            {rightMatches.map((m) => (
-              <MatchCard
-                key={m.matchId}
-                match={m}
-                teams={teams}
-                isFinal={false}
-                onTeamClick={onTeamClick}
-              />
-            ))}
-          </div>
+          </Fragment>
         );
       })}
     </div>
