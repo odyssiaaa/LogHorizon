@@ -134,7 +134,7 @@ export function EscrowChatModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden my-auto">
         {/* HEADER */}
         <div className="p-4 border-b border-gray-200 dark:border-[#211C2B] flex items-center justify-between bg-gray-50/50 dark:bg-[#0E0A16]">
           <div className="flex items-center gap-2">

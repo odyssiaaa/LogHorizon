@@ -195,7 +195,7 @@ button { cursor: pointer; }
 .inline-notice button { display: grid; border: 0; color: inherit; background: transparent; }
 .banned-note { color: #ff9aa8; font-size: 11px; }
 .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(5,4,9,.78); backdrop-filter: blur(8px); overflow-y: auto; }
-.modal-card { position: relative; width: min(520px, 100%); max-height: min(90vh, 850px); overflow-y: auto; padding: 29px; background: #171322; border: 1px solid rgba(255,255,255,.12); border-radius: 15px; box-shadow: 0 25px 90px rgba(0,0,0,.4); }
+.modal-card { position: relative; width: min(560px, calc(100vw - 2rem)); max-height: 85vh; overflow-y: auto; padding: 29px; background: #171322; border: 1px solid rgba(255,255,255,.12); border-radius: 15px; box-shadow: 0 25px 90px rgba(0,0,0,.4); }
 .modal-close { position: absolute; top: 18px; right: 18px; display: grid; place-items: center; padding: 6px; background: transparent; color: #918a9c; border: 0; }
 .modal-card > .section-kicker { margin: 0 0 8px; }
 .modal-card h2 { margin: 0 0 21px; font-size: 23px; letter-spacing: -.03em; }
@@ -560,7 +560,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .inline-notice { background: color-mix(in srgb, #16855b 9%, var(--card)); color: #15734f; }
 .dark .inline-notice { color: #70d7a8; }
 .modal-backdrop { background: rgba(8, 6, 11, .65); backdrop-filter: blur(3px); }
-.modal-card { background: var(--card); border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 16px 48px rgba(0,0,0,.18); padding: 24px; }
+.modal-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,.18); padding: 24px; width: min(560px, calc(100vw - 2rem)); max-height: 85vh; overflow-y: auto; }
 .modal-close { top: 13px; right: 13px; color: var(--muted); }
 .modal-card h2 { color: var(--foreground); font-size: 20px; }
 .stack-form label, .market-filters label, .member-search { color: var(--muted); }

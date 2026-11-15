@@ -189,7 +189,7 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
         </div>
       )}
 
-      <div className="treasury-tier-grid grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 my-6">
+      <div className="treasury-tier-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 my-6">
         {tiers.map(({ id, name, icon: Icon, price, badge, benefits }, index) => (
           <article className={`treasury-tier tier-${index + 1} p-5 sm:p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col justify-between`} key={id}>
             <div>
@@ -241,8 +241,8 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
 
       {/* QRIS PAYMENT & CONFIRMATION MODAL */}
       {tier && selectedTier && (
-        <div className="modal-backdrop fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 overflow-y-auto" onMouseDown={(event) => { if (event.target === event.currentTarget && !loading) setTier(null); }}>
-          <section className="modal-card treasury-modal bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative my-8" role="dialog" aria-modal="true" aria-labelledby="treasury-modal-title">
+        <div className="modal-backdrop fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-3 sm:p-4 overflow-y-auto" onMouseDown={(event) => { if (event.target === event.currentTarget && !loading) setTier(null); }}>
+          <section className="modal-card treasury-modal bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-xl p-5 sm:p-8 w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl relative my-auto" role="dialog" aria-modal="true" aria-labelledby="treasury-modal-title">
             <button type="button" className="modal-close absolute top-4 right-4 text-gray-400 hover:text-white" onClick={() => setTier(null)} disabled={loading} aria-label="Tutup">
               <X size={20} />
             </button>

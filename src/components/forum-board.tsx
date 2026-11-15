@@ -463,12 +463,12 @@ function ThreadModal({
 
   return (
     <div
-      className="modal-backdrop"
+      className="modal-backdrop fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="thread-modal-title">
+      <section className="modal-card w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto my-auto" role="dialog" aria-modal="true" aria-labelledby="thread-modal-title">
         <button className="modal-close" onClick={onClose} aria-label="Tutup">
           <X size={19} />
         </button>

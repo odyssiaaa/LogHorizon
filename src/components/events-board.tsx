@@ -861,9 +861,9 @@ export function EventsBoard() {
           )}
 
           {/* LIST POSTINGAN MABAR */}
-          <div className="lfg-grid grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="lfg-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {visibleLfgPosts.length === 0 && (
-              <p className="empty-state md:col-span-2">
+              <p className="empty-state sm:col-span-2 lg:col-span-3">
                 {search ? "Tidak ada party yang cocok dengan pencarian." : "Belum ada ajakan mabar aktif. Jadilah yang pertama membuat party!"}
               </p>
             )}
@@ -1004,8 +1004,8 @@ export function EventsBoard() {
       {/* MODAL 1: SETUP TEMPLATE TURNAMEN (Khusus Admin / Moderator) */}
       {/* ========================================================================= */}
       {showTemplateModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-full max-w-lg p-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setShowTemplateModal(false)}
@@ -1160,8 +1160,8 @@ export function EventsBoard() {
       {/* MODAL 2: KELOLA TIM, PEMAIN & UPDATE SKOR (Admin / Moderator) */}
       {/* ========================================================================= */}
       {managingTournament && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-full max-w-3xl p-6 shadow-2xl relative my-8">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-3xl max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setManagingTournament(null)}
@@ -1499,8 +1499,8 @@ export function EventsBoard() {
       {/* MODAL 3: PENDAFTARAN TIM MEMBER KE TURNAMEN */}
       {/* ========================================================================= */}
       {registeringTournament && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setRegisteringTournament(null)}
@@ -1575,8 +1575,8 @@ export function EventsBoard() {
       {/* POPUP: LIHAT SUSUNAN PEMAIN (ROSTER) TIM */}
       {/* ========================================================================= */}
       {viewingRoster && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-full max-w-sm p-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-sm max-h-[85vh] overflow-y-auto p-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150 my-auto">
             <button
               type="button"
               onClick={() => setViewingRoster(null)}
