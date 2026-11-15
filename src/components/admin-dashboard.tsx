@@ -30,6 +30,7 @@ import {
   Sparkles,
   Store,
   Trash2,
+  Trophy,
   Users,
   X,
 } from "lucide-react";
@@ -702,6 +703,17 @@ export function AdminDashboard({ role }: { role: Role }) {
                 </span>
               )}
             </button>
+
+            <Link
+              href="/events?view=turnamen"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724] border border-dashed border-[#9D4EDD]/40 mt-3 bg-[#9D4EDD]/5 transition-colors"
+            >
+              <div className="flex items-center gap-2.5 text-[#9D4EDD]">
+                <Trophy size={16} />
+                <span>Bagan Turnamen</span>
+              </div>
+              <ExternalLink size={12} className="text-gray-400" />
+            </Link>
           </aside>
 
           {/* MOBILE HORIZONTAL SCROLLABLE TABS (>= md hidden) */}
@@ -763,6 +775,12 @@ export function AdminDashboard({ role }: { role: Role }) {
                 </span>
               )}
             </button>
+            <Link
+              href="/events?view=turnamen"
+              className="px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 shrink-0 bg-[#9D4EDD]/10 text-[#9D4EDD] border border-[#9D4EDD]/30"
+            >
+              <Trophy size={14} /> Bagan Turnamen
+            </Link>
           </div>
 
           {/* MAIN TAB CONTENT */}

@@ -22,20 +22,90 @@ import {
   Sun,
   Swords,
   Trophy,
+  Users,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { NotificationBell } from "@/components/notification-bell";
 
-const navLinks = [
-  { label: "Home", href: "/", icon: Home },
-  { label: "Forum", href: "/forum", icon: MessageSquare },
-  { label: "Marketplace", href: "/marketplace", icon: Store },
-  { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
-  { label: "News", href: "/news", icon: Newspaper },
-  { label: "Events", href: "/events", icon: Swords },
-  { label: "Donate", href: "/donate", icon: HeartHandshake },
-  { label: "Rules", href: "/#rules", icon: BookOpen },
+type NavDropdownItem = {
+  label: string;
+  href: string;
+  desc: string;
+  icon: typeof MessageSquare;
+};
+
+type NavGroup = {
+  title: string;
+  key: string;
+  icon: typeof MessageSquare;
+  items: NavDropdownItem[];
+};
+
+const navGroups: NavGroup[] = [
+  {
+    title: "Komunitas",
+    key: "komunitas",
+    icon: MessageSquare,
+    items: [
+      {
+        label: "Forum Diskusi",
+        href: "/forum",
+        desc: "Diskusi umum & clip komunitas",
+        icon: MessageSquare,
+      },
+      {
+        label: "Warta & Info Discord",
+        href: "/news",
+        desc: "Berita game & pengumuman guild",
+        icon: Newspaper,
+      },
+      {
+        label: "Papan Peringkat",
+        href: "/leaderboard",
+        desc: "Top XP & Donatur",
+        icon: Trophy,
+      },
+    ],
+  },
+  {
+    title: "Arena & Mabar",
+    key: "arena",
+    icon: Swords,
+    items: [
+      {
+        label: "Cari Teman Mabar (LFG)",
+        href: "/events?view=mabar",
+        desc: "Ajakan push rank & mabar cepat",
+        icon: Users,
+      },
+      {
+        label: "Turnamen & Bagan",
+        href: "/events?view=turnamen",
+        desc: "Kompetisi resmi & bracket pertandingan",
+        icon: Trophy,
+      },
+    ],
+  },
+  {
+    title: "Guild",
+    key: "guild",
+    icon: Crown,
+    items: [
+      {
+        label: "Treasury & Donasi",
+        href: "/donate",
+        desc: "Dukung guild & klaim kasta role",
+        icon: HeartHandshake,
+      },
+      {
+        label: "Aturan & Kasta",
+        href: "/rules",
+        desc: "Panduan & hierarki kerajaan LogHorizon",
+        icon: BookOpen,
+      },
+    ],
+  },
 ];
 
 export function Navbar() {
@@ -46,10 +116,16 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [hoveredPath, setHoveredPath] = useState<string | null>(null);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [mobileAccordion, setMobileAccordion] = useState<Record<string, boolean>>({
+    komunitas: true,
+    arena: true,
+    guild: false,
+  });
   const [isDark, setIsDark] = useState(true);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const menuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync initial theme from localStorage
   useEffect(() => {
@@ -69,7 +145,7 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Click outside to close desktop profile dropdown
+  // Click outside to close desktop profile dropdown and menus
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -84,6 +160,7 @@ export function Navbar() {
   useEffect(() => {
     setMobileOpen(false);
     setDropdownOpen(false);
+    setActiveMenu(null);
   }, [pathname]);
 
   // Lock body scroll when mobile drawer is open
@@ -107,6 +184,7 @@ export function Navbar() {
       if (event.key === "Escape") {
         setMobileOpen(false);
         setDropdownOpen(false);
+        setActiveMenu(null);
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -120,8 +198,30 @@ export function Navbar() {
     window.localStorage.setItem("loghorizon-theme", nextDark ? "dark" : "light");
   }
 
+  const handleMouseEnter = (key: string) => {
+    if (menuTimeoutRef.current) clearTimeout(menuTimeoutRef.current);
+    setActiveMenu(key);
+  };
+
+  const handleMouseLeave = () => {
+    menuTimeoutRef.current = setTimeout(() => {
+      setActiveMenu(null);
+    }, 180);
+  };
+
+  const toggleMobileGroup = (key: string) => {
+    setMobileAccordion((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const isStaff = user && (user.role === "ADMIN" || user.role === "MODERATOR");
   const isOwner = user?.role === "ADMIN" && (user.username === ".odyssia" || user.discordId === "706661230835925042");
+
+  // Determine active states for top nav items
+  const isHomeActive = pathname === "/";
+  const isMarketplaceActive = pathname.startsWith("/marketplace");
+  const isKomunitasActive = pathname.startsWith("/forum") || pathname.startsWith("/news") || pathname.startsWith("/leaderboard");
+  const isArenaActive = pathname.startsWith("/events");
+  const isGuildActive = pathname.startsWith("/donate") || pathname.startsWith("/rules") || pathname === "/#rules";
 
   return (
     <>
@@ -151,40 +251,193 @@ export function Navbar() {
             </span>
           </Link>
 
-          {/* SISI TENGAH: Menu Navigasi Horizontal (Khusus Desktop md:flex) */}
+          {/* SISI TENGAH: Menu Navigasi Terstruktur Desktop (Dropdown Cyber Minimalist) */}
           <nav
-            className="hidden md:flex items-center gap-0.5 px-2.5 py-1 rounded-full border border-gray-200/60 dark:border-[#211C2B]/80 bg-white/40 dark:bg-[#120F17]/40 backdrop-blur-sm"
-            onMouseLeave={() => setHoveredPath(null)}
+            className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-full border border-gray-200/60 dark:border-[#211C2B]/80 bg-white/40 dark:bg-[#120F17]/40 backdrop-blur-sm"
             aria-label="Navigasi Utama Desktop"
           >
-            {navLinks.map((link) => {
-              const isActive =
-                link.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(link.href) && !link.href.includes("#");
+            {/* 1. HOME */}
+            <Link
+              href="/"
+              className={`relative px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                isHomeActive
+                  ? "text-[#9D4EDD] dark:text-[#C77DFF]"
+                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              }`}
+            >
+              Home
+            </Link>
 
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onMouseEnter={() => setHoveredPath(link.href)}
-                  className={`relative px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                    isActive
-                      ? "text-[#9D4EDD] dark:text-[#C77DFF] font-bold"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                >
-                  {hoveredPath === link.href && (
-                    <motion.div
-                      layoutId="navbarHoverPill"
-                      className="absolute inset-0 rounded-md bg-[#9D4EDD]/15 dark:bg-[#9D4EDD]/20 -z-10"
-                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                    />
-                  )}
-                  {link.label}
-                </Link>
-              );
-            })}
+            {/* 2. KOMUNITAS DROPDOWN */}
+            <div
+              className="relative"
+              onMouseEnter={() => handleMouseEnter("komunitas")}
+              onMouseLeave={handleMouseLeave}
+            >
+              <button
+                type="button"
+                onClick={() => setActiveMenu(activeMenu === "komunitas" ? null : "komunitas")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                  isKomunitasActive
+                    ? "text-[#9D4EDD] dark:text-[#C77DFF]"
+                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                <span>Komunitas</span>
+                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "komunitas" ? "rotate-180 text-[#9D4EDD]" : "opacity-70"}`} />
+              </button>
+
+              <AnimatePresence>
+                {activeMenu === "komunitas" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 p-2 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white/95 dark:bg-[#120F17]/95 backdrop-blur-md shadow-2xl z-50 space-y-1"
+                  >
+                    {navGroups[0].items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setActiveMenu(null)}
+                        className="flex items-start gap-3 p-2.5 rounded-lg text-left transition-all hover:bg-purple-50 dark:hover:bg-[#1E1A3A]/70 group/item"
+                      >
+                        <div className="size-8 rounded-md bg-purple-500/10 text-purple-600 dark:text-[#C77DFF] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:bg-[#9D4EDD] group-hover/item:text-white transition-colors">
+                          <item.icon size={15} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-gray-900 dark:text-white group-hover/item:text-[#9D4EDD] dark:group-hover/item:text-[#C77DFF] transition-colors">
+                            {item.label}
+                          </p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug line-clamp-1 mt-0.5">
+                            {item.desc}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* 3. ARENA & MABAR DROPDOWN */}
+            <div
+              className="relative"
+              onMouseEnter={() => handleMouseEnter("arena")}
+              onMouseLeave={handleMouseLeave}
+            >
+              <button
+                type="button"
+                onClick={() => setActiveMenu(activeMenu === "arena" ? null : "arena")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                  isArenaActive
+                    ? "text-[#9D4EDD] dark:text-[#C77DFF]"
+                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                <span>Arena &amp; Mabar</span>
+                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "arena" ? "rotate-180 text-[#9D4EDD]" : "opacity-70"}`} />
+              </button>
+
+              <AnimatePresence>
+                {activeMenu === "arena" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 p-2 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white/95 dark:bg-[#120F17]/95 backdrop-blur-md shadow-2xl z-50 space-y-1"
+                  >
+                    {navGroups[1].items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setActiveMenu(null)}
+                        className="flex items-start gap-3 p-2.5 rounded-lg text-left transition-all hover:bg-purple-50 dark:hover:bg-[#1E1A3A]/70 group/item"
+                      >
+                        <div className="size-8 rounded-md bg-purple-500/10 text-purple-600 dark:text-[#C77DFF] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:bg-[#9D4EDD] group-hover/item:text-white transition-colors">
+                          <item.icon size={15} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-gray-900 dark:text-white group-hover/item:text-[#9D4EDD] dark:group-hover/item:text-[#C77DFF] transition-colors">
+                            {item.label}
+                          </p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug line-clamp-1 mt-0.5">
+                            {item.desc}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* 4. MARKETPLACE */}
+            <Link
+              href="/marketplace"
+              className={`relative px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                isMarketplaceActive
+                  ? "text-[#9D4EDD] dark:text-[#C77DFF]"
+                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              }`}
+            >
+              Marketplace
+            </Link>
+
+            {/* 5. GUILD DROPDOWN */}
+            <div
+              className="relative"
+              onMouseEnter={() => handleMouseEnter("guild")}
+              onMouseLeave={handleMouseLeave}
+            >
+              <button
+                type="button"
+                onClick={() => setActiveMenu(activeMenu === "guild" ? null : "guild")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                  isGuildActive
+                    ? "text-[#9D4EDD] dark:text-[#C77DFF]"
+                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                <span>Guild</span>
+                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "guild" ? "rotate-180 text-[#9D4EDD]" : "opacity-70"}`} />
+              </button>
+
+              <AnimatePresence>
+                {activeMenu === "guild" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 p-2 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white/95 dark:bg-[#120F17]/95 backdrop-blur-md shadow-2xl z-50 space-y-1"
+                  >
+                    {navGroups[2].items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setActiveMenu(null)}
+                        className="flex items-start gap-3 p-2.5 rounded-lg text-left transition-all hover:bg-purple-50 dark:hover:bg-[#1E1A3A]/70 group/item"
+                      >
+                        <div className="size-8 rounded-md bg-purple-500/10 text-purple-600 dark:text-[#C77DFF] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:bg-[#9D4EDD] group-hover/item:text-white transition-colors">
+                          <item.icon size={15} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-gray-900 dark:text-white group-hover/item:text-[#9D4EDD] dark:group-hover/item:text-[#C77DFF] transition-colors">
+                            {item.label}
+                          </p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug line-clamp-1 mt-0.5">
+                            {item.desc}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </nav>
 
           {/* SISI KANAN: Aksi Desktop & Hamburger Mobile */}
@@ -219,53 +472,34 @@ export function Navbar() {
                       aria-expanded={dropdownOpen}
                       aria-label="Menu profil pengguna"
                     >
-                      <div className="relative size-7 rounded-full overflow-hidden border border-[#9D4EDD]/60 bg-[#1E1A3A] flex items-center justify-center shrink-0">
+                      <div className="relative size-7 rounded-full overflow-hidden border border-[#9D4EDD]/40 bg-[#171322] flex items-center justify-center">
                         {user.avatar ? (
-                          <Image
-                            src={user.avatar}
-                            alt={user.username ?? "User"}
-                            fill
-                            className="object-cover"
-                            unoptimized
-                          />
+                          <Image src={user.avatar} alt={user.username ?? "User"} fill className="object-cover" unoptimized />
                         ) : (
                           <span className="text-xs font-bold text-purple-300">
                             {(user.username ?? user.name ?? "G").slice(0, 1).toUpperCase()}
                           </span>
                         )}
-                        {isOwner && (
-                          <span className="absolute bottom-0 right-0 size-2.5 bg-amber-400 rounded-full border border-black flex items-center justify-center">
-                            <Crown size={7} className="text-black" />
-                          </span>
-                        )}
                       </div>
-
-                      <span className="text-xs font-bold text-gray-800 dark:text-gray-200 max-w-[100px] truncate">
+                      <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 max-w-[90px] truncate">
                         {user.username ?? user.name ?? "Gamer"}
                       </span>
-
-                      <ChevronDown
-                        size={13}
-                        className={`text-gray-400 transition-transform duration-200 ${
-                          dropdownOpen ? "rotate-180 text-[#9D4EDD]" : ""
-                        }`}
-                      />
+                      <ChevronDown size={13} className="text-gray-400" />
                     </button>
 
-                    {/* Dropdown Menu Desktop */}
                     <AnimatePresence>
                       {dropdownOpen && (
                         <motion.div
-                          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                          initial={{ opacity: 0, y: 6, scale: 0.98 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 6, scale: 0.96 }}
-                          transition={{ duration: 0.16, ease: "easeOut" }}
-                          className="absolute right-0 mt-2 w-64 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-2 shadow-2xl z-50 backdrop-blur-xl"
+                          exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 mt-2 w-56 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-2 shadow-xl z-50 space-y-1"
                           role="menu"
                         >
-                          <div className="px-3 py-2.5 border-b border-gray-100 dark:border-[#211C2B]">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-extrabold text-xs text-gray-900 dark:text-white truncate">
+                          <div className="px-3 py-2 border-b border-gray-100 dark:border-[#211C2B]">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-gray-900 dark:text-white truncate">
                                 {user.username ?? user.name ?? "Gamer"}
                               </span>
                               {isOwner && <Crown size={12} className="text-amber-400 shrink-0" />}
@@ -357,7 +591,7 @@ export function Navbar() {
       </header>
 
       {/* ========================================================================= */}
-      {/* 2. TAMPILAN MOBILE: OFFCANVAS SLIDEBAR MENU (Side Drawer) */}
+      {/* 2. TAMPILAN MOBILE: OFFCANVAS SLIDEBAR MENU (Accordion Style) */}
       {/* ========================================================================= */}
       <AnimatePresence>
         {mobileOpen && (
@@ -379,7 +613,7 @@ export function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="fixed inset-y-0 right-0 z-50 w-72 max-w-[80vw] bg-white dark:bg-[#0D0A14] border-l border-gray-200 dark:border-[#211C2B] p-5 flex flex-col justify-between shadow-2xl md:hidden overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] bg-white dark:bg-[#0D0A14] border-l border-gray-200 dark:border-[#211C2B] p-5 flex flex-col justify-between shadow-2xl md:hidden overflow-y-auto"
               aria-label="Menu navigasi mobile"
             >
               <div>
@@ -464,64 +698,127 @@ export function Navbar() {
                   </div>
                 )}
 
-                {/* Daftar Menu Navigasi Vertikal */}
-                <nav className="mt-5 flex flex-col space-y-1" aria-label="Navigasi Menu Mobile">
-                  {navLinks.map((link) => {
-                    const Icon = link.icon;
-                    const isActive =
-                      link.href === "/"
-                        ? pathname === "/"
-                        : pathname.startsWith(link.href) && !link.href.includes("#");
+                {/* Daftar Menu Navigasi Vertikal Accordion */}
+                <nav className="mt-5 flex flex-col space-y-1.5" aria-label="Navigasi Menu Mobile">
+                  {/* HOME */}
+                  <Link
+                    href="/"
+                    onClick={() => setMobileOpen(false)}
+                    className={`py-2.5 px-3.5 rounded-lg text-sm font-bold transition-colors flex items-center justify-between ${
+                      isHomeActive
+                        ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF]"
+                        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Home size={16} className={isHomeActive ? "text-[#9D4EDD] dark:text-[#C77DFF]" : "text-gray-400"} />
+                      <span>Home</span>
+                    </span>
+                    {isHomeActive && <span className="size-1.5 rounded-full bg-[#9D4EDD]" />}
+                  </Link>
 
+                  {/* ACCORDION GROUPS */}
+                  {navGroups.map((group) => {
+                    const isOpen = mobileAccordion[group.key] ?? false;
+                    const GroupIcon = group.icon;
                     return (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        onClick={() => setMobileOpen(false)}
-                        className={`py-3 px-4 rounded-md text-base font-semibold transition-colors flex items-center justify-between ${
-                          isActive
-                            ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] font-bold"
-                            : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5"
-                        }`}
-                      >
-                        <span className="flex items-center gap-3">
-                          <Icon size={18} className={isActive ? "text-[#9D4EDD] dark:text-[#C77DFF]" : "text-gray-400"} />
-                          <span>{link.label}</span>
-                        </span>
-                        {isActive && <span className="size-1.5 rounded-full bg-[#9D4EDD]" />}
-                      </Link>
+                      <div key={group.key} className="rounded-lg border border-gray-200/70 dark:border-[#211C2B] overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => toggleMobileGroup(group.key)}
+                          className="w-full py-2.5 px-3.5 flex items-center justify-between bg-gray-50/70 dark:bg-[#120F17]/60 text-sm font-bold text-gray-800 dark:text-gray-200 hover:text-[#9D4EDD]"
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <GroupIcon size={16} className="text-[#9D4EDD]" />
+                            <span>{group.title}</span>
+                          </span>
+                          <ChevronDown size={14} className={`transition-transform duration-200 text-gray-400 ${isOpen ? "rotate-180 text-[#9D4EDD]" : ""}`} />
+                        </button>
+
+                        <AnimatePresence>
+                          {isOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.15 }}
+                              className="p-1 space-y-0.5 bg-white dark:bg-[#0D0A14]"
+                            >
+                              {group.items.map((subItem) => {
+                                const SubIcon = subItem.icon;
+                                const isSubActive = pathname === subItem.href || (subItem.href.includes("?") && pathname === subItem.href.split("?")[0]);
+                                return (
+                                  <Link
+                                    key={subItem.href}
+                                    href={subItem.href}
+                                    onClick={() => setMobileOpen(false)}
+                                    className={`py-2 px-3 rounded-md text-xs font-medium transition-colors flex items-start gap-2.5 ${
+                                      isSubActive
+                                        ? "bg-purple-500/15 text-[#9D4EDD] dark:text-[#C77DFF] font-bold"
+                                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+                                    }`}
+                                  >
+                                    <SubIcon size={14} className="shrink-0 mt-0.5 text-purple-500/80" />
+                                    <div>
+                                      <p>{subItem.label}</p>
+                                      <p className="text-[10px] text-gray-400 line-clamp-1">{subItem.desc}</p>
+                                    </div>
+                                  </Link>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     );
                   })}
 
-                  {/* Link Menu Tambahan Mobile (Profile & Settings) */}
+                  {/* MARKETPLACE */}
+                  <Link
+                    href="/marketplace"
+                    onClick={() => setMobileOpen(false)}
+                    className={`py-2.5 px-3.5 rounded-lg text-sm font-bold transition-colors flex items-center justify-between ${
+                      isMarketplaceActive
+                        ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF]"
+                        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Store size={16} className={isMarketplaceActive ? "text-[#9D4EDD] dark:text-[#C77DFF]" : "text-gray-400"} />
+                      <span>Marketplace</span>
+                    </span>
+                    {isMarketplaceActive && <span className="size-1.5 rounded-full bg-[#9D4EDD]" />}
+                  </Link>
+
+                  {/* Profile & Settings (jika login) */}
                   {user && (
                     <Link
                       href="/profile"
                       onClick={() => setMobileOpen(false)}
-                      className={`py-3 px-4 rounded-md text-base font-semibold transition-colors flex items-center gap-3 ${
+                      className={`py-2.5 px-3.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-2.5 ${
                         pathname === "/profile"
-                          ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] font-bold"
-                          : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5"
+                          ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF]"
+                          : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5"
                       }`}
                     >
-                      <Settings size={18} className={pathname === "/profile" ? "text-[#9D4EDD] dark:text-[#C77DFF]" : "text-gray-400"} />
-                      <span>Profile &amp; Settings</span>
+                      <Settings size={16} className={pathname === "/profile" ? "text-[#9D4EDD]" : "text-gray-400"} />
+                      <span>Profil &amp; Pengaturan</span>
                     </Link>
                   )}
 
-                  {/* Link Menu Tambahan Mobile (Admin Panel khusus Admin/Moderator) */}
+                  {/* Admin Panel (jika staff) */}
                   {isStaff && (
                     <Link
                       href="/admin"
                       onClick={() => setMobileOpen(false)}
-                      className={`py-3 px-4 rounded-md text-base font-semibold transition-colors flex items-center gap-3 ${
+                      className={`py-2.5 px-3.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-2.5 ${
                         pathname.startsWith("/admin")
-                          ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] font-bold"
+                          ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF]"
                           : "text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/20"
                       }`}
                     >
-                      <ShieldCheck size={18} />
-                      <span>Admin Panel</span>
+                      <ShieldCheck size={16} />
+                      <span>Dashboard Admin</span>
                     </Link>
                   )}
                 </nav>
@@ -543,7 +840,7 @@ export function Navbar() {
                   </button>
                 ) : (
                   <p className="text-[11px] text-center text-gray-400 font-mono">
-                    LogHorizon • Find Your Party
+                    LogHorizon • Cyber Gaming Guild
                   </p>
                 )}
               </div>

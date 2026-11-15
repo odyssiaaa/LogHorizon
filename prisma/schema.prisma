@@ -33,6 +33,8 @@ enum ReportStatus {
 
 enum TournamentStatus {
   OPEN
+  REGISTRATION
+  ONGOING
   FULL
   COMPLETED
   CANCELLED
@@ -102,11 +104,16 @@ model User {
 
 model Tournament {
   id           String           @id @default(cuid())
+  title        String           @default("LogHorizon Community Cup")
   game         String
-  maxSlots     Int
+  prizePool    String?          @default("Prizepool Komunitas")
+  format       String           @default("8 Tim")
+  maxSlots     Int              @default(8)
   eventDate    DateTime
   status       TournamentStatus @default(OPEN)
   bracket      Json?
+  teams        Json?            @default("[]")
+  matches      Json?            @default("[]")
   createdAt    DateTime         @default(now())
   participants Participant[]
 
