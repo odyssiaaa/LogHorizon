@@ -129,6 +129,7 @@ export function EventsBoard() {
   const [lfgGame, setLfgGame] = useState("Mobile Legends");
   const [customGame, setCustomGame] = useState("");
   const [neededSlots, setNeededSlots] = useState("2");
+  const [customSlots, setCustomSlots] = useState("5");
   const [durationHours, setDurationHours] = useState("24");
   const [description, setDescription] = useState("");
   const [showLfgForm, setShowLfgForm] = useState(false);
@@ -440,7 +441,7 @@ export function EventsBoard() {
       return;
     }
     const gameToSave = lfgGame === "Game Lainnya" ? customGame.trim() || "Game Komunitas" : lfgGame;
-    const finalSlots = Number(neededSlots) + 1;
+    const finalSlots = (neededSlots === "custom" ? Number(customSlots || 5) : Number(neededSlots)) + 1;
     try {
       const response = await fetch("/api/lfg", {
         method: "POST",
@@ -938,11 +939,24 @@ export function EventsBoard() {
                     onChange={(e) => setNeededSlots(e.target.value)}
                     className="w-full px-3 py-2 rounded-md bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
                   >
-                    <option value="1">Butuh 1 Orang</option>
-                    <option value="2">Butuh 2 Orang</option>
-                    <option value="3">Butuh 3 Orang</option>
-                    <option value="4">Butuh 4 Orang (Full Team)</option>
+                    <option value="1">1 - Butuh 1 Orang</option>
+                    <option value="2">2 - Butuh 2 Orang</option>
+                    <option value="3">3 - Butuh 3 Orang</option>
+                    <option value="4">4 - Butuh 4 Orang (Full Team)</option>
+                    <option value="custom">custom - Custom / Bebas (Rame-rame)</option>
                   </select>
+                  {neededSlots === "custom" && (
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      placeholder="Masukkan jumlah orang (misal: 15)"
+                      value={customSlots}
+                      onChange={(e) => setCustomSlots(e.target.value)}
+                      className="mt-2 w-full px-3 py-1.5 rounded-md bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
+                      required
+                    />
+                  )}
                 </div>
 
                 <div>

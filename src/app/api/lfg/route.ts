@@ -80,7 +80,7 @@ export async function POST(request: Request) {
   let maxSlots = Number(data.maxSlots);
   if (!Number.isInteger(maxSlots) || maxSlots < 2) {
     const needed = Number(data.slotsNeeded ?? 2);
-    maxSlots = Number.isInteger(needed) && needed >= 1 && needed <= 19 ? needed + 1 : 5;
+    maxSlots = Number.isInteger(needed) && needed >= 1 && needed <= 100 ? needed + 1 : 5;
   }
 
   // Schedule: if not provided or in past, default to upcoming session (1 hour ahead)
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     description.length > 500 ||
     !Number.isInteger(maxSlots) ||
     maxSlots < 2 ||
-    maxSlots > 20
+    maxSlots > 101
   ) {
     return jsonError("Nama game, deskripsi ajakan, dan slot pemain tidak valid.", 400);
   }

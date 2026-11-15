@@ -224,9 +224,19 @@ export function Navbar() {
 
   function toggleTheme() {
     const nextDark = !isDark;
-    setIsDark(nextDark);
-    document.documentElement.classList.toggle("dark", nextDark);
-    window.localStorage.setItem("loghorizon-theme", nextDark ? "dark" : "light");
+    const applyTheme = () => {
+      setIsDark(nextDark);
+      document.documentElement.classList.toggle("dark", nextDark);
+      window.localStorage.setItem("loghorizon-theme", nextDark ? "dark" : "light");
+    };
+
+    if (typeof document !== "undefined" && "startViewTransition" in document) {
+      (document as unknown as { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
+        applyTheme();
+      });
+    } else {
+      applyTheme();
+    }
   }
 
   const handleMouseEnter = (key: string) => {

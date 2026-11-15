@@ -70,6 +70,42 @@ html {
   }
 }
 
+html,
+body {
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* ========================================================================= */
+/* CINEMATIC VIEW TRANSITION (DIAGONAL TEAR WIPE THEME TOGGLE)              */
+/* ========================================================================= */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+  animation: 550ms cubic-bezier(0.22, 1, 0.36, 1) both diagonalTearWipe;
+}
+
+@keyframes diagonalTearWipe {
+  0% {
+    clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+  }
+  50% {
+    clip-path: polygon(0 0, 100% 0, 20% 100%, 0 100%);
+  }
+  100% {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
 /* ========================================================================= */
 /* 2. ANTI-OVERFLOW SCREEN BOUNDARIES                                        */
 /* ========================================================================= */

@@ -199,8 +199,8 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
           )}
         </div>
 
-        {/* MODERN SEGMENTED CONTROL PILL TABS */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-gray-100 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 overflow-x-auto scrollbar-none my-4" role="tablist" aria-label="Kategori sub-forum">
+        {/* MODERN SEGMENTED CONTROL PILL TABS (Mobile & Tablet only, Desktop uses right sidebar directory) */}
+        <div className="lg:hidden flex items-center gap-1.5 p-1 rounded-xl bg-gray-100 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 overflow-x-auto scrollbar-none my-4" role="tablist" aria-label="Kategori sub-forum">
           {categories.map((item) => {
             const isActive = category === item.id;
             return (
@@ -486,21 +486,6 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                   <span>Gunakan tombol <strong>Report</strong> jika melihat spam atau penipuan.</span>
                 </li>
               </ul>
-            </div>
-
-            {/* CTA BUAT THREAD */}
-            <div className="p-4 rounded-xl border border-purple-500/20 bg-purple-950/15 space-y-2 text-left">
-              <h4 className="text-xs font-bold text-white">Punya Topik Menarik?</h4>
-              <p className="text-[11px] text-gray-400 leading-relaxed">
-                Mulai obrolan baru dan temukan rekan mabar satu guild sekarang.
-              </p>
-              <button
-                type="button"
-                onClick={handleCreateThread}
-                className="w-full mt-1 button button-primary text-xs font-bold py-2"
-              >
-                + Buat Thread Baru
-              </button>
             </div>
           </aside>
         </div>
