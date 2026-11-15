@@ -181,12 +181,12 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   }
 
   return (
-    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
       <div>
         <div className="forum-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div className="text-left">
             <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">RUANG DISKUSI GUILD</p>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Forum <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Komunitas</span></h1>
+            <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Forum <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Komunitas</span></h1>
             <p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Temukan party, berbagi cerita, dan tumbuh bersama para petualang.</p>
           </div>
           {status === "loading" ? (

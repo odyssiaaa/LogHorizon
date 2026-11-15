@@ -45,10 +45,10 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
   );
 
   return (
-    <main className="leaderboard-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+    <main className="leaderboard-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
       <header className="leaderboard-heading mb-6 text-left">
         <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">KOMPETISI GUILD</p>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Leaderboard</span></h1>
+        <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Leaderboard</span></h1>
         <p className="muted-copy text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">Peringkat petualang aktif dan benefactor berdasarkan dukungan terverifikasi.</p>
       </header>
 
@@ -105,7 +105,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
         {activeTab === "adventurers" ? (
           <div>
             {/* MOBILE LIST CARDS (< md) */}
-            <div className="md:hidden space-y-2.5">
+            <div className="md:hidden mobile-card-list space-y-2.5">
               {filteredMembers.map((member, index) => {
                 const RankIcon = rankIcons[index];
                 const iconSize = topIconSizes[index] ?? 16;
@@ -167,7 +167,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
             <DragScrollContainer
               buttonPosition="top"
               label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat detail kolom"
-              className="hidden md:block w-full"
+              className="hidden md:block desktop-table w-full"
             >
               <div className="leaderboard-table-wrap w-full min-w-[620px]">
                 <table className="leaderboard-table">
@@ -184,8 +184,8 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                   {filteredMembers.map((member, index) => {
                     const RankIcon = rankIcons[index];
                     const iconSize = topIconSizes[index] ?? 16;
-                    const isOwner = member.username === ".odyssia" || member.role === "ADMIN";
-                    const isUserPremium = member.isPremium || isOwner;
+                    const isOwner = member.username?.toLowerCase() === ".odyssia" || member.username?.toLowerCase() === "odyssia";
+                    const isUserPremium = member.isPremium || isOwner || member.role === "ADMIN";
                     return (
                       <motion.tr
                         key={member.id}
@@ -238,7 +238,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
         ) : (
           <div>
             {/* MOBILE LIST CARDS FOR BENEFACTORS (< md) */}
-            <div className="md:hidden space-y-2.5">
+            <div className="md:hidden mobile-card-list space-y-2.5">
               {filteredBenefactors.map((member, index) => {
                 const RoyaltyIcon = royaltyIcons[index];
                 const iconSize = topIconSizes[index] ?? 16;
@@ -288,7 +288,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
             <DragScrollContainer
               buttonPosition="top"
               label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat detail donatur"
-              className="hidden md:block w-full"
+              className="hidden md:block desktop-table w-full"
             >
               <div className="leaderboard-table-wrap w-full min-w-[580px]">
                 <table className="leaderboard-table benefactor-table">

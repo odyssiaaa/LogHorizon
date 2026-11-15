@@ -557,7 +557,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
   const processedDonationsList = data?.donations?.filter((d) => d.status !== "PENDING") ?? [];
 
   return (
-    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
       <div>
         <Link href="/" className="back-link inline-flex items-center gap-1.5 text-xs font-bold text-[#9D4EDD] mb-4">
           <ArrowLeft size={15} /> Kembali ke situs
@@ -569,7 +569,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">
               LOGHORIZON / GUILD HEADQUARTERS
             </p>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white break-words">
+            <h1 className="page-title text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white break-words">
               Command <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Center</span>
             </h1>
             <p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">

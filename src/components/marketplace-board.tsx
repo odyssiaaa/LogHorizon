@@ -274,12 +274,12 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   }
 
   return (
-    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
       <div>
         <div className="market-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="text-left">
             <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">MARKETPLACE KOMUNITAS</p>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Lapak <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Gamer</span></h1>
+            <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Lapak <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Gamer</span></h1>
             <p className="muted-copy text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-2xl mt-1 leading-relaxed">Jual beli akun, item, top-up, dan jasa gaming dengan komunitas LogHorizon. Transaksi dipantau oleh sistem keamanan guild.</p>
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap mt-2 live-status live-${liveState}`}>{liveState === "live" ? "Live" : liveState === "connecting" ? "Menghubungkan live…" : liveState === "stale" ? "Memperbarui…" : liveState === "error" ? "Live terputus" : "Live tidak aktif"}</span>
           </div>

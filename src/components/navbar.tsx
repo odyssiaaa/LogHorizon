@@ -233,7 +233,7 @@ export function Navbar() {
           scrolled ? "py-2.5 shadow-sm shadow-purple-950/5" : "py-3 sm:py-3.5"
         }`}
       >
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
+        <div className="w-full max-w-[1360px] 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
           {/* SISI KIRI: Logo & Nama Guild */}
           <Link href="/" className="flex items-center gap-2.5 group shrink-0" aria-label="LogHorizon Beranda">
             <div className="relative size-9 rounded-full overflow-hidden border border-[#9D4EDD]/40 group-hover:border-[#9D4EDD] transition-colors bg-[#171322] flex items-center justify-center shadow-sm">
@@ -253,7 +253,7 @@ export function Navbar() {
 
           {/* SISI TENGAH: Menu Navigasi Terstruktur Desktop (Dropdown Cyber Minimalist) */}
           <nav
-            className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-full border border-gray-200/60 dark:border-[#211C2B]/80 bg-white/40 dark:bg-[#120F17]/40 backdrop-blur-sm"
+            className="hidden md:flex desktop-navbar items-center gap-1 px-3 py-1.5 rounded-full border border-gray-200/60 dark:border-[#211C2B]/80 bg-white/40 dark:bg-[#120F17]/40 backdrop-blur-sm"
             aria-label="Navigasi Utama Desktop"
           >
             {/* 1. HOME */}
@@ -458,7 +458,7 @@ export function Navbar() {
             </button>
 
             {/* Aksi Khusus Desktop (Lonceng Notifikasi & Profil) */}
-            <div className="hidden md:flex items-center gap-2.5">
+            <div className="hidden md:flex desktop-navbar items-center gap-2.5">
               {status === "loading" ? (
                 <div className="h-8 w-24 rounded bg-gray-200 dark:bg-[#1E1A3A] animate-pulse" />
               ) : user ? (
@@ -580,7 +580,7 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="md:hidden size-9 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white/50 dark:bg-[#120F17]/60 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:border-[#9D4EDD] transition-colors"
+              className="md:hidden mobile-only size-9 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white/50 dark:bg-[#120F17]/60 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:border-[#9D4EDD] transition-colors"
               aria-label="Buka menu navigasi"
               aria-expanded={mobileOpen}
             >
@@ -603,7 +603,7 @@ export function Navbar() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden mobile-only"
               aria-hidden="true"
             />
 
@@ -613,7 +613,7 @@ export function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] bg-white dark:bg-[#0D0A14] border-l border-gray-200 dark:border-[#211C2B] p-5 flex flex-col justify-between shadow-2xl md:hidden overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] bg-white dark:bg-[#0D0A14] border-l border-gray-200 dark:border-[#211C2B] p-5 flex flex-col justify-between shadow-2xl md:hidden mobile-slidebar overflow-y-auto"
               aria-label="Menu navigasi mobile"
             >
               <div>

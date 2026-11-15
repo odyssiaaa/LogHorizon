@@ -87,7 +87,7 @@ export default async function Home() {
       {/* HERO SECTION */}
       <section className="hero-section relative py-12 sm:py-16 md:py-20 lg:py-24 border-b border-gray-200 dark:border-[#211C2B]">
         <div className="hero-glow" aria-hidden="true" />
-        <div className="page-shell px-4 sm:px-6 lg:px-10">
+        <div className="page-shell px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             <div className="hero-copy lg:col-span-7 text-left">
               <p className="eyebrow inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#9D4EDD] dark:text-[#C77DFF] uppercase mb-2">

@@ -530,12 +530,12 @@ export function EventsBoard() {
   const isAdminOrMod = session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR";
 
   return (
-    <main className="events-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+    <main className="events-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
       <header className="events-heading mb-6 text-left">
         <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">
           GUILD ARENA &amp; OPERATIONS
         </p>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
+        <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
           Arena &amp; <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Mabar Guild</span>
         </h1>
         <p className="muted-copy text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">

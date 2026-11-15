@@ -156,7 +156,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white break-words">
+                <h1 className="page-title text-2xl sm:text-3xl font-black text-gray-900 dark:text-white break-words">
                   {user.username ?? "Petualang"}
                 </h1>
                 {(user.isPremium || isOwner || user.role === "ADMIN") && (

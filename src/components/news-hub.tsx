@@ -95,7 +95,7 @@ export function NewsHub() {
   });
 
   return (
-    <main className="min-h-screen py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+    <main className="min-h-screen py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
       {/* ========================================================================= */}
       {/* 1. HEADER SECTION & STATUS SINKRONISASI */}
       {/* ========================================================================= */}
@@ -106,7 +106,7 @@ export function NewsHub() {
               <Rss size={13} className="animate-pulse" />
               <span>LOGHORIZON DISPATCH NETWORK</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white uppercase font-sans break-words">
+            <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white uppercase font-sans break-words">
               Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">News Hub</span>
             </h1>
             <p className="mt-2 text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
