@@ -162,10 +162,23 @@ async function getLiveDatabaseContext(userId: string) {
         select: { title: true, marketData: true },
       }),
       prisma.tournament.findMany({
-        where: { status: "OPEN" },
-        orderBy: { eventDate: "asc" },
-        take: 3,
-        select: { game: true, maxSlots: true, eventDate: true },
+        where: {
+          status: { in: ["OPEN", "REGISTRATION", "ONGOING", "COMPLETED"] },
+        },
+        orderBy: [{ eventDate: "asc" }, { createdAt: "desc" }],
+        take: 6,
+        select: {
+          id: true,
+          title: true,
+          game: true,
+          prizePool: true,
+          format: true,
+          maxSlots: true,
+          status: true,
+          eventDate: true,
+          teams: true,
+          _count: { select: { participants: true } },
+        },
       }),
       prisma.lfgPost.findMany({
         where: { status: "OPEN" },
@@ -215,12 +228,29 @@ async function getLiveDatabaseContext(userId: string) {
       ? `Total lapak aktif: ${allMarketListings.length}. Lapak tersedia: ` + availableMarket.join(", ")
       : "Belum ada barang aktif di lapak saat ini.";
 
+    const tournamentSummary = openTournaments.length
+      ? openTournaments
+          .map((t) => {
+            const registeredCount = t._count?.participants || (Array.isArray(t.teams) ? (t.teams as unknown[]).length : 0);
+            const statusText =
+              t.status === "REGISTRATION"
+                ? "Pendaftaran Dibuka"
+                : t.status === "ONGOING"
+                  ? "Sedang Berlangsung"
+                  : t.status === "COMPLETED"
+                    ? "Selesai"
+                    : "Buka";
+            return `"${t.title}" [Game: ${t.game}, Status: ${statusText}, Format: ${t.format || t.maxSlots + " Tim"}, Terisi: ${registeredCount}/${t.maxSlots} tim, Hadiah: ${t.prizePool || "Prizepool Komunitas"}]`;
+          })
+          .join(" | ")
+      : "Belum ada turnamen resmi yang dijadwalkan di /events?view=turnamen.";
+
     const eventList = [
-      ...openTournaments.map((t) => `Turnamen ${t.game} (Slot: ${t.maxSlots})`),
+      ...openTournaments.map((t) => `Turnamen ${t.title || t.game} (${t.game}, Slot: ${t.maxSlots})`),
       ...openLfg.map((l) => `Party ${l.game} (${l.description.slice(0, 30)}...)`),
     ];
     const eventSummary = eventList.length
-      ? eventList.slice(0, 4).join(", ")
+      ? eventList.slice(0, 5).join(", ")
       : "Belum ada turnamen atau sesi mabar LFG yang aktif saat ini.";
 
     return {
@@ -232,6 +262,7 @@ async function getLiveDatabaseContext(userId: string) {
       forumSummary,
       marketSummary,
       eventSummary,
+      tournamentSummary,
     };
   } catch (error) {
     console.error("[gemini-chat] Failed to fetch live database context:", error);
@@ -242,6 +273,7 @@ async function getLiveDatabaseContext(userId: string) {
       forumSummary: "Forum komunitas sedang aktif.",
       marketSummary: "Lapak marketplace tersedia dengan sistem Escrow aman.",
       eventSummary: "Turnamen & Party LFG tersedia di menu Events.",
+      tournamentSummary: "Turnamen resmi dan bagan bracket live dapat dilihat di /events?view=turnamen.",
     };
   }
 }
@@ -309,6 +341,11 @@ export async function POST(request: Request) {
     `- Data Forum Diskusi: ${dbContext.forumSummary}`,
     `- Data Lapak Marketplace: ${dbContext.marketSummary}`,
     `- Events & Party Aktif: ${dbContext.eventSummary}`,
+    `- Turnamen Resmi & Bracket Aktif: ${dbContext.tournamentSummary}`,
+    "",
+    "INSTRUKSI KHUSUS TURNAMEN & BAGAN:",
+    "- Jika user bertanya tentang turnamen, bagan, atau pertandingan, jawablah secara akurat sesuai data 'Turnamen Resmi & Bracket Aktif' di atas.",
+    "- Sebutkan nama turnamen, game, format tim, status pendaftaran, dan prizepool-nya, lalu arahkan user untuk melihat bagan visual interaktif atau mendaftar di halaman /events?view=turnamen.",
     "",
     "PENGETAHUAN LENGKAP FITUR & STRUKTUR WEBSITE LOGHORIZON:",
     "1. Navigasi Utama: Beranda (/), Forum Komunitas (/forum), Marketplace Jual-Beli (/marketplace), Leaderboard (/leaderboard), Warta Berita (/news), Turnamen & LFG Party Finder (/events), Kas Donasi (/donate), Aturan & Hierarki (/rules), dan Pengaturan Profil (/profile).",

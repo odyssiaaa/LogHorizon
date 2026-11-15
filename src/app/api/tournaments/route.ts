@@ -35,9 +35,12 @@ export async function POST(request: Request) {
   const title = typeof data.title === "string" && data.title.trim() ? data.title.trim() : "LogHorizon Tournament Cup";
   const game = typeof data.game === "string" ? data.game.trim() : "";
   const prizePool = typeof data.prizePool === "string" && data.prizePool.trim() ? data.prizePool.trim() : "Prizepool Komunitas";
-  const formatRaw = typeof data.format === "string" ? data.format : "8 Tim";
-  const format = formatRaw === "4 Tim" ? "4 Tim" : formatRaw === "16 Tim" ? "16 Tim" : "8 Tim";
-  const maxSlots = format === "4 Tim" ? 4 : format === "16 Tim" ? 16 : 8;
+
+  let teamCount = typeof data.teamCount === "number" ? data.teamCount : parseInt(String(data.format || "8").replace(/\D/g, ""), 10);
+  if (isNaN(teamCount) || teamCount < 2) teamCount = 8;
+  if (teamCount > 128) teamCount = 128;
+  const format = `${teamCount} Tim`;
+  const maxSlots = teamCount;
 
   const eventDate = typeof data.eventDate === "string" ? new Date(data.eventDate) : new Date(Date.now() + 86400000 * 3);
   if (!game || game.length > 80 || Number.isNaN(eventDate.getTime())) {
@@ -50,7 +53,7 @@ export async function POST(request: Request) {
   // Generate template bracket if not supplied
   const template = (rawTeams.length > 0 && rawMatches.length > 0)
     ? { teams: rawTeams, matches: rawMatches }
-    : generateTemplateBracket(format, rawTeams);
+    : generateTemplateBracket(teamCount, rawTeams);
 
   const status = data.status === "REGISTRATION"
     ? TournamentStatus.REGISTRATION

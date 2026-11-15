@@ -53,16 +53,36 @@ export function createSingleEliminationBracket(participants: BracketSlot[]) {
   return rounds;
 }
 
-// Generate template bracket for 4 Teams (Semifinals -> Grand Final) or 8 Teams (Quarterfinals -> Semifinals -> Grand Final)
+/**
+ * Generate dynamic single-elimination tournament bracket from 2 up to 128 teams.
+ * Supports arbitrary team count with dynamic Auto-BYE seeding.
+ */
 export function generateTemplateBracket(
-  format: "4 Tim" | "8 Tim" | "16 Tim",
+  teamCountOrFormat: number | string = 8,
   inputTeams: TournamentTeam[] = []
 ): { teams: TournamentTeam[]; matches: TournamentMatch[] } {
-  const maxTeams = format === "4 Tim" ? 4 : format === "16 Tim" ? 16 : 8;
+  let teamCount = typeof teamCountOrFormat === "number"
+    ? teamCountOrFormat
+    : parseInt(String(teamCountOrFormat).replace(/\D/g, ""), 10);
 
-  // Ensure teams list has slots populated with names
+  if (isNaN(teamCount) || teamCount < 2) teamCount = 8;
+  if (teamCount > 128) teamCount = 128;
+
+  // Bracket size is the smallest power of 2 >= teamCount
+  const bracketSize = Math.pow(2, Math.ceil(Math.log2(teamCount)));
+  const totalRounds = Math.log2(bracketSize);
+
+  function getRoundName(teamsRemaining: number, matchIdx?: number): string {
+    let base = `Round of ${teamsRemaining}`;
+    if (teamsRemaining === 2) base = "Grand Final";
+    else if (teamsRemaining === 4) base = "Semifinal";
+    else if (teamsRemaining === 8) base = "Quarterfinal";
+    return matchIdx !== undefined && teamsRemaining > 2 ? `${base} ${matchIdx + 1}` : base;
+  }
+
+  // Populate list of actual teams
   const teams: TournamentTeam[] = [];
-  for (let i = 0; i < maxTeams; i++) {
+  for (let i = 0; i < teamCount; i++) {
     if (inputTeams[i]) {
       teams.push(inputTeams[i]);
     } else {
@@ -75,117 +95,88 @@ export function generateTemplateBracket(
     }
   }
 
-  const matches: TournamentMatch[] = [];
+  // Pre-generate round matches skeleton
+  const matchesByRound: TournamentMatch[][] = [];
 
-  if (format === "4 Tim") {
-    // Round 1: Semifinals
-    matches.push({
-      matchId: "sf1",
-      round: 1,
-      roundName: "Semifinal 1",
-      teamA: { id: teams[0].id, name: teams[0].teamName, score: 0 },
-      teamB: { id: teams[3].id, name: teams[3].teamName, score: 0 },
-      winner: null,
-      nextMatchId: "gf",
-      nextSlot: "teamA",
-    });
-    matches.push({
-      matchId: "sf2",
-      round: 1,
-      roundName: "Semifinal 2",
-      teamA: { id: teams[1].id, name: teams[1].teamName, score: 0 },
-      teamB: { id: teams[2].id, name: teams[2].teamName, score: 0 },
-      winner: null,
-      nextMatchId: "gf",
-      nextSlot: "teamB",
-    });
-    // Round 2: Grand Final
-    matches.push({
-      matchId: "gf",
-      round: 2,
-      roundName: "Grand Final",
-      teamA: { name: "Pemenang SF1", score: 0 },
-      teamB: { name: "Pemenang SF2", score: 0 },
-      winner: null,
-    });
-  } else {
-    // 8 Teams format (Default)
-    // Round 1: Quarterfinals
-    matches.push({
-      matchId: "qf1",
-      round: 1,
-      roundName: "Quarterfinal 1",
-      teamA: { id: teams[0].id, name: teams[0].teamName, score: 0 },
-      teamB: { id: teams[7].id, name: teams[7].teamName, score: 0 },
-      winner: null,
-      nextMatchId: "sf1",
-      nextSlot: "teamA",
-    });
-    matches.push({
-      matchId: "qf2",
-      round: 1,
-      roundName: "Quarterfinal 2",
-      teamA: { id: teams[3].id, name: teams[3].teamName, score: 0 },
-      teamB: { id: teams[4].id, name: teams[4].teamName, score: 0 },
-      winner: null,
-      nextMatchId: "sf1",
-      nextSlot: "teamB",
-    });
-    matches.push({
-      matchId: "qf3",
-      round: 1,
-      roundName: "Quarterfinal 3",
-      teamA: { id: teams[1].id, name: teams[1].teamName, score: 0 },
-      teamB: { id: teams[6].id, name: teams[6].teamName, score: 0 },
-      winner: null,
-      nextMatchId: "sf2",
-      nextSlot: "teamA",
-    });
-    matches.push({
-      matchId: "qf4",
-      round: 1,
-      roundName: "Quarterfinal 4",
-      teamA: { id: teams[2].id, name: teams[2].teamName, score: 0 },
-      teamB: { id: teams[5].id, name: teams[5].teamName, score: 0 },
-      winner: null,
-      nextMatchId: "sf2",
-      nextSlot: "teamB",
-    });
+  for (let r = 1; r <= totalRounds; r++) {
+    const teamsInRound = bracketSize / Math.pow(2, r - 1);
+    const matchesInRound = teamsInRound / 2;
+    const roundList: TournamentMatch[] = [];
 
-    // Round 2: Semifinals
-    matches.push({
-      matchId: "sf1",
-      round: 2,
-      roundName: "Semifinal 1",
-      teamA: { name: "Pemenang QF1", score: 0 },
-      teamB: { name: "Pemenang QF2", score: 0 },
-      winner: null,
-      nextMatchId: "gf",
-      nextSlot: "teamA",
-    });
-    matches.push({
-      matchId: "sf2",
-      round: 2,
-      roundName: "Semifinal 2",
-      teamA: { name: "Pemenang QF3", score: 0 },
-      teamB: { name: "Pemenang QF4", score: 0 },
-      winner: null,
-      nextMatchId: "gf",
-      nextSlot: "teamB",
-    });
+    for (let m = 0; m < matchesInRound; m++) {
+      const matchId = `r${r}-m${m + 1}`;
+      const roundName = getRoundName(teamsInRound, m);
+      const nextMatchId = r < totalRounds ? `r${r + 1}-m${Math.floor(m / 2) + 1}` : undefined;
+      const nextSlot: "teamA" | "teamB" | undefined = r < totalRounds ? (m % 2 === 0 ? "teamA" : "teamB") : undefined;
 
-    // Round 3: Grand Final
-    matches.push({
-      matchId: "gf",
-      round: 3,
-      roundName: "Grand Final",
-      teamA: { name: "Pemenang SF1", score: 0 },
-      teamB: { name: "Pemenang SF2", score: 0 },
-      winner: null,
-    });
+      roundList.push({
+        matchId,
+        round: r,
+        roundName,
+        teamA: { name: r === 1 ? "" : `Pemenang R${r - 1}-M${m * 2 + 1}`, score: 0 },
+        teamB: { name: r === 1 ? "" : `Pemenang R${r - 1}-M${m * 2 + 2}`, score: 0 },
+        winner: null,
+        nextMatchId,
+        nextSlot,
+      });
+    }
+    matchesByRound.push(roundList);
   }
 
-  return { teams, matches };
+  // Populate Round 1 with teams and Auto-BYE
+  const round1Matches = matchesByRound[0];
+  for (let m = 0; m < round1Matches.length; m++) {
+    const match = round1Matches[m];
+    const teamAIndex = m;
+    const teamBIndex = bracketSize - 1 - m;
+
+    const teamAObj = teams[teamAIndex];
+    match.teamA = {
+      id: teamAObj?.id,
+      name: teamAObj?.teamName || `Tim ${teamAIndex + 1}`,
+      score: 0,
+    };
+
+    if (teamBIndex < teamCount) {
+      // Real opponent team
+      const teamBObj = teams[teamBIndex];
+      match.teamB = {
+        id: teamBObj?.id,
+        name: teamBObj?.teamName || `Tim ${teamBIndex + 1}`,
+        score: 0,
+      };
+    } else {
+      // Auto-BYE slot!
+      match.teamB = {
+        id: undefined,
+        name: "BYE",
+        score: 0,
+      };
+      // Auto-advance Team A as winner to round 2
+      match.winner = match.teamA.name;
+      match.winnerId = match.teamA.id;
+
+      if (match.nextMatchId && match.nextSlot && totalRounds > 1) {
+        const round2Matches = matchesByRound[1];
+        const nextMatch = round2Matches.find((nm) => nm.matchId === match.nextMatchId);
+        if (nextMatch) {
+          if (match.nextSlot === "teamA") {
+            nextMatch.teamA = { id: match.teamA.id, name: match.teamA.name, score: 0 };
+          } else {
+            nextMatch.teamB = { id: match.teamA.id, name: match.teamA.name, score: 0 };
+          }
+        }
+      }
+    }
+  }
+
+  // Flatten matches in round order
+  const allMatches: TournamentMatch[] = [];
+  for (const rList of matchesByRound) {
+    allMatches.push(...rList);
+  }
+
+  return { teams, matches: allMatches };
 }
 
 // Auto-advance helper: when a match winner is decided, update that match and propagate the winner to the next round!

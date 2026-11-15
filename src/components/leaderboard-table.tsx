@@ -6,6 +6,7 @@ import { Award, Crown, Medal, Search, Trophy, X } from "lucide-react";
 import { motion } from "framer-motion";
 import type { LeaderboardAdventurer, LeaderboardBenefactor } from "@/types/community";
 import { TacticalEmptyState } from "@/components/ui-feedback";
+import { DragScrollContainer } from "@/components/drag-scroll-container";
 
 type LeaderboardMember = LeaderboardAdventurer;
 type Benefactor = LeaderboardBenefactor;
@@ -161,8 +162,13 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
             </div>
 
             {/* DESKTOP TABLE (>= md) */}
-            <div className="hidden md:block leaderboard-table-wrap w-full overflow-x-auto scrollbar-none">
-              <table className="leaderboard-table">
+            <DragScrollContainer
+              buttonPosition="top"
+              label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat detail kolom"
+              className="hidden md:block w-full"
+            >
+              <div className="leaderboard-table-wrap w-full min-w-[620px]">
+                <table className="leaderboard-table">
                 <thead>
                   <tr>
                     <th scope="col">Rank</th>
@@ -216,7 +222,8 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                   )}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </DragScrollContainer>
           </div>
         ) : (
           <div>
@@ -268,8 +275,13 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
             </div>
 
             {/* DESKTOP TABLE FOR BENEFACTORS (>= md) */}
-            <div className="hidden md:block leaderboard-table-wrap w-full overflow-x-auto scrollbar-none">
-              <table className="leaderboard-table benefactor-table">
+            <DragScrollContainer
+              buttonPosition="top"
+              label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat detail donatur"
+              className="hidden md:block w-full"
+            >
+              <div className="leaderboard-table-wrap w-full min-w-[580px]">
+                <table className="leaderboard-table benefactor-table">
                 <thead>
                   <tr>
                     <th scope="col">Rank</th>
@@ -310,7 +322,8 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                   )}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </DragScrollContainer>
           </div>
         )}
       </motion.div>

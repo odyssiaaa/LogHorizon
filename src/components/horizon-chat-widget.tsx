@@ -285,14 +285,14 @@ export function HorizonChatWidget() {
 
           {/* Quick Suggestion Chips */}
           {messages.length <= 2 && (
-            <div className="px-4 py-2 border-t border-gray-100 dark:border-[#1E1A29] bg-gray-50/50 dark:bg-[#15111D] flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+            <div className="px-3.5 py-2.5 border-t border-gray-100 dark:border-[#1E1A29] bg-gray-50/70 dark:bg-[#15111D] flex flex-wrap items-center gap-1.5">
               {SUGGESTIONS.map((chip) => (
                 <button
                   key={chip}
                   type="button"
                   disabled={loading}
                   onClick={() => void sendMessage(chip)}
-                  className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-white dark:bg-[#1F192B] border border-gray-200 dark:border-[#2B233C] text-gray-700 dark:text-gray-300 hover:border-[#9D4EDD] hover:text-[#9D4EDD] dark:hover:text-[#C77DFF] whitespace-nowrap transition"
+                  className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-white dark:bg-[#1F192B] border border-gray-200 dark:border-[#2B233C] text-gray-700 dark:text-gray-300 hover:border-[#9D4EDD] hover:text-[#9D4EDD] dark:hover:text-[#C77DFF] transition shadow-xs"
                 >
                   {chip}
                 </button>

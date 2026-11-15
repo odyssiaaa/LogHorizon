@@ -18,5 +18,12 @@ export async function GET() {
     discordInviteUrl: "https://discord.gg/aJvbVyTxNb",
   };
 
-  return Response.json({ config: resolved });
+  return Response.json(
+    { config: resolved },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    }
+  );
 }

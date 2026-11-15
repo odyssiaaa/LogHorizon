@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { advanceMatchWinner, TournamentMatch, TournamentTeam } from "@/lib/tournament";
+import { DragScrollContainer } from "@/components/drag-scroll-container";
 
 type Participant = { id: string; teamName: string; leader: { username: string | null } };
 
@@ -125,7 +126,7 @@ export function EventsBoard() {
   const [templateTitle, setTemplateTitle] = useState("");
   const [templateGame, setTemplateGame] = useState("Valorant");
   const [templatePrize, setTemplatePrize] = useState("Rp 500.000 + Discord Role");
-  const [templateFormat, setTemplateFormat] = useState<"4 Tim" | "8 Tim">("8 Tim");
+  const [templateTeamCount, setTemplateTeamCount] = useState<number>(8);
   const [templateDate, setTemplateDate] = useState("");
   const [templateStatus, setTemplateStatus] = useState<"REGISTRATION" | "ONGOING">("REGISTRATION");
   const [creatingTournament, setCreatingTournament] = useState(false);
@@ -190,7 +191,8 @@ export function EventsBoard() {
           title: templateTitle.trim(),
           game: templateGame.trim(),
           prizePool: templatePrize.trim(),
-          format: templateFormat,
+          teamCount: templateTeamCount,
+          format: `${templateTeamCount} Tim`,
           eventDate: templateDate ? new Date(templateDate).toISOString() : new Date(Date.now() + 86400000 * 3).toISOString(),
           status: templateStatus,
         }),
@@ -527,10 +529,14 @@ export function EventsBoard() {
               const matches = tournament.matches || [];
               const teams = tournament.teams || [];
 
-              // Group matches by round for bracket view
-              const round1Matches = matches.filter((m) => m.round === 1);
-              const round2Matches = matches.filter((m) => m.round === 2);
-              const round3Matches = matches.filter((m) => m.round === 3);
+              // Group matches dynamically by round
+              const roundsMap = new Map<number, TournamentMatch[]>();
+              for (const m of matches) {
+                const list = roundsMap.get(m.round) || [];
+                list.push(m);
+                roundsMap.set(m.round, list);
+              }
+              const sortedRoundNumbers = Array.from(roundsMap.keys()).sort((a, b) => a - b);
 
               return (
                 <article
@@ -626,58 +632,48 @@ export function EventsBoard() {
                     </div>
 
                     {matches.length > 0 ? (
-                      <div className="overflow-x-auto scrollbar-none pb-4 pt-2 -mx-4 px-4 sm:mx-0 sm:px-0">
-                        <div className="flex items-stretch gap-6 sm:gap-8 min-w-[680px]">
-                          {/* ROUND 1: QUARTERFINALS / SEMIFINALS */}
-                          <div className="flex-1 flex flex-col justify-around space-y-4">
-                            <p className="text-[11px] font-mono font-bold text-purple-400 uppercase tracking-wider text-center pb-1 border-b border-purple-500/20">
-                              {is4Team ? "Babak Semifinal" : "Babak Quarterfinal"}
-                            </p>
-                            {round1Matches.map((m) => (
-                              <MatchCard
-                                key={m.matchId}
-                                match={m}
-                                teams={teams}
-                                onTeamClick={(team) => setViewingRoster(team)}
-                              />
-                            ))}
-                          </div>
+                      <DragScrollContainer
+                        buttonPosition="top"
+                        label="🖱️ Geser mouse / tombol ◀ ▶ untuk menjelajah seluruh ronde bagan"
+                        className="pt-1 pb-3"
+                      >
+                        <div
+                          className="flex items-stretch gap-6 sm:gap-8 pb-3 pt-2"
+                          style={{ minWidth: `${Math.max(680, sortedRoundNumbers.length * 270)}px` }}
+                        >
+                          {sortedRoundNumbers.map((rNum, idx) => {
+                            const roundMatches = roundsMap.get(rNum) || [];
+                            const isFinal = idx === sortedRoundNumbers.length - 1;
+                            const sampleName = roundMatches[0]?.roundName || "";
+                            const roundHeading = isFinal
+                              ? "Grand Final 🏆"
+                              : sampleName.replace(/\s*\d+$/, "") || `Ronde ${rNum}`;
 
-                          {/* ROUND 2: SEMIFINALS (for 8 Teams) or GRAND FINAL (for 4 Teams) */}
-                          <div className="flex-1 flex flex-col justify-around space-y-4">
-                            <p className="text-[11px] font-mono font-bold text-purple-400 uppercase tracking-wider text-center pb-1 border-b border-purple-500/20">
-                              {is4Team ? "Grand Final 🏆" : "Babak Semifinal"}
-                            </p>
-                            {round2Matches.map((m) => (
-                              <MatchCard
-                                key={m.matchId}
-                                match={m}
-                                teams={teams}
-                                isFinal={is4Team}
-                                onTeamClick={(team) => setViewingRoster(team)}
-                              />
-                            ))}
-                          </div>
-
-                          {/* ROUND 3: GRAND FINAL (for 8 Teams) */}
-                          {!is4Team && round3Matches.length > 0 && (
-                            <div className="flex-1 flex flex-col justify-around space-y-4">
-                              <p className="text-[11px] font-mono font-bold text-amber-400 uppercase tracking-wider text-center pb-1 border-b border-amber-500/20">
-                                Grand Final 🏆
-                              </p>
-                              {round3Matches.map((m) => (
-                                <MatchCard
-                                  key={m.matchId}
-                                  match={m}
-                                  teams={teams}
-                                  isFinal={true}
-                                  onTeamClick={(team) => setViewingRoster(team)}
-                                />
-                              ))}
-                            </div>
-                          )}
+                            return (
+                              <div key={rNum} className="flex-1 flex flex-col justify-around space-y-4 min-w-[240px]">
+                                <p
+                                  className={`text-[11px] font-mono font-bold uppercase tracking-wider text-center pb-1 border-b ${
+                                    isFinal
+                                      ? "text-amber-400 border-amber-500/20"
+                                      : "text-purple-400 border-purple-500/20"
+                                  }`}
+                                >
+                                  {roundHeading}
+                                </p>
+                                {roundMatches.map((m) => (
+                                  <MatchCard
+                                    key={m.matchId}
+                                    match={m}
+                                    teams={teams}
+                                    isFinal={isFinal}
+                                    onTeamClick={(team) => setViewingRoster(team)}
+                                  />
+                                ))}
+                              </div>
+                            );
+                          })}
                         </div>
-                      </div>
+                      </DragScrollContainer>
                     ) : (
                       <p className="text-xs text-gray-500 text-center py-6">
                         Bagan belum dibuat. Admin dapat mengatur bagan melalui tombol &quot;Kelola Tim &amp; Skor&quot;.
@@ -1036,17 +1032,42 @@ export function EventsBoard() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                    Format / Ukuran Bagan *
-                  </label>
-                  <select
-                    value={templateFormat}
-                    onChange={(e) => setTemplateFormat(e.target.value as "4 Tim" | "8 Tim")}
-                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                  >
-                    <option value="8 Tim">8 Tim (Quarterfinal ➔ Semifinal ➔ Final)</option>
-                    <option value="4 Tim">4 Tim (Semifinal ➔ Final)</option>
-                  </select>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      Jumlah Tim ({templateTeamCount} Tim) *
+                    </label>
+                    <span className="text-[10px] text-purple-400 font-mono">
+                      Bagan: {Math.pow(2, Math.ceil(Math.log2(Math.max(2, templateTeamCount))))} Slot
+                      {Math.pow(2, Math.ceil(Math.log2(Math.max(2, templateTeamCount)))) > templateTeamCount ? " (Auto-BYE)" : ""}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      required
+                      type="number"
+                      min={2}
+                      max={128}
+                      value={templateTeamCount}
+                      onChange={(e) => setTemplateTeamCount(Math.min(128, Math.max(2, parseInt(e.target.value, 10) || 2)))}
+                      className="w-24 px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                    />
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {[4, 8, 16, 32, 64].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setTemplateTeamCount(n)}
+                          className={`px-2 py-1 rounded text-[11px] font-mono font-bold transition ${
+                            templateTeamCount === n
+                              ? "bg-[#9D4EDD] text-white shadow-xs"
+                              : "bg-gray-100 dark:bg-[#1C1726] text-gray-700 dark:text-gray-300 hover:text-white"
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1538,19 +1559,25 @@ function MatchCard({
           className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors ${
             isWinnerB
               ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-black"
-              : "bg-gray-50 dark:bg-[#161220] text-gray-800 dark:text-gray-200"
+              : match.teamB.name === "BYE"
+                ? "bg-gray-100/40 dark:bg-[#120F17]/40 text-gray-400 dark:text-gray-500 italic"
+                : "bg-gray-50 dark:bg-[#161220] text-gray-800 dark:text-gray-200"
           }`}
         >
-          <button
-            type="button"
-            onClick={() => teamBData && onTeamClick(teamBData)}
-            className="text-xs truncate max-w-[150px] text-left hover:underline"
-            title={teamBData ? "Klik untuk melihat susunan pemain" : undefined}
-          >
-            {match.teamB.name || "TBD"}
-          </button>
+          {match.teamB.name === "BYE" ? (
+            <span className="text-[11px] font-mono text-gray-400 italic">BYE (Lolos Otomatis)</span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => teamBData && onTeamClick(teamBData)}
+              className="text-xs truncate max-w-[150px] text-left hover:underline"
+              title={teamBData ? "Klik untuk melihat susunan pemain" : undefined}
+            >
+              {match.teamB.name || "TBD"}
+            </button>
+          )}
           <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-black/20 font-bold ml-2">
-            {match.teamB.score}
+            {match.teamB.name === "BYE" ? "-" : match.teamB.score}
           </span>
         </div>
       </div>

@@ -37,6 +37,7 @@ import {
 import { readApiResponse } from "@/lib/api-response";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { EscrowChatModal } from "@/components/escrow-chat-modal";
+import { DragScrollContainer } from "@/components/drag-scroll-container";
 
 type Role = "MEMBER" | "MODERATOR" | "ADMIN";
 
@@ -1176,7 +1177,10 @@ export function AdminDashboard({ role }: { role: Role }) {
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto">
+                  <DragScrollContainer
+                    buttonPosition="top"
+                    label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat detail antrean donasi"
+                  >
                     <table className="w-full text-left text-xs min-w-[700px]">
                       <thead>
                         <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
@@ -1252,7 +1256,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                         )}
                       </tbody>
                     </table>
-                  </div>
+                  </DragScrollContainer>
                 </div>
 
                 {/* 2. RIWAYAT DONASI TERVERIFIKASI */}
@@ -1260,7 +1264,10 @@ export function AdminDashboard({ role }: { role: Role }) {
                   <h3 className="text-base font-bold text-gray-900 dark:text-white mb-3">
                     Riwayat Donasi Selesai / Terverifikasi
                   </h3>
-                  <div className="overflow-x-auto">
+                  <DragScrollContainer
+                    buttonPosition="top"
+                    label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat riwayat donasi"
+                  >
                     <table className="w-full text-left text-xs min-w-[650px]">
                       <thead>
                         <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
@@ -1309,7 +1316,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                         )}
                       </tbody>
                     </table>
-                  </div>
+                  </DragScrollContainer>
                 </div>
 
                 {/* 3. TIKET REKBER 3-PIHAK (CLAIM & RUANG CHAT) */}
@@ -1326,7 +1333,10 @@ export function AdminDashboard({ role }: { role: Role }) {
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto">
+                  <DragScrollContainer
+                    buttonPosition="top"
+                    label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat tiket rekber 3-pihak"
+                  >
                     <table className="w-full text-left text-xs min-w-[700px]">
                       <thead>
                         <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
@@ -1410,7 +1420,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                         )}
                       </tbody>
                     </table>
-                  </div>
+                  </DragScrollContainer>
                 </div>
 
                 {/* 4. PANTAUAN REKBER MARKETPLACE */}
@@ -1421,7 +1431,10 @@ export function AdminDashboard({ role }: { role: Role }) {
                   <p className="text-xs text-gray-500 mb-4">
                     Selesaikan transaksi rekber (*SOLD*), batalkan (*AVAILABLE*), atau hapus lapak bermasalah.
                   </p>
-                  <div className="overflow-x-auto">
+                  <DragScrollContainer
+                    buttonPosition="top"
+                    label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat daftar lapak marketplace"
+                  >
                     <table className="w-full text-left text-xs min-w-[650px]">
                       <thead>
                         <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
@@ -1488,7 +1501,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                         )}
                       </tbody>
                     </table>
-                  </div>
+                  </DragScrollContainer>
                 </div>
               </section>
             )}
@@ -1523,7 +1536,10 @@ export function AdminDashboard({ role }: { role: Role }) {
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto">
+                  <DragScrollContainer
+                    buttonPosition="top"
+                    label="🖱️ Drag mouse / tombol ◀ ▶ untuk mengelola akun member & kasta"
+                  >
                     <table className="w-full text-left text-xs min-w-[700px]">
                       <thead>
                         <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
@@ -1607,7 +1623,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                         })}
                       </tbody>
                     </table>
-                  </div>
+                  </DragScrollContainer>
 
                   {/* Pagination */}
                   {Boolean(data?.pagination && data.pagination.totalPages > 1) && (
