@@ -1490,8 +1490,8 @@ export function AdminDashboard({ role }: { role: Role }) {
                         Atur role web, sesuaikan Level &amp; XP, berikan status Premium, dan berikan sanksi Ban.
                       </p>
                     </div>
-                    <div className="relative w-full sm:w-64">
-                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <div className="flex items-center gap-2.5 px-3 h-9 w-full sm:w-64 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] focus-within:border-[#9D4EDD] transition-colors">
+                      <Search size={14} className="shrink-0 text-gray-400 pointer-events-none" />
                       <input
                         type="search"
                         value={search}
@@ -1500,7 +1500,7 @@ export function AdminDashboard({ role }: { role: Role }) {
                           setPage(1);
                         }}
                         placeholder="Cari username / discordId…"
-                        className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                        className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
                       />
                     </div>
                   </div>

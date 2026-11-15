@@ -51,20 +51,20 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
         <p className="muted-copy text-base md:text-lg text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">Peringkat petualang aktif dan benefactor berdasarkan dukungan terverifikasi.</p>
       </header>
 
-      <div className="relative flex items-center my-4">
-        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+      <div className="flex items-center gap-3 px-3.5 h-11 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors my-4">
+        <Search size={16} className="shrink-0 text-gray-400 pointer-events-none" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari petualang atau donatur…"
           aria-label="Cari petualang atau donatur"
-          className="w-full pl-11 pr-10 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
+          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
         />
         {search && (
           <button
             type="button"
             onClick={() => setSearch("")}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+            className="shrink-0 text-gray-400 hover:text-gray-900 dark:hover:text-white"
           >
             <X size={15} />
           </button>
@@ -114,7 +114,9 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
               {filteredMembers.map((member, index) => {
                 const RankIcon = rankIcons[index];
                 const iconSize = topIconSizes[index] ?? 16;
-                const badge = member.badges.length ? member.badges[0] : roleLabels[member.role];
+                const isOwner = member.username === ".odyssia" || member.role === "ADMIN";
+                const isUserPremium = member.isPremium || isOwner;
+                const badge = isOwner ? "👑 Emperor" : member.badges.length ? member.badges[0] : roleLabels[member.role];
                 return (
                   <motion.div
                     key={member.id}
@@ -133,7 +135,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                         <Link
                           href={`/u/${member.username ?? "user"}`}
                           className={`block font-bold text-sm truncate hover:text-[#9D4EDD] text-gray-900 dark:text-white ${
-                            member.isPremium ? "text-[#9D4EDD]" : ""
+                            isUserPremium ? "premium-username text-[#9D4EDD]" : ""
                           }`}
                         >
                           {member.username ?? "Gamer"}
@@ -174,6 +176,8 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                   {filteredMembers.map((member, index) => {
                     const RankIcon = rankIcons[index];
                     const iconSize = topIconSizes[index] ?? 16;
+                    const isOwner = member.username === ".odyssia" || member.role === "ADMIN";
+                    const isUserPremium = member.isPremium || isOwner;
                     return (
                       <motion.tr
                         key={member.id}
@@ -185,7 +189,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                         <td className="leaderboard-rank">
                           {RankIcon ? <RankIcon aria-label={`Peringkat ${index + 1}`} size={iconSize} /> : `#${index + 1}`}
                         </td>
-                        <td className={`leaderboard-player${member.isPremium ? " premium-username" : ""}`}>
+                        <td className={`leaderboard-player${isUserPremium ? " premium-username" : ""}`}>
                           <Link href={`/u/${member.username ?? "user"}`} className="hover:text-[#9D4EDD] hover:underline font-bold">
                             {member.username ?? "Gamer"}
                           </Link>
@@ -194,7 +198,12 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                         <td className="numeric-cell">{member.xp.toLocaleString("id-ID")}</td>
                         <td className="badge-cell">
                           <div className="leaderboard-badges">
-                            {(member.badges.length ? member.badges.slice(0, 2) : [roleLabels[member.role]]).map((badge) => (
+                            {isOwner ? (
+                              <>
+                                <span className="leaderboard-badge">👑 Emperor</span>
+                                <span className="leaderboard-badge">💎 Noble Patron</span>
+                              </>
+                            ) : (member.badges.length ? member.badges.slice(0, 2) : [roleLabels[member.role]]).map((badge) => (
                               <span className="leaderboard-badge" key={badge}>{badge}</span>
                             ))}
                           </div>

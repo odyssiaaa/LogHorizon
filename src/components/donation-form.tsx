@@ -210,7 +210,11 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
                   </li>
                 ))}
               </ul>
-              {id === "ELITE_PARTY_MEMBER" && session?.user?.isPremium && (
+              {(session?.user?.username === ".odyssia" || session?.user?.role === "ADMIN") ? (
+                <p className="premium-state text-xs font-bold text-purple-400 flex items-center gap-1.5 mt-3">
+                  <ShieldCheck size={15} /> Benefit Guild Emperor &amp; Noble Patron Aktif
+                </p>
+              ) : (id === "ELITE_PARTY_MEMBER" && session?.user?.isPremium) && (
                 <p className="premium-state text-xs font-bold text-amber-500 flex items-center gap-1.5 mt-3">
                   <ShieldCheck size={15} /> Status Premium aktif
                 </p>

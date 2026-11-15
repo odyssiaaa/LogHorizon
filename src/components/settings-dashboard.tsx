@@ -277,7 +277,7 @@ export function SettingsDashboard() {
             <div><dt>Username</dt><dd>{profile?.username ?? "Gamer"}</dd></div>
             <div><dt>Role komunitas</dt><dd>{profile?.role ?? session.user.role}</dd></div>
             <div><dt>Level / XP</dt><dd>Lv. {profile?.level ?? 1} · {profile?.xp ?? 0} XP</dd></div>
-            <div><dt>Benefit</dt><dd>{profile?.isPremium ? "Elite Party Member (Premium)" : "Adventurer"}</dd></div>
+            <div><dt>Benefit</dt><dd>{(profile?.username === ".odyssia" || profile?.role === "ADMIN") ? "👑 Guild Emperor / Noble Patron (Full Perks)" : profile?.isPremium ? "Elite Party Member (Premium)" : "Adventurer"}</dd></div>
           </dl>
         </section>
 

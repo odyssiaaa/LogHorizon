@@ -248,9 +248,10 @@ export async function POST(request: Request) {
   if (user.isBanned) return jsonError("Akun kamu sedang dibatasi dan tidak dapat menggunakan fitur AI.", 403);
 
   const now = Date.now();
+  const isOwner = user.role === "ADMIN" || user.username === ".odyssia" || user.discordId === "706661230835925042";
   const previousRequestAt = lastRequestAt.get(user.id);
-  const cooldownLimit = user.isPremium ? 500 : COOLDOWN_MS;
-  if (previousRequestAt && now - previousRequestAt < cooldownLimit) {
+  const cooldownLimit = isOwner ? 0 : user.isPremium ? 500 : COOLDOWN_MS;
+  if (!isOwner && previousRequestAt && now - previousRequestAt < cooldownLimit) {
     return Response.json(
       { error: "Sabar bro, jangan spam! Satpam lagi narik napas dulu (cooldown 2.5s)." },
       { status: 429, headers: { "Retry-After": "2", "Cache-Control": "no-store" } },

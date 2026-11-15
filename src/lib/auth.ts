@@ -94,6 +94,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           username: user.name ?? "Adventurer",
           avatar: user.image,
           ...(role ? { role } : {}),
+          ...(isOwner ? { isPremium: true, badges: ["👑 Emperor", "💎 Noble Patron", "Guild Benefactor"] } : {}),
         },
       });
     },
@@ -101,10 +102,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async session({ session, user }) {
       if (session.user) {
+        const isOwner =
+          user.username === ".odyssia" ||
+          user.name === ".odyssia" ||
+          user.discordId === "706661230835925042" ||
+          user.role === "ADMIN";
         session.user.id = user.id;
-        session.user.role = user.role;
+        session.user.role = isOwner ? "ADMIN" : user.role;
         session.user.isBanned = user.isBanned;
-        session.user.isPremium = user.isPremium;
+        session.user.isPremium = isOwner || user.isPremium;
         session.user.discordId = user.discordId;
         session.user.username = user.username;
         session.user.avatar = user.avatar;

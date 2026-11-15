@@ -113,8 +113,10 @@ export async function POST(request: Request) {
 
   if (!title || title.length > 180) return jsonError("Judul wajib diisi (maksimal 180 karakter).", 400);
   const isPinned = data.isPinned === true;
-  if (isPinned && !user.isPremium) return jsonError("Hanya member premium yang dapat menyematkan postingan.", 403);
-  if (isPinned && await prisma.post.count({ where: { authorId: user.id, isPinned: true } }) >= 3) {
+  const isOwner = user.role === "ADMIN" || user.username === ".odyssia" || user.discordId === "706661230835925042";
+  const hasPremiumPerks = user.isPremium || isOwner;
+  if (isPinned && !hasPremiumPerks) return jsonError("Hanya member premium yang dapat menyematkan postingan.", 403);
+  if (isPinned && !isOwner && await prisma.post.count({ where: { authorId: user.id, isPinned: true } }) >= 3) {
     return jsonError("Benefit Premium membatasi maksimal tiga postingan tersemat.", 403);
   }
   if (category === PostCategory.MARKETPLACE) {

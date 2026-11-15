@@ -26,6 +26,8 @@ export async function GET() {
     prisma.lfgPost.count({ where: { authorId: user.id } }),
   ]);
 
+  const isOwner = user.username === ".odyssia" || user.role === "ADMIN" || user.discordId === "706661230835925042";
+
   const achievements = [
     {
       id: "discussion-starter",
@@ -44,6 +46,7 @@ export async function GET() {
       title: "💎 Penyokong Guild",
       desc: "Berdonasi mendukung operasional server perbendaharaan.",
       unlocked:
+        isOwner ||
         donationsCount >= 1 ||
         user.badges.includes("Knight") ||
         user.badges.includes("High Merchant") ||
@@ -71,7 +74,7 @@ export async function GET() {
     level: user.level,
     xp: user.xp,
     role: user.role,
-    isPremium: user.isPremium,
+    isPremium: isOwner || user.isPremium,
     favoriteGames: user.favoriteGames ?? [],
     inGameName: user.inGameName ?? "",
     highestRank: user.highestRank ?? "",
@@ -118,9 +121,11 @@ export async function PATCH(request: Request) {
     },
   });
 
+  const isOwner = user.username === ".odyssia" || user.role === "ADMIN" || user.discordId === "706661230835925042";
+
   return Response.json({
     success: true,
-    profile: updated,
+    profile: { ...updated, isPremium: isOwner || updated.isPremium },
     message: "Profil gamer berhasil disimpan!",
   });
 }

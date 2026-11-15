@@ -231,44 +231,56 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
           })}
         </div>
 
-        {/* SEARCH BAR WITH DEBOUNCE SPINNER */}
+        {/* SEARCH BAR WITH FLEXBOX ALIGNMENT */}
         <form
-          className="market-search forum-search relative flex items-center my-4"
+          className="w-full my-4"
           role="search"
           onSubmit={(event) => event.preventDefault()}
         >
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-gray-400">
-            {isSearching ? <Loader2 size={16} className="animate-spin text-purple-500" /> : <Search size={16} />}
+          <div className="flex items-center gap-3 px-3.5 h-11 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors">
+            <div className="shrink-0 text-gray-400 flex items-center">
+              {isSearching ? <Loader2 size={16} className="animate-spin text-purple-500" /> : <Search size={16} />}
+            </div>
+            <input
+              maxLength={120}
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.target.value)}
+              placeholder="Cari thread atau kata kunci…"
+              aria-label="Cari diskusi"
+              className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
+            />
+            {searchValue && (
+              <button
+                type="button"
+                className="shrink-0 text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium px-1"
+                onClick={() => {
+                  setSearchValue("");
+                  setSearch("");
+                }}
+              >
+                Hapus
+              </button>
+            )}
           </div>
-          <input
-            maxLength={120}
-            value={searchValue}
-            onChange={(event) => setSearchValue(event.target.value)}
-            placeholder="Cari thread atau kata kunci…"
-            aria-label="Cari diskusi"
-            className="w-full pl-11 pr-20 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
-          />
-          {searchValue && (
-            <button
-              type="button"
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-white font-medium"
-              onClick={() => {
-                setSearchValue("");
-                setSearch("");
-              }}
-            >
-              Hapus
-            </button>
-          )}
         </form>
 
-        <div className="forum-category-intro flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] mb-4">
+        {/* SUB-FORUM CATEGORY HEADER & THREAD COUNT BADGE */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] mb-4">
           <div className="min-w-0 flex-1">
-            <span className="category-bullet" /> <strong className="break-words">{activeCategory.slug}</strong>
-            <p className="break-words text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{activeCategory.description}</p>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="w-2 h-2 rounded-full bg-[#9D4EDD] shadow-[0_0_8px_#9D4EDD] shrink-0" />
+              <strong className="text-sm sm:text-base font-mono font-bold text-gray-900 dark:text-white break-words">
+                {activeCategory.slug}
+              </strong>
+              <span className="inline-flex items-center px-3 py-1 rounded-md border border-gray-200 dark:border-[#211C2B] bg-gray-50 dark:bg-[#120F17] text-xs font-mono shrink-0 text-gray-700 dark:text-gray-300">
+                {posts.length} thread
+              </span>
+            </div>
+            <p className="break-words text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {activeCategory.description}
+            </p>
           </div>
-          <div className="forum-feed-status flex items-center gap-3 shrink-0 whitespace-nowrap self-start sm:self-auto">
-            <span className="whitespace-nowrap shrink-0 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">{posts.length} thread</span>
+          <div className="flex items-center gap-3 shrink-0 whitespace-nowrap self-start sm:self-auto">
             <span className={`live-status live-${liveState} whitespace-nowrap shrink-0`}>
               {liveState === "live"
                 ? "Live"
@@ -345,7 +357,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                         oleh{" "}
                         <Link
                           href={`/u/${post.author.username ?? "user"}`}
-                          className={`hover:underline ${post.author.isPremium ? "premium-username" : "font-semibold text-gray-800 dark:text-gray-200"}`}
+                          className={`hover:underline ${(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") ? "premium-username" : "font-semibold text-gray-800 dark:text-gray-200"}`}
                         >
                           {post.author.username ?? "Gamer"}
                         </Link>
@@ -398,7 +410,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
       {compose && (
         <ThreadModal
           category={category}
-          canPin={Boolean(user?.isPremium)}
+          canPin={Boolean(user?.isPremium || user?.role === "ADMIN" || user?.username === ".odyssia")}
           onClose={() => setCompose(false)}
           onCreated={() => {
             setCompose(false);

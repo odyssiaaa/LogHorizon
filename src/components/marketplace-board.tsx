@@ -284,12 +284,12 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
       <div>{status === "loading" ? <span className="nav-loading" /> : <button className="button button-primary w-full sm:w-auto inline-flex items-center justify-center gap-2" onClick={createListing}><Plus size={17} /> <span>Buat Lapak</span></button>}</div>
     </div>
     <section className="market-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] mb-6" aria-label="Filter dan pencarian marketplace">
-      <div className="market-search relative flex items-center sm:col-span-2 lg:col-span-1">
-        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-gray-400">
+      <div className="flex items-center gap-3 px-3.5 h-11 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors sm:col-span-2 lg:col-span-1">
+        <div className="shrink-0 text-gray-400 flex items-center">
           {isSearching ? (
-            <Loader2 size={16} className="animate-spin text-[#9D4EDD] shrink-0" />
+            <Loader2 size={16} className="animate-spin text-[#9D4EDD]" />
           ) : (
-            <Search size={16} className="shrink-0" />
+            <Search size={16} />
           )}
         </div>
         <input
@@ -297,7 +297,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
           onChange={(event) => setSearchValue(event.target.value)}
           placeholder="Cari judul, game, atau penjual…"
           aria-label="Cari lapak"
-          className="w-full pl-11 pr-10 py-2.5 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
+          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
         />
         {searchValue && (
           <button
@@ -307,7 +307,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               setSearch("");
             }}
             aria-label="Hapus pencarian"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+            className="shrink-0 text-gray-400 hover:text-gray-900 dark:hover:text-white"
           >
             <X size={14} />
           </button>
@@ -333,7 +333,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
         return <motion.article className={`market-card ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
           <div className="market-listing-labels flex flex-wrap gap-1.5 mb-3">
             {post.isPinned && <span className="pinned-label">PINNED</span>}
-            {post.author.isPremium && (
+            {(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") && (
               <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/40">
                 ✦ PREMIUM SELLER / VERIFIED
               </span>
@@ -354,7 +354,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                   oleh{" "}
                   <Link
                     href={`/u/${post.author.username ?? "user"}`}
-                    className={`font-semibold hover:underline ${post.author.isPremium ? "premium-username" : ""}`}
+                    className={`font-semibold hover:underline ${(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") ? "premium-username" : ""}`}
                   >
                     {post.author.username ?? "Gamer"}
                   </Link>
@@ -435,7 +435,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
       />
     )}
   </div>
-    {compose && <MarketModal canPin={Boolean(user?.isPremium)} onClose={() => setCompose(false)} onCreated={() => { setCompose(false); setRefreshKey((value) => value + 1); }} />}
+    {compose && <MarketModal canPin={Boolean(user?.isPremium || user?.role === "ADMIN" || user?.username === ".odyssia")} onClose={() => setCompose(false)} onCreated={() => { setCompose(false); setRefreshKey((value) => value + 1); }} />}
     {activeEscrowModalId && (
       <EscrowChatModal
         escrowId={activeEscrowModalId}

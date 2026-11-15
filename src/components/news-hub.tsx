@@ -177,19 +177,19 @@ export function NewsHub() {
           </div>
 
           {/* Quick Search Bar */}
-          <div className="relative flex items-center w-full sm:w-72 shrink-0">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <div className="flex items-center gap-2.5 px-3.5 h-10 w-full sm:w-72 shrink-0 rounded bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] focus-within:border-[#9D4EDD] transition-colors">
+            <Search size={15} className="shrink-0 text-gray-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari pengumuman atau warta…"
-              className="w-full pl-11 pr-8 py-2 rounded bg-white dark:bg-[#120F17] text-gray-900 dark:text-white border border-gray-200 dark:border-[#211C2B] text-xs outline-none focus:border-[#9D4EDD] transition-colors"
+              className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white"
+                className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-white"
                 aria-label="Hapus pencarian"
               >
                 <X size={14} />

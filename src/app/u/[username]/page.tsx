@@ -77,6 +77,10 @@ export default async function PublicProfilePage({ params }: PageProps) {
     prisma.lfgPost.count({ where: { authorId: user.id } }),
   ]);
 
+  const isOwner = user.username?.toLowerCase() === ".odyssia" || user.name?.toLowerCase() === ".odyssia";
+  const xpNeeded = user.level * 100;
+  const xpProgress = Math.min(100, Math.round(((user.xp % 100) / 100) * 100));
+
   const achievements = [
     {
       id: "discussion-starter",
@@ -95,6 +99,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
       title: "💎 Penyokong Guild",
       desc: "Donatur kas perbendaharaan",
       unlocked:
+        isOwner ||
         donationsCount >= 1 ||
         user.badges.includes("Knight") ||
         user.badges.includes("High Merchant") ||
@@ -113,10 +118,6 @@ export default async function PublicProfilePage({ params }: PageProps) {
       unlocked: Boolean(user.inGameName && user.primaryRole),
     },
   ];
-
-  const isOwner = user.username?.toLowerCase() === ".odyssia" || user.name?.toLowerCase() === ".odyssia";
-  const xpNeeded = user.level * 100;
-  const xpProgress = Math.min(100, Math.round(((user.xp % 100) / 100) * 100));
 
   return (
     <main className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full max-w-full overflow-x-hidden">
@@ -153,9 +154,9 @@ export default async function PublicProfilePage({ params }: PageProps) {
                 <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white break-words">
                   {user.username ?? "Petualang"}
                 </h1>
-                {user.isPremium && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30">
-                    <Sparkles size={12} /> Elite Member
+                {(user.isPremium || isOwner) && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                    <Sparkles size={12} /> {isOwner ? "👑 Guild Emperor / Noble Patron" : "✦ Elite Member"}
                   </span>
                 )}
               </div>
@@ -309,7 +310,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
               <div className="flex justify-between py-1">
                 <span className="text-gray-500">Benefit Guild:</span>
                 <span className="text-gray-800 dark:text-gray-200 font-medium">
-                  {user.isPremium ? "Elite Party Member" : "Adventurer"}
+                  {isOwner ? "👑 Guild Emperor / Noble Patron (Tier Tertinggi)" : user.isPremium ? "Elite Party Member" : "Adventurer"}
                 </span>
               </div>
             </div>
