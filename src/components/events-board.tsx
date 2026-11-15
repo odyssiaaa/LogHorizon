@@ -6,8 +6,10 @@ import { useSearchParams } from "next/navigation";
 import {
   Award,
   CalendarDays,
+  Check,
   CheckCircle2,
   Clock,
+  Copy,
   Crown,
   Edit3,
   ExternalLink,
@@ -16,6 +18,7 @@ import {
   LogOut,
   Medal,
   MessageSquare,
+  Phone,
   Plus,
   RefreshCw,
   Search,
@@ -28,10 +31,21 @@ import {
   X,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
-import { advanceMatchWinner, TournamentMatch, TournamentTeam } from "@/lib/tournament";
+import { advanceMatchWinner, TournamentMatch, TournamentTeam, TournamentRosterPlayer } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 
-type Participant = { id: string; teamName: string; leader: { username: string | null } };
+type Participant = {
+  id: string;
+  teamName: string;
+  phone?: string | null;
+  roster?: TournamentRosterPlayer[];
+  leader: {
+    id?: string;
+    username: string | null;
+    discordId?: string | null;
+    name?: string | null;
+  };
+};
 
 type Tournament = {
   id: string;
@@ -40,6 +54,8 @@ type Tournament = {
   prizePool?: string | null;
   format: string;
   maxSlots: number;
+  mainPlayersCount?: number;
+  subPlayersCount?: number;
   eventDate: string;
   status: string;
   teams?: TournamentTeam[];
@@ -127,6 +143,8 @@ export function EventsBoard() {
   const [templateGame, setTemplateGame] = useState("Valorant");
   const [templatePrize, setTemplatePrize] = useState("Rp 500.000 + Discord Role");
   const [templateTeamCount, setTemplateTeamCount] = useState<number>(8);
+  const [templateMainPlayers, setTemplateMainPlayers] = useState<number>(5);
+  const [templateSubPlayers, setTemplateSubPlayers] = useState<number>(2);
   const [templateDate, setTemplateDate] = useState("");
   const [templateStatus, setTemplateStatus] = useState<"REGISTRATION" | "ONGOING">("REGISTRATION");
   const [creatingTournament, setCreatingTournament] = useState(false);
@@ -137,14 +155,19 @@ export function EventsBoard() {
   const [manageMatches, setManageMatches] = useState<TournamentMatch[]>([]);
   const [manageTeams, setManageTeams] = useState<TournamentTeam[]>([]);
   const [manageSlotCount, setManageSlotCount] = useState<number>(8);
+  const [manageMainPlayers, setManageMainPlayers] = useState<number>(5);
+  const [manageSubPlayers, setManageSubPlayers] = useState<number>(2);
   const [isResizingBracket, setIsResizingBracket] = useState(false);
   const [savingManage, setSavingManage] = useState(false);
 
-  // Team Registration Modal State
+  // Team Registration Modal State (Structured Form)
   const [registeringTournament, setRegisteringTournament] = useState<Tournament | null>(null);
   const [registerTeamName, setRegisterTeamName] = useState("");
-  const [registerRoster, setRegisterRoster] = useState("");
+  const [registerPhone, setRegisterPhone] = useState("");
+  const [registerMainPlayers, setRegisterMainPlayers] = useState<{ name: string; inGameId: string }[]>([]);
+  const [registerSubPlayers, setRegisterSubPlayers] = useState<{ name: string; inGameId: string }[]>([]);
   const [submittingRegistration, setSubmittingRegistration] = useState(false);
+  const [copiedText, setCopiedText] = useState<string | null>(null);
 
   // View Team Roster Popup
   const [viewingRoster, setViewingRoster] = useState<TournamentTeam | null>(null);
@@ -175,7 +198,44 @@ export function EventsBoard() {
     setManageMatches(tournament.matches || []);
     setManageTeams(tournament.teams || []);
     setManageSlotCount(tournament.maxSlots || tournament.teams?.length || 8);
+    setManageMainPlayers(tournament.mainPlayersCount ?? 5);
+    setManageSubPlayers(tournament.subPlayersCount ?? 2);
     setManageTab("scores");
+  }
+
+  // Open Structured Registration Modal
+  function openRegisterModal(t: Tournament) {
+    if (!session?.user) {
+      void signIn("discord");
+      return;
+    }
+    setRegisteringTournament(t);
+    setRegisterTeamName("");
+    setRegisterPhone("");
+    const mainCount = t.mainPlayersCount ?? 5;
+    const subCount = t.subPlayersCount ?? 2;
+
+    const mains: { name: string; inGameId: string }[] = [];
+    for (let i = 0; i < mainCount; i++) {
+      mains.push({
+        name: i === 0 ? (session.user.username ?? session.user.name ?? "") : "",
+        inGameId: "",
+      });
+    }
+    setRegisterMainPlayers(mains);
+
+    const subs: { name: string; inGameId: string }[] = [];
+    for (let i = 0; i < subCount; i++) {
+      subs.push({ name: "", inGameId: "" });
+    }
+    setRegisterSubPlayers(subs);
+  }
+
+  function handleCopyText(text: string, label: string) {
+    navigator.clipboard.writeText(text);
+    setNotice(`${label} berhasil disalin ke clipboard!`);
+    setCopiedText(text);
+    setTimeout(() => setCopiedText(null), 2500);
   }
 
   // Resize slot count & regenerate bracket structure while preserving teams
@@ -246,6 +306,8 @@ export function EventsBoard() {
           game: templateGame.trim(),
           prizePool: templatePrize.trim(),
           teamCount: templateTeamCount,
+          mainPlayersCount: templateMainPlayers,
+          subPlayersCount: templateSubPlayers,
           format: `${templateTeamCount} Tim`,
           eventDate: templateDate ? new Date(templateDate).toISOString() : new Date(Date.now() + 86400000 * 3).toISOString(),
           status: templateStatus,
@@ -279,10 +341,12 @@ export function EventsBoard() {
         body: JSON.stringify({
           matches: manageMatches,
           teams: manageTeams,
+          mainPlayersCount: manageMainPlayers,
+          subPlayersCount: manageSubPlayers,
         }),
       });
       await readApiResponse(response, "Gagal memperbarui turnamen.");
-      setNotice("Bagan turnamen dan skor berhasil disimpan!");
+      setNotice("Bagan turnamen, tim, dan pengaturan slot pemain berhasil disimpan!");
       setManagingTournament(null);
       setRefreshKey((k) => k + 1);
     } catch (err) {
@@ -305,35 +369,59 @@ export function EventsBoard() {
     }
   }
 
-  // Register Team to Tournament
+  // Register Team to Tournament (Structured Form with Main/Sub slots & Representative Contact)
   async function handleRegisterTeam(e: FormEvent) {
     e.preventDefault();
     if (!session?.user) {
       await signIn("discord");
       return;
     }
-    if (!registeringTournament || !registerTeamName.trim()) return;
+    if (!registeringTournament || !registerTeamName.trim()) {
+      setError("Nama party/tim wajib diisi.");
+      return;
+    }
+
+    const cleanPhone = registerPhone.replace(/[^\d+]/g, "");
+    if (!cleanPhone || cleanPhone.replace(/\D/g, "").length < 8) {
+      setError("Nomor WhatsApp/telepon perwakilan wajib diisi (minimal 8 angka).");
+      return;
+    }
+
+    for (let i = 0; i < registerMainPlayers.length; i++) {
+      const p = registerMainPlayers[i];
+      if (!p.name.trim() || !p.inGameId.trim()) {
+        setError(`Pemain Inti #${i + 1} wajib diisi lengkap (Nickname dan ID/Tag In-Game).`);
+        return;
+      }
+    }
 
     setSubmittingRegistration(true);
     try {
-      const playerList = registerRoster
-        .split(",")
-        .map((p) => p.trim())
-        .filter(Boolean);
-
       const response = await fetch(`/api/tournaments/${registeringTournament.id}/participants`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           teamName: registerTeamName.trim(),
-          players: playerList,
+          phone: cleanPhone,
+          mainPlayers: registerMainPlayers.map((p) => ({
+            name: p.name.trim(),
+            inGameId: p.inGameId.trim(),
+          })),
+          subPlayers: registerSubPlayers
+            .filter((p) => p.name.trim() && p.inGameId.trim())
+            .map((p) => ({
+              name: p.name.trim(),
+              inGameId: p.inGameId.trim(),
+            })),
         }),
       });
       await readApiResponse(response, "Pendaftaran turnamen gagal.");
       setNotice(`Party "${registerTeamName}" berhasil didaftarkan ke turnamen!`);
       setRegisteringTournament(null);
       setRegisterTeamName("");
-      setRegisterRoster("");
+      setRegisterPhone("");
+      setRegisterMainPlayers([]);
+      setRegisterSubPlayers([]);
       setRefreshKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Pendaftaran gagal.");
@@ -607,6 +695,9 @@ export function EventsBoard() {
                         <span className="text-xs font-mono text-gray-500">
                           {tournament.format} ({tournament.maxSlots} Slot)
                         </span>
+                        <span className="text-[10.5px] font-mono text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                          👥 {tournament.mainPlayersCount ?? 5} Inti {tournament.subPlayersCount ? `+ ${tournament.subPlayersCount} Cad` : ""}
+                        </span>
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                           tournament.status === "ONGOING"
                             ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
@@ -638,7 +729,7 @@ export function EventsBoard() {
                       {(tournament.status === "OPEN" || tournament.status === "REGISTRATION") && (
                         <button
                           type="button"
-                          onClick={() => setRegisteringTournament(tournament)}
+                          onClick={() => openRegisterModal(tournament)}
                           className="button button-primary text-xs font-bold inline-flex items-center gap-1.5"
                         >
                           <Plus size={14} />
@@ -1121,6 +1212,39 @@ export function EventsBoard() {
                 </div>
               </div>
 
+              {/* Pengaturan Slot Pemain Inti & Cadangan */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+                    Pemain Inti per Tim (Wajib) *
+                  </label>
+                  <input
+                    required
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={templateMainPlayers}
+                    onChange={(e) => setTemplateMainPlayers(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                  />
+                  <span className="text-[10px] text-gray-400 mt-0.5 block">1 untuk Solo, 4 untuk BR, 5 untuk MOBA/FPS</span>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+                    Maks. Pemain Cadangan (Opsional)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={5}
+                    value={templateSubPlayers}
+                    onChange={(e) => setTemplateSubPlayers(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                  />
+                  <span className="text-[10px] text-gray-400 mt-0.5 block">0 s/d 5 cadangan (isi 0 jika tanpa cadangan)</span>
+                </div>
+              </div>
+
               <div>
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
                   Status Turnamen
@@ -1310,64 +1434,147 @@ export function EventsBoard() {
             {/* SUB-PANEL 2: KELOLA NAMA TIM & ROSTER */}
             {manageTab === "teams" && (
               <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
-                {manageTeams.map((team, idx) => (
-                  <div
-                    key={team.id || idx}
-                    className="p-3.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-gray-50 dark:bg-[#181324] space-y-2"
-                  >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] font-semibold text-gray-400 block mb-1">
-                          Nama Tim #{idx + 1}
-                        </label>
-                        <input
-                          type="text"
-                          value={team.teamName}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setManageTeams((prev) =>
-                              prev.map((t, i) => (i === idx ? { ...t, teamName: val } : t))
-                            );
-                          }}
-                          className="w-full px-3 py-1.5 rounded bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white"
-                        />
+                {manageTeams.map((team, idx) => {
+                  const participant = managingTournament.participants?.find(
+                    (p) => p.teamName?.toLowerCase() === team.teamName?.toLowerCase() || p.id === team.id
+                  );
+                  const repDiscord = team.representativeDiscord || (participant?.leader?.username ? `@${participant.leader.username}` : null);
+                  const repDiscordId = team.representativeDiscordId || participant?.leader?.discordId;
+                  const repPhone = team.representativePhone || participant?.phone;
+                  const rosterList = (team.roster && team.roster.length > 0)
+                    ? team.roster
+                    : (participant?.roster && Array.isArray(participant.roster) && participant.roster.length > 0)
+                      ? participant.roster
+                      : null;
+
+                  return (
+                    <div
+                      key={team.id || idx}
+                      className="p-3.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-gray-50 dark:bg-[#181324] space-y-2.5"
+                    >
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-400 block mb-1">
+                            Nama Tim #{idx + 1}
+                          </label>
+                          <input
+                            type="text"
+                            value={team.teamName}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setManageTeams((prev) =>
+                                prev.map((t, i) => (i === idx ? { ...t, teamName: val } : t))
+                              );
+                            }}
+                            className="w-full px-3 py-1.5 rounded bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-400 block mb-1">
+                            Kapten Tim
+                          </label>
+                          <input
+                            type="text"
+                            value={team.captainName}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setManageTeams((prev) =>
+                                prev.map((t, i) => (i === idx ? { ...t, captainName: val } : t))
+                              );
+                            }}
+                            className="w-full px-3 py-1.5 rounded bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-gray-400 block mb-1">
-                          Kapten Tim
-                        </label>
-                        <input
-                          type="text"
-                          value={team.captainName}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setManageTeams((prev) =>
-                              prev.map((t, i) => (i === idx ? { ...t, captainName: val } : t))
-                            );
-                          }}
-                          className="w-full px-3 py-1.5 rounded bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-                        />
-                      </div>
+
+                      {/* Info Kontak Perwakilan & WA (Khusus Admin/Panitia) */}
+                      {(repPhone || repDiscord || repDiscordId) && (
+                        <div className="p-2 rounded bg-purple-950/20 border border-purple-500/20 flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            {repDiscord && (
+                              <span className="text-purple-300 font-mono text-[11px]">
+                                Discord: <strong className="text-white">{repDiscord}</strong>
+                                {repDiscordId && <span className="text-gray-400 text-[10px] ml-1">({repDiscordId})</span>}
+                              </span>
+                            )}
+                            {repPhone && (
+                              <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-[11px]">
+                                <Phone size={12} className="shrink-0" />
+                                <span>WA: <strong className="text-emerald-300">{repPhone}</strong></span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            {repPhone && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyText(repPhone, `wa-${idx}`)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 text-[10px] font-bold transition"
+                              >
+                                {copiedText === `wa-${idx}` ? <Check size={11} /> : <Copy size={11} />}
+                                <span>{copiedText === `wa-${idx}` ? "Tersalin!" : "Salin WA"}</span>
+                              </button>
+                            )}
+                            {repDiscordId && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyText(repDiscordId, `dc-${idx}`)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 hover:bg-purple-500/30 border border-purple-500/30 text-[10px] font-bold transition"
+                              >
+                                {copiedText === `dc-${idx}` ? <Check size={11} /> : <Copy size={11} />}
+                                <span>{copiedText === `dc-${idx}` ? "Tersalin!" : "Salin ID"}</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Roster Terstruktur */}
+                      {rosterList && rosterList.length > 0 ? (
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-semibold text-gray-400 block">
+                            Susunan Pemain Terdaftar ({rosterList.length} Orang):
+                          </label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                            {rosterList.map((player, pIdx) => (
+                              <div
+                                key={pIdx}
+                                className="flex items-center justify-between px-2.5 py-1 rounded bg-black/30 border border-white/5 text-[11px]"
+                              >
+                                <span className="font-semibold text-gray-200">
+                                  {player.name}
+                                  {player.role === "SUB" && (
+                                    <span className="ml-1 px-1 py-0.2 text-[9px] rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Cad</span>
+                                  )}
+                                </span>
+                                <span className="text-[10px] font-mono text-purple-400">{player.inGameId}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-400 block mb-1">
+                            Daftar Pemain / Roster (Pisahkan dengan tanda koma)
+                          </label>
+                          <input
+                            type="text"
+                            value={(team.players || []).join(", ")}
+                            onChange={(e) => {
+                              const val = e.target.value.split(",").map((p) => p.trim());
+                              setManageTeams((prev) =>
+                                prev.map((t, i) => (i === idx ? { ...t, players: val } : t))
+                              );
+                            }}
+                            placeholder="Contoh: TenZ, aspas, Boaster, Derke, Chronicle"
+                            className="w-full px-3 py-1.5 rounded bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+                          />
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <label className="text-[11px] font-semibold text-gray-400 block mb-1">
-                        Daftar Pemain / Roster (Pisahkan dengan tanda koma)
-                      </label>
-                      <input
-                        type="text"
-                        value={team.players.join(", ")}
-                        onChange={(e) => {
-                          const val = e.target.value.split(",").map((p) => p.trim());
-                          setManageTeams((prev) =>
-                            prev.map((t, i) => (i === idx ? { ...t, players: val } : t))
-                          );
-                        }}
-                        placeholder="Contoh: TenZ, aspas, Boaster, Derke, Chronicle"
-                        className="w-full px-3 py-1.5 rounded bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -1444,6 +1651,48 @@ export function EventsBoard() {
                     </div>
                   </div>
 
+                  {/* Pengaturan Slot Pemain Inti & Cadangan */}
+                  <div className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] space-y-3">
+                    <div>
+                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block">
+                        Konfigurasi Roster Pemain per Tim:
+                      </span>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                        Tentukan berapa pemain inti yang wajib didaftarkan kapten dan batas cadangan.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-400 block mb-1">
+                          Jumlah Pemain Inti (Wajib)
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          value={manageMainPlayers}
+                          onChange={(e) => setManageMainPlayers(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                          className="w-full px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-[#181324] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white"
+                        />
+                        <span className="text-[10px] text-gray-400 mt-0.5 block">1 (Solo), 4 (BR), 5 (MOBA/FPS)</span>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-400 block mb-1">
+                          Maksimal Pemain Cadangan
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={5}
+                          value={manageSubPlayers}
+                          onChange={(e) => setManageSubPlayers(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                          className="w-full px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-[#181324] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white"
+                        />
+                        <span className="text-[10px] text-gray-400 mt-0.5 block">0 sampai 5 pemain cadangan</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Warning Box */}
                   <div className="p-3.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs text-amber-300 space-y-1">
                     <p className="font-bold flex items-center gap-1.5">
@@ -1496,11 +1745,11 @@ export function EventsBoard() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 3: PENDAFTARAN TIM MEMBER KE TURNAMEN */}
+      {/* MODAL 3: PENDAFTARAN TIM MEMBER KE TURNAMEN (FORM TERSTRUKTUR) */}
       {/* ========================================================================= */}
       {registeringTournament && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
+          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[88vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setRegisteringTournament(null)}
@@ -1509,48 +1758,200 @@ export function EventsBoard() {
               <X size={18} />
             </button>
 
-            <div className="mb-4">
-              <span className="text-[10px] font-mono font-bold text-[#9D4EDD] uppercase tracking-wider">
-                PENDAFTARAN TURNAMEN GUILD
-              </span>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mt-0.5">
-                Daftar ke: {registeringTournament.title}
+            <div className="mb-5 pb-3 border-b border-gray-200 dark:border-[#211C2B]">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-mono font-bold text-[#9D4EDD] uppercase tracking-wider">
+                  PENDAFTARAN TURNAMEN GUILD
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                  {registeringTournament.mainPlayersCount ?? 5} Inti + {registeringTournament.subPlayersCount ?? 2} Cadangan
+                </span>
+              </div>
+              <h3 className="text-xl font-black text-gray-900 dark:text-white">
+                Daftar Turnamen: {registeringTournament.title}
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Masukkan nama tim dan daftar pemain. Tim kamu akan mengisi slot bagan yang tersedia.
+                Lengkapi identitas tim, kontak perwakilan, serta susunan roster pemain inti dan cadangan.
               </p>
             </div>
 
-            <form onSubmit={handleRegisterTeam} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Nama Party / Tim *
-                </label>
-                <input
-                  required
-                  type="text"
-                  maxLength={64}
-                  value={registerTeamName}
-                  onChange={(e) => setRegisterTeamName(e.target.value)}
-                  placeholder="Contoh: LogHorizon Vanguard"
-                  className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                />
+            <form onSubmit={handleRegisterTeam} className="space-y-5">
+              {/* BAGIAN A: IDENTITAS TIM & KONTAK PERWAKILAN */}
+              <div className="space-y-3.5 p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-gray-50/50 dark:bg-[#181324]/50">
+                <h4 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider flex items-center gap-1.5">
+                  <Shield size={14} />
+                  <span>Bagian A: Identitas Tim &amp; Kontak Perwakilan</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+                      Nama Party / Tim *
+                    </label>
+                    <input
+                      required
+                      type="text"
+                      minLength={3}
+                      maxLength={64}
+                      value={registerTeamName}
+                      onChange={(e) => setRegisterTeamName(e.target.value)}
+                      placeholder="Contoh: LogHorizon Vanguard"
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+                      Nomor WhatsApp Perwakilan (Wajib) *
+                    </label>
+                    <input
+                      required
+                      type="tel"
+                      value={registerPhone}
+                      onChange={(e) => setRegisterPhone(e.target.value)}
+                      placeholder="Contoh: 081234567890"
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                    />
+                    <span className="text-[10px] text-gray-400 mt-0.5 block">Hanya untuk koordinasi panitia turnamen</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+                    Akun Discord Perwakilan (Terkunci Otomatis)
+                  </label>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-[#14101E] border border-gray-300 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-300 font-mono">
+                    <span className="text-purple-400">@</span>
+                    <span className="font-bold">{session?.user?.username || session?.user?.name || "Akun Discord"}</span>
+                    {session?.user?.discordId && (
+                      <span className="text-[10px] text-gray-500">({session.user.discordId})</span>
+                    )}
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                      Terverifikasi
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Daftar Pemain / Roster (Pisahkan dengan tanda koma)
-                </label>
-                <textarea
-                  rows={3}
-                  value={registerRoster}
-                  onChange={(e) => setRegisterRoster(e.target.value)}
-                  placeholder="Pemain 1 (Kapten), Pemain 2, Pemain 3, Pemain 4, Pemain 5"
-                  className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                />
+              {/* BAGIAN B: PEMAIN INTI WAJIB */}
+              <div className="space-y-3 p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-gray-50/50 dark:bg-[#181324]/50">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Users size={14} className="text-[#9D4EDD]" />
+                    <span>Bagian B: Pemain Inti Wajib ({registerMainPlayers.length} Pemain)</span>
+                  </h4>
+                  <span className="text-[11px] text-purple-400 font-mono">Slot Wajib Terisi Penuh</span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {registerMainPlayers.map((player, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-lg bg-white dark:bg-[#120F17] border border-gray-200 dark:border-gray-800 space-y-2"
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-purple-500/20 text-[#9D4EDD] inline-flex items-center justify-center text-[10px] font-mono">
+                            {idx + 1}
+                          </span>
+                          <span>{idx === 0 ? "Pemain #1 (Kapten Tim) *" : `Pemain Inti #${idx + 1} *`}</span>
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-mono">Slot Wajib</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input
+                          required
+                          type="text"
+                          value={player.name}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setRegisterMainPlayers((prev) =>
+                              prev.map((p, i) => (i === idx ? { ...p, name: val } : p))
+                            );
+                          }}
+                          placeholder={idx === 0 ? "Nickname In-Game Kapten *" : `Nickname Pemain #${idx + 1} *`}
+                          className="w-full px-3 py-1.5 rounded bg-gray-50 dark:bg-[#181324] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                        />
+                        <input
+                          required
+                          type="text"
+                          value={player.inGameId}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setRegisterMainPlayers((prev) =>
+                              prev.map((p, i) => (i === idx ? { ...p, inGameId: val } : p))
+                            );
+                          }}
+                          placeholder="ID / Tag In-Game (contoh: #1234 / UID: 9988) *"
+                          className="w-full px-3 py-1.5 rounded bg-gray-50 dark:bg-[#181324] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              {/* BAGIAN C: PEMAIN CADANGAN OPSIONAL */}
+              {registerSubPlayers.length > 0 && (
+                <div className="space-y-3 p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-gray-50/50 dark:bg-[#181324]/50">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Users size={14} className="text-amber-400" />
+                      <span>Bagian C: Pemain Cadangan (Maks. {registerSubPlayers.length} Pemain - Opsional)</span>
+                    </h4>
+                    <span className="text-[11px] text-amber-400 font-mono">Boleh Dikosongkan</span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {registerSubPlayers.map((sub, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-lg bg-white dark:bg-[#120F17] border border-gray-200 dark:border-gray-800 space-y-2"
+                      >
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                            <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 inline-flex items-center justify-center text-[10px] font-mono">
+                              C{idx + 1}
+                            </span>
+                            <span>Pemain Cadangan #{idx + 1}</span>
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-mono">Opsional</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={sub.name}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setRegisterSubPlayers((prev) =>
+                                prev.map((p, i) => (i === idx ? { ...p, name: val } : p))
+                              );
+                            }}
+                            placeholder={`Nickname Cadangan #${idx + 1} (Opsional)`}
+                            className="w-full px-3 py-1.5 rounded bg-gray-50 dark:bg-[#181324] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                          />
+                          <input
+                            type="text"
+                            value={sub.inGameId}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setRegisterSubPlayers((prev) =>
+                                prev.map((p, i) => (i === idx ? { ...p, inGameId: val } : p))
+                              );
+                            }}
+                            placeholder="ID / Tag In-Game (Opsional)"
+                            className="w-full px-3 py-1.5 rounded bg-gray-50 dark:bg-[#181324] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-gray-200 dark:border-[#211C2B]">
                 <button
                   type="button"
                   onClick={() => setRegisteringTournament(null)}
@@ -1563,7 +1964,7 @@ export function EventsBoard() {
                   disabled={submittingRegistration}
                   className="button button-primary text-xs font-bold"
                 >
-                  {submittingRegistration ? "Mendaftarkan…" : "Kirim Pendaftaran"}
+                  {submittingRegistration ? "Mendaftarkan Tim…" : "Konfirmasi & Daftarkan Tim"}
                 </button>
               </div>
             </form>
@@ -1574,58 +1975,140 @@ export function EventsBoard() {
       {/* ========================================================================= */}
       {/* POPUP: LIHAT SUSUNAN PEMAIN (ROSTER) TIM */}
       {/* ========================================================================= */}
-      {viewingRoster && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-sm max-h-[85vh] overflow-y-auto p-5 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150 my-auto">
-            <button
-              type="button"
-              onClick={() => setViewingRoster(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
-            >
-              <X size={16} />
-            </button>
+      {viewingRoster && (() => {
+        const hasStructured = (viewingRoster.mainPlayers && viewingRoster.mainPlayers.length > 0) ||
+          (viewingRoster.roster && viewingRoster.roster.length > 0);
+        
+        const mainList = viewingRoster.mainPlayers && viewingRoster.mainPlayers.length > 0
+          ? viewingRoster.mainPlayers
+          : viewingRoster.roster
+            ? viewingRoster.roster.filter((p) => p.role !== "SUB")
+            : [];
 
-            <div className="flex items-center gap-2 mb-3">
-              <Shield size={18} className="text-[#9D4EDD]" />
-              <div>
-                <h4 className="text-base font-extrabold text-gray-900 dark:text-white">
-                  {viewingRoster.teamName}
-                </h4>
-                <p className="text-[11px] font-mono text-[#9D4EDD]">
-                  Kapten: {viewingRoster.captainName || "Leader Party"}
-                </p>
+        const subList = viewingRoster.subPlayers && viewingRoster.subPlayers.length > 0
+          ? viewingRoster.subPlayers
+          : viewingRoster.roster
+            ? viewingRoster.roster.filter((p) => p.role === "SUB")
+            : [];
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150 my-auto">
+              <button
+                type="button"
+                onClick={() => setViewingRoster(null)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200 dark:border-[#211C2B]">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[#9D4EDD] shrink-0">
+                  <Shield size={20} />
+                </div>
+                <div>
+                  <h4 className="text-base font-extrabold text-gray-900 dark:text-white">
+                    {viewingRoster.teamName}
+                  </h4>
+                  <p className="text-[11px] font-mono text-[#9D4EDD]">
+                    Kapten: {viewingRoster.captainName || "Leader Party"}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-1.5 my-3">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                Susunan Pemain (Roster):
-              </p>
-              {viewingRoster.players && viewingRoster.players.length > 0 ? (
-                viewingRoster.players.map((player, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between px-3 py-1.5 rounded bg-gray-50 dark:bg-[#181324] text-xs font-medium text-gray-800 dark:text-gray-200"
-                  >
-                    <span>{player}</span>
-                    <span className="text-[10px] font-mono text-gray-400">Slot #{idx + 1}</span>
+              {hasStructured ? (
+                <div className="space-y-4 my-3">
+                  {/* Pemain Inti */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                        Pemain Inti ({mainList.length} Orang):
+                      </p>
+                      <span className="text-[10px] font-mono text-purple-400">Roster Utama</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {mainList.map((player, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#181324] border border-gray-200 dark:border-[#211C2B] text-xs"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="w-4 h-4 rounded-full bg-purple-500/20 text-[#9D4EDD] inline-flex items-center justify-center text-[10px] font-mono font-bold">
+                              {idx + 1}
+                            </span>
+                            <span className="font-bold text-gray-900 dark:text-white">{player.name}</span>
+                            {idx === 0 && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/25">
+                                Kapten
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] font-mono text-purple-400 font-semibold">{player.inGameId}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))
-              ) : (
-                <p className="text-xs text-gray-400">Roster pemain belum diisi oleh kapten tim.</p>
-              )}
-            </div>
 
-            <button
-              type="button"
-              onClick={() => setViewingRoster(null)}
-              className="button button-quiet w-full text-xs font-bold mt-2"
-            >
-              Tutup
-            </button>
+                  {/* Pemain Cadangan */}
+                  {subList.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[11px] font-bold text-amber-500 uppercase tracking-wider">
+                          Pemain Cadangan ({subList.length} Orang):
+                        </p>
+                        <span className="text-[10px] font-mono text-amber-400">Substitute</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {subList.map((player, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#181324] border border-gray-200 dark:border-[#211C2B] text-xs"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 inline-flex items-center justify-center text-[10px] font-mono font-bold">
+                                C{idx + 1}
+                              </span>
+                              <span className="font-medium text-gray-800 dark:text-gray-200">{player.name}</span>
+                            </div>
+                            <span className="text-[11px] font-mono text-gray-400">{player.inGameId}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1.5 my-3">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Susunan Pemain (Roster):
+                  </p>
+                  {viewingRoster.players && viewingRoster.players.length > 0 ? (
+                    viewingRoster.players.map((player, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between px-3 py-1.5 rounded bg-gray-50 dark:bg-[#181324] text-xs font-medium text-gray-800 dark:text-gray-200"
+                      >
+                        <span>{player}</span>
+                        <span className="text-[10px] font-mono text-gray-400">Slot #{idx + 1}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-400">Roster pemain belum diisi oleh kapten tim.</p>
+                  )}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setViewingRoster(null)}
+                className="button button-quiet w-full text-xs font-bold mt-3"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </main>
   );
 }

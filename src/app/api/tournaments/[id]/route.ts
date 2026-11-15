@@ -71,6 +71,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       ...(typeof data.title === "string" ? { title: data.title.trim() } : {}),
       ...(typeof data.game === "string" ? { game: data.game.trim() } : {}),
       ...(typeof data.prizePool === "string" ? { prizePool: data.prizePool.trim() } : {}),
+      ...(typeof data.mainPlayersCount === "number" ? { mainPlayersCount: Math.max(1, Math.min(10, data.mainPlayersCount)) } : {}),
+      ...(typeof data.subPlayersCount === "number" ? { subPlayersCount: Math.max(0, Math.min(5, data.subPlayersCount)) } : {}),
       ...(nextMaxSlots !== tournament.maxSlots ? { maxSlots: nextMaxSlots } : {}),
       ...(nextFormat !== tournament.format ? { format: nextFormat } : {}),
       ...(nextStatus ? { status: nextStatus } : {}),

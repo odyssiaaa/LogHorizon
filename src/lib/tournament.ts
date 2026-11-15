@@ -7,11 +7,23 @@ export type BracketMatch = {
   winner: BracketSlot | null;
 };
 
+export type TournamentRosterPlayer = {
+  name: string;
+  inGameId: string;
+  role?: "MAIN" | "SUB";
+};
+
 export type TournamentTeam = {
   id: string;
   teamName: string;
   captainName: string;
-  players: string[];
+  representativeDiscord?: string;
+  representativeDiscordId?: string;
+  representativePhone?: string;
+  players?: string[];
+  mainPlayers?: TournamentRosterPlayer[];
+  subPlayers?: TournamentRosterPlayer[];
+  roster?: TournamentRosterPlayer[];
 };
 
 export type TournamentMatch = {

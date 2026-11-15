@@ -12,10 +12,54 @@ export async function POST(request: Request, { params }: RouteContext) {
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
   const teamName = typeof data.teamName === "string" ? data.teamName.trim() : "";
-  const playersRaw = Array.isArray(data.players) ? data.players.filter((p): p is string => typeof p === "string" && p.trim().length > 0) : [];
-  const players = playersRaw.length > 0 ? playersRaw : [user.username ?? "Kapten Party", "Player 2", "Player 3", "Player 4", "Player 5"];
 
-  if (!teamName || teamName.length > 64) return jsonError("Nama party wajib diisi (maksimal 64 karakter).", 400);
+  if (!teamName || teamName.length > 64) {
+    return jsonError("Nama party/tim wajib diisi (maksimal 64 karakter).", 400);
+  }
+
+  const rawPhone = typeof data.phone === "string" ? data.phone.trim().replace(/[^\d+]/g, "") : "";
+  if (!rawPhone || rawPhone.replace(/\D/g, "").length < 8) {
+    return jsonError("Nomor WhatsApp/telepon perwakilan wajib diisi (minimal 8 angka).", 400);
+  }
+
+  // Parse Pemain Inti
+  let mainPlayers: { name: string; inGameId: string; role: "MAIN" }[] = [];
+  if (Array.isArray(data.mainPlayers)) {
+    mainPlayers = (data.mainPlayers as Array<{ name?: unknown; inGameId?: unknown }>)
+      .map((p) => ({
+        name: typeof p.name === "string" ? p.name.trim() : "",
+        inGameId: typeof p.inGameId === "string" ? p.inGameId.trim() : "",
+        role: "MAIN" as const,
+      }))
+      .filter((p) => p.name.length > 0 && p.inGameId.length > 0);
+  } else if (Array.isArray(data.players)) {
+    mainPlayers = (data.players as string[])
+      .filter((p) => typeof p === "string" && p.trim().length > 0)
+      .map((p, idx) => ({
+        name: p.trim(),
+        inGameId: `TAG-${idx + 1}`,
+        role: "MAIN" as const,
+      }));
+  }
+
+  if (mainPlayers.length === 0) {
+    return jsonError("Daftar pemain inti wajib diisi lengkap dengan Nickname dan ID In-Game.", 400);
+  }
+
+  // Parse Pemain Cadangan (Opsional)
+  let subPlayers: { name: string; inGameId: string; role: "SUB" }[] = [];
+  if (Array.isArray(data.subPlayers)) {
+    subPlayers = (data.subPlayers as Array<{ name?: unknown; inGameId?: unknown }>)
+      .map((p) => ({
+        name: typeof p.name === "string" ? p.name.trim() : "",
+        inGameId: typeof p.inGameId === "string" ? p.inGameId.trim() : "",
+        role: "SUB" as const,
+      }))
+      .filter((p) => p.name.length > 0 && p.inGameId.length > 0);
+  }
+
+  const roster = [...mainPlayers, ...subPlayers];
+  const legacyPlayerStrings = roster.map((p) => `${p.name} (${p.inGameId})`);
 
   try {
     const participant = await prisma.$transaction(async (tx) => {
@@ -27,7 +71,13 @@ export async function POST(request: Request, { params }: RouteContext) {
       if (count >= tournament.maxSlots) throw new Error("TOURNAMENT_FULL");
 
       const created = await tx.participant.create({
-        data: { tournamentId: id, leaderId: user.id, teamName },
+        data: {
+          tournamentId: id,
+          leaderId: user.id,
+          teamName,
+          phone: rawPhone,
+          roster: roster as unknown as Prisma.InputJsonValue,
+        },
       });
 
       // Update tournament teams array
@@ -35,8 +85,14 @@ export async function POST(request: Request, { params }: RouteContext) {
       const newTeamObj: TournamentTeam = {
         id: created.id,
         teamName,
-        captainName: user.username ?? "Kapten Party",
-        players,
+        captainName: user.username ?? user.name ?? "Kapten Party",
+        representativeDiscord: user.username ?? user.name ?? "Gamer",
+        representativeDiscordId: user.discordId ?? undefined,
+        representativePhone: rawPhone,
+        players: legacyPlayerStrings,
+        mainPlayers,
+        subPlayers,
+        roster,
       };
 
       // Replace placeholder or push

@@ -103,19 +103,21 @@ model User {
 }
 
 model Tournament {
-  id           String           @id @default(cuid())
-  title        String           @default("LogHorizon Community Cup")
-  game         String
-  prizePool    String?          @default("Prizepool Komunitas")
-  format       String           @default("8 Tim")
-  maxSlots     Int              @default(8)
-  eventDate    DateTime
-  status       TournamentStatus @default(OPEN)
-  bracket      Json?
-  teams        Json?            @default("[]")
-  matches      Json?            @default("[]")
-  createdAt    DateTime         @default(now())
-  participants Participant[]
+  id               String           @id @default(cuid())
+  title            String           @default("LogHorizon Community Cup")
+  game             String
+  prizePool        String?          @default("Prizepool Komunitas")
+  format           String           @default("8 Tim")
+  maxSlots         Int              @default(8)
+  mainPlayersCount Int              @default(5)
+  subPlayersCount  Int              @default(2)
+  eventDate        DateTime
+  status           TournamentStatus @default(OPEN)
+  bracket          Json?
+  teams            Json?            @default("[]")
+  matches          Json?            @default("[]")
+  createdAt        DateTime         @default(now())
+  participants     Participant[]
 
   @@index([status, eventDate])
 }
@@ -125,6 +127,8 @@ model Participant {
   tournamentId String
   leaderId     String
   teamName     String
+  phone        String?
+  roster       Json?      @default("[]")
   createdAt    DateTime   @default(now())
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   leader       User       @relation(fields: [leaderId], references: [id], onDelete: Cascade)
