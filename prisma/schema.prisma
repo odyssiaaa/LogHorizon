@@ -100,6 +100,9 @@ model User {
   donations      Donation[]
   notifications  Notification[]
   announcements  Announcement[]
+  createdConversations   Conversation[]            @relation("CreatedConversations")
+  conversationMemberships ConversationParticipant[]
+  directMessages         DirectMessage[]
 }
 
 model Tournament {
@@ -375,3 +378,44 @@ model Sponsor {
 
   @@index([createdAt])
 }
+
+model Conversation {
+  id           String                    @id @default(cuid())
+  name         String?
+  isGroup      Boolean                   @default(false)
+  creatorId    String?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  creator      User?                     @relation("CreatedConversations", fields: [creatorId], references: [id], onDelete: SetNull)
+  participants ConversationParticipant[]
+  messages     DirectMessage[]
+
+  @@index([updatedAt])
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+  lastReadAt     DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId, conversationId])
+}
+
+model DirectMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String       @db.Text
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId, createdAt])
+}
+

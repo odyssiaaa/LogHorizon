@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { DiscordAvatar } from "@/components/discord-avatar";
+import { ShareButton } from "@/components/share-button";
 
 type PageProps = {
   params: Promise<{ username: string }>;
@@ -190,10 +191,27 @@ export default async function PublicProfilePage({ params }: PageProps) {
             </div>
           </div>
 
-          <div className="sm:self-center shrink-0">
+          <div className="sm:self-center shrink-0 flex flex-col sm:items-end gap-2.5">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">
               <CheckCircle2 size={15} /> {successfulSales} Transaksi Sukses
             </span>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link
+                href={`/messages?user=${user.id}`}
+                className="button button-primary text-xs font-bold inline-flex items-center gap-1.5"
+              >
+                <MessageSquare size={14} />
+                <span>Kirim Pesan (PM)</span>
+              </Link>
+              <ShareButton
+                url={`/u/${encodeURIComponent(user.username || "")}`}
+                title={`Profil ${user.username} - LogHorizon`}
+                text={`Lihat profil petualang ${user.username} di LogHorizon!`}
+                label="Bagikan Profil 🔗"
+                variant="outline"
+              />
+            </div>
           </div>
         </div>
 

@@ -5,6 +5,15 @@ import { advanceMatchWinner, generateTemplateBracket, TournamentMatch, Tournamen
 
 type RouteContext = { params: Promise<{ id: string }> };
 
+export async function GET(_request: Request, { params }: RouteContext) {
+  const { id } = await params;
+  const tournament = await prisma.tournament.findUnique({
+    where: { id },
+  });
+  if (!tournament) return jsonError("Turnamen tidak ditemukan.", 404);
+  return Response.json({ success: true, tournament });
+}
+
 export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await requireStaff(["ADMIN", "MODERATOR"]);
   if (access.response) return access.response;

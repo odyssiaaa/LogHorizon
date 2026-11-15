@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ArrowDownUp, Flag, Loader2, Plus, Search, ShieldCheck, ShoppingBag, Trash2, X } from "lucide-react";
+import { ArrowDownUp, Flag, Loader2, MessageSquare, Plus, Search, ShieldCheck, ShoppingBag, Trash2, X } from "lucide-react";
 import { isPublicMarketData } from "@/lib/market-data";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
@@ -13,6 +13,7 @@ import { createRealtimeClient, type SealedLiveQuery } from "@neon/realtime/clien
 import { PostReactions } from "@/components/post-reactions";
 import { SkeletonMarketCard, TacticalEmptyState } from "@/components/ui-feedback";
 import { EscrowChatModal } from "@/components/escrow-chat-modal";
+import { ShareButton } from "@/components/share-button";
 import type { MarketplacePostRecord } from "@/types/community";
 import { motion } from "framer-motion";
 
@@ -409,6 +410,22 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               </button>
             )}
             <div className="market-card-actions flex flex-wrap gap-2 mt-4">
+              <ShareButton
+                url={`/marketplace?id=${post.id}`}
+                title={`[${market.type}] ${post.title} - Marketplace LogHorizon`}
+                text={`Cek lapak ${post.title} (${market.game}) di Marketplace LogHorizon: Rp ${market.price?.toLocaleString("id-ID")}`}
+                label="Bagikan"
+                variant="outline"
+              />
+              {user?.id !== post.authorId && (
+                <Link
+                  href={`/messages?user=${post.authorId}`}
+                  className="button button-quiet text-xs flex items-center gap-1 border-[#9D4EDD]/40 text-[#9D4EDD]"
+                  title="Kirim Pesan Langsung (PM) ke Penjual"
+                >
+                  <MessageSquare size={13} /> PM Penjual
+                </Link>
+              )}
               {market.status === "AVAILABLE" && market.type === "WTS" && user?.id !== post.authorId && (
                 <button
                   className="button button-primary"

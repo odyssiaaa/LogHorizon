@@ -123,6 +123,37 @@ export function Navbar() {
     guild: false,
   });
   const [isDark, setIsDark] = useState(true);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  // Poll unread messages count for active user
+  useEffect(() => {
+    if (!user) {
+      setUnreadMessages(0);
+      return;
+    }
+    let active = true;
+
+    const checkUnread = async () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      try {
+        const res = await fetch("/api/conversations/unread-count");
+        if (!res.ok) return;
+        const data = (await res.json()) as { success: boolean; unreadCount?: number };
+        if (active && typeof data.unreadCount === "number") {
+          setUnreadMessages(data.unreadCount);
+        }
+      } catch {
+        // Silently catch background errors
+      }
+    };
+
+    void checkUnread();
+    const interval = setInterval(checkUnread, 15000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [user]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -463,6 +494,18 @@ export function Navbar() {
                 <div className="h-8 w-24 rounded bg-gray-200 dark:bg-[#1E1A3A] animate-pulse" />
               ) : user ? (
                 <div className="flex items-center gap-2">
+                  <Link
+                    href="/messages"
+                    className="relative p-2 rounded-full border border-gray-200 dark:border-[#211C2B] bg-white/60 dark:bg-[#120F17]/60 hover:border-[#9D4EDD]/60 transition-colors text-gray-600 dark:text-gray-300 hover:text-[#9D4EDD] dark:hover:text-[#C77DFF]"
+                    title="Pesan &amp; Obrolan Komunitas"
+                  >
+                    <MessageSquare size={17} />
+                    {unreadMessages > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-[#9D4EDD] text-white rounded-full text-[9px] font-extrabold flex items-center justify-center animate-pulse">
+                        {unreadMessages > 9 ? "9+" : unreadMessages}
+                      </span>
+                    )}
+                  </Link>
                   <NotificationBell />
                   <div className="relative" ref={dropdownRef}>
                     <button
@@ -576,16 +619,33 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Hamburger Menu Button (Khusus Mobile di bawah md) */}
-            <button
-              type="button"
-              onClick={() => setMobileOpen(true)}
-              className="md:hidden mobile-only size-9 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white/50 dark:bg-[#120F17]/60 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:border-[#9D4EDD] transition-colors"
-              aria-label="Buka menu navigasi"
-              aria-expanded={mobileOpen}
-            >
-              <Menu size={18} />
-            </button>
+            {/* Mobile Actions (Pesan & Hamburger Menu) */}
+            <div className="flex md:hidden items-center gap-1.5">
+              {user && (
+                <Link
+                  href="/messages"
+                  className="relative size-9 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white/50 dark:bg-[#120F17]/60 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:border-[#9D4EDD] transition-colors"
+                  aria-label="Pesan &amp; Obrolan Komunitas"
+                >
+                  <MessageSquare size={17} />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -top-1 -right-1 size-3.5 bg-[#9D4EDD] rounded-full text-[8px] font-bold text-white flex items-center justify-center animate-pulse">
+                      {unreadMessages > 9 ? "9+" : unreadMessages}
+                    </span>
+                  )}
+                </Link>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setMobileOpen(true)}
+                className="mobile-only size-9 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white/50 dark:bg-[#120F17]/60 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:border-[#9D4EDD] transition-colors"
+                aria-label="Buka menu navigasi"
+                aria-expanded={mobileOpen}
+              >
+                <Menu size={18} />
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -681,6 +741,25 @@ export function Navbar() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Pesan & Obrolan Komunitas Shortcut */}
+                    <Link
+                      href="/messages"
+                      onClick={() => setMobileOpen(false)}
+                      className="mt-2.5 flex items-center justify-between p-2.5 rounded-lg border border-[#9D4EDD]/30 bg-[#9D4EDD]/10 text-xs font-bold text-gray-800 dark:text-gray-200 hover:border-[#9D4EDD] transition"
+                    >
+                      <div className="flex items-center gap-2">
+                        <MessageSquare size={15} className="text-[#9D4EDD]" />
+                        <span>Pesan &amp; Obrolan Komunitas</span>
+                      </div>
+                      {unreadMessages > 0 ? (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#9D4EDD] text-white">
+                          {unreadMessages} baru
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400">Buka ➔</span>
+                      )}
+                    </Link>
                   </div>
                 ) : (
                   <div className="mt-4">

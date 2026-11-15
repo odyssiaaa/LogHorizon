@@ -10,6 +10,7 @@ import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { PostReactions, type PostReaction } from "@/components/post-reactions";
 import { SkeletonForumCard, TacticalEmptyState } from "@/components/ui-feedback";
+import { ShareButton } from "@/components/share-button";
 import { motion } from "framer-motion";
 import type { ForumPostRecord } from "@/types/community";
 
@@ -383,6 +384,14 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                           <MessageCircle size={13} />
                           <span>Diskusi</span>
                         </Link>
+                        <span>•</span>
+                        <ShareButton
+                          url={`/forum/${post.id}`}
+                          title={`[Forum] ${post.title}`}
+                          text={`Cek diskusi di Forum LogHorizon: ${post.title}`}
+                          label="Share"
+                          variant="ghost"
+                        />
                         {(user?.role === "ADMIN" || user?.role === "MODERATOR") && (
                           <button
                             type="button"

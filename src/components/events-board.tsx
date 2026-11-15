@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -33,6 +34,7 @@ import {
 import { readApiResponse } from "@/lib/api-response";
 import { advanceMatchWinner, TournamentMatch, TournamentTeam, TournamentRosterPlayer } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
+import { ShareButton } from "@/components/share-button";
 
 type Participant = {
   id: string;
@@ -737,6 +739,34 @@ export function EventsBoard() {
                         </button>
                       )}
 
+                      {/* Share Tournament Button */}
+                      <ShareButton
+                        url={`/events/turnamen/${tournament.id}`}
+                        title={`🏆 ${tournament.title} - Turnamen LogHorizon`}
+                        text={`Ikuti turnamen ${tournament.game}! Hadiah: ${tournament.prizePool || "Prizepool Resmi"}. Cek bagan dan daftar sekarang:`}
+                        label="Bagikan Turnamen 🔗"
+                        variant="secondary"
+                      />
+
+                      {/* Copy Registration Link Button */}
+                      <ShareButton
+                        url={`/events/turnamen/${tournament.id}#daftar`}
+                        title={`Daftar Turnamen ${tournament.title}`}
+                        text={`Link Pendaftaran Turnamen ${tournament.title} (${tournament.game}):`}
+                        label="Salin Link Pendaftaran"
+                        variant="outline"
+                      />
+
+                      {/* Dedicated Tournament Page Link */}
+                      <Link
+                        href={`/events/turnamen/${tournament.id}`}
+                        className="button button-quiet text-xs font-semibold inline-flex items-center gap-1"
+                        title="Buka halaman lengkap turnamen"
+                      >
+                        <ExternalLink size={13} />
+                        <span>Halaman Khusus</span>
+                      </Link>
+
                       {/* Manage Tournament Button (Admin / Mod) */}
                       {isAdminOrMod && (
                         <button
@@ -1015,6 +1045,13 @@ export function EventsBoard() {
                       >
                         <Headphones size={13} /> <span>Voice Discord</span>
                       </a>
+                      <ShareButton
+                        url={`/events?view=mabar&post=${post.id}`}
+                        title={`🎮 Mabar ${post.game} - LogHorizon`}
+                        text={`Yuk mabar ${post.game}! Dibutuhkan rekan party di LogHorizon:`}
+                        label="Share"
+                        variant="ghost"
+                      />
                       <button
                         type="button"
                         onClick={() => setActivePartyChat(activePartyChat === post.id ? null : post.id)}
@@ -2119,7 +2156,7 @@ export function EventsBoard() {
 // =========================================================================
 // SUB-KOMPONEN: KARTU PERTANDINGAN BAGAN VISUAL (CYBER MINIMALIST)
 // =========================================================================
-function MatchCard({
+export function MatchCard({
   match,
   teams,
   isFinal = false,
@@ -2208,7 +2245,7 @@ function MatchCard({
 // =========================================================================
 // SUB-KOMPONEN: BAGAN SIMETRIS SPLIT DUAL-WING (SAYAP KIRI - TENGAH - SAYAP KANAN)
 // =========================================================================
-function DualWingBracketView({
+export function DualWingBracketView({
   sortedRoundNumbers,
   roundsMap,
   teams,
