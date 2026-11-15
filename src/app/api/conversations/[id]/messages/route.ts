@@ -1,5 +1,6 @@
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { sanitizeText } from "@/lib/sanitize";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -85,7 +86,8 @@ export async function POST(request: Request, { params }: RouteContext) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const content = typeof body.content === "string" ? body.content.trim() : "";
+  const rawContent = typeof body.content === "string" ? body.content.trim() : "";
+  const content = sanitizeText(rawContent);
 
   if (!content) {
     return jsonError("Pesan tidak boleh kosong.", 400);

@@ -1,9 +1,13 @@
 import { TournamentStatus, Prisma } from "@prisma/client";
-import { jsonError, requireStaff } from "@/lib/http";
+import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { generateTemplateBracket, TournamentTeam, TournamentMatch } from "@/lib/tournament";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 export async function GET() {
+  const viewer = await authenticatedUser().catch(() => null);
+  const isStaff = viewer?.role === "ADMIN" || viewer?.role === "MODERATOR";
+
   const tournaments = await prisma.tournament.findMany({
     orderBy: [{ eventDate: "asc" }, { createdAt: "desc" }],
     include: {
@@ -17,26 +21,38 @@ export async function GET() {
       },
     },
   });
-  return Response.json(tournaments.map((tournament) => ({
-    ...tournament,
-    mainPlayersCount: tournament.mainPlayersCount ?? 5,
-    subPlayersCount: tournament.subPlayersCount ?? 2,
-    participants: tournament.participants.map((participant) => ({
-      id: participant.id,
-      teamName: participant.teamName,
-      phone: participant.phone ?? null,
-      roster: participant.roster ?? [],
-      leader: {
-        id: participant.leader.id,
-        username: participant.leader.username,
-        discordId: participant.leader.discordId ?? null,
-        name: participant.leader.name,
-      },
-    })),
-    bracket: tournament.bracket,
-    teams: (tournament.teams as unknown as TournamentTeam[]) || [],
-    matches: (tournament.matches as unknown as TournamentMatch[]) || [],
-  })));
+
+  return Response.json(tournaments.map((tournament) => {
+    const rawTeams = (tournament.teams as unknown as TournamentTeam[]) || [];
+    // Sanitize team representative phone numbers for non-staff
+    const sanitizedTeams = isStaff
+      ? rawTeams
+      : rawTeams.map((team) => ({
+          ...team,
+          representativePhone: undefined,
+        }));
+
+    return {
+      ...tournament,
+      mainPlayersCount: tournament.mainPlayersCount ?? 5,
+      subPlayersCount: tournament.subPlayersCount ?? 2,
+      participants: tournament.participants.map((participant) => ({
+        id: participant.id,
+        teamName: participant.teamName,
+        phone: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.phone ?? null : null,
+        roster: participant.roster ?? [],
+        leader: {
+          id: participant.leader.id,
+          username: participant.leader.username,
+          discordId: participant.leader.discordId ?? null,
+          name: participant.leader.name,
+        },
+      })),
+      bracket: tournament.bracket,
+      teams: sanitizedTeams,
+      matches: (tournament.matches as unknown as TournamentMatch[]) || [],
+    };
+  }));
 }
 
 export async function POST(request: Request) {
@@ -45,9 +61,9 @@ export async function POST(request: Request) {
 
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
-  const title = typeof data.title === "string" && data.title.trim() ? data.title.trim() : "LogHorizon Tournament Cup";
-  const game = typeof data.game === "string" ? data.game.trim() : "";
-  const prizePool = typeof data.prizePool === "string" && data.prizePool.trim() ? data.prizePool.trim() : "Prizepool Komunitas";
+  const title = sanitizePlainText(typeof data.title === "string" && data.title.trim() ? data.title.trim() : "LogHorizon Tournament Cup");
+  const game = sanitizePlainText(typeof data.game === "string" ? data.game.trim() : "");
+  const prizePool = sanitizePlainText(typeof data.prizePool === "string" && data.prizePool.trim() ? data.prizePool.trim() : "Prizepool Komunitas");
 
   let teamCount = typeof data.teamCount === "number" ? data.teamCount : parseInt(String(data.format || "8").replace(/\D/g, ""), 10);
   if (isNaN(teamCount) || teamCount < 2) teamCount = 8;

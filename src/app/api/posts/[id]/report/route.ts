@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { authenticatedUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -9,8 +10,9 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (!user) return jsonError("Login diperlukan untuk melaporkan postingan.", 401);
   const { id } = await params;
   const payload: unknown = await request.json();
-  const reason = payload && typeof payload === "object" ? (payload as Record<string, unknown>).reason : null;
-  if (typeof reason !== "string" || !reason.trim() || reason.length > 2000) return jsonError("Alasan laporan wajib diisi (maksimal 2.000 karakter).", 400);
+  const rawReason = payload && typeof payload === "object" ? (payload as Record<string, unknown>).reason : null;
+  const reason = sanitizePlainText(typeof rawReason === "string" ? rawReason.trim() : "");
+  if (!reason || reason.length > 2000) return jsonError("Alasan laporan wajib diisi (maksimal 2.000 karakter).", 400);
   try {
     const report = await prisma.report.create({ data: { postId: id, reporterId: user.id, reason: reason.trim() } });
     return Response.json(report, { status: 201 });

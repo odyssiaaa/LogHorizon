@@ -2,6 +2,7 @@ import { Prisma, TournamentStatus } from "@prisma/client";
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { createSingleEliminationBracket, TournamentTeam, TournamentMatch } from "@/lib/tournament";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -11,7 +12,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   const { id } = await params;
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
-  const teamName = typeof data.teamName === "string" ? data.teamName.trim() : "";
+  const teamName = sanitizePlainText(typeof data.teamName === "string" ? data.teamName.trim() : "");
 
   if (!teamName || teamName.length > 64) {
     return jsonError("Nama party/tim wajib diisi (maksimal 64 karakter).", 400);
@@ -27,8 +28,8 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (Array.isArray(data.mainPlayers)) {
     mainPlayers = (data.mainPlayers as Array<{ name?: unknown; inGameId?: unknown }>)
       .map((p) => ({
-        name: typeof p.name === "string" ? p.name.trim() : "",
-        inGameId: typeof p.inGameId === "string" ? p.inGameId.trim() : "",
+        name: sanitizePlainText(typeof p.name === "string" ? p.name.trim() : ""),
+        inGameId: sanitizePlainText(typeof p.inGameId === "string" ? p.inGameId.trim() : ""),
         role: "MAIN" as const,
       }))
       .filter((p) => p.name.length > 0 && p.inGameId.length > 0);
@@ -36,7 +37,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     mainPlayers = (data.players as string[])
       .filter((p) => typeof p === "string" && p.trim().length > 0)
       .map((p, idx) => ({
-        name: p.trim(),
+        name: sanitizePlainText(p.trim()),
         inGameId: `TAG-${idx + 1}`,
         role: "MAIN" as const,
       }));

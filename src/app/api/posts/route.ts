@@ -4,6 +4,7 @@ import { marketJson, type MarketData } from "@/lib/market-data";
 import { prisma } from "@/lib/prisma";
 import { addXpInTransaction } from "@/lib/xp";
 import { sendDiscordNotice } from "@/lib/discord-webhook";
+import { sanitizePlainText, sanitizeText } from "@/lib/sanitize";
 
 function isPostCategory(value: string | null): value is PostCategory {
   return value !== null && Object.values(PostCategory).includes(value as PostCategory);
@@ -107,8 +108,8 @@ export async function POST(request: Request) {
   const payload: unknown = await request.json();
   if (!payload || typeof payload !== "object") return jsonError("Isi postingan tidak valid.", 400);
   const data = payload as Record<string, unknown>;
-  const title = typeof data.title === "string" ? data.title.trim() : "";
-  const content = typeof data.content === "string" ? data.content.trim() : "";
+  const title = sanitizePlainText(typeof data.title === "string" ? data.title.trim() : "");
+  const content = sanitizeText(typeof data.content === "string" ? data.content.trim() : "");
   const category = data.category;
 
   if (!title || title.length > 180) return jsonError("Judul wajib diisi (maksimal 180 karakter).", 400);
@@ -128,10 +129,11 @@ export async function POST(request: Request) {
       !market.game.trim() ||
       typeof market.price !== "number" ||
       !Number.isInteger(market.price) ||
-      market.price < 0 ||
+      Number.isNaN(market.price) ||
+      market.price <= 0 ||
       (market.imageUrl != null && (typeof market.imageUrl !== "string" || !isValidUrl(market.imageUrl))) ||
       !content
-    ) return jsonError("Data lapak tidak valid. Gambar bersifat opsional, tetapi URL yang diberikan harus valid.", 400);
+    ) return jsonError("Data lapak tidak valid. Harga harus berupa nominal positif di atas 0.", 400);
 
     const contact = typeof market.contact === "string" && market.contact.trim()
       ? market.contact.trim()

@@ -1,5 +1,6 @@
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 export async function GET() {
   const me = await activeUser();
@@ -175,7 +176,7 @@ export async function POST(request: Request) {
   }
 
   // Group Chat
-  const groupName = typeof name === "string" ? name.trim() : "";
+  const groupName = sanitizePlainText(typeof name === "string" ? name.trim() : "");
   if (!groupName || groupName.length < 2) {
     return jsonError("Nama grup obrolan minimal 2 karakter.", 400);
   }

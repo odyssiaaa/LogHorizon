@@ -84,7 +84,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
           }`}
           onClick={() => setActiveTab("adventurers")}
         >
-          <span>⚔️ Petualang Teraktif</span>
+          <span>⚔️ Top 5 Petualang (XP)</span>
         </button>
         <button
           type="button"

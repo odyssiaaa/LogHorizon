@@ -3,6 +3,7 @@ import { Role } from "@prisma/client";
 import { jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { addXpInTransaction } from "@/lib/xp";
+import { isGuildOwner } from "@/lib/caste";
 
 function isAuthorized(request: Request) {
   const expected = process.env.DISCORD_SYNC_TOKEN;
@@ -28,9 +29,15 @@ export async function POST(request: Request) {
   }
 
   const updated = await prisma.$transaction(async (tx) => {
-    const user = await tx.user.findUnique({ where: { discordId }, select: { id: true } });
+    const user = await tx.user.findUnique({ where: { discordId }, select: { id: true, username: true } });
     if (!user) return null;
-    if (role !== undefined) await tx.user.update({ where: { id: user.id }, data: { role: role as Role } });
+    if (role !== undefined) {
+      if (isGuildOwner(user) && role !== Role.ADMIN) {
+        // Guild Owner (.odyssia) role is permanently protected
+        return null;
+      }
+      await tx.user.update({ where: { id: user.id }, data: { role: role as Role } });
+    }
     if (xpDelta > 0) await addXpInTransaction(tx, user.id, xpDelta);
     return tx.user.findUnique({
       where: { id: user.id },

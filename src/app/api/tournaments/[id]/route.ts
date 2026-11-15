@@ -1,17 +1,35 @@
 import { Prisma, TournamentStatus } from "@prisma/client";
-import { jsonError, requireStaff } from "@/lib/http";
+import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { advanceMatchWinner, generateTemplateBracket, TournamentMatch, TournamentTeam } from "@/lib/tournament";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: RouteContext) {
+  const viewer = await authenticatedUser().catch(() => null);
+  const isStaff = viewer?.role === "ADMIN" || viewer?.role === "MODERATOR";
   const { id } = await params;
   const tournament = await prisma.tournament.findUnique({
     where: { id },
   });
   if (!tournament) return jsonError("Turnamen tidak ditemukan.", 404);
-  return Response.json({ success: true, tournament });
+
+  const rawTeams = (tournament.teams as unknown as TournamentTeam[]) || [];
+  const sanitizedTeams = isStaff
+    ? rawTeams
+    : rawTeams.map((team) => ({
+        ...team,
+        representativePhone: undefined,
+      }));
+
+  return Response.json({
+    success: true,
+    tournament: {
+      ...tournament,
+      teams: sanitizedTeams,
+    },
+  });
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {

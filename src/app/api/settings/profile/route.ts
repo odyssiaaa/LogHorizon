@@ -1,5 +1,6 @@
 import { authenticatedUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 type DiscordProfile = { id: string; username: string; avatar: string | null };
 type DiscordTokenResponse = {
@@ -91,11 +92,15 @@ export async function PATCH(request: Request) {
   const body = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
 
   const favoriteGames = Array.isArray(body.favoriteGames)
-    ? body.favoriteGames.filter((g): g is string => typeof g === "string").slice(0, 10)
+    ? body.favoriteGames
+        .filter((g): g is string => typeof g === "string")
+        .map((g) => sanitizePlainText(g.trim()))
+        .filter(Boolean)
+        .slice(0, 10)
     : undefined;
-  const inGameName = typeof body.inGameName === "string" ? body.inGameName.trim().slice(0, 80) : undefined;
-  const highestRank = typeof body.highestRank === "string" ? body.highestRank.trim().slice(0, 50) : undefined;
-  const primaryRole = typeof body.primaryRole === "string" ? body.primaryRole.trim().slice(0, 50) : undefined;
+  const inGameName = typeof body.inGameName === "string" ? sanitizePlainText(body.inGameName.trim().slice(0, 80)) : undefined;
+  const highestRank = typeof body.highestRank === "string" ? sanitizePlainText(body.highestRank.trim().slice(0, 50)) : undefined;
+  const primaryRole = typeof body.primaryRole === "string" ? sanitizePlainText(body.primaryRole.trim().slice(0, 50)) : undefined;
 
   const updated = await prisma.user.update({
     where: { id: user.id },

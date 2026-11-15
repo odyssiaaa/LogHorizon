@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { addXpInTransaction } from "@/lib/xp";
 import { createNotification } from "@/lib/notifications";
+import { sanitizeText } from "@/lib/sanitize";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -12,7 +13,8 @@ export async function POST(request: Request, { params }: RouteContext) {
   const { id } = await params;
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
-  const content = typeof data.content === "string" ? data.content.trim() : "";
+  const rawContent = typeof data.content === "string" ? data.content.trim() : "";
+  const content = sanitizeText(rawContent);
   const parentId = typeof data.parentId === "string" ? data.parentId : null;
   if (!content || content.length > 5000) return jsonError("Komentar wajib diisi (maksimal 5.000 karakter).", 400);
 

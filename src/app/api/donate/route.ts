@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sendDiscordNotice } from "@/lib/discord-webhook";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 export async function GET() {
   const [total, config, envGoal] = await Promise.all([
@@ -37,12 +38,15 @@ export async function POST(request: Request) {
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
   const amount = Number(data.amount);
-  const senderName = typeof data.senderName === "string" ? data.senderName.trim() : "";
-  const notes = typeof data.notes === "string" ? data.notes.trim() : "";
+  const senderName = sanitizePlainText(typeof data.senderName === "string" ? data.senderName.trim() : "");
+  const notes = sanitizePlainText(typeof data.notes === "string" ? data.notes.trim() : "");
   const proofUrl = typeof data.proofUrl === "string" ? data.proofUrl.trim() : "";
 
-  if (!Number.isSafeInteger(amount) || amount < 10_000 || amount > 10_000_000) {
-    return jsonError("Nominal donasi harus antara Rp 10.000 dan Rp 10.000.000.", 400);
+  const config = await prisma.siteConfig.findUnique({ where: { id: "default" } });
+  const minDonation = config?.minDonation || 10_000;
+
+  if (!Number.isSafeInteger(amount) || Number.isNaN(amount) || amount <= 0 || amount < minDonation || amount > 50_000_000) {
+    return jsonError(`Nominal donasi minimal Rp ${minDonation.toLocaleString("id-ID")} dan maksimal Rp 50.000.000.`, 400);
   }
 
   // Tentukan tier secara otomatis berdasarkan nominal

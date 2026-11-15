@@ -2,6 +2,7 @@ import { LfgStatus } from "@prisma/client";
 import { activeUser, authenticatedUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sendDiscordNotice } from "@/lib/discord-webhook";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 const VALID_DURATIONS = [1, 3, 6, 12, 24] as const;
 
@@ -70,8 +71,10 @@ export async function POST(request: Request) {
 
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
-  const game = typeof data.game === "string" ? data.game.trim() : "";
-  const description = typeof data.description === "string" ? data.description.trim() : "";
+  const rawGame = typeof data.game === "string" ? data.game.trim() : "";
+  const rawDesc = typeof data.description === "string" ? data.description.trim() : "";
+  const game = sanitizePlainText(rawGame);
+  const description = sanitizePlainText(rawDesc);
   
   // Slot calculations: can be directly maxSlots or calculated from slotsNeeded (host + needed)
   let maxSlots = Number(data.maxSlots);
@@ -91,10 +94,10 @@ export async function POST(request: Request) {
     scheduledAt = new Date(Date.now() + 60 * 60 * 1000);
   }
 
-  const targetRank = typeof data.targetRank === "string" && data.targetRank.trim() ? data.targetRank.trim().slice(0, 50) : "Bebas";
-  const roleNeeded = typeof data.roleNeeded === "string" && data.roleNeeded.trim() ? data.roleNeeded.trim().slice(0, 50) : "Flex";
-  const playGoal = typeof data.playGoal === "string" && data.playGoal.trim() ? data.playGoal.trim().slice(0, 50) : "Mabar Santai";
-  const playTime = typeof data.playTime === "string" && data.playTime.trim() ? data.playTime.trim().slice(0, 50) : "Malam ini";
+  const targetRank = sanitizePlainText(typeof data.targetRank === "string" && data.targetRank.trim() ? data.targetRank.trim().slice(0, 50) : "Bebas");
+  const roleNeeded = sanitizePlainText(typeof data.roleNeeded === "string" && data.roleNeeded.trim() ? data.roleNeeded.trim().slice(0, 50) : "Flex");
+  const playGoal = sanitizePlainText(typeof data.playGoal === "string" && data.playGoal.trim() ? data.playGoal.trim().slice(0, 50) : "Mabar Santai");
+  const playTime = sanitizePlainText(typeof data.playTime === "string" && data.playTime.trim() ? data.playTime.trim().slice(0, 50) : "Malam ini");
 
   if (
     !game ||

@@ -10,7 +10,7 @@ export default async function LeaderboardPage() {
       where: { isBanned: false },
       select: { id: true, username: true, level: true, xp: true, role: true, badges: true, isPremium: true },
       orderBy: [{ level: "desc" }, { xp: "desc" }, { joinedAt: "asc" }],
-      take: 10,
+      take: 5,
     }),
     prisma.$queryRaw<{ id: string; username: string | null; badges: string[]; total: string }[]>`
       SELECT u."id", u."username", u."badges", SUM(d."amount")::text AS "total"
