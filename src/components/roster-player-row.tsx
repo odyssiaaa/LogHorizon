@@ -36,7 +36,7 @@ export function RosterPlayerRow({
   return (
     <div className="grid grid-cols-12 gap-2 items-center text-xs w-full">
       {/* Kotak Kiri (col-span-7): Nickname In-Game */}
-      <div className="col-span-7 px-3 py-2 rounded-md bg-white/[0.03] border border-gray-200 dark:border-[#211C2B] flex items-center gap-2 min-w-0">
+      <div className="col-span-7 px-3 py-2 rounded-md bg-white/[0.03] border border-[#211C2B] flex items-center gap-2 min-w-0">
         <span
           className={`w-4 h-4 rounded-full text-[10px] font-mono font-bold flex items-center justify-center shrink-0 ${
             isSub

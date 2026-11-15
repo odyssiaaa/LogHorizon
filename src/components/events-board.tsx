@@ -2832,15 +2832,21 @@ export function EventsBoard() {
                     Susunan Pemain (Roster):
                   </p>
                   {viewingRoster.players && viewingRoster.players.length > 0 ? (
-                    viewingRoster.players.map((player, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between px-3 py-1.5 rounded bg-gray-50 dark:bg-[#181324] text-xs font-medium text-gray-800 dark:text-gray-200"
-                      >
-                        <span>{player}</span>
-                        <span className="text-[10px] font-mono text-gray-400">Slot #{idx + 1}</span>
-                      </div>
-                    ))
+                    viewingRoster.players.map((player, idx) => {
+                      const match = player.match(/^(.*?)\s*\((.*?)\)$/);
+                      const pName = match ? match[1] : player;
+                      const pId = match ? match[2] : "-";
+                      return (
+                        <RosterPlayerRow
+                          key={idx}
+                          index={idx + 1}
+                          name={pName}
+                          inGameId={pId}
+                          isCaptain={idx === 0}
+                          isSub={false}
+                        />
+                      );
+                    })
                   ) : (
                     <p className="text-xs text-gray-400">Roster pemain belum diisi oleh kapten tim.</p>
                   )}
