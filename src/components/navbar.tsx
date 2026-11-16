@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { NotificationBell } from "@/components/notification-bell";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type NavDropdownItem = {
   label: string;
@@ -277,14 +278,14 @@ export function Navbar() {
       {/* 1. MAIN TOP NAVBAR (Sticky z-40, Slim 72px)                               */}
       {/* ========================================================================= */}
       <header
-        className={`sticky top-0 z-40 w-full transition-all duration-200 bg-[#09040F]/95 backdrop-blur-md border-b border-[#2A1B42] h-[72px] flex items-center ${
-          scrolled ? "shadow-xl shadow-black/40" : ""
+        className={`sticky top-0 z-40 w-full transition-all duration-200 bg-white/95 dark:bg-[#09040F]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#2A1B42] h-[72px] flex items-center ${
+          scrolled ? "shadow-md shadow-slate-900/5 dark:shadow-xl dark:shadow-black/40" : ""
         }`}
       >
         <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 flex items-center justify-between gap-4">
           {/* SISI KIRI: Logo & Nama Guild */}
           <Link href="/" className="flex items-center gap-3 group shrink-0" aria-label="LogHorizon Beranda">
-            <div className="relative size-9 rounded-lg border border-[#2A1B42] group-hover:border-[#7C3AED] transition-colors bg-[#11091D] flex items-center justify-center shadow-sm overflow-hidden">
+            <div className="relative size-9 rounded-lg border border-slate-200 dark:border-[#2A1B42] group-hover:border-[#7C3AED] transition-colors bg-slate-100 dark:bg-[#11091D] flex items-center justify-center shadow-sm overflow-hidden">
               <Image
                 src="/loghorizon-logo.png"
                 alt="LogHorizon Emblem"
@@ -295,15 +296,15 @@ export function Navbar() {
               />
             </div>
             <div className="flex flex-col text-left">
-              <span className="font-display font-bold tracking-wider text-base text-[#F8FAFC] uppercase">
-                LOG<span className="text-[#A78BFA]">HORIZON</span>
+              <span className="font-display font-bold tracking-wider text-base text-slate-900 dark:text-[#F8FAFC] uppercase">
+                LOG<span className="text-[#7C3AED] dark:text-[#A78BFA]">HORIZON</span>
               </span>
             </div>
           </Link>
 
           {/* SISI TENGAH: Menu Navigasi 5 Menu Pill Desktop */}
           <nav
-            className="hidden md:flex desktop-navbar items-center gap-1 p-1 rounded-lg border border-[#2A1B42] bg-[#11091D]"
+            className="hidden md:flex desktop-navbar items-center gap-1 p-1 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-slate-100/90 dark:bg-[#11091D]"
             aria-label="Navigasi Utama Desktop"
           >
             {/* 1. HOME */}
@@ -312,7 +313,7 @@ export function Navbar() {
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                 isHomeActive
                   ? "bg-[#7C3AED] text-white"
-                  : "text-[#94A3B8] hover:text-white hover:bg-[#1A0F2E]"
+                  : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
               }`}
             >
               Home
@@ -330,7 +331,7 @@ export function Navbar() {
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                   isKomunitasActive || activeMenu === "komunitas"
                     ? "bg-[#7C3AED] text-white"
-                    : "text-[#94A3B8] hover:text-white hover:bg-[#1A0F2E]"
+                    : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                 }`}
               >
                 <span>Komunitas</span>
@@ -344,23 +345,23 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-[#7C3AED]/60 bg-[#11091D] shadow-2xl z-50 divide-y divide-[#2A1B42]/60 p-1.5"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-xl dark:shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
                   >
                     {navGroups[0].items.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
                         onClick={() => setActiveMenu(null)}
-                        className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-[#1A0F2E] group/item"
+                        className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
                       >
-                        <div className="size-8 rounded-md bg-[#1A0F2E] border border-[#2A1B42] text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-white transition-colors">
+                        <div className="size-8 rounded-md bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
                           <item.icon size={15} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-[#F8FAFC] group-hover/item:text-[#A78BFA] transition-colors">
+                          <p className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-[#A78BFA] transition-colors">
                             {item.label}
                           </p>
-                          <p className="text-[11px] text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
+                          <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
                             {item.desc}
                           </p>
                         </div>
@@ -383,7 +384,7 @@ export function Navbar() {
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                   isArenaActive || activeMenu === "arena"
                     ? "bg-[#7C3AED] text-white"
-                    : "text-[#94A3B8] hover:text-white hover:bg-[#1A0F2E]"
+                    : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                 }`}
               >
                 <span>Arena &amp; Mabar</span>
@@ -397,23 +398,23 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-[#7C3AED]/60 bg-[#11091D] shadow-2xl z-50 divide-y divide-[#2A1B42]/60 p-1.5"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-xl dark:shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
                   >
                     {navGroups[1].items.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
                         onClick={() => setActiveMenu(null)}
-                        className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-[#1A0F2E] group/item"
+                        className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
                       >
-                        <div className="size-8 rounded-md bg-[#1A0F2E] border border-[#2A1B42] text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-white transition-colors">
+                        <div className="size-8 rounded-md bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
                           <item.icon size={15} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-[#F8FAFC] group-hover/item:text-[#A78BFA] transition-colors">
+                          <p className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-[#A78BFA] transition-colors">
                             {item.label}
                           </p>
-                          <p className="text-[11px] text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
+                          <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
                             {item.desc}
                           </p>
                         </div>
@@ -430,7 +431,7 @@ export function Navbar() {
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                 isMarketplaceActive
                   ? "bg-[#7C3AED] text-white"
-                  : "text-[#94A3B8] hover:text-white hover:bg-[#1A0F2E]"
+                  : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
               }`}
             >
               Marketplace
@@ -448,7 +449,7 @@ export function Navbar() {
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                   isGuildActive || activeMenu === "guild"
                     ? "bg-[#7C3AED] text-white"
-                    : "text-[#94A3B8] hover:text-white hover:bg-[#1A0F2E]"
+                    : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                 }`}
               >
                 <span>Guild</span>
@@ -462,23 +463,23 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-[#7C3AED]/60 bg-[#11091D] shadow-2xl z-50 divide-y divide-[#2A1B42]/60 p-1.5"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-xl dark:shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
                   >
                     {navGroups[2].items.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
                         onClick={() => setActiveMenu(null)}
-                        className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-[#1A0F2E] group/item"
+                        className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
                       >
-                        <div className="size-8 rounded-md bg-[#1A0F2E] border border-[#2A1B42] text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-white transition-colors">
+                        <div className="size-8 rounded-md bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
                           <item.icon size={15} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-[#F8FAFC] group-hover/item:text-[#A78BFA] transition-colors">
+                          <p className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-[#A78BFA] transition-colors">
                             {item.label}
                           </p>
-                          <p className="text-[11px] text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
+                          <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
                             {item.desc}
                           </p>
                         </div>
@@ -492,30 +493,18 @@ export function Navbar() {
 
           {/* SISI KANAN: Aksi Desktop & Hamburger Mobile */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Theme Toggle */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="w-10 h-10 rounded-lg border border-[#2A1B42] bg-[#11091D] text-[#94A3B8] hover:text-white hover:border-[#7C3AED] flex items-center justify-center transition-colors shrink-0"
-              title={isDark ? "Ganti ke mode terang" : "Ganti ke mode gelap"}
-              aria-label="Ganti mode tema"
-            >
-              {isDark ? (
-                <Sun size={16} className="text-[#F59E0B] transition-transform hover:rotate-45" />
-              ) : (
-                <Moon size={16} className="text-[#7C3AED] transition-transform hover:-rotate-12" />
-              )}
-            </button>
+            {/* Theme Toggle Component */}
+            <ThemeToggle />
 
             {/* Aksi Khusus Desktop (Pesan, Lonceng Notifikasi & Profil) */}
             <div className="hidden md:flex desktop-navbar items-center gap-2">
               {status === "loading" ? (
-                <div className="h-10 w-24 rounded-lg bg-[#11091D] border border-[#2A1B42] animate-pulse" />
+                <div className="h-10 w-24 rounded-lg bg-slate-100 dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] animate-pulse" />
               ) : user ? (
                 <div className="flex items-center gap-2">
                   <Link
                     href="/messages"
-                    className="relative w-10 h-10 rounded-lg border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] transition-colors text-[#94A3B8] hover:text-white flex items-center justify-center shrink-0"
+                    className="relative w-10 h-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white flex items-center justify-center shrink-0 shadow-sm dark:shadow-none"
                     title="Pesan &amp; Obrolan Komunitas"
                   >
                     <MessageSquare size={16} />
@@ -530,15 +519,15 @@ export function Navbar() {
                     <button
                       type="button"
                       onClick={() => setDropdownOpen((prev) => !prev)}
-                      className="h-10 px-3 rounded-lg border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] transition-colors flex items-center gap-2 font-mono text-xs text-[#F8FAFC]"
+                      className="h-10 px-3 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors flex items-center gap-2 font-mono text-xs text-slate-900 dark:text-[#F8FAFC] shadow-sm dark:shadow-none"
                       aria-expanded={dropdownOpen}
                       aria-label="Menu profil pengguna"
                     >
-                      <div className="relative size-6 rounded-md border border-[#7C3AED]/40 bg-[#1A0E2E] flex items-center justify-center overflow-hidden">
+                      <div className="relative size-6 rounded-md border border-[#7C3AED]/40 bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center overflow-hidden">
                         {user.avatar ? (
                           <Image src={user.avatar} alt={user.username ?? "User"} fill className="object-cover" unoptimized />
                         ) : (
-                          <span className="text-[10px] font-bold text-[#A78BFA]">
+                          <span className="text-[10px] font-bold text-[#7C3AED] dark:text-[#A78BFA]">
                             {(user.username ?? user.name ?? "G").slice(0, 1).toUpperCase()}
                           </span>
                         )}
@@ -547,7 +536,7 @@ export function Navbar() {
                         {user.username ?? user.name ?? "Gamer"}
                       </span>
                       <span className="size-2 rounded-full bg-[#10B981] shrink-0" title="Online" />
-                      <ChevronDown size={13} className="text-[#A78BFA]" />
+                      <ChevronDown size={13} className="text-slate-400 dark:text-[#A78BFA]" />
                     </button>
 
                     <AnimatePresence>
@@ -557,18 +546,18 @@ export function Navbar() {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 6, scale: 0.98 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute right-0 mt-2 w-56 rounded-lg border border-[#7C3AED]/60 bg-[#11091D] p-2 shadow-2xl z-50 space-y-1 divide-y divide-[#2A1B42]/60"
+                          className="absolute right-0 mt-2 w-56 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] p-2 shadow-xl dark:shadow-2xl z-50 space-y-1 divide-y divide-slate-100 dark:divide-[#2A1B42]/60"
                           role="menu"
                         >
                           <div className="px-3 py-2 pb-2.5">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-[#F8FAFC] truncate">
+                              <span className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] truncate">
                                 {user.username ?? user.name ?? "Gamer"}
                               </span>
-                              {isOwner && <Crown size={12} className="text-amber-400 shrink-0" />}
+                              {isOwner && <Crown size={12} className="text-amber-500 shrink-0" />}
                             </div>
                             <div className="flex items-center justify-between mt-1">
-                              <p className="text-[11px] font-mono text-[#A78BFA]">
+                              <p className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]">
                                 {isOwner
                                   ? "👑 Emperor"
                                   : user.role === "ADMIN"
@@ -577,7 +566,7 @@ export function Navbar() {
                                       ? "⚔️ Lord Commander"
                                       : "🎮 Adventurer"}
                               </p>
-                              <span className="text-[10px] font-mono px-1.5 py-0.2 bg-[#1A0E2E] border border-[#2A1B42] text-[#10B981] font-bold rounded">
+                              <span className="text-[10px] font-mono px-1.5 py-0.2 bg-slate-100 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2A1B42] text-emerald-600 dark:text-[#10B981] font-bold rounded">
                                 Lv. {user.level ?? 1}
                               </span>
                             </div>
@@ -588,20 +577,20 @@ export function Navbar() {
                               <Link
                                 href="/admin"
                                 onClick={() => setDropdownOpen(false)}
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono font-semibold text-[#A78BFA] hover:text-[#F8FAFC] hover:bg-[#1A0E2E] transition-colors"
+                                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono font-semibold text-slate-700 dark:text-[#A78BFA] hover:text-[#7C3AED] dark:hover:text-[#F8FAFC] hover:bg-slate-50 dark:hover:bg-[#1A0E2E] transition-colors"
                                 role="menuitem"
                               >
-                                <ShieldCheck size={14} className="shrink-0 text-[#10B981]" />
+                                <ShieldCheck size={14} className="shrink-0 text-emerald-600 dark:text-[#10B981]" />
                                 <span>Dashboard Admin</span>
                               </Link>
                             )}
                             <Link
                               href="/profile"
                               onClick={() => setDropdownOpen(false)}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono text-[#F8FAFC] hover:bg-[#1A0E2E] transition-colors"
+                              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono text-slate-700 dark:text-[#F8FAFC] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] hover:bg-slate-50 dark:hover:bg-[#1A0E2E] transition-colors"
                               role="menuitem"
                             >
-                              <Settings size={14} className="shrink-0 text-[#A78BFA]" />
+                              <Settings size={14} className="shrink-0 text-[#7C3AED] dark:text-[#A78BFA]" />
                               <span>Profil &amp; Pengaturan</span>
                             </Link>
                           </div>
@@ -613,7 +602,7 @@ export function Navbar() {
                                 setDropdownOpen(false);
                                 void signOut();
                               }}
-                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono text-red-400 hover:bg-red-950/20 transition-colors"
+                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
                               role="menuitem"
                             >
                               <LogOut size={14} className="shrink-0" />
@@ -644,7 +633,7 @@ export function Navbar() {
               {user && (
                 <Link
                   href="/messages"
-                  className="relative w-10 h-10 rounded-lg border border-[#2A1B42] bg-[#11091D] text-[#94A3B8] hover:text-white flex items-center justify-center hover:border-[#7C3AED] transition-colors shrink-0"
+                  className="relative w-10 h-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white flex items-center justify-center hover:border-[#7C3AED] transition-colors shrink-0 shadow-sm dark:shadow-none"
                   aria-label="Pesan &amp; Obrolan Komunitas"
                 >
                   <MessageSquare size={16} />
@@ -659,7 +648,7 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="mobile-only w-10 h-10 rounded-lg border border-[#2A1B42] bg-[#11091D] text-[#F8FAFC] flex items-center justify-center hover:border-[#7C3AED] transition-colors shrink-0"
+                className="mobile-only w-10 h-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] text-slate-700 dark:text-[#F8FAFC] flex items-center justify-center hover:border-[#7C3AED] transition-colors shrink-0 shadow-sm dark:shadow-none"
                 aria-label="Buka menu navigasi"
                 aria-expanded={mobileOpen}
               >
@@ -691,24 +680,24 @@ export function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] bg-[#09040F] border-l border-[#2E1E45] p-5 flex flex-col justify-between shadow-2xl md:hidden mobile-slidebar overflow-y-auto rounded-none"
+              className="fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] bg-white dark:bg-[#09040F] border-l border-slate-200 dark:border-[#2E1E45] p-5 flex flex-col justify-between shadow-2xl md:hidden mobile-slidebar overflow-y-auto rounded-none"
               aria-label="Menu navigasi mobile"
             >
               <div>
-                <div className="flex items-center justify-between pb-4 border-b border-[#2E1E45]">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-[#2E1E45]">
                   <div className="flex items-center gap-2.5">
-                    <div className="relative size-8 rounded-none border border-[#2E1E45] bg-[#130921] flex items-center justify-center overflow-hidden">
+                    <div className="relative size-8 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-100 dark:bg-[#130921] flex items-center justify-center overflow-hidden">
                       <Image src="/loghorizon-logo.png" alt="LogHorizon" fill className="object-cover" />
                     </div>
-                    <span className="font-display font-bold text-sm text-[#F8FAFC] tracking-wider uppercase">
-                      LOG<span className="text-[#A78BFA]">HORIZON</span>
+                    <span className="font-display font-bold text-sm text-slate-900 dark:text-[#F8FAFC] tracking-wider uppercase">
+                      LOG<span className="text-[#7C3AED] dark:text-[#A78BFA]">HORIZON</span>
                     </span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setMobileOpen(false)}
-                    className="size-8 rounded-none border border-[#2E1E45] text-[#A78BFA] hover:text-[#F8FAFC] flex items-center justify-center transition"
+                    className="size-8 rounded-none border border-slate-200 dark:border-[#2E1E45] text-slate-500 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] flex items-center justify-center transition"
                     aria-label="Tutup menu navigasi"
                   >
                     <X size={16} />
@@ -717,13 +706,13 @@ export function Navbar() {
 
                 {/* Kartu Info User Mobile */}
                 {user ? (
-                  <div className="mt-4 p-3.5 rounded-none border border-[#2E1E45] bg-[#130921]">
+                  <div className="mt-4 p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#130921]">
                     <div className="flex items-center gap-3">
-                      <div className="relative size-10 rounded-none border border-[#7C3AED]/60 bg-[#1A0E2E] shrink-0 overflow-hidden">
+                      <div className="relative size-10 rounded-none border border-[#7C3AED]/60 bg-slate-100 dark:bg-[#1A0E2E] shrink-0 overflow-hidden">
                         {user.avatar ? (
                           <Image src={user.avatar} alt={user.username ?? "User"} fill className="object-cover" unoptimized />
                         ) : (
-                          <span className="grid place-items-center h-full text-xs font-bold text-[#A78BFA]">
+                          <span className="grid place-items-center h-full text-xs font-bold text-[#7C3AED] dark:text-[#A78BFA]">
                             {(user.username ?? user.name ?? "G").slice(0, 1).toUpperCase()}
                           </span>
                         )}
@@ -735,13 +724,13 @@ export function Navbar() {
                       </div>
                       <div className="min-w-0 flex-1 font-mono">
                         <div className="flex items-center gap-1.5">
-                          <p className="font-bold text-sm text-[#F8FAFC] truncate">
+                          <p className="font-bold text-sm text-slate-900 dark:text-[#F8FAFC] truncate">
                             {user.username ?? user.name ?? "Gamer"}
                           </p>
                           <span className="size-2 rounded-full bg-[#10B981] shrink-0" />
-                          {isOwner && <Crown size={12} className="text-amber-400 shrink-0" />}
+                          {isOwner && <Crown size={12} className="text-amber-500 shrink-0" />}
                         </div>
-                        <p className="text-[11px] text-[#A78BFA]">
+                        <p className="text-[11px] text-slate-500 dark:text-[#A78BFA]">
                           {isOwner
                             ? "👑 Emperor"
                             : user.role === "ADMIN"
@@ -750,8 +739,8 @@ export function Navbar() {
                                 ? "⚔️ Lord Commander"
                                 : "🎮 Adventurer"}
                         </p>
-                        <div className="mt-1 flex items-center gap-1.5 text-[10px] text-[#A78BFA]">
-                          <span className="px-1.5 py-0.2 bg-[#1A0E2E] border border-[#2E1E45] text-[#10B981] font-bold">
+                        <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-[#A78BFA]">
+                          <span className="px-1.5 py-0.2 bg-slate-100 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45] text-emerald-600 dark:text-[#10B981] font-bold">
                             Lv. {user.level ?? 1}
                           </span>
                           <span>•</span>
@@ -763,10 +752,10 @@ export function Navbar() {
                     <Link
                       href="/messages"
                       onClick={() => setMobileOpen(false)}
-                      className="mt-2.5 flex items-center justify-between p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-xs font-mono font-bold text-[#F8FAFC] hover:border-[#7C3AED] transition"
+                      className="mt-2.5 flex items-center justify-between p-2.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#1A0E2E] text-xs font-mono font-bold text-slate-900 dark:text-[#F8FAFC] hover:border-[#7C3AED] transition"
                     >
                       <div className="flex items-center gap-2">
-                        <MessageSquare size={14} className="text-[#A78BFA]" />
+                        <MessageSquare size={14} className="text-[#7C3AED] dark:text-[#A78BFA]" />
                         <span>Pesan &amp; Obrolan Komunitas</span>
                       </div>
                       {unreadMessages > 0 ? (
@@ -774,7 +763,7 @@ export function Navbar() {
                           {unreadMessages} baru
                         </span>
                       ) : (
-                        <span className="text-[10px] text-[#A78BFA]">Buka ➔</span>
+                        <span className="text-[10px] text-[#7C3AED] dark:text-[#A78BFA]">Buka ➔</span>
                       )}
                     </Link>
                   </div>
@@ -800,14 +789,14 @@ export function Navbar() {
                   <Link
                     href="/"
                     onClick={() => setMobileOpen(false)}
-                    className={`py-2.5 px-3.5 rounded-none border border-[#2E1E45] text-sm font-bold transition-colors flex items-center justify-between ${
+                    className={`py-2.5 px-3.5 rounded-none border text-sm font-bold transition-colors flex items-center justify-between ${
                       isHomeActive
-                        ? "bg-[#1A0E2E] text-[#F8FAFC] border-[#7C3AED]"
-                        : "text-[#A78BFA] hover:bg-[#130921] hover:text-[#F8FAFC]"
+                        ? "bg-purple-50 dark:bg-[#1A0E2E] text-[#7C3AED] dark:text-[#F8FAFC] border-[#7C3AED]"
+                        : "border-slate-200 dark:border-[#2E1E45] text-slate-700 dark:text-[#A78BFA] hover:bg-slate-100 dark:hover:bg-[#130921] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
                     }`}
                   >
                     <span className="flex items-center gap-2.5">
-                      <Home size={16} className={isHomeActive ? "text-[#7C3AED]" : "text-[#A78BFA]"} />
+                      <Home size={16} className={isHomeActive ? "text-[#7C3AED]" : "text-slate-400 dark:text-[#A78BFA]"} />
                       <span>Home</span>
                     </span>
                     {isHomeActive && <span className="size-1.5 bg-[#7C3AED]" />}
@@ -818,17 +807,17 @@ export function Navbar() {
                     const isOpen = mobileAccordion[group.key] ?? false;
                     const GroupIcon = group.icon;
                     return (
-                      <div key={group.key} className="rounded-none border border-[#2E1E45] overflow-hidden">
+                      <div key={group.key} className="rounded-none border border-slate-200 dark:border-[#2E1E45] overflow-hidden">
                         <button
                           type="button"
                           onClick={() => toggleMobileGroup(group.key)}
-                          className="w-full py-2.5 px-3.5 flex items-center justify-between bg-[#130921] text-sm font-bold text-[#F8FAFC] hover:text-[#A78BFA]"
+                          className="w-full py-2.5 px-3.5 flex items-center justify-between bg-slate-50 dark:bg-[#130921] text-sm font-bold text-slate-900 dark:text-[#F8FAFC] hover:text-[#7C3AED] dark:hover:text-[#A78BFA]"
                         >
                           <span className="flex items-center gap-2.5">
                             <GroupIcon size={16} className="text-[#7C3AED]" />
                             <span>{group.title}</span>
                           </span>
-                          <ChevronDown size={14} className={`transition-transform duration-200 text-[#A78BFA] ${isOpen ? "rotate-180 text-[#7C3AED]" : ""}`} />
+                          <ChevronDown size={14} className={`transition-transform duration-200 text-slate-400 dark:text-[#A78BFA] ${isOpen ? "rotate-180 text-[#7C3AED]" : ""}`} />
                         </button>
 
                         <AnimatePresence>
@@ -838,7 +827,7 @@ export function Navbar() {
                               animate={{ height: "auto", opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.15 }}
-                              className="p-1 space-y-0.5 bg-[#09040F] divide-y divide-[#2E1E45]/40"
+                              className="p-1 space-y-0.5 bg-white dark:bg-[#09040F] divide-y divide-slate-100 dark:divide-[#2E1E45]/40"
                             >
                               {group.items.map((subItem) => {
                                 const SubIcon = subItem.icon;
@@ -850,14 +839,14 @@ export function Navbar() {
                                     onClick={() => setMobileOpen(false)}
                                     className={`py-2 px-3 rounded-none text-xs font-medium transition-colors flex items-start gap-2.5 ${
                                       isSubActive
-                                        ? "bg-[#1A0E2E] text-[#F8FAFC] font-bold"
-                                        : "text-[#A78BFA] hover:bg-[#130921] hover:text-[#F8FAFC]"
+                                        ? "bg-purple-50 dark:bg-[#1A0E2E] text-[#7C3AED] dark:text-[#F8FAFC] font-bold"
+                                        : "text-slate-600 dark:text-[#A78BFA] hover:bg-slate-100 dark:hover:bg-[#130921] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
                                     }`}
                                   >
                                     <SubIcon size={14} className="shrink-0 mt-0.5 text-[#7C3AED]" />
                                     <div>
                                       <p>{subItem.label}</p>
-                                      <p className="text-[10px] text-[#A78BFA]/80 line-clamp-1">{subItem.desc}</p>
+                                      <p className="text-[10px] text-slate-500 dark:text-[#A78BFA]/80 line-clamp-1">{subItem.desc}</p>
                                     </div>
                                   </Link>
                                 );
@@ -873,14 +862,14 @@ export function Navbar() {
                   <Link
                     href="/marketplace"
                     onClick={() => setMobileOpen(false)}
-                    className={`py-2.5 px-3.5 rounded-none border border-[#2E1E45] text-sm font-bold transition-colors flex items-center justify-between ${
+                    className={`py-2.5 px-3.5 rounded-none border text-sm font-bold transition-colors flex items-center justify-between ${
                       isMarketplaceActive
-                        ? "bg-[#1A0E2E] text-[#F8FAFC] border-[#7C3AED]"
-                        : "text-[#A78BFA] hover:bg-[#130921] hover:text-[#F8FAFC]"
+                        ? "bg-purple-50 dark:bg-[#1A0E2E] text-[#7C3AED] dark:text-[#F8FAFC] border-[#7C3AED]"
+                        : "border-slate-200 dark:border-[#2E1E45] text-slate-700 dark:text-[#A78BFA] hover:bg-slate-100 dark:hover:bg-[#130921] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
                     }`}
                   >
                     <span className="flex items-center gap-2.5">
-                      <Store size={16} className={isMarketplaceActive ? "text-[#7C3AED]" : "text-[#A78BFA]"} />
+                      <Store size={16} className={isMarketplaceActive ? "text-[#7C3AED]" : "text-slate-400 dark:text-[#A78BFA]"} />
                       <span>Marketplace</span>
                     </span>
                     {isMarketplaceActive && <span className="size-1.5 bg-[#7C3AED]" />}
@@ -891,13 +880,13 @@ export function Navbar() {
                     <Link
                       href="/profile"
                       onClick={() => setMobileOpen(false)}
-                      className={`py-2.5 px-3.5 rounded-none border border-[#2E1E45] text-sm font-bold transition-colors flex items-center gap-2.5 ${
+                      className={`py-2.5 px-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] text-sm font-bold transition-colors flex items-center gap-2.5 ${
                         pathname === "/profile"
-                          ? "bg-[#1A0E2E] text-[#F8FAFC] border-[#7C3AED]"
-                          : "text-[#A78BFA] hover:bg-[#130921] hover:text-[#F8FAFC]"
+                          ? "bg-purple-50 dark:bg-[#1A0E2E] text-[#7C3AED] dark:text-[#F8FAFC] border-[#7C3AED]"
+                          : "text-slate-700 dark:text-[#A78BFA] hover:bg-slate-100 dark:hover:bg-[#130921] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
                       }`}
                     >
-                      <Settings size={16} className={pathname === "/profile" ? "text-[#7C3AED]" : "text-[#A78BFA]"} />
+                      <Settings size={16} className={pathname === "/profile" ? "text-[#7C3AED]" : "text-slate-400 dark:text-[#A78BFA]"} />
                       <span>Profil &amp; Pengaturan</span>
                     </Link>
                   )}
@@ -907,13 +896,13 @@ export function Navbar() {
                     <Link
                       href="/admin"
                       onClick={() => setMobileOpen(false)}
-                      className={`py-2.5 px-3.5 rounded-none border border-[#2E1E45] text-sm font-bold transition-colors flex items-center gap-2.5 ${
+                      className={`py-2.5 px-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] text-sm font-bold transition-colors flex items-center gap-2.5 ${
                         pathname.startsWith("/admin")
-                          ? "bg-[#1A0E2E] text-[#F8FAFC] border-[#7C3AED]"
-                          : "text-[#A78BFA] hover:bg-[#130921] hover:text-[#F8FAFC]"
+                          ? "bg-purple-50 dark:bg-[#1A0E2E] text-[#7C3AED] dark:text-[#F8FAFC] border-[#7C3AED]"
+                          : "text-slate-700 dark:text-[#A78BFA] hover:bg-slate-100 dark:hover:bg-[#130921] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
                       }`}
                     >
-                      <ShieldCheck size={16} className="text-[#10B981]" />
+                      <ShieldCheck size={16} className="text-emerald-600 dark:text-[#10B981]" />
                       <span>Dashboard Admin</span>
                     </Link>
                   )}
@@ -921,7 +910,7 @@ export function Navbar() {
               </div>
 
               {/* Footer Slidebar (Sign Out jika Login) */}
-              <div className="pt-5 border-t border-gray-100 dark:border-[#211C2B] mt-6">
+              <div className="pt-5 border-t border-slate-200 dark:border-[#211C2B] mt-6">
                 {user ? (
                   <button
                     type="button"

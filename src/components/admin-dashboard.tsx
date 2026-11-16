@@ -1749,7 +1749,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               <button
                                 type="button"
                                 onClick={() => setEditTournamentModal(curTournament)}
-                                className="px-3 py-2 rounded-none text-xs font-bold border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] text-[#F8FAFC] flex items-center gap-1.5 transition font-mono"
+                                className="px-3 py-2 rounded-none text-xs font-bold border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] flex items-center gap-1.5 transition font-mono"
                                 title="Edit Info Turnamen (Judul, Tanggal, Hadiah, dll)"
                               >
                                 <span>✏️ Edit Turnamen</span>
@@ -2904,8 +2904,8 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   </div>
 
                   {/* Form Tambah Sponsor (2 Input Saja: Upload Logo + Link Tujuan) */}
-                  <form onSubmit={(e) => void handleAddSponsor(e)} className="p-4 rounded-none bg-[#09040F] border border-[#2E1E45] mb-6 space-y-4">
-                    <p className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <form onSubmit={(e) => void handleAddSponsor(e)} className="p-4 rounded-none bg-slate-50 dark:bg-[#09040F] border border-slate-200 dark:border-[#2E1E45] mb-6 space-y-4">
+                    <p className="text-xs font-mono font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                       <Sparkles size={14} className="text-[#7C3AED]" />
                       <span>Tambah Sponsor Baru (Logo-Only &amp; Clickable)</span>
                     </p>
@@ -2921,7 +2921,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                       </div>
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-xs font-mono font-bold text-gray-300 uppercase tracking-wider mb-1.5">
+                          <label className="block text-xs font-mono font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
                             2. Link Laman Tujuan Sponsor <span className="text-red-400">*</span>
                           </label>
                           <input
@@ -2930,9 +2930,9 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             value={sponsorWebsite}
                             onChange={(e) => setSponsorWebsite(e.target.value)}
                             placeholder="https://instagram.com/... atau https://discord.gg/..."
-                            className="w-full px-3.5 py-2.5 rounded-none border border-[#2E1E45] bg-[#130921] text-xs font-mono text-white placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED]"
+                            className="w-full px-3.5 py-2.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED]"
                           />
-                          <p className="text-[10px] font-mono text-gray-400 mt-1">
+                          <p className="text-[10px] font-mono text-slate-500 dark:text-gray-400 mt-1">
                             Pengunjung akan diarahkan ke link ini saat mengklik logo di halaman utama.
                           </p>
                         </div>
@@ -2953,13 +2953,13 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     {data?.sponsors?.map((sp) => (
                       <div
                         key={sp.id}
-                        className="p-3 rounded-none border border-[#2E1E45] bg-[#130921] flex flex-col items-center justify-between gap-3 text-center"
+                        className="p-3 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col items-center justify-between gap-3 text-center"
                       >
-                        <div className="relative w-full h-14 rounded-none overflow-hidden flex items-center justify-center bg-[#09040F] border border-[#2E1E45] p-2">
+                        <div className="relative w-full h-14 rounded-none overflow-hidden flex items-center justify-center bg-slate-50 dark:bg-[#09040F] border border-slate-200 dark:border-[#2E1E45] p-2">
                           {sp.logoUrl ? (
                             <Image src={sp.logoUrl} alt={sp.name} fill className="object-contain p-1" unoptimized />
                           ) : (
-                            <span className="font-mono text-xs text-[#A78BFA]">{sp.name}</span>
+                            <span className="font-mono text-xs text-purple-700 dark:text-[#A78BFA]">{sp.name}</span>
                           )}
                         </div>
                         {sp.websiteUrl && (
@@ -2967,7 +2967,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             href={sp.websiteUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[10px] font-mono text-[#A78BFA] hover:text-[#7C3AED] hover:underline truncate max-w-full block"
+                            className="text-[10px] font-mono text-purple-600 dark:text-[#A78BFA] hover:text-[#7C3AED] hover:underline truncate max-w-full block"
                             title={sp.websiteUrl}
                           >
                             🔗 {sp.websiteUrl}

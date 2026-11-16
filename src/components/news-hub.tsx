@@ -99,35 +99,35 @@ export function NewsHub() {
       {/* ========================================================================= */}
       {/* 1. HEADER SECTION & STATUS SINKRONISASI */}
       {/* ========================================================================= */}
-      <header className="mb-8 border-b border-[#2E1E45] pb-6">
+      <header className="mb-8 border-b border-slate-200 dark:border-[#2E1E45] pb-6">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 text-left">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-none bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#A78BFA] text-xs font-mono font-bold tracking-widest uppercase mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-none bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-purple-700 dark:text-[#A78BFA] text-xs font-mono font-bold tracking-widest uppercase mb-3">
               <Rss size={13} className="animate-pulse text-[#7C3AED]" />
               <span>LOGHORIZON DISPATCH NETWORK // NEWS HUB</span>
             </div>
-            <h1 className="page-title font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-[#F8FAFC] break-words">
-              GUILD <span className="text-[#A78BFA]">NEWS HUB</span>
+            <h1 className="page-title font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC] break-words">
+              GUILD <span className="text-purple-600 dark:text-[#A78BFA]">NEWS HUB</span>
             </h1>
-            <p className="mt-2 text-xs sm:text-sm md:text-base text-[#A78BFA] max-w-2xl leading-relaxed font-sans">
+            <p className="mt-2 text-xs sm:text-sm md:text-base text-slate-600 dark:text-[#A78BFA] max-w-2xl leading-relaxed font-sans">
               Feed berita terpadu: pengumuman resmi server Discord LogHorizon bersanding dengan warta gaming, esports, dan teknologi global secara kronologis.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {discordDebug && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-none text-[11px] font-mono bg-[#7C3AED]/10 text-[#A78BFA] border border-[#7C3AED]/30">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-none text-[11px] font-mono bg-purple-500/10 dark:bg-[#7C3AED]/10 text-purple-700 dark:text-[#A78BFA] border border-purple-500/20 dark:border-[#7C3AED]/30">
                 <span className="w-1.5 h-1.5 rounded-none bg-[#10B981] animate-pulse" />
                 <span className="truncate max-w-[240px] sm:max-w-xs">{discordDebug}</span>
               </span>
             )}
-            <span className="text-[11px] font-mono text-[#A78BFA] bg-[#130921] px-3 py-1.5 rounded-none border border-[#2E1E45]">
-              Transmisi: <strong className="text-[#F8FAFC] font-bold">{feed.length} WARTA</strong>
+            <span className="text-[11px] font-mono text-slate-600 dark:text-[#A78BFA] bg-white dark:bg-[#130921] px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45]">
+              Transmisi: <strong className="text-slate-900 dark:text-[#F8FAFC] font-bold">{feed.length} WARTA</strong>
             </span>
             <button
               onClick={() => void fetchNews()}
               disabled={refreshing}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider bg-[#1A0E2E] text-[#F8FAFC] border border-[#2E1E45] hover:border-[#7C3AED] transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] transition-colors disabled:opacity-50"
               title="Segarkan transmisi warta"
             >
               <RefreshCw size={13} className={refreshing ? "animate-spin text-[#7C3AED]" : ""} />
@@ -139,19 +139,19 @@ export function NewsHub() {
         {/* ========================================================================= */}
         {/* 2. FILTER PILLS: SEMUA BERITA / INFO GUILD / GLOBAL NEWS + SEARCH BAR */}
         {/* ========================================================================= */}
-        <div className="mt-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 border-t border-[#2E1E45] pt-5">
+        <div className="mt-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 border-t border-slate-200 dark:border-[#2E1E45] pt-5">
           {/* Main Filter Pills (ALL / GUILD / GLOBAL) */}
-          <div className="flex items-center gap-1.5 p-1 rounded-none bg-[#130921] border border-[#2E1E45] overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1.5 p-1 rounded-none bg-slate-100 dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] overflow-x-auto scrollbar-none">
             <button
               onClick={() => setFilterType("ALL")}
               className={`px-3.5 py-2 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 border ${
                 filterType === "ALL"
-                  ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
-                  : "bg-[#1A0E2E] text-[#A78BFA] border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC]"
+                  ? "bg-[#7C3AED] text-white border-[#7C3AED]"
+                  : "bg-white dark:bg-[#1A0E2E] text-slate-600 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
               }`}
             >
               <span>⚡ Semua Berita</span>
-              <span className="px-1.5 py-0.2 rounded-none text-[10px] bg-black/40 text-[#F8FAFC]">
+              <span className="px-1.5 py-0.2 rounded-none text-[10px] bg-black/40 text-white">
                 {feed.length}
               </span>
             </button>
@@ -160,12 +160,12 @@ export function NewsHub() {
               onClick={() => setFilterType("GUILD")}
               className={`px-3.5 py-2 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 border ${
                 filterType === "GUILD"
-                  ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
-                  : "bg-[#1A0E2E] text-[#A78BFA] border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC]"
+                  ? "bg-[#7C3AED] text-white border-[#7C3AED]"
+                  : "bg-white dark:bg-[#1A0E2E] text-slate-600 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
               }`}
             >
               <span>🛡️ Info Guild</span>
-              <span className="px-1.5 py-0.2 rounded-none text-[10px] bg-black/40 text-[#F8FAFC]">
+              <span className="px-1.5 py-0.2 rounded-none text-[10px] bg-black/40 text-white">
                 {guildCount}
               </span>
             </button>
@@ -174,31 +174,31 @@ export function NewsHub() {
               onClick={() => setFilterType("GLOBAL")}
               className={`px-3.5 py-2 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 border ${
                 filterType === "GLOBAL"
-                  ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
-                  : "bg-[#1A0E2E] text-[#A78BFA] border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC]"
+                  ? "bg-[#7C3AED] text-white border-[#7C3AED]"
+                  : "bg-white dark:bg-[#1A0E2E] text-slate-600 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
               }`}
             >
               <span>🎮 Global News</span>
-              <span className="px-1.5 py-0.2 rounded-none text-[10px] bg-black/40 text-[#F8FAFC]">
+              <span className="px-1.5 py-0.2 rounded-none text-[10px] bg-black/40 text-white">
                 {globalCount}
               </span>
             </button>
           </div>
 
           {/* Quick Search Bar */}
-          <div className="flex items-center gap-2.5 px-3.5 h-11 w-full lg:w-80 shrink-0 rounded-none bg-[#130921] border border-[#2E1E45] focus-within:border-[#7C3AED] transition-colors">
-            <Search size={15} className="shrink-0 text-[#A78BFA] pointer-events-none" />
+          <div className="flex items-center gap-2.5 px-3.5 h-11 w-full lg:w-80 shrink-0 rounded-none bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] focus-within:border-[#7C3AED] transition-colors">
+            <Search size={15} className="shrink-0 text-slate-400 dark:text-[#A78BFA] pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari berita guild, game, hardware…"
-              className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs text-[#F8FAFC] placeholder:text-[#A78BFA]/50 p-0 font-sans"
+              className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#A78BFA]/50 p-0 font-sans"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="shrink-0 text-[#A78BFA] hover:text-[#F8FAFC] font-mono text-xs uppercase"
+                className="shrink-0 text-slate-500 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] font-mono text-xs uppercase"
                 aria-label="Hapus pencarian"
               >
                 <X size={14} />
@@ -209,7 +209,7 @@ export function NewsHub() {
 
         {/* Secondary Category Filter Pills (Global Category filter) */}
         <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          <span className="text-[11px] font-mono text-[#A78BFA] uppercase tracking-wider mr-1 hidden sm:inline">
+          <span className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA] uppercase tracking-wider mr-1 hidden sm:inline">
             KATEGORI:
           </span>
           {[
@@ -224,8 +224,8 @@ export function NewsHub() {
               onClick={() => setActiveCategory(cat.id)}
               className={`px-3 py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition whitespace-nowrap border ${
                 activeCategory === cat.id
-                  ? "bg-[#7C3AED]/20 text-[#F8FAFC] border-[#7C3AED]"
-                  : "bg-[#130921] text-[#A78BFA] border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC]"
+                  ? "bg-purple-500/15 text-purple-700 dark:text-[#F8FAFC] border-[#7C3AED]"
+                  : "bg-white dark:bg-[#130921] text-slate-600 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
               }`}
             >
               {cat.label}
@@ -303,16 +303,16 @@ function UnifiedNewsCard({ article, index }: { article: NormalizedArticle; index
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, delay: Math.min(index * 0.03, 0.35) }}
-      className={`group rounded-none overflow-hidden flex flex-col justify-between transition-all duration-200 bg-[#130921] ${
+      className={`group rounded-none overflow-hidden flex flex-col justify-between transition-all duration-200 bg-white dark:bg-[#130921] ${
         isGuild
-          ? "border-l-4 border-l-[#7C3AED] border border-[#2E1E45] hover:border-[#7C3AED]"
-          : "border border-[#2E1E45] hover:border-[#7C3AED]"
+          ? "border-l-4 border-l-[#7C3AED] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED]"
+          : "border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED]"
       }`}
     >
       <div>
         {/* Gambar Thumbnail Warta */}
         {imgSrc && !imgError ? (
-          <div className="relative h-48 w-full overflow-hidden bg-[#1A0E2E]">
+          <div className="relative h-48 w-full overflow-hidden bg-slate-100 dark:bg-[#1A0E2E]">
             <Image
               src={imgSrc}
               alt={article.title}
@@ -333,12 +333,12 @@ function UnifiedNewsCard({ article, index }: { article: NormalizedArticle; index
             {/* Badge Kategori di Pojok Gambar */}
             <div className="absolute top-3 left-3 z-10">
               {isGuild ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-[#7C3AED] text-[#F8FAFC] border border-[#7C3AED]">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-[#7C3AED] text-white border border-[#7C3AED]">
                   <span>🛡️</span>
                   <span>INFO GUILD</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-none text-[10px] font-mono font-extrabold uppercase tracking-wider bg-[#09040F]/90 text-[#A78BFA] border border-[#2E1E45]">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-none text-[10px] font-mono font-extrabold uppercase tracking-wider bg-slate-900/80 dark:bg-[#09040F]/90 text-white dark:text-[#A78BFA] border border-slate-700 dark:border-[#2E1E45]">
                   <span>🎮</span>
                   <span>{article.category || "GAMING / TECH"}</span>
                 </span>
@@ -347,7 +347,7 @@ function UnifiedNewsCard({ article, index }: { article: NormalizedArticle; index
           </div>
         ) : (
           /* Header Banner jika warta Discord tidak memiliki gambar */
-          <div className="p-4 bg-[#1A0E2E] border-b border-[#2E1E45] flex items-center justify-between gap-2">
+          <div className="p-4 bg-slate-50 dark:bg-[#1A0E2E] border-b border-slate-200 dark:border-[#2E1E45] flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               {article.authorAvatar ? (
                 <Image
@@ -356,23 +356,23 @@ function UnifiedNewsCard({ article, index }: { article: NormalizedArticle; index
                   width={28}
                   height={28}
                   unoptimized
-                  className="w-7 h-7 rounded-none border border-[#2E1E45] object-cover shrink-0"
+                  className="w-7 h-7 rounded-none border border-slate-200 dark:border-[#2E1E45] object-cover shrink-0"
                 />
               ) : (
-                <div className="w-7 h-7 rounded-none bg-[#7C3AED] text-[#F8FAFC] flex items-center justify-center text-[11px] font-mono font-bold shrink-0">
+                <div className="w-7 h-7 rounded-none bg-[#7C3AED] text-white flex items-center justify-center text-[11px] font-mono font-bold shrink-0">
                   LH
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-xs font-mono font-bold text-[#F8FAFC] truncate">
+                <p className="text-xs font-mono font-bold text-slate-900 dark:text-[#F8FAFC] truncate">
                   {article.authorName ?? "Council LogHorizon"}
                 </p>
-                <p className="text-[10px] font-mono text-[#A78BFA]">
+                <p className="text-[10px] font-mono text-slate-500 dark:text-[#A78BFA]">
                   Discord • #pengumuman
                 </p>
               </div>
             </div>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-[#7C3AED] text-[#F8FAFC] shrink-0">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-[#7C3AED] text-white shrink-0">
               <span>🛡️</span>
               <span>INFO GUILD</span>
             </span>
@@ -382,7 +382,7 @@ function UnifiedNewsCard({ article, index }: { article: NormalizedArticle; index
         {/* Isi Teks Konten */}
         <div className="p-5 text-left">
           {/* Metadata Bar (Tanggal & Sumber) */}
-          <div className="flex items-center justify-between text-[11px] text-[#A78BFA] mb-2 font-mono">
+          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-[#A78BFA] mb-2 font-mono">
             <span className="flex items-center gap-1.5 font-bold truncate max-w-[170px]">
               {isGuild ? (
                 <>
@@ -396,17 +396,17 @@ function UnifiedNewsCard({ article, index }: { article: NormalizedArticle; index
                 </>
               )}
             </span>
-            <span className="flex items-center gap-1 shrink-0 text-[#A78BFA]">
+            <span className="flex items-center gap-1 shrink-0 text-slate-500 dark:text-[#A78BFA]">
               <Calendar size={11} />
               <span>{formattedDate}</span>
             </span>
           </div>
 
-          <h3 className="font-display text-base font-bold text-[#F8FAFC] line-clamp-2 leading-snug uppercase tracking-tight group-hover:text-[#A78BFA] transition-colors break-words">
+          <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#F8FAFC] line-clamp-2 leading-snug uppercase tracking-tight group-hover:text-purple-600 dark:group-hover:text-[#A78BFA] transition-colors break-words">
             {article.title}
           </h3>
 
-          <p className="mt-2.5 text-xs text-[#A78BFA] font-sans line-clamp-3 leading-relaxed break-words whitespace-pre-wrap">
+          <p className="mt-2.5 text-xs text-slate-600 dark:text-[#A78BFA] font-sans line-clamp-3 leading-relaxed break-words whitespace-pre-wrap">
             {article.description}
           </p>
         </div>
@@ -419,7 +419,7 @@ function UnifiedNewsCard({ article, index }: { article: NormalizedArticle; index
             href={article.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider text-[#F8FAFC] bg-[#5865F2] hover:bg-[#4752C4] border border-[#5865F2] transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider text-white bg-[#5865F2] hover:bg-[#4752C4] border border-[#5865F2] transition-colors"
           >
             <span>Buka di Discord</span>
             <ArrowUpRight size={14} />
@@ -429,7 +429,7 @@ function UnifiedNewsCard({ article, index }: { article: NormalizedArticle; index
             href={article.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider text-[#F8FAFC] bg-[#1A0E2E] border border-[#2E1E45] hover:bg-[#7C3AED] hover:border-[#7C3AED] transition-colors group/btn"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider text-slate-800 dark:text-[#F8FAFC] bg-slate-100 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45] hover:bg-[#7C3AED] hover:border-[#7C3AED] hover:text-white transition-colors group/btn"
           >
             <span>Baca Selengkapnya</span>
             <ArrowUpRight size={14} className="transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />

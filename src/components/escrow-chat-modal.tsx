@@ -183,33 +183,33 @@ export function EscrowChatModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-[#130921] border border-[#2E1E45] rounded-none w-[calc(100vw-2rem)] sm:max-w-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden my-auto">
+      <div className="bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] rounded-none w-[calc(100vw-2rem)] sm:max-w-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden my-auto">
         {/* HEADER */}
-        <div className="p-4 border-b border-[#2E1E45] flex items-center justify-between bg-[#09040F]">
+        <div className="p-4 border-b border-slate-200 dark:border-[#2E1E45] flex items-center justify-between bg-slate-50 dark:bg-[#09040F]">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-none bg-[#7C3AED]/20 text-[#A78BFA] border border-[#7C3AED]/40">
+            <div className="p-2 rounded-none bg-purple-500/10 dark:bg-[#7C3AED]/20 text-purple-700 dark:text-[#A78BFA] border border-purple-500/20 dark:border-[#7C3AED]/40">
               <ShieldCheck size={20} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm sm:text-base text-white font-display tracking-tight">
+                <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white font-display tracking-tight">
                   Ruang Rekber 3-Pihak
                 </h3>
                 {detail && (
                   <span
                     className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-none border ${
                       detail.status === "COMPLETED"
-                        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
                         : detail.status === "CANCELLED"
-                          ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
-                          : "bg-amber-500/15 text-amber-400 border-amber-500/30 animate-pulse"
+                          ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
+                          : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 animate-pulse"
                     }`}
                   >
                     {detail.status === "COMPLETED" ? "SELESAI (SOLD)" : detail.status === "CANCELLED" ? "DIBATALKAN" : "PROSES REKBER"}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-400 truncate max-w-md font-sans">
+              <p className="text-xs text-slate-500 dark:text-gray-400 truncate max-w-md font-sans">
                 Lapak: {detail?.postTitle ?? "Memuat..."}
               </p>
             </div>
@@ -217,7 +217,7 @@ export function EscrowChatModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1 rounded-none transition"
+            className="text-slate-400 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white p-1 rounded-none transition"
             aria-label="Tutup"
           >
             <X size={20} />
@@ -226,19 +226,19 @@ export function EscrowChatModal({
 
         {/* PARTICIPANTS & CLAIM BAR */}
         {detail && (
-          <div className="px-4 py-2.5 bg-[#1A0E2E] border-b border-[#2E1E45] flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+          <div className="px-4 py-2.5 bg-slate-100 dark:bg-[#1A0E2E] border-b border-slate-200 dark:border-[#2E1E45] flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
             <div className="flex items-center gap-2.5 flex-wrap">
               <span>
-                🛒 Buyer: <strong className="text-white">{detail.buyer.username}</strong>
+                🛒 Buyer: <strong className="text-slate-900 dark:text-white">{detail.buyer.username}</strong>
               </span>
-              <span className="text-[#2E1E45]">&bull;</span>
+              <span className="text-slate-300 dark:text-[#2E1E45]">&bull;</span>
               <span>
-                🏷️ Seller: <strong className="text-white">{detail.seller.username}</strong>
+                🏷️ Seller: <strong className="text-slate-900 dark:text-white">{detail.seller.username}</strong>
               </span>
-              <span className="text-[#2E1E45]">&bull;</span>
+              <span className="text-slate-300 dark:text-[#2E1E45]">&bull;</span>
               <span>
                 🛡️ Admin:{" "}
-                <strong className={detail.claimedBy ? "text-emerald-400" : "text-amber-400"}>
+                <strong className={detail.claimedBy ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}>
                   {detail.claimedBy?.username ?? "Menunggu Claim"}
                 </strong>
               </span>
@@ -266,16 +266,16 @@ export function EscrowChatModal({
         )}
 
         {/* CHAT MESSAGES BODY */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3 min-h-[280px] max-h-[420px] bg-[#09040F]">
+        <div className="flex-1 p-4 overflow-y-auto space-y-3 min-h-[280px] max-h-[420px] bg-slate-50 dark:bg-[#09040F]">
           {loading ? (
-            <div className="flex items-center justify-center h-48 text-xs font-mono text-gray-500">
+            <div className="flex items-center justify-center h-48 text-xs font-mono text-slate-500 dark:text-gray-500">
               Menghubungkan ke ruang rekber...
             </div>
           ) : detail?.messages.length === 0 ? (
-            <div className="text-center py-12 text-xs text-gray-400">
+            <div className="text-center py-12 text-xs text-slate-500 dark:text-gray-400">
               <MessageSquare size={32} className="mx-auto mb-2 opacity-30 text-[#A78BFA]" />
-              <p className="font-bold text-white font-display">Ruang Rekber 3-Pihak Telah Terbuka</p>
-              <p className="text-[11px] text-gray-400 mt-1 max-w-sm mx-auto font-sans">
+              <p className="font-bold text-slate-900 dark:text-white font-display">Ruang Rekber 3-Pihak Telah Terbuka</p>
+              <p className="text-[11px] text-slate-500 dark:text-gray-400 mt-1 max-w-sm mx-auto font-sans">
                 Buyer dan Seller dapat berkoordinasi langsung di sini. Admin Rekber akan mengawasi transaksi dan memfasilitasi transfer data akun/item yang aman.
               </p>
             </div>
@@ -288,10 +288,10 @@ export function EscrowChatModal({
                 return (
                   <div
                     key={msg.id}
-                    className="p-2.5 rounded-none bg-[#1A0E2E] border border-[#2E1E45] text-xs text-purple-200 text-center leading-relaxed font-mono"
+                    className="p-2.5 rounded-none bg-purple-50 dark:bg-[#1A0E2E] border border-purple-200 dark:border-[#2E1E45] text-xs text-purple-900 dark:text-purple-200 text-center leading-relaxed font-mono"
                   >
                     {msg.message}
-                    <div className="text-[9px] text-[#A78BFA]/70 mt-1">
+                    <div className="text-[9px] text-purple-600 dark:text-[#A78BFA]/70 mt-1">
                       {new Date(msg.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </div>
@@ -303,15 +303,15 @@ export function EscrowChatModal({
                   key={msg.id}
                   className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                 >
-                  <div className="flex items-center gap-1.5 mb-0.5 text-[10px] text-gray-400 font-mono">
-                    <span className="font-bold text-white">{msg.senderName ?? "Petualang"}</span>
+                  <div className="flex items-center gap-1.5 mb-0.5 text-[10px] text-slate-500 dark:text-gray-400 font-mono">
+                    <span className="font-bold text-slate-900 dark:text-white">{msg.senderName ?? "Petualang"}</span>
                     {msg.senderRole === "ADMIN" && (
-                      <span className="px-1.5 py-0.2 rounded-none bg-rose-500/20 text-rose-400 font-mono font-bold text-[9px] border border-rose-500/30">
+                      <span className="px-1.5 py-0.2 rounded-none bg-rose-500/20 text-rose-500 dark:text-rose-400 font-mono font-bold text-[9px] border border-rose-500/30">
                         ADMIN
                       </span>
                     )}
                     {msg.senderRole === "MODERATOR" && (
-                      <span className="px-1.5 py-0.2 rounded-none bg-amber-500/20 text-amber-400 font-mono font-bold text-[9px] border border-amber-500/30">
+                      <span className="px-1.5 py-0.2 rounded-none bg-amber-500/20 text-amber-600 dark:text-amber-400 font-mono font-bold text-[9px] border border-amber-500/30">
                         MOD
                       </span>
                     )}
@@ -324,7 +324,7 @@ export function EscrowChatModal({
                     className={`max-w-[85%] rounded-none px-3.5 py-2 text-xs leading-relaxed border ${
                       isMe
                         ? "bg-[#7C3AED] text-white border-[#8B5CF6]"
-                        : "bg-[#130921] text-gray-200 border-[#2E1E45]"
+                        : "bg-white dark:bg-[#130921] text-slate-800 dark:text-gray-200 border-slate-200 dark:border-[#2E1E45]"
                     }`}
                   >
                     <FormattedChatMessage text={msg.message} />
@@ -338,23 +338,23 @@ export function EscrowChatModal({
 
         {/* LOCKED BANNER OR INPUT BAR */}
         {detail?.isLocked ? (
-          <div className="p-3 bg-[#130921] border-t border-[#2E1E45] text-center text-xs font-mono text-gray-400 flex items-center justify-center gap-2">
+          <div className="p-3 bg-white dark:bg-[#130921] border-t border-slate-200 dark:border-[#2E1E45] text-center text-xs font-mono text-slate-500 dark:text-gray-400 flex items-center justify-center gap-2">
             <Lock size={14} className="text-[#A78BFA]" /> Ruang chat rekber dikunci (transaksi telah {detail.status === "COMPLETED" ? "selesai" : "dibatalkan"}).
           </div>
         ) : (
           <form
             onSubmit={handleSendMessage}
-            className="p-3 bg-[#130921] border-t border-[#2E1E45] flex flex-col gap-2"
+            className="p-3 bg-white dark:bg-[#130921] border-t border-slate-200 dark:border-[#2E1E45] flex flex-col gap-2"
           >
             {attachedImage && (
-              <div className="flex items-center gap-2 p-1.5 px-3 bg-[#7C3AED]/15 border border-[#7C3AED]/40 rounded-none w-fit max-w-full">
+              <div className="flex items-center gap-2 p-1.5 px-3 bg-purple-500/10 dark:bg-[#7C3AED]/15 border border-purple-500/20 dark:border-[#7C3AED]/40 rounded-none w-fit max-w-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={attachedImage} alt="Lampiran" className="w-10 h-10 object-cover rounded-none border border-[#2E1E45]" />
-                <span className="text-[11px] text-[#A78BFA] font-mono font-medium truncate max-w-[180px]">Foto siap dikirim</span>
+                <img src={attachedImage} alt="Lampiran" className="w-10 h-10 object-cover rounded-none border border-slate-200 dark:border-[#2E1E45]" />
+                <span className="text-[11px] text-purple-700 dark:text-[#A78BFA] font-mono font-medium truncate max-w-[180px]">Foto siap dikirim</span>
                 <button
                   type="button"
                   onClick={() => setAttachedImage(null)}
-                  className="p-1 hover:text-white text-gray-400"
+                  className="p-1 hover:text-slate-900 dark:hover:text-white text-slate-400 dark:text-gray-400"
                   aria-label="Hapus Lampiran"
                 >
                   <X size={14} />
@@ -368,7 +368,7 @@ export function EscrowChatModal({
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Tulis pesan rekber (misal: 'Saya sudah transfer')..."
-                className="flex-1 bg-[#09040F] border border-[#2E1E45] rounded-none px-3.5 py-2.5 text-xs text-white placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED]"
+                className="flex-1 bg-slate-50 dark:bg-[#09040F] border border-slate-200 dark:border-[#2E1E45] rounded-none px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED]"
                 maxLength={1000}
                 disabled={sending || actionBusy}
               />
@@ -386,7 +386,7 @@ export function EscrowChatModal({
 
         {/* ACTION CONTROLS FOOTER */}
         {detail && !detail.isLocked && (
-          <div className="px-4 py-3 bg-[#09040F] border-t border-[#2E1E45] flex flex-wrap items-center justify-between gap-2">
+          <div className="px-4 py-3 bg-slate-100 dark:bg-[#09040F] border-t border-slate-200 dark:border-[#2E1E45] flex flex-wrap items-center justify-between gap-2">
             <div className="text-[11px] font-mono text-gray-400">
               NOMINAL: <strong className="text-emerald-400">Rp {detail.amount.toLocaleString("id-ID")}</strong>
             </div>

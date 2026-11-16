@@ -216,21 +216,21 @@ export function MatchLobbyModal({
       onClick={onClose}
     >
       <div
-        className="bg-[#130921] border border-[#2E1E45] rounded-none w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto animate-in zoom-in-95 duration-150 text-left"
+        className="bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] rounded-none w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto animate-in zoom-in-95 duration-150 text-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* HEADER MODAL */}
-        <div className="p-4 border-b border-[#2E1E45] flex items-center justify-between bg-[#1A0E2E]">
+        <div className="p-4 border-b border-slate-200 dark:border-[#2E1E45] flex items-center justify-between bg-slate-50 dark:bg-[#1A0E2E]">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-2 rounded-none bg-[#130921] text-[#A78BFA] border border-[#2E1E45] shrink-0">
+            <div className="p-2 rounded-none bg-white dark:bg-[#130921] text-purple-600 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] shrink-0">
               <Swords size={20} />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-display font-extrabold uppercase tracking-tight text-sm sm:text-base text-[#F8FAFC] truncate">
+                <h3 className="font-display font-extrabold uppercase tracking-tight text-sm sm:text-base text-slate-900 dark:text-[#F8FAFC] truncate">
                   Ruang Koordinasi Match
                 </h3>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30 uppercase">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-none bg-purple-500/10 dark:bg-[#7C3AED]/15 text-purple-700 dark:text-[#A78BFA] border border-purple-500/20 dark:border-[#7C3AED]/30 uppercase">
                   #{match.matchId} · {match.roundName}
                 </span>
                 {isMatchFinished && (
@@ -239,9 +239,9 @@ export function MatchLobbyModal({
                   </span>
                 )}
               </div>
-              <p className="text-xs font-mono text-[#A78BFA] truncate mt-0.5">
-                <strong className="text-[#F8FAFC]">{match.teamA.name || "Tim A"}</strong> VS{" "}
-                <strong className="text-[#F8FAFC]">{match.teamB.name || "Tim B"}</strong>
+              <p className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] truncate mt-0.5">
+                <strong className="text-slate-900 dark:text-[#F8FAFC]">{match.teamA.name || "Tim A"}</strong> VS{" "}
+                <strong className="text-slate-900 dark:text-[#F8FAFC]">{match.teamB.name || "Tim B"}</strong>
               </p>
             </div>
           </div>

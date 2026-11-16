@@ -407,9 +407,9 @@ export function HorizonChatWidget() {
             </div>
 
             {/* SATPAM AI Badge */}
-            <div className="mt-1 px-2 py-0.5 rounded-none bg-[#11091D] border border-[#7C3AED] shadow-md flex items-center gap-1 z-20 pointer-events-none">
+            <div className="mt-1 px-2 py-0.5 rounded-none bg-white dark:bg-[#11091D] border border-[#7C3AED] shadow-md flex items-center gap-1 z-20 pointer-events-none">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-              <span className="text-[9px] font-mono font-bold tracking-wider text-[#A78BFA] uppercase whitespace-nowrap">
+              <span className="text-[9px] font-mono font-bold tracking-wider text-[#7C3AED] dark:text-[#A78BFA] uppercase whitespace-nowrap">
                 SATPAM AI
               </span>
             </div>

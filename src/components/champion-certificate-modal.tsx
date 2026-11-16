@@ -355,7 +355,7 @@ export function ChampionCertificateModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-none text-xs font-mono font-bold bg-[#1A0E2E] hover:bg-[#251540] text-gray-300 border border-[#2E1E45] transition"
+              className="px-4 py-2.5 rounded-none text-xs font-mono font-bold bg-slate-100 dark:bg-[#1A0E2E] hover:bg-slate-200 dark:hover:bg-[#251540] text-slate-800 dark:text-gray-300 border border-slate-300 dark:border-[#2E1E45] transition"
             >
               TUTUP
             </button>

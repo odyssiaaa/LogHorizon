@@ -667,10 +667,10 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   return (
     <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 text-left">
       {/* Back button & top bar */}
-      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap border-b border-[#2E1E45] pb-4">
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap border-b border-slate-200 dark:border-[#2E1E45] pb-4">
         <Link
           href="/events?view=turnamen"
-          className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#A78BFA] hover:text-[#F8FAFC]"
+          className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-slate-600 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
         >
           <ArrowLeft size={16} />
           <span>KEMBALI KE SEMUA TURNAMEN</span>
@@ -695,23 +695,23 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       )}
 
       {/* Tournament Header Banner */}
-      <div className="relative overflow-hidden rounded-none border border-[#2E1E45] bg-[#130921] p-6 sm:p-8 shadow-xl mb-8">
+      <div className="relative overflow-hidden rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] p-6 sm:p-8 shadow-xl mb-8">
         <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-3 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-1 rounded-none text-[10px] font-mono font-extrabold uppercase tracking-wider bg-[#7C3AED] text-[#F8FAFC]">
+              <span className="px-2.5 py-1 rounded-none text-[10px] font-mono font-extrabold uppercase tracking-wider bg-[#7C3AED] text-white">
                 {tournament.game}
               </span>
-              <span className="px-2.5 py-1 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-[#1A0E2E] text-[#A78BFA] border border-[#2E1E45]">
+              <span className="px-2.5 py-1 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45]">
                 {tournament.format || `${tournament.maxSlots} TIM`}
               </span>
               <span
                 className={`px-2.5 py-1 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider ${
                   tournament.status === "COMPLETED"
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
                     : tournament.status === "ONGOING"
-                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
-                    : "bg-[#7C3AED]/20 text-[#A78BFA] border border-[#7C3AED]/30"
+                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                    : "bg-purple-500/10 dark:bg-[#7C3AED]/20 text-purple-700 dark:text-[#A78BFA] border border-purple-500/20 dark:border-[#7C3AED]/30"
                 }`}
               >
                 ● {tournament.status}
@@ -727,20 +727,20 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               )}
             </div>
 
-            <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#F8FAFC] uppercase tracking-tight leading-tight">
+            <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-tight leading-tight">
               {tournament.title}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-[#A78BFA]">
-              <span className="font-bold text-[#F8FAFC] flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-600 dark:text-[#A78BFA]">
+              <span className="font-bold text-slate-900 dark:text-[#F8FAFC] flex items-center gap-1.5">
                 <Trophy size={16} className="text-[#F59E0B]" /> Hadiah: {tournament.prizePool || "Prizepool Resmi Guild"}
               </span>
               <span>•</span>
               <span className="flex items-center gap-1.5">
-                <Users size={16} /> Slot Terdaftar: <strong className="text-[#F8FAFC]">{realTeams.length} / {tournament.maxSlots} TIM</strong>
+                <Users size={16} /> Slot Terdaftar: <strong className="text-slate-900 dark:text-[#F8FAFC]">{realTeams.length} / {tournament.maxSlots} TIM</strong>
               </span>
               <span>•</span>
-              <span className="text-[#A78BFA]/80">
+              <span className="text-slate-500 dark:text-[#A78BFA]/80">
                 Format: {mainCount} Inti + Maks {subCount} Cadangan
               </span>
             </div>
@@ -762,7 +762,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                 id="daftar"
                 type="button"
                 onClick={handleOpenRegister}
-                className="px-6 py-2.5 rounded-none font-bold text-xs uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] inline-flex items-center justify-center gap-2"
+                className="px-6 py-2.5 rounded-none font-bold text-xs uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center justify-center gap-2"
               >
                 <Plus size={16} />
                 <span>Daftar Tim / Party Sekarang</span>
@@ -773,7 +773,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               <button
                 type="button"
                 onClick={() => setShowEditTournamentModal(true)}
-                className="border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] text-xs px-3 py-2 rounded-none font-mono font-bold inline-flex items-center justify-center gap-1.5 text-[#F8FAFC] transition-all cursor-pointer"
+                className="border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] text-xs px-3 py-2 rounded-none font-mono font-bold inline-flex items-center justify-center gap-1.5 text-slate-800 dark:text-[#F8FAFC] transition-all cursor-pointer"
                 title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
               >
                 <span>✏️ Edit Turnamen</span>
@@ -795,11 +795,11 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       </div>
 
       {/* Bracket Tree Section */}
-      <section className="p-5 sm:p-7 rounded-none border border-[#2E1E45] bg-[#130921] shadow-xl mb-10">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2 border-b border-[#2E1E45] pb-4">
+      <section className="p-5 sm:p-7 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl mb-10">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2 border-b border-slate-200 dark:border-[#2E1E45] pb-4">
           <div className="flex items-center gap-2.5 flex-wrap">
             <Flame size={20} className="text-[#7C3AED]" />
-            <h2 className="font-display text-base sm:text-lg font-extrabold uppercase tracking-tight text-[#F8FAFC]">
+            <h2 className="font-display text-base sm:text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC]">
               Pohon Bagan Pertandingan (Bracket Tree Simetris)
             </h2>
             {/* 🔴 LIVE SYNC AKTIF BADGE */}
@@ -817,20 +817,20 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* INSTANT SEARCH BAR DI POHON BAGAN */}
             <div className="relative w-56 sm:w-72">
-              <div className="flex items-center gap-2 px-3 h-9 rounded-none border border-[#2E1E45] bg-[#1A0E2E] focus-within:border-[#7C3AED] transition-all">
-                <Search size={13} className="text-[#A78BFA] shrink-0" />
+              <div className="flex items-center gap-2 px-3 h-9 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] focus-within:border-[#7C3AED] transition-all">
+                <Search size={13} className="text-slate-400 dark:text-[#A78BFA] shrink-0" />
                 <input
                   type="text"
                   value={bracketSearchQuery}
                   onChange={(e) => setBracketSearchQuery(e.target.value)}
                   placeholder="Cari tim atau kode #R1-M12…"
-                  className="w-full bg-transparent text-xs text-[#F8FAFC] placeholder:text-[#A78BFA]/50 focus:outline-none font-sans"
+                  className="w-full bg-transparent text-xs text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#A78BFA]/50 focus:outline-none font-sans"
                 />
                 {bracketSearchQuery && (
                   <button
                     type="button"
                     onClick={() => setBracketSearchQuery("")}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none text-[10px] font-mono font-medium text-[#A78BFA] bg-[#2E1E45] hover:text-[#F8FAFC] transition shrink-0"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none text-[10px] font-mono font-medium text-slate-600 dark:text-[#A78BFA] bg-slate-200 dark:bg-[#2E1E45] hover:text-slate-900 dark:hover:text-[#F8FAFC] transition shrink-0"
                     title="Reset pencarian"
                   >
                     <X size={11} />
@@ -850,7 +850,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               <button
                 type="button"
                 onClick={() => setShowEditTournamentModal(true)}
-                className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] text-[#F8FAFC] transition-all cursor-pointer"
+                className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition-all cursor-pointer"
                 title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
               >
                 <span>✏️ Edit Turnamen</span>
@@ -910,14 +910,14 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       </section>
 
       {/* Teams & Roster Section */}
-      <section className="p-5 sm:p-7 rounded-none border border-[#2E1E45] bg-[#130921] shadow-xl">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3 border-b border-[#2E1E45] pb-4">
+      <section className="p-5 sm:p-7 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3 border-b border-slate-200 dark:border-[#2E1E45] pb-4">
           <div>
-            <h2 className="font-display text-base sm:text-lg font-extrabold uppercase tracking-tight text-[#F8FAFC] flex items-center gap-2">
+            <h2 className="font-display text-base sm:text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
               <Shield size={18} className="text-[#7C3AED]" />
               <span>Daftar Tim Terdaftar ({realTeams.length} TIM)</span>
             </h2>
-            <p className="text-xs text-[#A78BFA] mt-0.5 font-sans">
+            <p className="text-xs text-slate-600 dark:text-[#A78BFA] mt-0.5 font-sans">
               Klik kartu tim untuk memeriksa komposisi roster pemain inti dan cadangan.
             </p>
           </div>
@@ -926,7 +926,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             <button
               type="button"
               onClick={handleOpenRegister}
-              className="px-4 py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] inline-flex items-center gap-1.5"
+              className="px-4 py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center gap-1.5"
             >
               <Plus size={14} />
               <span>Tambah Tim</span>
@@ -935,7 +935,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         </div>
 
         {realTeams.length === 0 ? (
-          <div className="text-center py-12 text-xs font-mono text-[#A78BFA] border border-dashed border-[#2E1E45] rounded-none bg-[#1A0E2E]">
+          <div className="text-center py-12 text-xs font-mono text-slate-500 dark:text-[#A78BFA] border border-dashed border-slate-200 dark:border-[#2E1E45] rounded-none bg-slate-50 dark:bg-[#1A0E2E]">
             Belum ada tim yang mendaftar. Jadilah tim pertama yang mendaftar dan rebut gelarnya!
           </div>
         ) : (
@@ -949,29 +949,29 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                 <div
                   key={team.id || idx}
                   onClick={() => setViewingRoster(team)}
-                  className="p-4 rounded-none border border-[#2E1E45] bg-[#1A0E2E] hover:border-[#7C3AED] transition cursor-pointer space-y-3 text-left"
+                  className="p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] hover:border-[#7C3AED] transition cursor-pointer space-y-3 text-left"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="w-6 h-6 rounded-none bg-[#130921] border border-[#2E1E45] text-[#A78BFA] text-xs font-mono font-bold flex items-center justify-center shrink-0">
+                    <span className="w-6 h-6 rounded-none bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] text-purple-600 dark:text-[#A78BFA] text-xs font-mono font-bold flex items-center justify-center shrink-0">
                       #{idx + 1}
                     </span>
-                    <span className="text-[10px] font-mono uppercase text-[#A78BFA]">
+                    <span className="text-[10px] font-mono uppercase text-slate-500 dark:text-[#A78BFA]">
                       {mainPlayers.length} INTI {subPlayers.length > 0 ? `+ ${subPlayers.length} CAD` : ""}
                     </span>
                   </div>
 
                   <div>
-                    <h3 className="font-display font-bold text-sm text-[#F8FAFC] uppercase tracking-tight truncate">
+                    <h3 className="font-display font-bold text-sm text-slate-900 dark:text-[#F8FAFC] uppercase tracking-tight truncate">
                       {team.teamName}
                     </h3>
                     {team.captainName && (
-                      <p className="text-xs font-mono text-[#A78BFA] truncate mt-0.5">
+                      <p className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] truncate mt-0.5">
                         👑 Kapten: {team.captainName}
                       </p>
                     )}
                   </div>
 
-                  <div className="pt-2 border-t border-[#2E1E45] flex items-center justify-between text-[11px] font-mono text-[#A78BFA]">
+                  <div className="pt-2 border-t border-slate-200 dark:border-[#2E1E45] flex items-center justify-between text-[11px] font-mono text-slate-600 dark:text-[#A78BFA]">
                     <span>Lihat Susunan Roster</span>
                     <span className="text-[#7C3AED] font-bold">➔</span>
                   </div>

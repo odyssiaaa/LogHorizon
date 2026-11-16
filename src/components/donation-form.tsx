@@ -152,15 +152,15 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
 
   return (
     <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 overflow-x-hidden text-left">
-      <header className="treasury-hero mb-8 border-b border-[#2E1E45] pb-6">
-        <p className="section-kicker text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-widest mb-1.5 flex items-center gap-2">
+      <header className="treasury-hero mb-8 border-b border-slate-200 dark:border-[#2E1E45] pb-6">
+        <p className="section-kicker text-xs font-mono font-bold text-slate-600 dark:text-[#A78BFA] uppercase tracking-widest mb-1.5 flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-[#7C3AED]" />
           LOGHORIZON // COMMUNITY FUND &amp; TREASURY
         </p>
-        <h1 className="page-title font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-[#F8FAFC] break-words">
-          GUILD TREASURY <span className="text-[#A78BFA]">&amp; BENEFACTOR</span>
+        <h1 className="page-title font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC] break-words">
+          GUILD TREASURY <span className="text-purple-600 dark:text-[#A78BFA]">&amp; BENEFACTOR</span>
         </h1>
-        <p className="muted-copy text-xs sm:text-sm md:text-base text-[#A78BFA] max-w-2xl mt-2 leading-relaxed font-sans">
+        <p className="muted-copy text-xs sm:text-sm md:text-base text-slate-600 dark:text-[#A78BFA] max-w-2xl mt-2 leading-relaxed font-sans">
           Dukung operasional server, kembangkan ekosistem, dan danai turnamen komunitas berhadiah massal. Setiap kontribusi kamu akan diverifikasi langsung oleh Admin untuk membuka kasta benefit eksklusif.
         </p>
       </header>
@@ -172,7 +172,7 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
         </div>
       )}
       {error && (
-        <div className="p-4 rounded-none bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-mono font-semibold mb-6 flex items-center justify-between">
+        <div className="p-4 rounded-none bg-red-500/15 border border-red-500/30 text-red-500 dark:text-red-400 text-xs font-mono font-semibold mb-6 flex items-center justify-between">
           <span>{error}</span>
           <button onClick={() => setError("")} aria-label="Tutup"><X size={16} /></button>
         </div>
@@ -180,20 +180,20 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
 
       <div className="treasury-tier-grid grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 my-6">
         {tiers.map(({ id, name, icon: Icon, price, badge, benefits }, index) => (
-          <article className={`treasury-tier tier-${index + 1} p-5 sm:p-6 rounded-none border border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED] transition-all flex flex-col justify-between text-left`} key={id}>
+          <article className={`treasury-tier tier-${index + 1} p-5 sm:p-6 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#7C3AED] transition-all flex flex-col justify-between text-left`} key={id}>
             <div>
-              <div className="treasury-tier-icon w-10 h-10 rounded-none bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA] flex items-center justify-center mb-3">
+              <div className="treasury-tier-icon w-10 h-10 rounded-none bg-slate-100 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45] text-purple-600 dark:text-[#A78BFA] flex items-center justify-center mb-3">
                 <Icon size={20} />
               </div>
-              <p className="section-kicker text-[10px] font-mono font-bold text-[#A78BFA] uppercase tracking-wider">TIER 0{index + 1}</p>
-              <h2 className="font-display text-lg md:text-xl font-bold uppercase tracking-tight break-words text-[#F8FAFC] mt-1">{name}</h2>
+              <p className="section-kicker text-[10px] font-mono font-bold text-slate-500 dark:text-[#A78BFA] uppercase tracking-wider">TIER 0{index + 1}</p>
+              <h2 className="font-display text-lg md:text-xl font-bold uppercase tracking-tight break-words text-slate-900 dark:text-[#F8FAFC] mt-1">{name}</h2>
               <strong className="treasury-tier-price text-sm sm:text-base font-mono font-extrabold text-[#10B981] block my-1">{price}</strong>
-              <span className="treasury-badge inline-block px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30 my-2">
+              <span className="treasury-badge inline-block px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-none bg-purple-500/10 dark:bg-[#7C3AED]/15 text-purple-700 dark:text-[#A78BFA] border border-purple-500/20 dark:border-[#7C3AED]/30 my-2">
                 {badge}
               </span>
               <ul className="space-y-2 mt-3 font-sans">
                 {benefits.map((benefit) => (
-                  <li key={benefit} className="flex items-start gap-2 text-xs sm:text-sm text-[#A78BFA] leading-snug">
+                  <li key={benefit} className="flex items-start gap-2 text-xs sm:text-sm text-slate-600 dark:text-[#A78BFA] leading-snug">
                     <BadgeCheck size={15} className="text-[#7C3AED] shrink-0 mt-0.5" />
                     <span>{benefit}</span>
                   </li>
@@ -204,7 +204,7 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
                   <ShieldCheck size={15} /> Benefit Guild Emperor &amp; Noble Patron Aktif
                 </p>
               ) : session?.user?.role === "ADMIN" ? (
-                <p className="premium-state text-xs font-mono font-bold text-[#A78BFA] flex items-center gap-1.5 mt-3">
+                <p className="premium-state text-xs font-mono font-bold text-purple-600 dark:text-[#A78BFA] flex items-center gap-1.5 mt-3">
                   <ShieldCheck size={15} /> Hak Istimewa Prince / Princess (High Council) Aktif
                 </p>
               ) : (id === "ELITE_PARTY_MEMBER" && session?.user?.isPremium) && (
@@ -215,7 +215,7 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
             </div>
             <button
               type="button"
-              className="w-full mt-6 py-2.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] justify-center flex items-center gap-2 transition-colors"
+              className="w-full mt-6 py-2.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] justify-center flex items-center gap-2 transition-colors"
               onClick={() => {
                 setTier(id);
                 setAmount(id === "ADVENTURER_SUPPORT" ? "25000" : id === "ELITE_PARTY_MEMBER" ? "50000" : "100000");
@@ -228,31 +228,31 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
         ))}
       </div>
 
-      <p className="donation-disclaimer treasury-disclaimer text-xs text-[#A78BFA] font-mono mt-4 leading-relaxed">
+      <p className="donation-disclaimer treasury-disclaimer text-xs text-slate-500 dark:text-[#A78BFA] font-mono mt-4 leading-relaxed">
         Seluruh donasi disalurkan via QRIS resmi perbendaharaan guild LogHorizon. Demi keamanan dan akurasi kas, setiap transaksi wajib dikonfirmasi dan diverifikasi oleh jajaran Admin sebelum status kasta diaktifkan.
       </p>
 
       {/* QRIS PAYMENT & CONFIRMATION MODAL */}
       {tier && selectedTier && (
         <div className="modal-backdrop fixed inset-0 z-50 bg-[#09040F]/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto" onMouseDown={(event) => { if (event.target === event.currentTarget && !loading) setTier(null); }}>
-          <section className="modal-card treasury-modal bg-[#130921] border border-[#2E1E45] rounded-none p-5 sm:p-8 w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl relative my-auto text-left" role="dialog" aria-modal="true" aria-labelledby="treasury-modal-title">
-            <button type="button" className="modal-close absolute top-4 right-4 text-[#A78BFA] hover:text-[#F8FAFC]" onClick={() => setTier(null)} disabled={loading} aria-label="Tutup">
+          <section className="modal-card treasury-modal bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] rounded-none p-5 sm:p-8 w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl relative my-auto text-left" role="dialog" aria-modal="true" aria-labelledby="treasury-modal-title">
+            <button type="button" className="modal-close absolute top-4 right-4 text-slate-500 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC]" onClick={() => setTier(null)} disabled={loading} aria-label="Tutup">
               <X size={20} />
             </button>
 
             <div className="text-center mb-4">
-              <p className="section-kicker text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-wider">KAS PERBENDAHARAAN GUILD</p>
-              <h2 id="treasury-modal-title" className="font-display text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-[#F8FAFC] mt-1">
+              <p className="section-kicker text-xs font-mono font-bold text-purple-600 dark:text-[#A78BFA] uppercase tracking-wider">KAS PERBENDAHARAAN GUILD</p>
+              <h2 id="treasury-modal-title" className="font-display text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC] mt-1">
                 {selectedTier.name}
               </h2>
             </div>
 
             {/* QRIS OFFICIAL GUILD DISPLAY */}
-            <div className="bg-[#1A0E2E] border border-[#2E1E45] rounded-none p-4 text-center my-4 flex flex-col items-center">
-              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#A78BFA] mb-2 uppercase">
+            <div className="bg-slate-50 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45] rounded-none p-4 text-center my-4 flex flex-col items-center">
+              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-700 dark:text-[#A78BFA] mb-2 uppercase">
                 <QrCode size={16} /> QRIS RESMI GUILD LOGHORIZON
               </div>
-              <div className="relative w-48 h-64 sm:w-56 sm:h-72 rounded-none overflow-hidden shadow-lg bg-white border border-[#2E1E45]">
+              <div className="relative w-48 h-64 sm:w-56 sm:h-72 rounded-none overflow-hidden shadow-lg bg-white border border-slate-200 dark:border-[#2E1E45]">
                 <Image
                   src={qrisUrl}
                   alt="QRIS Resmi Guild LogHorizon"
@@ -262,10 +262,10 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
                   priority
                 />
               </div>
-              <p className="text-[11px] font-mono text-[#A78BFA] mt-2">
-                NMID: <strong className="text-[#F8FAFC]">ID1025450776899</strong> (odyssiavault)
+              <p className="text-[11px] font-mono text-slate-700 dark:text-[#A78BFA] mt-2">
+                NMID: <strong className="text-slate-900 dark:text-[#F8FAFC]">ID1025450776899</strong> (odyssiavault)
               </p>
-              <p className="text-[10px] font-mono text-[#A78BFA]/70">
+              <p className="text-[10px] font-mono text-slate-500 dark:text-[#A78BFA]/70">
                 Mendukung semua Bank &amp; E-Wallet (BCA, Mandiri, BRI, GoPay, OVO, Dana, ShopeePay)
               </p>
             </div>
@@ -273,8 +273,8 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
             {/* TRANSFER CONFIRMATION FORM */}
             <div className="space-y-3 mt-4 text-left font-mono">
               <div>
-                <label className="block text-xs font-bold text-[#A78BFA] mb-1 uppercase">
-                  Nominal Transfer (IDR) <span className="text-red-400">*</span>
+                <label className="block text-xs font-bold text-slate-700 dark:text-[#A78BFA] mb-1 uppercase">
+                  Nominal Transfer (IDR) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -283,7 +283,7 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
                   step={5000}
                   value={amount}
                   onChange={(event) => handleAmountChange(event.target.value)}
-                  className="w-full px-3 py-2 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#7C3AED]"
+                  className="w-full px-3 py-2 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#1A0E2E] text-sm text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-[#7C3AED]"
                   placeholder="50000"
                 />
               </div>

@@ -130,9 +130,9 @@ export function DailyCheckInWidget() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="w-full p-4 rounded-none border border-[#2E1E45] bg-[#130921] animate-pulse flex items-center justify-between mb-6">
-        <div className="h-5 bg-[#1A0E2E] rounded-none w-1/3"></div>
-        <div className="h-8 bg-[#1A0E2E] rounded-none w-32"></div>
+      <div className="w-full p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] animate-pulse flex items-center justify-between mb-6">
+        <div className="h-5 bg-slate-100 dark:bg-[#1A0E2E] rounded-none w-1/3"></div>
+        <div className="h-8 bg-slate-100 dark:bg-[#1A0E2E] rounded-none w-32"></div>
       </div>
     );
   }
@@ -140,16 +140,16 @@ export function DailyCheckInWidget() {
   // Not logged in
   if (!session?.user) {
     return (
-      <div className="w-full p-4 sm:p-5 rounded-none border border-[#2E1E45] bg-[#130921] flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shadow-sm text-left">
+      <div className="w-full p-4 sm:p-5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shadow-sm text-left">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-none bg-[#1A0E2E] border border-[#2E1E45] flex items-center justify-center text-[#7C3AED] shrink-0">
+          <div className="w-10 h-10 rounded-none bg-slate-100 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45] flex items-center justify-center text-[#7C3AED] shrink-0">
             <Zap size={20} />
           </div>
           <div>
-            <h3 className="font-display text-sm font-extrabold uppercase tracking-tight text-[#F8FAFC] flex items-center gap-1.5">
+            <h3 className="font-display text-sm font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC] flex items-center gap-1.5">
               <span>⚡ ABSEN HARIAN GUILD (+15 XP)</span>
             </h3>
-            <p className="text-xs text-[#A78BFA] font-sans mt-0.5">
+            <p className="text-xs text-slate-600 dark:text-[#A78BFA] font-sans mt-0.5">
               Masuk untuk klaim bonus XP harian dan kumpulkan streak kehadiranmu!
             </p>
           </div>
@@ -157,7 +157,7 @@ export function DailyCheckInWidget() {
         <button
           type="button"
           onClick={() => signIn("discord")}
-          className="px-4 py-2 rounded-none text-xs font-mono font-bold uppercase tracking-wider bg-[#7C3AED] text-[#F8FAFC] hover:bg-[#6D28D9] border border-[#7C3AED] transition whitespace-nowrap self-start sm:self-auto"
+          className="px-4 py-2 rounded-none text-xs font-mono font-bold uppercase tracking-wider bg-[#7C3AED] text-white hover:bg-[#6D28D9] border border-[#7C3AED] transition whitespace-nowrap self-start sm:self-auto"
         >
           Masuk Discord
         </button>
@@ -169,14 +169,14 @@ export function DailyCheckInWidget() {
   const streak = data?.streak ?? 0;
 
   return (
-    <div className="w-full p-4 sm:p-5 rounded-none border border-[#2E1E45] bg-[#130921] relative overflow-hidden mb-6 text-left">
+    <div className="w-full p-4 sm:p-5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] relative overflow-hidden mb-6 text-left">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
         <div className="flex items-center gap-3.5">
           <div
             className={`w-11 h-11 rounded-none flex items-center justify-center shrink-0 border transition-all ${
               isClaimed
                 ? "bg-[#10B981]/10 border-[#10B981]/30 text-[#10B981]"
-                : "bg-[#1A0E2E] border-[#7C3AED]/50 text-[#F59E0B]"
+                : "bg-slate-100 dark:bg-[#1A0E2E] border-slate-200 dark:border-[#7C3AED]/50 text-[#F59E0B]"
             }`}
           >
             {isClaimed ? <CheckCircle2 size={22} /> : <Zap size={22} />}
@@ -184,7 +184,7 @@ export function DailyCheckInWidget() {
 
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-display text-sm sm:text-base font-extrabold uppercase tracking-tight text-[#F8FAFC]">
+              <h3 className="font-display text-sm sm:text-base font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC]">
                 {isClaimed ? "ABSEN HARIAN TERVERIFIKASI" : "KLAIM ABSEN HARIAN"}
               </h3>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-[11px] font-mono font-bold bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30">
@@ -193,20 +193,20 @@ export function DailyCheckInWidget() {
               </span>
             </div>
 
-            <p className="text-xs text-[#A78BFA] mt-0.5 flex items-center gap-1.5 flex-wrap font-sans">
+            <p className="text-xs text-slate-600 dark:text-[#A78BFA] mt-0.5 flex items-center gap-1.5 flex-wrap font-sans">
               {isClaimed ? (
                 <>
-                  <Clock size={12} className="text-[#A78BFA] shrink-0" />
+                  <Clock size={12} className="text-slate-500 dark:text-[#A78BFA] shrink-0" />
                   <span>
                     Sudah absen hari ini • Reset kalender WIB dalam:{" "}
-                    <strong className="font-mono text-[#F8FAFC] font-bold">
+                    <strong className="font-mono text-slate-900 dark:text-[#F8FAFC] font-bold">
                       {formatTimeRemaining(countdown)}
                     </strong>
                   </span>
                 </>
               ) : (
                 <span>
-                  Klaim sekarang untuk mendapatkan <strong className="font-mono text-[#F8FAFC] font-bold">+15 XP</strong> dan tingkatkan level karaktermu.
+                  Klaim sekarang untuk mendapatkan <strong className="font-mono text-slate-900 dark:text-[#F8FAFC] font-bold">+15 XP</strong> dan tingkatkan level karaktermu.
                 </span>
               )}
             </p>
