@@ -15,8 +15,8 @@ export async function POST(request: Request, { params }: RouteContext) {
     ? ((payload as Record<string, unknown>).message as string).trim()
     : "";
 
-  if (!message || message.length > 1000) {
-    return jsonError("Pesan wajib diisi (maksimal 1000 karakter).", 400);
+  if (!message || message.length > 250000) {
+    return jsonError("Pesan wajib diisi (maksimal 250.000 karakter).", 400);
   }
 
   const escrow = await prisma.escrowTransaction.findUnique({

@@ -13,6 +13,7 @@ import { SkeletonForumCard, TacticalEmptyState } from "@/components/ui-feedback"
 import { ShareButton } from "@/components/share-button";
 import { motion } from "framer-motion";
 import type { ForumPostRecord } from "@/types/community";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 type Category = "GENERAL_CHAT" | "PROMOTION" | "FEEDBACK";
 type ForumLiveRow = { id: string };
@@ -522,6 +523,7 @@ function ThreadModal({
 }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [attachmentImg, setAttachmentImg] = useState("");
   const [isPinned, setIsPinned] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -531,10 +533,14 @@ function ThreadModal({
     setSaving(true);
     setError("");
     try {
+      let finalContent = content;
+      if (attachmentImg) {
+        finalContent += `\n\n![Lampiran Gambar](${attachmentImg})`;
+      }
       const response = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category, title, content, isPinned }),
+        body: JSON.stringify({ category, title, content: finalContent, isPinned }),
       });
       await readApiResponse<unknown>(response, "Thread tidak dapat dibuat.");
       onCreated();
@@ -584,6 +590,14 @@ function ThreadModal({
               placeholder="Ceritakan lebih lanjut…"
             />
           </label>
+          <div>
+            <ImageUploader
+              value={attachmentImg}
+              onChange={setAttachmentImg}
+              label="Lampiran Gambar / Tangkapan Layar (Opsional)"
+              description="Unggah tangkapan layar langsung dari galeri HP atau PC. Otomatis dikompresi."
+            />
+          </div>
           {canPin && (
             <label className="form-checkbox">
               <input

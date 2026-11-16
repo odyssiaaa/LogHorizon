@@ -93,8 +93,8 @@ export async function POST(request: Request, { params }: RouteContext) {
     return jsonError("Pesan tidak boleh kosong.", 400);
   }
 
-  if (content.length > 2000) {
-    return jsonError("Pesan maksimal 2000 karakter.", 400);
+  if (content.length > 250000) {
+    return jsonError("Pesan maksimal 250.000 karakter.", 400);
   }
 
   const message = await prisma.directMessage.create({

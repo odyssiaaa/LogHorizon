@@ -16,7 +16,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   const rawContent = typeof data.content === "string" ? data.content.trim() : "";
   const content = sanitizeText(rawContent);
   const parentId = typeof data.parentId === "string" ? data.parentId : null;
-  if (!content || content.length > 5000) return jsonError("Komentar wajib diisi (maksimal 5.000 karakter).", 400);
+  if (!content || content.length > 250000) return jsonError("Komentar wajib diisi (maksimal 250.000 karakter).", 400);
 
   const post = await prisma.post.findUnique({
     where: { id },

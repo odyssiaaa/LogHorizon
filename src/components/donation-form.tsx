@@ -5,6 +5,7 @@ import Image from "next/image";
 import { signIn, useSession } from "next-auth/react";
 import { BadgeCheck, Crown, Gem, HeartHandshake, QrCode, ShieldCheck, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 const formatMoney = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
@@ -343,15 +344,11 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  Link Bukti Transfer / Screenshot (Opsional)
-                </label>
-                <input
-                  type="url"
+                <ImageUploader
                   value={proofUrl}
-                  onChange={(event) => setProofUrl(event.target.value)}
-                  className="w-full px-3 py-2 rounded border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                  placeholder="https://imgur.com/... atau tautan gambar"
+                  onChange={setProofUrl}
+                  label="Bukti Struk Transfer / Screenshot QRIS (Opsional)"
+                  description="Pilih foto langsung dari galeri HP atau PC. Otomatis dikompresi ringan."
                 />
               </div>
             </div>

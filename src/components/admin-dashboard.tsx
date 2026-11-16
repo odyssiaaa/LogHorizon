@@ -48,6 +48,7 @@ import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 import { RosterPlayerRow } from "@/components/roster-player-row";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 type Role = "MEMBER" | "MODERATOR" | "ADMIN";
 
@@ -1307,29 +1308,12 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="sm:col-span-2">
-                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                            URL Gambar QRIS Resmi Guild
-                          </label>
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="text"
-                              value={configForm.qrisImageUrl}
-                              onChange={(e) => setConfigForm({ ...configForm, qrisImageUrl: e.target.value })}
-                              className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                              placeholder="/qris-guild.png"
-                              required
-                            />
-                            {configForm.qrisImageUrl && (
-                              <div className="relative w-10 h-10 rounded border border-gray-200 dark:border-[#211C2B] overflow-hidden bg-white shrink-0">
-                                <Image
-                                  src={configForm.qrisImageUrl}
-                                  alt="Preview QRIS"
-                                  fill
-                                  className="object-contain"
-                                />
-                              </div>
-                            )}
-                          </div>
+                          <ImageUploader
+                            value={configForm.qrisImageUrl}
+                            onChange={(url) => setConfigForm({ ...configForm, qrisImageUrl: url })}
+                            label="Gambar QRIS Resmi Guild *"
+                            description="Pilih atau tarik foto barcode QRIS langsung dari galeri HP atau PC. Otomatis dikompresi."
+                          />
                         </div>
 
                         <div>
@@ -2703,12 +2687,11 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                         />
                       </div>
                       <div>
-                        <input
-                          type="url"
+                        <ImageUploader
                           value={sponsorLogo}
-                          onChange={(e) => setSponsorLogo(e.target.value)}
-                          placeholder="URL Logo (Opsional)"
-                          className="w-full px-3 py-1.5 rounded border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                          onChange={setSponsorLogo}
+                          label="Upload Logo Sponsor (Opsional)"
+                          description="Pilih logo sponsor dari HP atau komputer."
                         />
                       </div>
                       <div>
@@ -3060,15 +3043,11 @@ function BroadcastSection({
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-            URL Gambar / Banner (Opsional)
-          </label>
-          <input
-            type="url"
+          <ImageUploader
             value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-            placeholder="https://imgur.com/... atau tautan gambar langsung"
+            onChange={setImageUrl}
+            label="Upload Gambar / Banner Pengumuman (Opsional)"
+            description="Pilih banner atau poster dari galeri HP atau PC. Otomatis dikompresi."
           />
         </div>
 

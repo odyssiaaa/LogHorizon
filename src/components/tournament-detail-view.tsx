@@ -35,6 +35,7 @@ import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 import { RosterPlayerRow } from "@/components/roster-player-row";
 import { QuickMatchScoreModal } from "@/components/quick-match-score-modal";
 import { ChampionCertificateModal } from "@/components/champion-certificate-modal";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 type TournamentData = {
   id: string;
@@ -1256,37 +1257,13 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
                     {/* Kolom 2: Upload Gambar Bukti Bayar */}
                     <div>
-                      <label className="font-bold text-gray-800 dark:text-gray-200 block mb-1">
-                        2. Upload Bukti Transfer (JPG/PNG/WebP) *
-                      </label>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={handleProofFileSelect}
-                        className="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#9D4EDD] file:text-white hover:file:bg-[#8637c7] cursor-pointer"
+                      <ImageUploader
+                        value={registerPaymentProof}
+                        onChange={setRegisterPaymentProof}
+                        label="2. Upload Bukti Transfer (JPG/PNG/WebP) *"
                         required={!registerPaymentProof}
+                        description="Pilih screenshot bukti transfer QRIS langsung dari HP atau PC."
                       />
-                      {compressingProof && (
-                        <span className="text-[10px] text-purple-400 animate-pulse mt-1 block">
-                          Mengompresi gambar bukti...
-                        </span>
-                      )}
-                      {registerPaymentProof && (
-                        <div className="mt-2 flex items-center gap-2">
-                          <img
-                            src={registerPaymentProof}
-                            alt="Preview Bukti"
-                            className="w-16 h-12 object-cover rounded border border-amber-400/50"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setRegisterPaymentProof("")}
-                            className="text-[11px] text-rose-400 hover:underline"
-                          >
-                            Hapus &amp; Ganti
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
 

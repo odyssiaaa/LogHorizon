@@ -16,6 +16,7 @@ import { EscrowChatModal } from "@/components/escrow-chat-modal";
 import { ShareButton } from "@/components/share-button";
 import type { MarketplacePostRecord } from "@/types/community";
 import { motion } from "framer-motion";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 type MarketPost = MarketplacePostRecord;
 
@@ -505,27 +506,20 @@ function MarketModal({ canPin, onClose, onCreated }: { canPin: boolean; onClose:
   const [price, setPrice] = useState("");
   const [content, setContent] = useState("");
   const [isPinned, setIsPinned] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const imagePreview = useMemo(() => imageFile ? URL.createObjectURL(imageFile) : null, [imageFile]);
-
-  useEffect(() => () => {
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-  }, [imagePreview]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     setError("");
     try {
-      let imageUrl: string | null = null;
-      if (imageFile) {
-        const formData = new FormData();
-        formData.append("image", imageFile);
-        const uploadResponse = await fetch("/api/marketplace/image", { method: "POST", body: formData });
-        const upload = await readApiResponse<{ imageUrl: string }>(uploadResponse, "Gambar gagal diunggah.");
-        imageUrl = upload.imageUrl;
+      const imageUrl = images[0] || null;
+      let finalContent = content;
+      if (images.length > 1) {
+        const extraImgs = images.slice(1).map((img, i) => `\n\n![Foto ${i + 2}](${img})`).join("");
+        finalContent += extraImgs;
       }
       const response = await fetch("/api/posts", {
         method: "POST",
@@ -533,7 +527,7 @@ function MarketModal({ canPin, onClose, onCreated }: { canPin: boolean; onClose:
         body: JSON.stringify({
           category: "MARKETPLACE",
           title,
-          content,
+          content: finalContent,
           isPinned,
           marketData: { type, game, price: Number(price), imageUrl },
         }),
@@ -557,19 +551,18 @@ function MarketModal({ canPin, onClose, onCreated }: { canPin: boolean; onClose:
     </div>
     <label>Deskripsi<textarea required maxLength={10000} rows={4} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Jelaskan detail barang dan ketentuan transaksi…" /></label>
     {canPin && <label className="form-checkbox"><input type="checkbox" checked={isPinned} onChange={(event) => setIsPinned(event.target.checked)} /> Sematkan lapak (Premium, maks. 3)</label>}
-    <label>Foto barang (opsional)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => {
-      const file = event.target.files?.[0] ?? null;
-      if (file && (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 4 * 1024 * 1024)) {
-        setError("Gunakan gambar JPG, PNG, atau WebP dengan ukuran maksimal 4 MB.");
-        event.currentTarget.value = "";
-        setImageFile(null);
-        return;
-      }
-      setError("");
-      setImageFile(file);
-    }} /></label>
-    <p className="upload-hint">Unggah foto untuk WTS atau WTB, atau biarkan kosong jika belum ada foto.</p>
-    {imagePreview && <Image className="market-image-preview" src={imagePreview} alt="Pratinjau foto lapak" width={260} height={180} unoptimized />}
+    
+    <div>
+      <ImageUploader
+        multiple
+        maxFiles={3}
+        values={images}
+        onMultiChange={setImages}
+        label="Foto Barang / Akun (1-3 Foto Langsung dari Galeri HP/PC)"
+        description="Pilih 1 sampai 3 foto dari galeri HP atau komputer. Otomatis dikompresi (< 100 KB)."
+      />
+    </div>
+
     {error && <p className="form-error" role="alert">{error}</p>}<button className="button button-primary" disabled={saving}>{saving ? "Menerbitkan…" : "Terbitkan Lapak"}</button>
   </form></section></div>;
 }

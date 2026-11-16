@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { CheckCircle2, Lock, MessageSquare, Send, ShieldAlert, ShieldCheck, X } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 type EscrowMessage = {
   id: string;
@@ -30,6 +31,47 @@ type EscrowDetail = {
   messages: EscrowMessage[];
 };
 
+function FormattedChatMessage({ text }: { text: string }) {
+  const imageRegex = /!\[(.*?)\]\(((?:data:image\/[^)]+|https?:\/\/[^)]+|\/[^)]+))\)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = imageRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(
+        <span key={lastIndex} className="whitespace-pre-wrap">
+          {text.slice(lastIndex, match.index)}
+        </span>
+      );
+    }
+    const alt = match[1] || "Foto Bukti";
+    const src = match[2];
+    parts.push(
+      <span key={match.index} className="block my-1.5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          className="max-h-60 max-w-full rounded-lg border border-white/20 bg-black/40 object-contain shadow-md"
+        />
+      </span>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(
+      <span key={lastIndex} className="whitespace-pre-wrap">
+        {text.slice(lastIndex)}
+      </span>
+    );
+  }
+
+  return <>{parts.length > 0 ? parts : <span className="whitespace-pre-wrap">{text}</span>}</>;
+}
+
 export function EscrowChatModal({
   escrowId,
   onClose,
@@ -44,6 +86,7 @@ export function EscrowChatModal({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [inputText, setInputText] = useState("");
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -81,20 +124,25 @@ export function EscrowChatModal({
 
   async function handleSendMessage(e: FormEvent) {
     e.preventDefault();
-    if (!inputText.trim() || sending || !detail || detail.isLocked) return;
+    if ((!inputText.trim() && !attachedImage) || sending || !detail || detail.isLocked) return;
 
     setSending(true);
     try {
+      let finalMsg = inputText.trim();
+      if (attachedImage) {
+        finalMsg = finalMsg ? `${finalMsg}\n\n![Bukti Rekber](${attachedImage})` : `![Bukti Rekber](${attachedImage})`;
+      }
       const res = await fetch(`/api/escrow/${escrowId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: inputText.trim() }),
+        body: JSON.stringify({ message: finalMsg }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Gagal mengirim pesan.");
       }
       setInputText("");
+      setAttachedImage(null);
       await fetchDetail();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal mengirim pesan.");
@@ -278,7 +326,7 @@ export function EscrowChatModal({
                         : "bg-gray-100 dark:bg-[#1C1726] text-gray-900 dark:text-gray-100 rounded-bl-none border border-gray-200 dark:border-white/5"
                     }`}
                   >
-                    {msg.message}
+                    <FormattedChatMessage text={msg.message} />
                   </div>
                 </div>
               );
@@ -295,25 +343,43 @@ export function EscrowChatModal({
         ) : (
           <form
             onSubmit={handleSendMessage}
-            className="p-3 bg-gray-50 dark:bg-[#120F17] border-t border-gray-200 dark:border-[#211C2B] flex items-center gap-2"
+            className="p-3 bg-gray-50 dark:bg-[#120F17] border-t border-gray-200 dark:border-[#211C2B] flex flex-col gap-2"
           >
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Tulis pesan rekber (misal: 'Saya sudah transfer ke rekening rekber')..."
-              className="flex-1 bg-white dark:bg-[#0A070F] border border-gray-200 dark:border-[#211C2B] rounded-xl px-3.5 py-2.5 text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
-              maxLength={1000}
-              disabled={sending || actionBusy}
-            />
-            <button
-              type="submit"
-              disabled={!inputText.trim() || sending || actionBusy}
-              className="px-4 py-2.5 rounded-xl bg-[#9D4EDD] hover:bg-[#8338EC] disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 transition-all shrink-0"
-            >
-              <Send size={14} />
-              <span className="hidden sm:inline">Kirim</span>
-            </button>
+            {attachedImage && (
+              <div className="flex items-center gap-2 p-1.5 px-3 bg-[#9D4EDD]/15 border border-[#9D4EDD]/30 rounded-xl w-fit max-w-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={attachedImage} alt="Lampiran" className="w-10 h-10 object-cover rounded border border-purple-500/40" />
+                <span className="text-[11px] text-purple-300 font-medium truncate max-w-[180px]">Foto siap dikirim</span>
+                <button
+                  type="button"
+                  onClick={() => setAttachedImage(null)}
+                  className="p-1 hover:text-white text-gray-400"
+                  aria-label="Hapus Lampiran"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <ImageUploader compact onAttachment={(b64) => setAttachedImage(b64)} />
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Tulis pesan rekber (misal: 'Saya sudah transfer')..."
+                className="flex-1 bg-white dark:bg-[#0A070F] border border-gray-200 dark:border-[#211C2B] rounded-xl px-3.5 py-2.5 text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
+                maxLength={1000}
+                disabled={sending || actionBusy}
+              />
+              <button
+                type="submit"
+                disabled={(!inputText.trim() && !attachedImage) || sending || actionBusy}
+                className="px-4 py-2.5 rounded-xl bg-[#9D4EDD] hover:bg-[#8338EC] disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 transition-all shrink-0"
+              >
+                <Send size={14} />
+                <span className="hidden sm:inline">Kirim</span>
+              </button>
+            </div>
           </form>
         )}
 

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { readApiResponse } from "@/lib/api-response";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 type UserSummary = {
   id: string;
@@ -72,6 +73,47 @@ type ConversationDetail = {
   creator?: UserSummary | null;
 };
 
+function FormattedChatMessage({ text }: { text: string }) {
+  const imageRegex = /!\[(.*?)\]\(((?:data:image\/[^)]+|https?:\/\/[^)]+|\/[^)]+))\)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = imageRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(
+        <span key={lastIndex} className="whitespace-pre-wrap">
+          {text.slice(lastIndex, match.index)}
+        </span>
+      );
+    }
+    const alt = match[1] || "Gambar";
+    const src = match[2];
+    parts.push(
+      <span key={match.index} className="block my-1.5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          className="max-h-60 max-w-full rounded-lg border border-white/20 bg-black/40 object-contain shadow-md"
+        />
+      </span>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(
+      <span key={lastIndex} className="whitespace-pre-wrap">
+        {text.slice(lastIndex)}
+      </span>
+    );
+  }
+
+  return <>{parts.length > 0 ? parts : <span className="whitespace-pre-wrap">{text}</span>}</>;
+}
+
 export function MessagesView() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
@@ -82,6 +124,7 @@ export function MessagesView() {
   const [activeDetail, setActiveDetail] = useState<ConversationDetail | null>(null);
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [messageInput, setMessageInput] = useState("");
+  const [chatAttachment, setChatAttachment] = useState<string | null>(null);
   const [loadingList, setLoadingList] = useState(true);
   const [loadingChat, setLoadingChat] = useState(false);
   const [sending, setSending] = useState(false);
@@ -248,11 +291,16 @@ export function MessagesView() {
   // Send message
   async function handleSendMessage(e: FormEvent) {
     e.preventDefault();
-    const content = messageInput.trim();
-    if (!content || !activeConvId || sending) return;
+    const text = messageInput.trim();
+    if ((!text && !chatAttachment) || !activeConvId || sending) return;
 
     setSending(true);
+    let content = text;
+    if (chatAttachment) {
+      content = content ? `${content}\n\n![Gambar](${chatAttachment})` : `![Gambar](${chatAttachment})`;
+    }
     setMessageInput("");
+    setChatAttachment(null);
 
     try {
       const res = await fetch(`/api/conversations/${activeConvId}/messages`, {
@@ -675,7 +723,7 @@ export function MessagesView() {
                               : "bg-gray-100 dark:bg-[#1C1726] text-gray-900 dark:text-gray-100 rounded-bl-xs border border-gray-200/50 dark:border-white/5"
                           }`}
                         >
-                          <p className="whitespace-pre-wrap">{msg.content}</p>
+                          <div><FormattedChatMessage text={msg.content} /></div>
                           <span
                             className={`text-[10px] block mt-1 text-right ${
                               isMe ? "text-purple-200/80" : "text-gray-400"
@@ -697,23 +745,41 @@ export function MessagesView() {
               {/* Chat Send Form */}
               <form
                 onSubmit={handleSendMessage}
-                className="p-3 border-t border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex items-center gap-2"
+                className="p-3 border-t border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col gap-2"
               >
-                <input
-                  type="text"
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  placeholder="Ketik pesan..."
-                  className="flex-1 h-10 px-3.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#16121E] text-xs sm:text-sm focus:border-[#9D4EDD] focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  disabled={!messageInput.trim() || sending}
-                  className="button button-primary h-10 px-4 rounded-xl font-bold inline-flex items-center gap-1.5"
-                >
-                  <Send size={15} />
-                  <span className="hidden sm:inline">Kirim</span>
-                </button>
+                {chatAttachment && (
+                  <div className="flex items-center gap-2 p-1.5 px-3 bg-[#9D4EDD]/15 border border-[#9D4EDD]/30 rounded-xl w-fit max-w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={chatAttachment} alt="Lampiran" className="w-10 h-10 object-cover rounded border border-purple-500/40" />
+                    <span className="text-[11px] text-purple-300 font-medium truncate max-w-[180px]">Foto siap dikirim</span>
+                    <button
+                      type="button"
+                      onClick={() => setChatAttachment(null)}
+                      className="p-1 hover:text-white text-gray-400"
+                      aria-label="Hapus Lampiran"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <ImageUploader compact onAttachment={(b64) => setChatAttachment(b64)} />
+                  <input
+                    type="text"
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    placeholder="Ketik pesan..."
+                    className="flex-1 h-10 px-3.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#16121E] text-xs sm:text-sm focus:border-[#9D4EDD] focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={(!messageInput.trim() && !chatAttachment) || sending}
+                    className="button button-primary h-10 px-4 rounded-xl font-bold inline-flex items-center gap-1.5"
+                  >
+                    <Send size={15} />
+                    <span className="hidden sm:inline">Kirim</span>
+                  </button>
+                </div>
               </form>
             </>
           ) : (

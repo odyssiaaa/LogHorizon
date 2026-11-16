@@ -12,6 +12,8 @@ function isPostCategory(value: string | null): value is PostCategory {
 
 function isValidUrl(value: unknown) {
   if (typeof value !== "string") return false;
+  if (value.startsWith("data:image/")) return true;
+  if (value.startsWith("/")) return true;
   try {
     const url = new URL(value);
     return url.protocol === "https:" || url.protocol === "http:";
@@ -157,7 +159,7 @@ export async function POST(request: Request) {
   }
 
   if (typeof category !== "string" || !isPostCategory(category) || category === PostCategory.MARKETPLACE) return jsonError("Kategori tidak valid.", 400);
-  if (!content || content.length > 10000) return jsonError("Isi thread wajib diisi (maksimal 10.000 karakter).", 400);
+  if (!content || content.length > 250000) return jsonError("Isi thread wajib diisi (maksimal 250.000 karakter).", 400);
   const post = await prisma.$transaction(async (tx) => {
     const created = await tx.post.create({ data: { authorId: user.id, category, title, content, isPinned } });
     await addXpInTransaction(tx, user.id, 10);
