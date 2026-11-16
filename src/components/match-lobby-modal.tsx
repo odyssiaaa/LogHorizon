@@ -3,16 +3,11 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
-  Check,
   Clock,
-  Copy,
-  Gamepad2,
-  KeyRound,
   MessageSquare,
   Send,
   ShieldAlert,
   Swords,
-  Users,
   X,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -97,16 +92,17 @@ export function MatchLobbyModal({
   const [inputText, setInputText] = useState("");
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-
-  // Custom Room State (Pinned at Top)
-  const [roomId, setRoomId] = useState("");
-  const [roomPassword, setRoomPassword] = useState("");
-  const [savingRoom, setSavingRoom] = useState(false);
-  const [copiedRoom, setCopiedRoom] = useState(false);
   const [callingReferee, setCallingReferee] = useState(false);
+  const [serverFinished, setServerFinished] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const currentUser = session?.user;
+
+  const isMatchFinished =
+    serverFinished ||
+    match?.matchStatus === "FINISHED" ||
+    Boolean(match?.winner) ||
+    Boolean(match && (match.teamA.score > 0 || match.teamB.score > 0) && match.winner);
 
   async function fetchChatData() {
     if (!match) return;
@@ -120,8 +116,9 @@ export function MatchLobbyModal({
       }
       const data = await res.json();
       setMessages(data.messages || []);
-      if (data.customRoomId !== undefined) setRoomId(data.customRoomId || "");
-      if (data.customRoomPassword !== undefined) setRoomPassword(data.customRoomPassword || "");
+      if (typeof data.isFinished === "boolean") {
+        setServerFinished(data.isFinished);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memuat ruang koordinasi.");
     } finally {
@@ -132,9 +129,10 @@ export function MatchLobbyModal({
   useEffect(() => {
     if (!isOpen || !match) return;
     setLoading(true);
+    setServerFinished(match.matchStatus === "FINISHED" || Boolean(match.winner));
     void fetchChatData();
 
-    // Polling every 3.5 seconds
+    // Polling setiap 3.5 detik untuk sinkronisasi pesan baru
     const interval = setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
         void fetchChatData();
@@ -152,7 +150,7 @@ export function MatchLobbyModal({
 
   async function handleSendMessage(e: FormEvent) {
     e.preventDefault();
-    if ((!inputText.trim() && !attachedImage) || sending || !match) return;
+    if ((!inputText.trim() && !attachedImage) || sending || !match || isMatchFinished) return;
 
     setSending(true);
     setError("");
@@ -180,37 +178,8 @@ export function MatchLobbyModal({
     }
   }
 
-  async function handleUpdateRoomCredentials() {
-    if (!match) return;
-    setSavingRoom(true);
-    setError("");
-    try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/match-chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          matchId: match.matchId,
-          action: "UPDATE_ROOM",
-          customRoomId: roomId.trim(),
-          customRoomPassword: roomPassword.trim(),
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Gagal menyimpan info room.");
-      }
-      setNotice("ID & Password Custom Room berhasil di-pin di atas ruang chat!");
-      setTimeout(() => setNotice(""), 3500);
-      await fetchChatData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal menyimpan info room.");
-    } finally {
-      setSavingRoom(false);
-    }
-  }
-
   async function handleCallReferee() {
-    if (!match) return;
+    if (!match || isMatchFinished) return;
     const confirmCall = window.confirm(
       "Apakah Anda yakin ingin memanggil Wasit / Panitia Turnamen ke ruang koordinasi ini? Notifikasi lonceng & Discord Webhook akan dikirimkan serentak ke seluruh admin."
     );
@@ -241,13 +210,6 @@ export function MatchLobbyModal({
     }
   }
 
-  function handleCopyRoomInfo() {
-    const textToCopy = `ID Room: ${roomId || "(Belum diisi)"} | Password: ${roomPassword || "(Tanpa Password)"}`;
-    navigator.clipboard.writeText(textToCopy);
-    setCopiedRoom(true);
-    setTimeout(() => setCopiedRoom(false), 2500);
-  }
-
   return (
     <div
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
@@ -266,11 +228,16 @@ export function MatchLobbyModal({
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-extrabold text-sm sm:text-base text-gray-900 dark:text-white truncate">
-                  Ruang Koordinasi Lobby / Match Room
+                  Ruang Koordinasi Match
                 </h3>
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#9D4EDD]/15 text-purple-300 border border-[#9D4EDD]/30">
                   #{match.matchId} · {match.roundName}
                 </span>
+                {isMatchFinished && (
+                  <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    ARSIP PEMERIKSAAN (READ-ONLY)
+                  </span>
+                )}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
                 <strong className="text-purple-400">{match.teamA.name || "Tim A"}</strong> VS{" "}
@@ -280,16 +247,18 @@ export function MatchLobbyModal({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleCallReferee}
-              disabled={callingReferee}
-              className="px-2.5 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/40 text-red-400 font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
-              title="Panggil Panitia/Wasit ke ruang koordinasi ini"
-            >
-              <ShieldAlert size={14} className="text-red-400 animate-pulse" />
-              <span className="hidden sm:inline">Panggil Panitia</span>
-            </button>
+            {!isMatchFinished && (
+              <button
+                type="button"
+                onClick={handleCallReferee}
+                disabled={callingReferee}
+                className="px-2.5 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/40 text-red-400 font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
+                title="Panggil Panitia/Wasit ke ruang koordinasi ini"
+              >
+                <ShieldAlert size={14} className="text-red-400 animate-pulse" />
+                <span className="hidden sm:inline">Panggil Panitia</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}
@@ -301,58 +270,15 @@ export function MatchLobbyModal({
           </div>
         </div>
 
-        {/* PINNED CUSTOM ROOM BAR (ID & PASSWORD) */}
-        <div className="p-3.5 bg-gradient-to-r from-purple-950/30 via-[#161124] to-purple-950/30 border-b border-gray-200 dark:border-[#211C2B] space-y-2">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-[#9D4EDD] flex items-center gap-1.5">
-              <Gamepad2 size={13} />
-              <span>PIN INFO CUSTOM ROOM / LOBBY IN-GAME</span>
+        {/* 24-HOUR POST-MATCH AUDIT ARCHIVE BANNER */}
+        {isMatchFinished && (
+          <div className="p-3 bg-amber-500/10 border-b border-amber-500/25 flex items-center gap-2 text-xs text-amber-300 animate-in fade-in">
+            <AlertTriangle size={16} className="text-amber-400 shrink-0" />
+            <span className="leading-snug">
+              Pertandingan ini telah selesai. Riwayat chat disimpan selama 24 jam untuk keperluan audit panitia sebelum terhapus otomatis.
             </span>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={handleCopyRoomInfo}
-                disabled={!roomId}
-                className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/10 hover:bg-white/20 text-gray-200 border border-white/10 flex items-center gap-1 transition"
-                title="Salin ID & Password Room"
-              >
-                {copiedRoom ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
-                <span>{copiedRoom ? "Tersalin!" : "Salin ID & Pass"}</span>
-              </button>
-            </div>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-            <div className="sm:col-span-5 relative">
-              <input
-                type="text"
-                value={roomId}
-                onChange={(e) => setRoomId(e.target.value)}
-                placeholder="ID Custom Room Game..."
-                className="w-full px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#120F17] text-xs font-mono text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
-              />
-            </div>
-            <div className="sm:col-span-4 relative">
-              <input
-                type="text"
-                value={roomPassword}
-                onChange={(e) => setRoomPassword(e.target.value)}
-                placeholder="Password Room (Opsional)..."
-                className="w-full px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#120F17] text-xs font-mono text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
-              />
-            </div>
-            <div className="sm:col-span-3">
-              <button
-                type="button"
-                onClick={handleUpdateRoomCredentials}
-                disabled={savingRoom}
-                className="w-full py-1.5 rounded-lg bg-[#9D4EDD] hover:bg-[#8338EC] disabled:opacity-50 text-white font-bold text-xs shadow-xs transition"
-              >
-                {savingRoom ? "Menyimpan..." : "Pin Info Room"}
-              </button>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* FEEDBACK & NOTICE */}
         {notice && (
@@ -369,7 +295,7 @@ export function MatchLobbyModal({
         )}
 
         {/* MESSAGES BODY */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3 min-h-[260px] max-h-[380px] bg-white dark:bg-[#0B0812]">
+        <div className="flex-1 p-4 overflow-y-auto space-y-3 min-h-[280px] max-h-[420px] bg-white dark:bg-[#0B0812]">
           {loading ? (
             <div className="flex items-center justify-center h-48 text-xs text-gray-400">
               Menghubungkan ke ruang koordinasi...
@@ -379,7 +305,7 @@ export function MatchLobbyModal({
               <MessageSquare size={32} className="mx-auto opacity-30 text-[#9D4EDD]" />
               <p className="font-bold text-gray-300">Ruang Koordinasi Match Siap Digunakan</p>
               <p className="text-[11px] text-gray-500 max-w-sm mx-auto">
-                Silakan koordinasikan ID Custom Room, pergantian pemain cadangan, atau unggah bukti screenshot match jika diperlukan.
+                Ruang obrolan ini terhubung otomatis antar kedua kapten tim di pertandingan ini. Gunakan untuk koordinasi lobby room, swap pemain, atau unggah bukti screenshot.
               </p>
             </div>
           ) : (
@@ -455,48 +381,54 @@ export function MatchLobbyModal({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* INPUT BAR WITH CAMERA BUTTON */}
-        <form
-          onSubmit={handleSendMessage}
-          className="p-3 bg-gray-50 dark:bg-[#120F17] border-t border-gray-200 dark:border-[#211C2B] flex flex-col gap-2"
-        >
-          {attachedImage && (
-            <div className="flex items-center gap-2 p-1.5 px-3 bg-[#9D4EDD]/15 border border-[#9D4EDD]/30 rounded-xl w-fit max-w-full">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={attachedImage} alt="Lampiran" className="w-10 h-10 object-cover rounded border border-purple-500/40" />
-              <span className="text-[11px] text-purple-300 font-medium truncate max-w-[180px]">Bukti screenshot terlampir</span>
+        {/* INPUT BAR OR READ-ONLY ARCHIVE NOTICE */}
+        {isMatchFinished ? (
+          <div className="p-3 bg-gray-50/80 dark:bg-[#120F17] border-t border-gray-200 dark:border-[#211C2B] text-center text-xs text-gray-500 font-mono">
+            🔒 Mode Arsip Pemeriksaan (Read-Only) · Pertandingan telah berakhir
+          </div>
+        ) : (
+          <form
+            onSubmit={handleSendMessage}
+            className="p-3 bg-gray-50 dark:bg-[#120F17] border-t border-gray-200 dark:border-[#211C2B] flex flex-col gap-2"
+          >
+            {attachedImage && (
+              <div className="flex items-center gap-2 p-1.5 px-3 bg-[#9D4EDD]/15 border border-[#9D4EDD]/30 rounded-xl w-fit max-w-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={attachedImage} alt="Lampiran" className="w-10 h-10 object-cover rounded border border-purple-500/40" />
+                <span className="text-[11px] text-purple-300 font-medium truncate max-w-[180px]">Bukti screenshot terlampir</span>
+                <button
+                  type="button"
+                  onClick={() => setAttachedImage(null)}
+                  className="p-1 hover:text-white text-gray-400"
+                  aria-label="Hapus Lampiran"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <ImageUploader compact onAttachment={(b64) => setAttachedImage(b64)} />
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Tulis pesan ke kapten lawan / panitia..."
+                className="flex-1 bg-white dark:bg-[#0A070F] border border-gray-200 dark:border-[#211C2B] rounded-xl px-3.5 py-2.5 text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
+                maxLength={2000}
+                disabled={sending}
+              />
               <button
-                type="button"
-                onClick={() => setAttachedImage(null)}
-                className="p-1 hover:text-white text-gray-400"
-                aria-label="Hapus Lampiran"
+                type="submit"
+                disabled={(!inputText.trim() && !attachedImage) || sending}
+                className="px-4 py-2.5 rounded-xl bg-[#9D4EDD] hover:bg-[#8338EC] disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 shadow-sm"
               >
-                <X size={14} />
+                <Send size={14} />
+                <span className="hidden sm:inline">Kirim</span>
               </button>
             </div>
-          )}
-
-          <div className="flex items-center gap-2">
-            <ImageUploader compact onAttachment={(b64) => setAttachedImage(b64)} />
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Tulis pesan ke kapten lawan / panitia (misal: 'Room sudah dibuat')..."
-              className="flex-1 bg-white dark:bg-[#0A070F] border border-gray-200 dark:border-[#211C2B] rounded-xl px-3.5 py-2.5 text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
-              maxLength={2000}
-              disabled={sending}
-            />
-            <button
-              type="submit"
-              disabled={(!inputText.trim() && !attachedImage) || sending}
-              className="px-4 py-2.5 rounded-xl bg-[#9D4EDD] hover:bg-[#8338EC] disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 shadow-sm"
-            >
-              <Send size={14} />
-              <span className="hidden sm:inline">Kirim</span>
-            </button>
-          </div>
-        </form>
+          </form>
+        )}
       </div>
     </div>
   );

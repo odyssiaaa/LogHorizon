@@ -3750,10 +3750,10 @@ export function MatchCard({
               type="button"
               onClick={() => onOpenLobby(match)}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#9D4EDD]/20 text-[#D8B4FE] hover:bg-[#9D4EDD]/40 border border-[#9D4EDD]/50 transition shadow-xs active:scale-95"
-              title="Buka Ruang Koordinasi Lobby / Custom Room (Khusus Kapten & Panitia)"
+              title="Buka Ruang Koordinasi Match (Khusus Kapten & Panitia)"
             >
               <MessageSquare size={10} />
-              <span>💬 Lobby Room</span>
+              <span>💬 Match Chat</span>
             </button>
           )}
 

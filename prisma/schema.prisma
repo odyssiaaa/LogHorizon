@@ -458,12 +458,14 @@ model MatchMessage {
   senderId     String
   content      String     @db.Text
   roleLabel    String?
+  expiresAt    DateTime?
   createdAt    DateTime   @default(now())
 
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   sender       User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([tournamentId, matchId, createdAt])
+  @@index([expiresAt])
 }
 
 

@@ -7,6 +7,15 @@ import { sanitizePlainText } from "@/lib/sanitize";
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: RouteContext) {
+  // Auto-cleanup pesan chat kedaluwarsa (> 24 jam setelah match selesai)
+  await prisma.matchMessage.deleteMany({
+    where: {
+      expiresAt: {
+        lte: new Date(),
+      },
+    },
+  }).catch(() => {});
+
   const viewer = await authenticatedUser().catch(() => null);
   const isStaff = viewer?.role === "ADMIN" || viewer?.role === "MODERATOR";
   const { id } = await params;
@@ -83,6 +92,15 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const access = await requireStaff(["ADMIN", "MODERATOR"]);
   if (access.response) return access.response;
 
+  // Auto-cleanup pesan chat kedaluwarsa (> 24 jam setelah match selesai)
+  await prisma.matchMessage.deleteMany({
+    where: {
+      expiresAt: {
+        lte: new Date(),
+      },
+    },
+  }).catch(() => {});
+
   const { id } = await params;
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
@@ -123,6 +141,16 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const matchId = data.matchId;
     if (data.resetMatch === true) {
       updatedMatches = resetMatchResult(updatedMatches, matchId);
+      // Reset status arsip kedaluwarsa jika pertandingan dibuka kembali untuk diedit ulang
+      await prisma.matchMessage.updateMany({
+        where: {
+          tournamentId: id,
+          matchId,
+        },
+        data: {
+          expiresAt: null,
+        },
+      }).catch(() => {});
     } else {
       if (typeof data.matchStatus === "string") {
         const manualOverride =
@@ -163,6 +191,21 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         const scoreB = typeof data.scoreB === "number" ? data.scoreB : undefined;
         const lossReason = (typeof data.lossReason === "string" ? data.lossReason : "NORMAL") as TournamentLossReason;
         updatedMatches = advanceMatchWinner(updatedMatches, matchId, winnerName, winnerId, scoreA, scoreB, lossReason);
+      }
+
+      // Jika pertandingan berstatus selesai atau pemenang ditentukan, tetapkan kedaluwarsa 24 jam untuk arsip audit panitia
+      if (data.matchStatus === "FINISHED" || (typeof data.winner === "string" && data.winner.trim().length > 0)) {
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await prisma.matchMessage.updateMany({
+          where: {
+            tournamentId: id,
+            matchId,
+            expiresAt: null,
+          },
+          data: {
+            expiresAt,
+          },
+        }).catch(() => {});
       }
     }
   }
