@@ -159,8 +159,81 @@ export function HorizonChatWidget() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragInfo = useRef<{ startX: number; startY: number; initialX: number; initialY: number; moved: boolean } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const rect = e.currentTarget.getBoundingClientRect();
+    dragInfo.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: rect.left,
+      initialY: rect.top,
+      moved: false,
+    };
+    setIsDragging(true);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragInfo.current) return;
+    const dx = e.clientX - dragInfo.current.startX;
+    const dy = e.clientY - dragInfo.current.startY;
+    if (Math.hypot(dx, dy) > 5) {
+      dragInfo.current.moved = true;
+    }
+    const targetX = dragInfo.current.initialX + dx;
+    const targetY = dragInfo.current.initialY + dy;
+    const maxX = Math.max(0, (typeof window !== "undefined" ? window.innerWidth : 800) - 76);
+    const maxY = Math.max(0, (typeof window !== "undefined" ? window.innerHeight : 600) - 96);
+    const clampedX = Math.max(10, Math.min(maxX, targetX));
+    const clampedY = Math.max(10, Math.min(maxY, targetY));
+    setPosition({ x: clampedX, y: clampedY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragInfo.current) return;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+    const didMove = dragInfo.current.moved;
+    dragInfo.current = null;
+    setIsDragging(false);
+    if (!didMove) {
+      setIsOpen((prev) => !prev);
+    }
+  };
+
+  const getPopupStyle = (): React.CSSProperties => {
+    if (!position || typeof window === "undefined") return {};
+    const isMobile = window.innerWidth < 640;
+    if (isMobile) {
+      return {
+        left: "1rem",
+        right: "1rem",
+        bottom: "5.5rem",
+        width: "calc(100vw - 2rem)",
+      };
+    }
+    const popupWidth = 384;
+    const popupHeight = 520;
+    let left = position.x - popupWidth + 70;
+    if (left < 16) left = 16;
+    if (left + popupWidth > window.innerWidth - 16) left = window.innerWidth - popupWidth - 16;
+
+    let top = position.y - popupHeight - 12;
+    if (top < 16) {
+      top = position.y + 90;
+      if (top + popupHeight > window.innerHeight - 16) {
+        top = window.innerHeight - popupHeight - 16;
+      }
+    }
+    return { left: `${left}px`, top: `${top}px` };
+  };
 
   // Jangan tampilkan di halaman Admin agar tidak menutupi tabel operasional
   const isAdminPage = pathname?.startsWith("/admin");
@@ -260,28 +333,88 @@ export function HorizonChatWidget() {
 
   return (
     <>
-      {/* Floating Circle Button */}
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
-        <button
-          onClick={() => setIsOpen((prev) => !prev)}
-          className={`relative group w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-200 shadow-xl focus:outline-none ${
-            isOpen
-              ? "bg-[#2E1E45] text-white border border-[#9D4EDD]/50 hover:bg-[#2A2338]"
-              : "bg-[#9D4EDD] text-white hover:bg-[#8338EC] shadow-[#9D4EDD]/35 hover:scale-105 active:scale-95"
+      {/* Draggable Tactical Chibi Guardian Mascot */}
+      <div
+        style={
+          position
+            ? { left: `${position.x}px`, top: `${position.y}px` }
+            : undefined
+        }
+        className={`fixed z-50 touch-none select-none ${
+          !position ? "bottom-4 right-4 sm:bottom-6 sm:right-6" : ""
+        }`}
+      >
+        <div
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className={`relative group cursor-grab active:cursor-grabbing transition-transform duration-200 ease-out ${
+            isDragging ? "scale-110 rotate-3 shadow-[0_0_25px_rgba(157,78,221,0.6)]" : "hover:scale-105"
           }`}
-          aria-label={isOpen ? "Tutup chat Satpam Horizon" : "Buka chat Satpam Horizon"}
-          title={isOpen ? "Tutup Chat" : "Tanya Satpam Horizon (Aura AI Guard)"}
+          title={isOpen ? "Tutup Chat Satpam AI" : "Tarik untuk memindahkan, klik untuk ngobrol dengan Satpam AI"}
         >
-          {isOpen ? (
-            <X className="size-5 sm:size-6 transition-transform group-hover:rotate-90 duration-200" />
-          ) : (
-            <>
-              <Shield className="size-5 sm:size-6 animate-pulse" />
-              {/* Online indicator dot */}
-              <span className="absolute top-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-400 border-2 border-[#130921] shadow-sm animate-pulse" />
-            </>
-          )}
-        </button>
+          {/* Chibi Tactical Guardian Mascot */}
+          <div className="relative flex flex-col items-center">
+            {/* Halo / Status indicator */}
+            <div className="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center">
+              {/* Glow ambient background */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#7C3AED] via-[#9D4EDD] to-[#4C1D95] opacity-90 blur-xs shadow-lg shadow-[#7C3AED]/40" />
+
+              {/* Mascot SVG */}
+              <svg
+                viewBox="0 0 64 64"
+                className="w-12 h-12 sm:w-14 sm:h-14 relative z-10 drop-shadow-md"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {/* Tactical Helmet Horns / Antennas */}
+                <path d="M14 26L18 32H12L14 26Z" fill="#7C3AED" stroke="#C4B5FD" strokeWidth="1.5" />
+                <path d="M50 26L46 32H52L50 26Z" fill="#7C3AED" stroke="#C4B5FD" strokeWidth="1.5" />
+
+                {/* Commander Crest Top */}
+                <path d="M26 8H38L34 16H30L26 8Z" fill="#F59E0B" stroke="#FDE68A" strokeWidth="1" />
+                <path d="M32 16V22" stroke="#A78BFA" strokeWidth="2" strokeLinecap="round" />
+
+                {/* Helmet Base Head */}
+                <rect x="16" y="18" width="32" height="30" rx="10" fill="#180E29" stroke="#7C3AED" strokeWidth="2" />
+
+                {/* Visor Background */}
+                <rect x="20" y="27" width="24" height="12" rx="4" fill="#09040F" stroke="#2E1E45" strokeWidth="1.5" />
+
+                {/* Glowing Cyber Visor / Eyes */}
+                <rect x="22" y="29" width="20" height="8" rx="2" fill="#10B981" />
+                <line x1="25" y1="33" x2="31" y2="33" stroke="#ECFDF5" strokeWidth="2" strokeLinecap="round" />
+                <line x1="33" y1="33" x2="39" y2="33" stroke="#ECFDF5" strokeWidth="2" strokeLinecap="round" />
+
+                {/* Tactical Cheek Guard */}
+                <path d="M18 38L22 43H42L46 38" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" />
+
+                {/* Chest Pauldrons / Mantle */}
+                <path d="M12 50C12 48 18 46 32 46C46 46 52 48 52 50L54 58H10L12 50Z" fill="#2E1052" stroke="#7C3AED" strokeWidth="1.5" />
+                <circle cx="32" cy="52" r="3" fill="#10B981" />
+              </svg>
+
+              {/* Online pulse badge */}
+              <span className="absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#11091D] shadow-sm animate-pulse z-20" />
+
+              {/* If open, show an X overlay indicator */}
+              {isOpen && (
+                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center z-30">
+                  <X className="size-6 text-white" />
+                </div>
+              )}
+            </div>
+
+            {/* SATPAM AI Badge */}
+            <div className="mt-1 px-2 py-0.5 rounded-none bg-[#11091D] border border-[#7C3AED] shadow-md flex items-center gap-1 z-20 pointer-events-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              <span className="text-[9px] font-mono font-bold tracking-wider text-[#A78BFA] uppercase whitespace-nowrap">
+                SATPAM AI
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Chat Popup Window */}
@@ -289,7 +422,10 @@ export function HorizonChatWidget() {
         <aside
           role="dialog"
           aria-label="Jendela Chat Satpam Horizon"
-          className="fixed bottom-20 right-4 sm:bottom-20 sm:right-5 z-50 w-[calc(100vw-2rem)] sm:w-96 h-[520px] max-h-[82vh] rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-2xl flex flex-col overflow-hidden transition-all duration-200"
+          style={getPopupStyle()}
+          className={`fixed z-50 w-[calc(100vw-2rem)] sm:w-96 h-[520px] max-h-[82vh] rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 ${
+            !position ? "bottom-20 right-4 sm:bottom-20 sm:right-5" : ""
+          }`}
         >
           {/* Header */}
           <div className="px-4 py-3 bg-gray-50 dark:bg-[#1A1524] border-b border-gray-200 dark:border-[#2E1E45] flex items-center justify-between gap-3">

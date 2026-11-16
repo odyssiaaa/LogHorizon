@@ -1094,7 +1094,7 @@ export function EventsBoard() {
   const isAdminOrMod = session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR";
 
   return (
-    <main className="events-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+    <main className="events-page py-6 sm:py-10 w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 overflow-x-hidden">
       <header className="events-heading mb-6 text-left border-b border-[#2E1E45] pb-6">
         <p className="section-kicker text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-widest mb-1.5 flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-[#7C3AED]" />
@@ -2098,7 +2098,7 @@ export function EventsBoard() {
       {/* ========================================================================= */}
       {managingTournament && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] rounded-none w-[calc(100vw-2rem)] sm:max-w-3xl max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
+          <div className="bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] rounded-none w-[calc(100vw-2rem)] sm:max-w-4xl max-h-[88vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setManagingTournament(null)}
@@ -2120,26 +2120,26 @@ export function EventsBoard() {
             </div>
 
             {/* TAB SELECTOR DALAM MODAL */}
-            <div className="flex items-center justify-between gap-2 border-b border-gray-200 dark:border-[#2E1E45] pb-2 mb-4 overflow-x-auto scrollbar-none">
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-[#2E1E45] pb-3 mb-4">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setManageTab("scores")}
-                  className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 ${
+                  className={`px-3 py-1.5 rounded-none text-xs font-mono font-bold tracking-wider uppercase border transition ${
                     manageTab === "scores"
-                      ? "bg-[#9D4EDD] text-white"
-                      : "text-gray-400 hover:text-white"
+                      ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
+                      : "bg-[#11091D] text-[#A78BFA] border-[#2A1B42] hover:text-[#F8FAFC] hover:border-[#7C3AED]"
                   }`}
                 >
-                  1. Atur Skor &amp; Pemenang Match
+                  1. Update Skor &amp; Pemenang Match
                 </button>
                 <button
                   type="button"
                   onClick={() => setManageTab("teams")}
-                  className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 ${
+                  className={`px-3 py-1.5 rounded-none text-xs font-mono font-bold tracking-wider uppercase border transition ${
                     manageTab === "teams"
-                      ? "bg-[#9D4EDD] text-white"
-                      : "text-gray-400 hover:text-white"
+                      ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
+                      : "bg-[#11091D] text-[#A78BFA] border-[#2A1B42] hover:text-[#F8FAFC] hover:border-[#7C3AED]"
                   }`}
                 >
                   2. Daftar Tim &amp; Roster Pemain
@@ -2147,22 +2147,22 @@ export function EventsBoard() {
                 <button
                   type="button"
                   onClick={() => setManageTab("settings")}
-                  className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-none text-xs font-mono font-bold tracking-wider uppercase border transition flex items-center gap-1.5 ${
                     manageTab === "settings"
-                      ? "bg-[#9D4EDD] text-white"
-                      : "text-gray-400 hover:text-white"
+                      ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
+                      : "bg-[#11091D] text-[#A78BFA] border-[#2A1B42] hover:text-[#F8FAFC] hover:border-[#7C3AED]"
                   }`}
                 >
                   <Settings size={13} />
-                  <span>3. Pengaturan Slot &amp; Biaya</span>
+                  <span>3. Pengaturan Bagan &amp; Slot</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setManageTab("verifications")}
-                  className={`px-3 py-1.5 rounded text-xs font-bold shrink-0 flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-none text-xs font-mono font-bold tracking-wider uppercase border transition flex items-center gap-1.5 ${
                     manageTab === "verifications"
-                      ? "bg-[#9D4EDD] text-white"
-                      : "text-gray-400 hover:text-white"
+                      ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
+                      : "bg-[#11091D] text-[#A78BFA] border-[#2A1B42] hover:text-[#F8FAFC] hover:border-[#7C3AED]"
                   }`}
                 >
                   <ShieldCheck size={13} />
@@ -2170,7 +2170,7 @@ export function EventsBoard() {
                   {(() => {
                     const pendingCount = managingTournament.participants?.filter((p) => p.paymentStatus === "PENDING_PAYMENT").length || 0;
                     return pendingCount > 0 ? (
-                      <span className="ml-1 px-1.5 py-0.2 rounded-full text-[9px] font-black bg-amber-400 text-black">
+                      <span className="ml-1 px-1.5 py-0.2 rounded-none text-[9px] font-black bg-amber-400 text-black">
                         {pendingCount} PENDING
                       </span>
                     ) : null;
@@ -2183,7 +2183,7 @@ export function EventsBoard() {
                 <button
                   type="button"
                   onClick={() => handleGachaBracket(managingTournament)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold border border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 shrink-0 flex items-center gap-1.5 transition ml-2 shadow-xs"
+                  className="px-3 py-1.5 rounded-none text-xs font-mono font-bold border border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 shrink-0 flex items-center gap-1.5 transition ml-auto shadow-xs"
                   title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
                 >
                   <Dices size={13} className="text-amber-400" />
@@ -2217,7 +2217,7 @@ export function EventsBoard() {
                 <div className="space-y-3">
                   {/* SEARCH & QUICK FILTER BAR */}
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-200 dark:border-[#2E1E45]">
-                    <div className="relative flex-1">
+                    <div className="relative flex-1 min-w-[220px]">
                       <div className="flex items-center gap-2.5 px-3.5 h-10 rounded-none border border-gray-300 dark:border-[#2E1E45] bg-white dark:bg-[#130921] focus-within:border-[#9D4EDD] focus-within:ring-1 focus-within:ring-[#9D4EDD] transition-all">
                         <Search size={15} className="text-gray-400 shrink-0" />
                         <input
@@ -2339,257 +2339,251 @@ export function EventsBoard() {
                       filteredMatches.map((m) => (
                         <div
                           key={m.matchId}
-                          className="p-3.5 rounded-lg border border-gray-200 dark:border-[#2E1E45] bg-gray-50 dark:bg-[#181324] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                          className="p-4 rounded-none border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED]/60 transition-all flex flex-col gap-3"
                         >
-                          <div>
-                            <span className="text-[10px] font-mono text-purple-400 font-bold uppercase">
-                              {m.roundName} (Match #{m.matchId})
-                            </span>
-                            <div className="flex items-center gap-3 text-sm font-bold text-gray-900 dark:text-white mt-1">
-                              <span className={m.winner === m.teamA.name ? "text-emerald-400 font-black" : ""}>
-                                {m.teamA.name || "TBD"}
+                          {/* BARIS 1: Header Match, Jadwal Langsung, Status Live */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-[#2A1B42]">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[11px] font-mono font-bold text-[#A78BFA] uppercase tracking-wider">
+                                #{m.matchId.toUpperCase()} • {m.roundName}
                               </span>
-                              <span className="text-xs text-gray-400">VS</span>
-                              <span className={m.winner === m.teamB.name ? "text-emerald-400 font-black" : ""}>
-                                {m.teamB.name || "TBD"}
-                              </span>
-                            </div>
-                            {m.winner && (
-                              <p className="text-[11px] text-emerald-400 font-mono mt-0.5 flex items-center gap-1.5">
-                                <span>✔ Pemenang: <strong>{m.winner}</strong></span>
-                                {m.lossReason === "WO" && (
-                                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
-                                    MENANG WO
-                                  </span>
-                                )}
-                                {m.lossReason === "DQ" && (
-                                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-red-500/20 text-red-300 font-bold border border-red-500/30">
-                                    LAWAN DQ
-                                  </span>
-                                )}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded">
-                              <input
-                                type="number"
-                                min={0}
-                                max={99}
-                                value={m.teamA.score}
-                                onChange={(e) => {
-                                  const val = Number(e.target.value);
-                                  setManageMatches((prev) =>
-                                    prev.map((match) =>
-                                      match.matchId === m.matchId
-                                        ? { ...match, teamA: { ...match.teamA, score: val } }
-                                        : match
-                                    )
-                                  );
-                                }}
-                                className="w-10 text-center py-1 rounded bg-white dark:bg-[#130921] text-xs font-bold border border-gray-300 dark:border-gray-700"
-                              />
-                              <span className="text-xs text-gray-400">-</span>
-                              <input
-                                type="number"
-                                min={0}
-                                max={99}
-                                value={m.teamB.score}
-                                onChange={(e) => {
-                                  const val = Number(e.target.value);
-                                  setManageMatches((prev) =>
-                                    prev.map((match) =>
-                                      match.matchId === m.matchId
-                                        ? { ...match, teamB: { ...match.teamB, score: val } }
-                                        : match
-                                    )
-                                  );
-                                }}
-                                className="w-10 text-center py-1 rounded bg-white dark:bg-[#130921] text-xs font-bold border border-gray-300 dark:border-gray-700"
-                              />
+                              {m.winner && (
+                                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-none bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                  <span>✔ Pemenang: <strong>{m.winner}</strong></span>
+                                  {m.lossReason === "WO" && <span className="text-amber-400 font-bold ml-1">(WO)</span>}
+                                  {m.lossReason === "DQ" && <span className="text-rose-400 font-bold ml-1">(DQ)</span>}
+                                </span>
+                              )}
                             </div>
 
-                            {/* Flexible Status Toggle Button */}
-                            {m.matchStatus === "LIVE" ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = updateMatchStatus(manageMatches, m.matchId, "UPCOMING", true);
-                                  setManageMatches(updated);
-                                  if (managingTournament) {
-                                    fetch(`/api/tournaments/${managingTournament.id}`, {
-                                      method: "PATCH",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ matchId: m.matchId, matchStatus: "UPCOMING", manualOverride: true }),
-                                    }).catch(() => {});
-                                  }
-                                }}
-                                className="px-2.5 py-1.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition flex items-center gap-1"
-                                title="Batalkan status live dan kembali ke jadwal menunggu"
-                              >
-                                ⏸ Batalkan Live (Kembali Menunggu)
-                              </button>
-                            ) : (m.matchStatus === "FINISHED" || Boolean(m.winner)) ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = resetMatchResult(manageMatches, m.matchId);
-                                  setManageMatches(updated);
-                                  if (managingTournament) {
-                                    fetch(`/api/tournaments/${managingTournament.id}`, {
-                                      method: "PATCH",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ matchId: m.matchId, resetMatch: true }),
-                                    }).catch(() => {});
-                                  }
-                                }}
-                                className="px-2.5 py-1.5 rounded text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition flex items-center gap-1"
-                                title="Buka kembali kunci match & reset pemenang"
-                              >
-                                ↺ Edit Ulang Match
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = updateMatchStatus(manageMatches, m.matchId, "LIVE");
-                                  setManageMatches(updated);
-                                  if (managingTournament) {
-                                    fetch(`/api/tournaments/${managingTournament.id}`, {
-                                      method: "PATCH",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ matchId: m.matchId, matchStatus: "LIVE" }),
-                                    }).catch(() => {});
-                                  }
-                                }}
-                                className="px-2.5 py-1.5 rounded text-[11px] font-bold bg-red-500/20 text-red-300 border border-red-500/40 hover:bg-red-500/30 transition flex items-center gap-1"
-                                title="Mulai pertandingan dan tandai sedang live"
-                              >
-                                🔴 Set Live
-                              </button>
-                            )}
-
-                            {/* Tim A Outcome Options */}
-                            <div className="flex items-center gap-1 bg-purple-500/10 p-1 rounded border border-purple-500/20">
-                              <span className="text-[10px] font-mono font-bold text-purple-300 px-1">Tim A:</span>
-                              <button
-                                type="button"
-                                onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score, "NORMAL")}
-                                className="px-2 py-1 rounded text-[10px] font-bold bg-purple-500/20 text-purple-200 hover:bg-purple-500/40 transition"
-                                title="Menang skor normal"
-                              >
-                                Skor ➔
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score, "WO")}
-                                className="px-2 py-1 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition"
-                                title="Menang WO (Lawan Tidak Hadir)"
-                              >
-                                Menang WO
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score, "DQ")}
-                                className="px-2 py-1 rounded text-[10px] font-bold bg-red-500/20 text-red-300 hover:bg-red-500/30 transition"
-                                title="Menang DQ (Lawan Diskualifikasi)"
-                              >
-                                Menang DQ
-                              </button>
-                            </div>
-
-                            {/* Tim B Outcome Options */}
-                            <div className="flex items-center gap-1 bg-purple-500/10 p-1 rounded border border-purple-500/20">
-                              <span className="text-[10px] font-mono font-bold text-purple-300 px-1">Tim B:</span>
-                              <button
-                                type="button"
-                                onClick={() => handleSelectWinner(m.matchId, m.teamB.name, m.teamB.id, m.teamA.score, m.teamB.score, "NORMAL")}
-                                className="px-2 py-1 rounded text-[10px] font-bold bg-purple-500/20 text-purple-200 hover:bg-purple-500/40 transition"
-                                title="Menang skor normal"
-                              >
-                                Skor ➔
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleSelectWinner(m.matchId, m.teamB.name, m.teamB.id, m.teamA.score, m.teamB.score, "WO")}
-                                className="px-2 py-1 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition"
-                                title="Menang WO (Lawan Tidak Hadir)"
-                              >
-                                Menang WO
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleSelectWinner(m.matchId, m.teamB.name, m.teamB.id, m.teamA.score, m.teamB.score, "DQ")}
-                                className="px-2 py-1 rounded text-[10px] font-bold bg-red-500/20 text-red-300 hover:bg-red-500/30 transition"
-                                title="Menang DQ (Lawan Diskualifikasi)"
-                              >
-                                Menang DQ
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Individual Match Schedule Row */}
-                          <div className="w-full flex items-center justify-between gap-2 pt-2 border-t border-gray-200 dark:border-white/5 flex-wrap text-xs">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <Clock size={12} className="text-[#9D4EDD]" />
-                              <span className="text-[10px] font-mono uppercase font-bold text-gray-500 dark:text-gray-400">
-                                Jadwal:
-                              </span>
-                              <input
-                                type="datetime-local"
-                                value={isoToDateTimeLocal(m.scheduledAt)}
-                                onChange={(e) => {
-                                  const iso = dateTimeLocalToIso(e.target.value);
-                                  const updated = manageMatches.map((match) =>
-                                    match.matchId === m.matchId ? { ...match, scheduledAt: iso, manualOverride: false } : match
-                                  );
-                                  setManageMatches(updated);
-                                  if (managingTournament) {
-                                    fetch(`/api/tournaments/${managingTournament.id}`, {
-                                      method: "PATCH",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ matchId: m.matchId, scheduledAt: iso, manualOverride: false }),
-                                    }).catch(() => {});
-                                  }
-                                }}
-                                className="px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#130921] text-[11px] font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                              />
-                              {m.scheduledAt && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
+                            {/* Tengah & Kanan: Jadwal Match Langsung & Toggle Status */}
+                            <div className="flex items-center gap-2 flex-wrap ml-auto">
+                              <div className="flex items-center gap-1.5 bg-[#180E2B] px-2 py-1 border border-[#2A1B42]">
+                                <Clock size={12} className="text-[#A78BFA]" />
+                                <span className="text-[10px] font-mono text-[#A78BFA] uppercase">Jadwal:</span>
+                                <input
+                                  type="datetime-local"
+                                  value={isoToDateTimeLocal(m.scheduledAt)}
+                                  onChange={(e) => {
+                                    const iso = dateTimeLocalToIso(e.target.value);
                                     const updated = manageMatches.map((match) =>
-                                      match.matchId === m.matchId ? { ...match, scheduledAt: null, manualOverride: false } : match
+                                      match.matchId === m.matchId ? { ...match, scheduledAt: iso, manualOverride: false } : match
                                     );
                                     setManageMatches(updated);
                                     if (managingTournament) {
                                       fetch(`/api/tournaments/${managingTournament.id}`, {
                                         method: "PATCH",
                                         headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ matchId: m.matchId, scheduledAt: null, manualOverride: false }),
+                                        body: JSON.stringify({ matchId: m.matchId, scheduledAt: iso, manualOverride: false }),
                                       }).catch(() => {});
                                     }
                                   }}
-                                  className="p-1 rounded text-gray-400 hover:text-white"
-                                  title="Hapus jadwal"
+                                  className="bg-transparent text-[11px] font-mono text-[#F8FAFC] focus:outline-none"
+                                />
+                                {m.scheduledAt && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = manageMatches.map((match) =>
+                                        match.matchId === m.matchId ? { ...match, scheduledAt: null, manualOverride: false } : match
+                                      );
+                                      setManageMatches(updated);
+                                      if (managingTournament) {
+                                        fetch(`/api/tournaments/${managingTournament.id}`, {
+                                          method: "PATCH",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ matchId: m.matchId, scheduledAt: null, manualOverride: false }),
+                                        }).catch(() => {});
+                                      }
+                                    }}
+                                    className="text-rose-400 hover:text-rose-300 ml-1 cursor-pointer"
+                                    title="Hapus jadwal spesifik match ini"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Live / Reset Toggle */}
+                              {m.matchStatus === "LIVE" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = updateMatchStatus(manageMatches, m.matchId, "UPCOMING", true);
+                                    setManageMatches(updated);
+                                    if (managingTournament) {
+                                      fetch(`/api/tournaments/${managingTournament.id}`, {
+                                        method: "PATCH",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ matchId: m.matchId, matchStatus: "UPCOMING", manualOverride: true }),
+                                      }).catch(() => {});
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 rounded-none text-[11px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition flex items-center gap-1.5 cursor-pointer"
+                                  title="Batalkan status live dan kembali ke jadwal menunggu"
                                 >
-                                  <X size={12} />
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                                  <span>⏸ Batal Live</span>
+                                </button>
+                              ) : (m.matchStatus === "FINISHED" || Boolean(m.winner)) ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = resetMatchResult(manageMatches, m.matchId);
+                                    setManageMatches(updated);
+                                    if (managingTournament) {
+                                      fetch(`/api/tournaments/${managingTournament.id}`, {
+                                        method: "PATCH",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ matchId: m.matchId, resetMatch: true }),
+                                      }).catch(() => {});
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 rounded-none text-[11px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition flex items-center gap-1.5 cursor-pointer"
+                                  title="Buka kembali kunci match & reset pemenang"
+                                >
+                                  <span>↺ Edit Ulang Match</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = updateMatchStatus(manageMatches, m.matchId, "LIVE");
+                                    setManageMatches(updated);
+                                    if (managingTournament) {
+                                      fetch(`/api/tournaments/${managingTournament.id}`, {
+                                        method: "PATCH",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ matchId: m.matchId, matchStatus: "LIVE" }),
+                                      }).catch(() => {});
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 rounded-none text-[11px] font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30 transition flex items-center gap-1.5 cursor-pointer"
+                                  title="Mulai pertandingan dan tandai sedang live"
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                  <span>🔴 Set Live</span>
                                 </button>
                               )}
                             </div>
+                          </div>
 
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {m.scheduledAt && (
-                                <span className="text-[10px] font-mono text-purple-300 bg-purple-500/10 border border-purple-500/30 px-2 py-0.5 rounded">
-                                  {formatMatchScheduleDisplay(m.scheduledAt, m.schedule, m.manualOverride).badgeText}
+                          {/* BARIS 2: Skor Tim & Aksi Pemenang */}
+                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                            {/* Skor Tim A vs Tim B */}
+                            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs sm:text-sm font-bold ${m.winner === m.teamA.name ? "text-emerald-400" : "text-[#F8FAFC]"}`}>
+                                  {m.teamA.name || "TBD"}
                                 </span>
-                              )}
-                              {m.manualOverride && (
-                                <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded">
-                                  Override Manual Aktif
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={99}
+                                  value={m.teamA.score}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    setManageMatches((prev) =>
+                                      prev.map((match) =>
+                                        match.matchId === m.matchId
+                                          ? { ...match, teamA: { ...match.teamA, score: val } }
+                                          : match
+                                      )
+                                    );
+                                  }}
+                                  className="w-14 text-center py-1.5 rounded-none font-bold font-mono bg-[#11091D] border border-[#2A1B42] text-sm text-[#F8FAFC] focus:border-[#7C3AED] focus:outline-none"
+                                />
+                              </div>
+
+                              <span className="text-xs font-mono font-bold text-[#A78BFA] px-1">VS</span>
+
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={99}
+                                  value={m.teamB.score}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    setManageMatches((prev) =>
+                                      prev.map((match) =>
+                                        match.matchId === m.matchId
+                                          ? { ...match, teamB: { ...match.teamB, score: val } }
+                                          : match
+                                      )
+                                    );
+                                  }}
+                                  className="w-14 text-center py-1.5 rounded-none font-bold font-mono bg-[#11091D] border border-[#2A1B42] text-sm text-[#F8FAFC] focus:border-[#7C3AED] focus:outline-none"
+                                />
+                                <span className={`text-xs sm:text-sm font-bold ${m.winner === m.teamB.name ? "text-emerald-400" : "text-[#F8FAFC]"}`}>
+                                  {m.teamB.name || "TBD"}
                                 </span>
-                              )}
+                              </div>
+                            </div>
+
+                            {/* Tombol Aksi Pemenang */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {/* Tim A Winner Options */}
+                              <div className="flex items-center gap-1 bg-[#1A0E2E] p-1 border border-[#2E1E45]">
+                                <span className="text-[10px] font-mono font-bold text-[#A78BFA] px-1 truncate max-w-[80px]" title={m.teamA.name || "Tim A"}>
+                                  {m.teamA.name || "Tim A"}:
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score, "NORMAL")}
+                                  className="px-2 py-1 text-[10px] font-mono font-bold bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] transition cursor-pointer"
+                                  title="Simpan skor & tetapkan Tim A sebagai pemenang"
+                                >
+                                  ✓ Simpan Skor
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score, "WO")}
+                                  className="px-2 py-1 text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 transition cursor-pointer"
+                                  title="Menang WO (Lawan Tidak Hadir)"
+                                >
+                                  Menang WO
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score, "DQ")}
+                                  className="px-2 py-1 text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/40 transition cursor-pointer"
+                                  title="Menang DQ (Lawan Diskualifikasi)"
+                                >
+                                  Menang DQ
+                                </button>
+                              </div>
+
+                              {/* Tim B Winner Options */}
+                              <div className="flex items-center gap-1 bg-[#1A0E2E] p-1 border border-[#2E1E45]">
+                                <span className="text-[10px] font-mono font-bold text-[#A78BFA] px-1 truncate max-w-[80px]" title={m.teamB.name || "Tim B"}>
+                                  {m.teamB.name || "Tim B"}:
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectWinner(m.matchId, m.teamB.name, m.teamB.id, m.teamA.score, m.teamB.score, "NORMAL")}
+                                  className="px-2 py-1 text-[10px] font-mono font-bold bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] transition cursor-pointer"
+                                  title="Simpan skor & tetapkan Tim B sebagai pemenang"
+                                >
+                                  ✓ Simpan Skor
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectWinner(m.matchId, m.teamB.name, m.teamB.id, m.teamA.score, m.teamB.score, "WO")}
+                                  className="px-2 py-1 text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 transition cursor-pointer"
+                                  title="Menang WO (Lawan Tidak Hadir)"
+                                >
+                                  Menang WO
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectWinner(m.matchId, m.teamB.name, m.teamB.id, m.teamA.score, m.teamB.score, "DQ")}
+                                  className="px-2 py-1 text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/40 transition cursor-pointer"
+                                  title="Menang DQ (Lawan Diskualifikasi)"
+                                >
+                                  Menang DQ
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>

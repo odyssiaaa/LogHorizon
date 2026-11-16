@@ -26,6 +26,13 @@ const categories: { id: Category; slug: string; label: string; description: stri
   { id: "FEEDBACK", slug: "f/feedback", label: "Aspirasi & Saran", description: "Bantu LogHorizon jadi guild yang lebih baik." },
 ];
 
+function parsePostContent(content: string): { cleanText: string; imageUrl: string | null } {
+  const match = content.match(/!\[(.*?)\]\(((?:data:image\/[^)]+|https?:\/\/[^)]+|\/[^)]+))\)/);
+  const imageUrl = match ? match[2] : null;
+  const cleanText = content.replace(/!\[.*?\]\([^)]+\)/g, "").trim();
+  return { cleanText, imageUrl };
+}
+
 export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [category, setCategory] = useState<Category>("GENERAL_CHAT");
   const [posts, setPosts] = useState<ForumPostRecord[]>([]);
@@ -39,6 +46,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [loginAction, setLoginAction] = useState("");
   const [reportId, setReportId] = useState<string | null>(null);
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const [liveState, setLiveState] = useState<LiveState>("live");
   const [liveError, setLiveError] = useState("");
   const { data: session, status } = useSession();
@@ -189,7 +197,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   }
 
   return (
-    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+    <main className="community-page py-6 sm:py-10 w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 overflow-x-hidden">
       <div>
         <div className="forum-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 border-b border-[#2E1E45] pb-6">
           <div className="text-left">
@@ -374,7 +382,34 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                       <Link className="block text-base sm:text-lg font-display font-bold uppercase tracking-tight break-words text-[#F8FAFC] hover:text-[#A78BFA] transition-colors leading-snug" href={`/forum/${post.id}`}>
                         {post.title}
                       </Link>
-                      <p className="text-xs sm:text-sm text-[#A78BFA] font-sans break-words leading-relaxed mt-1.5 line-clamp-2">{post.content}</p>
+                      {(() => {
+                        const { cleanText, imageUrl } = parsePostContent(post.content);
+                        return (
+                          <>
+                            {cleanText ? (
+                              <p className="text-xs sm:text-sm text-[#A78BFA] font-sans break-words leading-relaxed mt-1.5 line-clamp-2">
+                                {cleanText}
+                              </p>
+                            ) : null}
+                            {imageUrl && (
+                              <div className="mt-2.5">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={imageUrl}
+                                  alt="Lampiran Forum"
+                                  loading="lazy"
+                                  className="max-h-60 sm:max-h-80 w-auto rounded-lg border border-[#2A1B42] bg-[#09040F] object-contain cursor-zoom-in hover:border-[#7C3AED] transition-all shadow-md"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setLightboxImg(imageUrl);
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                       <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-[#A78BFA] font-mono mt-3 pt-2.5 border-t border-[#2E1E45]">
                         <span className="flex items-center gap-1.5">
                           <DiscordAvatar src={post.author.avatar} username={post.author.username} size={20} />
@@ -526,6 +561,27 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
       )}
       <LoginPrompt open={Boolean(loginAction)} action={loginAction} onClose={() => setLoginAction("")} />
       <ReportDialog postId={reportId} open={Boolean(reportId)} onClose={() => setReportId(null)} onSuccess={setMessage} />
+      {lightboxImg && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm cursor-zoom-out"
+          onClick={() => setLightboxImg(null)}
+        >
+          <div className="relative max-h-[90vh] max-w-[90vw] flex flex-col items-center">
+            <button
+              onClick={() => setLightboxImg(null)}
+              className="absolute -top-10 right-0 text-[#A78BFA] hover:text-[#F8FAFC] font-mono text-xs flex items-center gap-1.5 bg-[#1A0E2E] border border-[#2E1E45] px-3 py-1 cursor-pointer"
+            >
+              <X size={14} /> TUTUP [ESC]
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={lightboxImg}
+              alt="Preview Zoom Lightbox"
+              className="max-h-[85vh] max-w-full rounded-none border border-[#7C3AED] object-contain shadow-2xl bg-[#09040F]"
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

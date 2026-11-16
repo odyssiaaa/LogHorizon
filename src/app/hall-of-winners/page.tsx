@@ -126,7 +126,7 @@ export default async function HallOfWinnersPage() {
   combined.sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
 
   return (
-    <main className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden min-h-screen">
+    <main className="py-8 sm:py-12 w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 overflow-x-hidden min-h-screen">
       {/* HERO SECTION */}
       <header className="mb-8 text-left space-y-2 border-b border-[#2E1E45] pb-6">
         <p className="text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-widest flex items-center gap-1.5">

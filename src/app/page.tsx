@@ -220,12 +220,12 @@ export default async function Home() {
                 </div>
 
                 <div className="p-3 bg-[#130921] border border-[#2E1E45]">
-                  <span className="font-mono text-[10px] text-[#A78BFA] uppercase block">KAS TERVERIFIKASI</span>
+                  <span className="font-mono text-[10px] text-[#A78BFA] uppercase block">ESCROW &amp; REKBER</span>
                   <strong className="font-mono text-xl sm:text-2xl font-bold text-[#10B981] block mt-0.5">
-                    {formatRupiah(verifiedKas)}
+                    {escrowCount > 0 ? `${escrowCount} Transaksi` : "100% Aman"}
                   </strong>
-                  <span className="font-mono text-[10px] text-[#A78BFA] mt-0.5 block">
-                    {escrowCount > 0 ? `${escrowCount} TRX Rekber Terlindungi` : "100% Kas Terbuka"}
+                  <span className="font-mono text-[10px] text-[#10B981] mt-0.5 block">
+                    ● Kas Guild Terlindungi
                   </span>
                 </div>
               </div>

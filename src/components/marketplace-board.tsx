@@ -281,7 +281,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   }
 
   return (
-    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+    <main className="community-page py-6 sm:py-10 w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 overflow-x-hidden">
       <div>
         <div className="market-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 border-b border-[#2E1E45] pb-6">
           <div className="text-left">

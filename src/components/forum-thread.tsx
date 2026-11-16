@@ -35,7 +35,7 @@ type ThreadRecord = {
   comments: CommentRecord[];
 };
 
-function FormattedPostContent({ text }: { text: string }) {
+function FormattedPostContent({ text, onImageClick }: { text: string; onImageClick?: (src: string) => void }) {
   const imageRegex = /!\[(.*?)\]\(((?:data:image\/[^)]+|https?:\/\/[^)]+|\/[^)]+))\)/g;
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -58,7 +58,8 @@ function FormattedPostContent({ text }: { text: string }) {
           src={src}
           alt={alt}
           loading="lazy"
-          className="max-h-96 max-w-full rounded-none border border-[#2E1E45] bg-[#09040F] object-contain shadow-md"
+          className="mt-2 max-h-80 w-auto rounded-lg border border-[#2A1B42] bg-[#09040F] object-contain cursor-zoom-in hover:border-[#7C3AED] transition-all shadow-md"
+          onClick={() => onImageClick?.(src)}
         />
       </span>
     );
@@ -88,6 +89,7 @@ export function ForumThread({ id }: { id: string }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [loginAction, setLoginAction] = useState("");
   const [reportOpen, setReportOpen] = useState(false);
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const { data: session } = useSession();
   const user = session?.user;
 
@@ -204,7 +206,7 @@ export function ForumThread({ id }: { id: string }) {
             ) : null}
             <time className="text-[11px] font-mono text-[#A78BFA]/70">{new Date(item.createdAt).toLocaleString("id-ID")}</time>
           </div>
-          <div className="break-words mt-2 text-xs sm:text-sm leading-relaxed text-[#F8FAFC]/90 font-sans"><FormattedPostContent text={item.content} /></div>
+          <div className="break-words mt-2 text-xs sm:text-sm leading-relaxed text-[#F8FAFC]/90 font-sans"><FormattedPostContent text={item.content} onImageClick={setLightboxImg} /></div>
           {!user?.isBanned && (
             <button
               className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-mono text-[#A78BFA] hover:text-[#F8FAFC] uppercase tracking-wider"
@@ -243,7 +245,7 @@ export function ForumThread({ id }: { id: string }) {
   ));
 
   return (
-    <main className="community-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full max-w-full overflow-x-hidden">
+    <main className="community-page py-8 sm:py-12 w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 overflow-x-hidden">
       <div className="page-shell px-0 sm:px-0 thread-layout">
         <div>
           <Link className="back-link inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#A78BFA] hover:text-[#F8FAFC] mb-4 uppercase tracking-wider" href="/forum">
@@ -279,7 +281,7 @@ export function ForumThread({ id }: { id: string }) {
             </div>
             <PostReactions postId={thread.id} likes={thread.likes} dislikes={thread.dislikes} reaction={thread.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} />
             <div className="thread-body break-words leading-relaxed text-sm sm:text-base my-5 text-[#F8FAFC]/90 font-sans">
-              <FormattedPostContent text={thread.content} />
+              <FormattedPostContent text={thread.content} onImageClick={setLightboxImg} />
             </div>
             <div className="thread-actions flex flex-wrap items-center gap-2 sm:gap-3 pt-3 border-t border-[#2E1E45]">
               <ShareButton url={`/forum/${thread.id}`} title={thread.title} text={`Baca dan diskusikan di Forum LogHorizon: ${thread.title}`} label="Bagikan Diskusi 🔗" variant="outline" />
@@ -343,6 +345,27 @@ export function ForumThread({ id }: { id: string }) {
       </div>
       <LoginPrompt open={Boolean(loginAction)} action={loginAction} onClose={() => setLoginAction("")} />
       <ReportDialog postId={id} open={reportOpen} onClose={() => setReportOpen(false)} onSuccess={setError} />
+      {lightboxImg && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm cursor-zoom-out"
+          onClick={() => setLightboxImg(null)}
+        >
+          <div className="relative max-h-[90vh] max-w-[90vw] flex flex-col items-center">
+            <button
+              onClick={() => setLightboxImg(null)}
+              className="absolute -top-10 right-0 text-[#A78BFA] hover:text-[#F8FAFC] font-mono text-xs flex items-center gap-1.5 bg-[#1A0E2E] border border-[#2E1E45] px-3 py-1 cursor-pointer"
+            >
+              <X size={14} /> TUTUP [ESC]
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={lightboxImg}
+              alt="Preview Zoom Lightbox"
+              className="max-h-[85vh] max-w-full rounded-none border border-[#7C3AED] object-contain shadow-2xl bg-[#09040F]"
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

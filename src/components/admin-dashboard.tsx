@@ -897,7 +897,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     );
 
   return (
-    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+    <main className="community-page py-6 sm:py-10 w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 overflow-x-hidden">
       <div>
         <Link href="/" className="back-link inline-flex items-center gap-1.5 text-xs font-bold text-[#9D4EDD] mb-4">
           <ArrowLeft size={15} /> Kembali ke situs

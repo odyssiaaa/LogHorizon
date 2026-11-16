@@ -151,7 +151,7 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
   const qrisUrl = treasury?.qrisImageUrl || process.env.NEXT_PUBLIC_QRIS_IMAGE_URL || "/qris-guild.png";
 
   return (
-    <main className="donate-page treasury-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden text-left">
+    <main className="donate-page treasury-page py-6 sm:py-10 w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 overflow-x-hidden text-left">
       <header className="treasury-hero mb-8 border-b border-[#2E1E45] pb-6">
         <p className="section-kicker text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-widest mb-1.5 flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-[#7C3AED]" />
@@ -163,23 +163,6 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
         <p className="muted-copy text-xs sm:text-sm md:text-base text-[#A78BFA] max-w-2xl mt-2 leading-relaxed font-sans">
           Dukung operasional server, kembangkan ekosistem, dan danai turnamen komunitas berhadiah massal. Setiap kontribusi kamu akan diverifikasi langsung oleh Admin untuk membuka kasta benefit eksklusif.
         </p>
-
-        <div className="treasury-progress mt-6 p-4 rounded-none border border-[#2E1E45] bg-[#130921]">
-          <div className="flex flex-wrap items-center justify-between gap-3 text-xs mb-3 font-mono">
-            <div>
-              <span className="text-[#A78BFA] block text-[11px] uppercase">Kas terverifikasi:</span>
-              <strong className="text-lg sm:text-xl font-black text-[#10B981]">{treasury ? formatMoney.format(treasury.total) : "Memuat…"}</strong>
-            </div>
-            <div className="text-right">
-              <span className="text-[#A78BFA] block text-[11px] uppercase">Target kas bulanan:</span>
-              <strong className="text-lg sm:text-xl font-black text-[#F8FAFC]">{treasury?.goal ? formatMoney.format(treasury.goal) : "Rp 5.000.000"}</strong>
-            </div>
-          </div>
-          <div className="w-full h-2 rounded-none bg-[#1A0E2E] border border-[#2E1E45] overflow-hidden" role="progressbar" aria-label="Progres kas komunitas" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
-            <div className="h-full bg-[#7C3AED] transition-all duration-500" style={{ width: `${progress}%` }} />
-          </div>
-          <small className="text-[11px] font-mono text-[#A78BFA] mt-2 block">{treasury?.goal ? `${Math.round(progress)}% DARI TARGET BULANAN GUILD` : "TARGET PENDANAAN OPERASIONAL GUILD"}</small>
-        </div>
       </header>
 
       {message && (
