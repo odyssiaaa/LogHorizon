@@ -38,6 +38,7 @@ import { ChampionCertificateModal } from "@/components/champion-certificate-moda
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { MatchLobbyModal } from "@/components/match-lobby-modal";
 import { BracketZoomControl } from "@/components/bracket-zoom-control";
+import { EditTournamentModal } from "@/components/edit-tournament-modal";
 
 type TournamentData = {
   id: string;
@@ -77,6 +78,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
   // Tournament Rules Gate Modal state
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [showEditTournamentModal, setShowEditTournamentModal] = useState(false);
 
   // Registration modal state
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -767,6 +769,17 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               </button>
             )}
 
+            {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && (
+              <button
+                type="button"
+                onClick={() => setShowEditTournamentModal(true)}
+                className="border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] text-xs px-3 py-2 rounded-none font-mono font-bold inline-flex items-center justify-center gap-1.5 text-[#F8FAFC] transition-all cursor-pointer"
+                title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
+              >
+                <span>✏️ Edit Turnamen</span>
+              </button>
+            )}
+
             <div className="flex items-center gap-2">
               <ShareButton
                 url={shareUrl}
@@ -832,6 +845,17 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               zoom={bracketZoomLevel}
               onZoomChange={setBracketZoomLevel}
             />
+
+            {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && (
+              <button
+                type="button"
+                onClick={() => setShowEditTournamentModal(true)}
+                className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] text-[#F8FAFC] transition-all cursor-pointer"
+                title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
+              >
+                <span>✏️ Edit Turnamen</span>
+              </button>
+            )}
 
             {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && tournament.status !== "COMPLETED" && (
               <button
@@ -1387,6 +1411,18 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         isRolling={detailGachaModalState.isRolling}
         teamsList={detailGachaModalState.teamsList}
         onFinish={() => setDetailGachaModalState((prev) => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* DEDICATED EDIT TOURNAMENT INFO MODAL */}
+      <EditTournamentModal
+        isOpen={showEditTournamentModal}
+        tournament={tournament}
+        onClose={() => setShowEditTournamentModal(false)}
+        onSuccess={(updated) => {
+          setTournament((prev) => (prev ? { ...prev, ...updated } : updated));
+          setShowEditTournamentModal(false);
+          setNotice("Informasi turnamen berhasil diperbarui!");
+        }}
       />
 
       {/* MANDATORY TOURNAMENT RULES AGREEMENT MODAL */}

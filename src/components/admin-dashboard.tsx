@@ -47,6 +47,7 @@ import { EscrowChatModal } from "@/components/escrow-chat-modal";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
+import { EditTournamentModal } from "@/components/edit-tournament-modal";
 import { RosterPlayerRow } from "@/components/roster-player-row";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
@@ -200,6 +201,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
   const [adminProofLightbox, setAdminProofLightbox] = useState<string | null>(null);
   const [adminVerificationLoading, setAdminVerificationLoading] = useState<string | null>(null);
   const [adminRulesViewModal, setAdminRulesViewModal] = useState<any | null>(null);
+  const [editTournamentModal, setEditTournamentModal] = useState<any | null>(null);
 
   // Admin Gacha Bracket Modal State
   const [adminGachaModalState, setAdminGachaModalState] = useState<{
@@ -1699,6 +1701,14 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                               <button
                                 type="button"
+                                onClick={() => setEditTournamentModal(curTournament)}
+                                className="px-3 py-2 rounded-none text-xs font-bold border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] text-[#F8FAFC] flex items-center gap-1.5 transition font-mono"
+                                title="Edit Info Turnamen (Judul, Tanggal, Hadiah, dll)"
+                              >
+                                <span>✏️ Edit Turnamen</span>
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => setAdminRulesViewModal(curTournament)}
                                 className="px-3 py-2 rounded-none text-xs font-bold border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] text-gray-700 dark:text-gray-300 hover:text-white flex items-center gap-1.5 transition"
                                 title="Lihat Peraturan Resmi Turnamen"
@@ -3122,6 +3132,21 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
           onAgree={() => setAdminRulesViewModal(null)}
         />
       )}
+
+      {/* DEDICATED EDIT TOURNAMENT MODAL FOR ADMIN */}
+      <EditTournamentModal
+        isOpen={Boolean(editTournamentModal)}
+        tournament={editTournamentModal}
+        onClose={() => setEditTournamentModal(null)}
+        onSuccess={(updated) => {
+          setTournamentsList((prev) =>
+            prev.map((t) => (t.id === updated.id ? { ...t, ...updated } : t))
+          );
+          setEditTournamentModal(null);
+          setNotice("Informasi turnamen berhasil diperbarui!");
+          fetchTournaments();
+        }}
+      />
 
       {/* MODAL BUAT TURNAMEN BARU DARI ADMIN */}
       {createTournamentOpen && (

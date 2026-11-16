@@ -51,6 +51,7 @@ import { QuickMatchScoreModal } from "@/components/quick-match-score-modal";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { MatchLobbyModal } from "@/components/match-lobby-modal";
 import { BracketZoomControl } from "@/components/bracket-zoom-control";
+import { EditTournamentModal } from "@/components/edit-tournament-modal";
 
 type Participant = {
   id: string;
@@ -206,6 +207,7 @@ export function EventsBoard() {
   const [massScheduleRound, setMassScheduleRound] = useState<number>(1);
   const [massScheduleInput, setMassScheduleInput] = useState<string>("");
   const [activeLobbyMatch, setActiveLobbyMatch] = useState<{ tournamentId: string; match: TournamentMatch } | null>(null);
+  const [editingTournament, setEditingTournament] = useState<any | null>(null);
 
   // Gacha Bracket Modal State
   const [gachaModalState, setGachaModalState] = useState<{
@@ -1338,6 +1340,18 @@ export function EventsBoard() {
                         >
                           <Dices size={14} className="text-amber-400" />
                           <span>🎲 Gacha Bagan</span>
+                        </button>
+                      )}
+
+                      {/* Edit Tournament Info Button (Admin / Mod) */}
+                      {isAdminOrMod && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingTournament(tournament)}
+                          className="border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] text-xs px-3 py-2 rounded-none font-mono font-bold inline-flex items-center gap-1.5 text-[#F8FAFC] transition-all"
+                          title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
+                        >
+                          <span>✏️ Edit Turnamen</span>
                         </button>
                       )}
 
@@ -3626,6 +3640,19 @@ export function EventsBoard() {
         isRolling={gachaModalState.isRolling}
         teamsList={gachaModalState.teamsList}
         onFinish={() => setGachaModalState((prev) => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* DEDICATED EDIT TOURNAMENT INFO MODAL */}
+      <EditTournamentModal
+        isOpen={Boolean(editingTournament)}
+        tournament={editingTournament}
+        onClose={() => setEditingTournament(null)}
+        onSuccess={(updated) => {
+          setTournaments((prev) =>
+            prev.map((t) => (t.id === updated.id ? { ...t, ...updated } : t))
+          );
+          setEditingTournament(null);
+        }}
       />
 
       {/* MANDATORY TOURNAMENT RULES AGREEMENT MODAL */}

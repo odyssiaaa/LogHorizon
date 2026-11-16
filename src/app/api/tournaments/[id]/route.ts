@@ -312,10 +312,19 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       ...(typeof data.game === "string" ? { game: data.game.trim() } : {}),
       ...(typeof data.prizePool === "string" ? { prizePool: data.prizePool.trim() } : {}),
       ...(typeof data.rules === "string" ? { rules: data.rules.trim() } : {}),
+      ...(typeof data.eventDate === "string" && !isNaN(new Date(data.eventDate).getTime())
+        ? { eventDate: new Date(data.eventDate) }
+        : {}),
       ...(typeof data.mainPlayersCount === "number" ? { mainPlayersCount: Math.max(1, Math.min(10, data.mainPlayersCount)) } : {}),
       ...(typeof data.subPlayersCount === "number" ? { subPlayersCount: Math.max(0, Math.min(5, data.subPlayersCount)) } : {}),
-      ...(typeof data.isFreeEntry === "boolean" ? { isFreeEntry: data.isFreeEntry } : {}),
-      ...(typeof data.entryFee === "number" ? { entryFee: Math.max(0, Math.min(100_000_000, data.entryFee)) } : {}),
+      ...(typeof data.isFreeEntry === "boolean"
+        ? {
+            isFreeEntry: data.isFreeEntry,
+            ...(data.isFreeEntry ? { entryFee: 0 } : typeof data.entryFee === "number" ? { entryFee: Math.max(0, Math.min(100_000_000, data.entryFee)) } : {}),
+          }
+        : typeof data.entryFee === "number"
+        ? { entryFee: Math.max(0, Math.min(100_000_000, data.entryFee)) }
+        : {}),
       ...(nextMaxSlots !== tournament.maxSlots ? { maxSlots: nextMaxSlots } : {}),
       ...(nextFormat !== tournament.format ? { format: nextFormat } : {}),
       ...(nextStatus ? { status: nextStatus } : {}),
