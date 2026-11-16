@@ -35,7 +35,51 @@ type ThreadRecord = {
   comments: CommentRecord[];
 };
 
+function formatInlineMarkdown(rawText: string): React.ReactNode[] {
+  // Bersihkan sisa tag header berulang jika ada komentar lama di database
+  const text = rawText.replace(/^(?:🛡️\s*)?(?:\*{1,2})?\[?(?:SATPAM\s*HORIZON|AI\s*GUARDIAN)[^\]]*\]?(?:\*{1,2})?\s*[:\n]*/i, "");
+  // Tokenize **bold**, *italic*, `code`
+  const tokenRegex = /(\*\*[^*]+?\*\*|\*[^*\n]+?\*|`[^`\n]+`)/g;
+  const nodes: React.ReactNode[] = [];
+  let lastIdx = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = tokenRegex.exec(text)) !== null) {
+    if (match.index > lastIdx) {
+      nodes.push(text.slice(lastIdx, match.index));
+    }
+    const token = match[0];
+    if (token.startsWith("**") && token.endsWith("**") && token.length >= 4) {
+      nodes.push(
+        <strong key={`b-${match.index}`} className="font-bold text-slate-900 dark:text-white">
+          {token.slice(2, -2)}
+        </strong>
+      );
+    } else if (token.startsWith("*") && token.endsWith("*") && token.length >= 2) {
+      nodes.push(
+        <em key={`i-${match.index}`} className="italic text-[#7C3AED] dark:text-[#C4B5FD]">
+          {token.slice(1, -1)}
+        </em>
+      );
+    } else if (token.startsWith("`") && token.endsWith("`") && token.length >= 2) {
+      nodes.push(
+        <code key={`c-${match.index}`} className="font-mono text-xs px-1.5 py-0.5 rounded bg-slate-200 dark:bg-[#1A0F2E] text-[#6D28D9] dark:text-[#A78BFA] border border-slate-300 dark:border-[#2A1B42]">
+          {token.slice(1, -1)}
+        </code>
+      );
+    }
+    lastIdx = match.index + token.length;
+  }
+
+  if (lastIdx < text.length) {
+    nodes.push(text.slice(lastIdx));
+  }
+
+  return nodes;
+}
+
 function FormattedPostContent({ text, onImageClick }: { text: string; onImageClick?: (src: string) => void }) {
+  if (!text) return null;
   const imageRegex = /!\[(.*?)\]\(((?:data:image\/[^)]+|https?:\/\/[^)]+|\/[^)]+))\)/g;
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -45,14 +89,14 @@ function FormattedPostContent({ text, onImageClick }: { text: string; onImageCli
     if (match.index > lastIndex) {
       parts.push(
         <span key={lastIndex} className="whitespace-pre-wrap">
-          {text.slice(lastIndex, match.index)}
+          {formatInlineMarkdown(text.slice(lastIndex, match.index))}
         </span>
       );
     }
     const alt = match[1] || "Lampiran gambar";
     const src = match[2];
     parts.push(
-      <span key={match.index} className="block my-2">
+      <span key={`img-${match.index}`} className="block my-2">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
@@ -69,12 +113,12 @@ function FormattedPostContent({ text, onImageClick }: { text: string; onImageCli
   if (lastIndex < text.length) {
     parts.push(
       <span key={lastIndex} className="whitespace-pre-wrap">
-        {text.slice(lastIndex)}
+        {formatInlineMarkdown(text.slice(lastIndex))}
       </span>
     );
   }
 
-  return <>{parts.length > 0 ? parts : <span className="whitespace-pre-wrap">{text}</span>}</>;
+  return <>{parts.length > 0 ? parts : <span className="whitespace-pre-wrap">{formatInlineMarkdown(text)}</span>}</>;
 }
 
 export function ForumThread({ id }: { id: string }) {
@@ -157,6 +201,11 @@ export function ForumThread({ id }: { id: string }) {
       setReplyTo(null);
       setLoading(true);
       setRefreshKey((value) => value + 1);
+      // Auto-polling jika memanggil @satpam atau membalas Satpam Bot agar balasan AI muncul mulus
+      if (/@satpam\b/i.test(finalBody) || parentId) {
+        setTimeout(() => setRefreshKey((value) => value + 1), 2500);
+        setTimeout(() => setRefreshKey((value) => value + 1), 5000);
+      }
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Komentar gagal dikirim."); }
     finally { setSending(false); }
   }
@@ -224,7 +273,7 @@ export function ForumThread({ id }: { id: string }) {
               <time className="text-[11px] font-mono text-[#A78BFA]/70">{new Date(item.createdAt).toLocaleString("id-ID")}</time>
             </div>
             <div className="break-words mt-2 text-xs sm:text-sm leading-relaxed text-[#F8FAFC]/90 font-sans"><FormattedPostContent text={item.content} onImageClick={setLightboxImg} /></div>
-            {!user?.isBanned && !isSatpamBot && (
+            {!user?.isBanned && (
               <button
                 className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-mono text-[#A78BFA] hover:text-[#F8FAFC] uppercase tracking-wider"
                 onClick={() => {
@@ -236,7 +285,7 @@ export function ForumThread({ id }: { id: string }) {
                   setReplyText("");
                 }}
               >
-                <MessageCircle size={13} /> Balas
+                <MessageCircle size={13} /> {isSatpamBot ? "Balas Satpam AI" : "Balas"}
               </button>
             )}
             {replyTo === item.id && (
@@ -247,7 +296,7 @@ export function ForumThread({ id }: { id: string }) {
                   rows={2}
                   value={replyText}
                   onChange={(event) => setReplyText(event.target.value)}
-                  placeholder={`Balas ${item.author.username ?? "gamer"}…`}
+                  placeholder={isSatpamBot ? "Tanya atau balas Satpam Horizon..." : `Balas ${item.author.username ?? "gamer"}…`}
                   className="w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] font-sans text-xs focus:outline-none focus:border-[#7C3AED]"
                 />
                 <button className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED]" disabled={sending}>

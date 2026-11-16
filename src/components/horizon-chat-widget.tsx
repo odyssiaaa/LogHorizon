@@ -165,6 +165,22 @@ export function HorizonChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setPosition((prev) => {
+        if (!prev) return null;
+        const maxX = Math.max(10, window.innerWidth - 96);
+        const maxY = Math.max(10, window.innerHeight - 96);
+        return {
+          x: Math.min(prev.x, maxX),
+          y: Math.min(prev.y, maxY),
+        };
+      });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -188,7 +204,7 @@ export function HorizonChatWidget() {
     }
     const targetX = dragInfo.current.initialX + dx;
     const targetY = dragInfo.current.initialY + dy;
-    const maxX = Math.max(0, (typeof window !== "undefined" ? window.innerWidth : 800) - 76);
+    const maxX = Math.max(0, (typeof window !== "undefined" ? window.innerWidth : 800) - 96);
     const maxY = Math.max(0, (typeof window !== "undefined" ? window.innerHeight : 600) - 96);
     const clampedX = Math.max(10, Math.min(maxX, targetX));
     const clampedY = Math.max(10, Math.min(maxY, targetY));
@@ -337,11 +353,14 @@ export function HorizonChatWidget() {
       <div
         style={
           position
-            ? { left: `${position.x}px`, top: `${position.y}px` }
+            ? {
+                left: `${typeof window !== "undefined" ? Math.min(position.x, window.innerWidth - 96) : position.x}px`,
+                top: `${position.y}px`,
+              }
             : undefined
         }
         className={`fixed z-50 touch-none select-none ${
-          !position ? "bottom-4 right-4 sm:bottom-6 sm:right-6" : ""
+          !position ? "bottom-6 right-6" : ""
         }`}
       >
         <div

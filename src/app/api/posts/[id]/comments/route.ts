@@ -44,9 +44,24 @@ export async function POST(request: Request, { params }: RouteContext) {
     }
   }
 
+  let parentComment: {
+    id: string;
+    content: string;
+    author: { username: string | null; name: string | null; badges: string[] } | null;
+  } | null = null;
+
   if (parentId) {
-    const parent = await prisma.comment.findFirst({ where: { id: parentId, postId: id }, select: { id: true } });
-    if (!parent) return jsonError("Komentar yang dibalas tidak ditemukan.", 404);
+    parentComment = await prisma.comment.findFirst({
+      where: { id: parentId, postId: id },
+      select: {
+        id: true,
+        content: true,
+        author: {
+          select: { username: true, name: true, badges: true },
+        },
+      },
+    });
+    if (!parentComment) return jsonError("Komentar yang dibalas tidak ditemukan.", 404);
   }
 
   // Berikan XP hanya jika jeda komentar >= 30 detik untuk mencegah XP farming
@@ -64,8 +79,17 @@ export async function POST(request: Request, { params }: RouteContext) {
     return created;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
-  // Pemicu Otomatis @satpam di Forum Diskusi (Mirip @grok di X/Twitter)
-  if (/@satpam\b/i.test(content)) {
+  // Pemicu Otomatis @satpam di Forum Diskusi (Mention @satpam ATAU Balasan Langsung ke Satpam Horizon)
+  const isMentionSatpam = /@satpam\b/i.test(content);
+  const isDirectReplyToSatpam = Boolean(
+    parentComment && (
+      parentComment.author?.username?.toLowerCase().includes("satpam") ||
+      parentComment.author?.name?.toLowerCase().includes("satpam") ||
+      parentComment.author?.badges?.includes("SATPAM_AI")
+    )
+  );
+
+  if (isMentionSatpam || isDirectReplyToSatpam) {
     const isOwnerOrStaff = user.role === "ADMIN" || user.role === "MODERATOR" || user.username === ".odyssia";
     const cooldown = checkSatpamCooldown(user.id, isOwnerOrStaff);
     if (cooldown.allowed) {
@@ -74,6 +98,7 @@ export async function POST(request: Request, { params }: RouteContext) {
         commentId: comment.id,
         userContent: content,
         authorUsername: user.username ?? "Gamer",
+        parentContent: parentComment?.content,
       });
     }
   }

@@ -37,17 +37,29 @@ export function checkSatpamCooldown(userId: string, isOwnerOrStaff: boolean): { 
 }
 
 /**
- * Menghasilkan respon dari Google Gemini menggunakan fallback model cerdas.
+ * Menghasilkan respon dari Google Gemini menggunakan fallback model cerdas dan dukungan Multimodal Vision.
  */
 export async function callGemini(
   prompt: string,
   systemPrompt = "Kamu adalah Satpam Horizon, AI Guardian resmi LogHorizon.",
-  maxTokens = 300
+  maxTokens = 350,
+  imagePart?: { inlineData: { mimeType: string; data: string } } | null
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!apiKey) {
     return "Token AI (GEMINI_API_KEY) belum terpasang di server. Hubungi Emperor .odyssia agar Satpam Horizon bisa aktif penuh!";
   }
+
+  const userParts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [];
+  if (imagePart?.inlineData?.data && imagePart?.inlineData?.mimeType) {
+    userParts.push({
+      inlineData: {
+        mimeType: imagePart.inlineData.mimeType,
+        data: imagePart.inlineData.data,
+      },
+    });
+  }
+  userParts.push({ text: prompt });
 
   for (const endpoint of GEMINI_ENDPOINTS) {
     try {
@@ -64,7 +76,7 @@ export async function callGemini(
           contents: [
             {
               role: "user",
-              parts: [{ text: prompt }],
+              parts: userParts,
             },
           ],
           generationConfig: {
@@ -72,7 +84,7 @@ export async function callGemini(
             temperature: 0.7,
           },
         }),
-        signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(18_000),
       });
 
       if (response.ok) {
@@ -88,6 +100,11 @@ export async function callGemini(
       // Continue to next fallback model endpoint
       continue;
     }
+  }
+
+  // Fallback: Jika pemanggilan multimodal gagal di semua model, coba ulang sekali tanpa part gambar
+  if (imagePart) {
+    return callGemini(prompt, systemPrompt, maxTokens, null);
   }
 
   return "Sinyal Satpam Horizon lagi terdistorsi gelombang radio nih petualang! Tapi santai, keamanan room tetap dalam pengawasan penuh.";
@@ -440,31 +457,106 @@ export async function processEscrowGuardian({
 // =========================================================================
 
 /**
- * Menangani pemanggilan @satpam di thread forum (merangkum, opini, review build).
+ * Ekstrak sumber gambar (data URI atau URL HTTP/HTTPS) dari teks konten.
+ */
+export function extractImageSource(text: string): string | null {
+  if (!text) return null;
+  const mdMatch = text.match(/!\[.*?\]\(((?:data:image\/[^)]+|https?:\/\/[^)]+))\)/i);
+  if (mdMatch) return mdMatch[1];
+  const base64Match = text.match(/(data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+)/i);
+  if (base64Match) return base64Match[1];
+  const urlMatch = text.match(/(https?:\/\/[^\s<>'"]+\.(?:png|jpe?g|webp|gif|svg))/i);
+  if (urlMatch) return urlMatch[1];
+  return null;
+}
+
+/**
+ * Mempersiapkan inlineData untuk Vision Gemini dari data URI atau URL gambar.
+ */
+export async function prepareGeminiImagePart(
+  imageSource: string
+): Promise<{ inlineData: { mimeType: string; data: string } } | null> {
+  try {
+    if (imageSource.startsWith("data:")) {
+      const match = imageSource.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        let mimeType = match[1].toLowerCase().trim();
+        if (mimeType === "image/jpg") mimeType = "image/jpeg";
+        return {
+          inlineData: {
+            mimeType,
+            data: match[2].trim(),
+          },
+        };
+      }
+    } else if (imageSource.startsWith("http://") || imageSource.startsWith("https://")) {
+      const res = await fetch(imageSource, { signal: AbortSignal.timeout(6000) });
+      if (res.ok) {
+        const arrayBuffer = await res.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const contentType = res.headers.get("content-type") || "image/jpeg";
+        let mimeType = contentType.split(";")[0].toLowerCase().trim();
+        if (mimeType === "image/jpg") mimeType = "image/jpeg";
+        return {
+          inlineData: {
+            mimeType,
+            data: buffer.toString("base64"),
+          },
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("[satpam-guardian] Gagal memproses gambar untuk Gemini Vision:", err);
+  }
+  return null;
+}
+
+/**
+ * Membersihkan data base64 yang panjang dari teks prompt agar tidak membuang token teks.
+ */
+export function cleanTextForPrompt(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/!\[(.*?)\]\((?:data:image\/[^)]+)\)/g, "[Gambar: $1]")
+    .replace(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g, "[Data Gambar Lampiran]")
+    .trim();
+}
+
+/**
+ * Menangani pemanggilan @satpam atau balasan langsung di thread forum (merangkum, opini, analisis gambar, review build).
  */
 export async function handleForumMention({
   postId,
   commentId,
   userContent,
   authorUsername,
+  parentContent,
 }: {
   postId: string;
   commentId: string;
   userContent: string;
   authorUsername: string;
+  parentContent?: string | null;
 }): Promise<void> {
   try {
     const isSummarize = /@satpam\s+(rangkum|kesimpulan|ringkas|summary)/i.test(userContent);
     const [post, recentComments, satpamBot, siteConfig, activeSponsors] = await Promise.all([
       prisma.post.findUnique({
         where: { id: postId },
-        select: { title: true, content: true, category: true },
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          category: true,
+          marketData: true,
+          author: { select: { username: true, name: true } },
+        },
       }),
       prisma.comment.findMany({
         where: { postId },
         orderBy: { createdAt: "desc" },
         take: 10,
-        include: { author: { select: { username: true } } },
+        include: { author: { select: { username: true, name: true, badges: true } } },
       }),
       getOrCreateSatpamBotUser(),
       prisma.siteConfig.findUnique({
@@ -480,42 +572,94 @@ export async function handleForumMention({
 
     if (!post) return;
 
-    const threadContext = `JUDUL THREAD: "${post.title}"\nKATEGORI: ${post.category}\nISI THREAD:\n${post.content.slice(0, 1000)}`;
+    // 1. Ekstrak Gambar dari Post Utama / Komentar (Multimodal Vision)
+    let imageSource: string | null = extractImageSource(post.content);
+    if (!imageSource && userContent) {
+      imageSource = extractImageSource(userContent);
+    }
+    if (!imageSource && post.marketData && typeof post.marketData === "object") {
+      const md = post.marketData as Record<string, unknown>;
+      if (typeof md.image === "string" && md.image) {
+        imageSource = md.image;
+      } else if (Array.isArray(md.images) && typeof md.images[0] === "string" && md.images[0]) {
+        imageSource = md.images[0];
+      }
+    }
+
+    let imagePart: { inlineData: { mimeType: string; data: string } } | null = null;
+    if (imageSource) {
+      imagePart = await prepareGeminiImagePart(imageSource);
+    }
+
+    const postAuthor = post.author?.name || post.author?.username || "Petualang";
+    const cleanedPostContent = cleanTextForPrompt(post.content).slice(0, 1500);
+
+    const threadContext = [
+      `JUDUL THREAD (OP): "${post.title}"`,
+      `PENULIS THREAD: @${postAuthor}`,
+      `KATEGORI: ${post.category}`,
+      imagePart
+        ? `LAMPIRAN VISUAL: [Terdapat gambar/foto/screenshot pada thread ini yang sudah di-input langsung ke sistem Vision kamu. Analisis visual gambar tersebut secara detail bila ditanyakan oleh user].`
+        : `LAMPIRAN VISUAL: [Tidak ada gambar yang dilampirkan].`,
+      `ISI THREAD UTAMA:`,
+      cleanedPostContent || "(Konten teks kosong, periksa lampiran gambar)",
+    ].join("\n");
+
     const debateContext = recentComments
+      .slice()
       .reverse()
-      .map((c) => `@${c.author.username || "Gamer"}: ${c.content.slice(0, 200)}`)
+      .map((c) => {
+        const username = c.author?.username || "Gamer";
+        const isBot = username.toLowerCase().includes("satpam") || c.author?.badges?.includes("SATPAM_AI");
+        return `${isBot ? "[Satpam AI]" : `@${username}`}: ${cleanTextForPrompt(c.content).slice(0, 250)}`;
+      })
       .join("\n");
+
+    const parentReplyContext = parentContent
+      ? `KOMENTAR YANG SEDANG DIBALAS LANGSUNG OLEH USER:\n"${cleanTextForPrompt(parentContent).slice(0, 400)}"\n`
+      : "";
 
     const sponsorText = activeSponsors && activeSponsors.length > 0
       ? activeSponsors.map((s) => `${s.name} (${s.tier || "Partner"}) - Link: ${s.websiteUrl || "#"}`).join(", ")
       : "";
 
     const systemPrompt = [
-      "Kamu adalah Satpam Horizon, AI Guardian resmi LogHorizon.",
-      "Gaya bahasamu cerdas, santai, solutif, sedikit humor ala gamer Indonesia (GGWP, mabar, push rank, sepuh, gacor).",
-      "Kamu baru saja dipanggil via mention @satpam oleh member di thread forum.",
+      "Kamu adalah Satpam Horizon, AI Guardian resmi guild LogHorizon.",
+      "Gaya bahasamu cerdas, santai, solutif, sedikit humor ala gamer Indonesia (GGWP, mabar, push rank, sepuh, gacor, dll).",
+      "Kamu memiliki kemampuan Multimodal Vision untuk melihat dan menganalisis foto makanan/game/screenshot yang diunggah para petualang.",
+      "Kamu dipanggil oleh member melalui mention @satpam atau balasan langsung di thread forum diskusi.",
       isSummarize
         ? "PERINTAH KHUSUS: User memintamu merangkum perdebatan/thread ini. Buatlah rangkuman eksekutif padat dalam 3-4 butir bullet Markdown: 1. Pokok Bahasan, 2. Pandangan/Argumen Komunitas, 3. Kesimpulan/Rekomendasi Satpam. Format bersih, to-the-point, dan berwibawa."
-        : "Tugasmu: Berikan tanggapan yang sangat relevan sesuai perintah/pertanyaan user (misal: analisis build, pendapat fair, atau tips). Jawab dalam 2-4 kalimat padat dan berwibawa.",
+        : "Tugasmu: Berikan tanggapan yang sangat relevan sesuai isi postingan utama, foto/gambar yang dilampirkan (bila ada), dan pesan spesifik user (misal: analisis foto makanan/game, review build/item, tips gameplay, atau tanggapan adil). Jawab dalam 2-4 kalimat padat, ramah, dan solutif.",
       siteConfig?.aiKnowledgeBase ? `INGATAN & ATURAN KHUSUS DARI OWNER / ADMIN CMS:\n${siteConfig.aiKnowledgeBase}` : "",
-      sponsorText ? `PARTNER RESMI GUILD: ${sponsorText}. Jika user menanyakan voucher, gear, atau topup, sebutkan partner ini secara halus.` : "",
-      "Format jawaban dengan Markdown rapi tanpa backtick pada link.",
+      sponsorText ? `PARTNER RESMI GUILD: ${sponsorText}. Jika menanyakan rekomendasi gear/topup, sebutkan secara halus.` : "",
+      "ATURAN FORMAT WAJIB (SANGAT PENTING):",
+      "1. LANGSUNG jawab ke inti pertanyaan/pembicaraan. DILARANG KERAS menulis header berulang seperti '**[SATPAM HORIZON // AI GUARDIAN]**' atau '[SATPAM HORIZON]' karena sistem antarmuka web sudah menampilkan badge dan foto profil kamu secara otomatis.",
+      "2. Gunakan format Markdown bersih (**teks tebal**, *teks miring*). Jangan gunakan backtick pada URL link.",
     ].filter(Boolean).join("\n");
 
     const userPrompt = [
-      `KONTEKS THREAD FORUM:`,
+      `=== KONTEKS THREAD UTAMA (OP) ===`,
       threadContext,
       "",
-      `DISKUSI TERAKHIR DARI PARA PETUALANG:`,
+      `=== RIWAYAT DISKUSI THREAD ===`,
       debateContext || "(Belum ada komentar lain)",
       "",
-      `PESAN PEMANGGIL DARI @${authorUsername}:`,
-      userContent,
+      parentReplyContext ? `=== BALASAN LANGSUNG KE KOMENTAR SEBELUMNYA ===\n${parentReplyContext}` : "",
+      `=== PESAN PEMANGGIL DARI @${authorUsername} ===`,
+      cleanTextForPrompt(userContent),
       "",
-      isSummarize ? "Buat rangkuman eksekutif padat (3-4 bullet) sekarang:" : "Berikan jawabanmu sekarang:",
-    ].join("\n");
+      isSummarize
+        ? "Buat rangkuman eksekutif padat (3-4 butir) sekarang tanpa awalan header berulang:"
+        : "Berikan jawaban kamu sekarang secara langsung tanpa awalan header berulang:",
+    ].filter(Boolean).join("\n");
 
-    const reply = await callGemini(userPrompt, systemPrompt, isSummarize ? 450 : 350);
+    const reply = await callGemini(userPrompt, systemPrompt, isSummarize ? 450 : 350, imagePart);
+
+    // Bersihkan sisa header jika model masih menghasilkan awalan berulang
+    const cleanReply = reply
+      .replace(/^(?:🛡️\s*)?(?:\*{1,2})?\[?(?:SATPAM\s*HORIZON|AI\s*GUARDIAN)[^\]]*\]?(?:\*{1,2})?\s*[:\n]*/i, "")
+      .trim();
 
     // Simpan komentar balasan bot di database (dikaitkan ke parentId komentar pemanggil)
     await prisma.comment.create({
@@ -523,7 +667,7 @@ export async function handleForumMention({
         postId,
         authorId: satpamBot.id,
         parentId: commentId,
-        content: `🛡️ **[SATPAM HORIZON // AI GUARDIAN]**\n\n${reply}`,
+        content: cleanReply,
       },
     });
   } catch (err) {
