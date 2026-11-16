@@ -16,6 +16,7 @@ import {
   Crown,
   Dices,
   DollarSign,
+  Download,
   ExternalLink,
   Flag,
   ImageIcon,
@@ -591,6 +592,46 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     }
   }
 
+  // Export Financial Report to CSV
+  function exportFinancialReportCSV() {
+    if (!data?.donations || data.donations.length === 0) {
+      alert("Belum ada data mutasi kas donasi untuk diekspor.");
+      return;
+    }
+
+    const headers = [
+      "ID Transaksi",
+      "Waktu Mutasi",
+      "Kategori",
+      "Pengirim / Username",
+      "Nominal (IDR)",
+      "Status Verifikasi",
+      "Catatan",
+    ];
+
+    const rows = data.donations.map((d) => [
+      `"${d.id}"`,
+      `"${new Date(d.createdAt).toLocaleString("id-ID")}"`,
+      '"DONASI_KAS_QRIS"',
+      `"${(d.senderName || d.user?.username || "Anonim").replace(/"/g, '""')}"`,
+      d.amount,
+      `"${d.status}"`,
+      `"${(d.notes || "-").replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Laporan_Keuangan_Kas_LogHorizon_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setNotice("Laporan Keuangan (.CSV) berhasil diekspor!");
+  }
+
   // Add Sponsor (Logo + Link Website saja)
   async function handleAddSponsor(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -981,12 +1022,14 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
         {/* ========================================================================= */}
         {/* RESPONSIVE LAYOUT: DESKTOP SIDEBAR + MOBILE HORIZONTAL TABS */}
         {/* ========================================================================= */}
-        <div className="md:grid md:grid-cols-[230px_1fr] md:gap-8 items-start">
+        <div className="md:grid md:grid-cols-[240px_1fr] md:gap-8 items-start">
           {/* DESKTOP SIDEBAR (< md hidden) */}
           <aside className="hidden md:flex flex-col gap-1.5 sticky top-24 p-3 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm">
             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-1.5">
-              PANEL KENDALI
+              6 MODUL UTAMA COMMAND CENTER
             </p>
+
+            {/* 1. RINGKASAN & KEUANGAN */}
             <button
               type="button"
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
@@ -998,10 +1041,96 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             >
               <div className="flex items-center gap-2.5">
                 <LayoutDashboard size={16} />
-                <span>Overview &amp; Statistik</span>
+                <span>Ringkasan &amp; Keuangan</span>
               </div>
             </button>
 
+            {/* 2. TURNAMEN & VERIFIKASI PESERTA */}
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+                tab === "tournaments" || tab === "hall_of_winners"
+                  ? "bg-[#9D4EDD] text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+              }`}
+              onClick={() => {
+                setTab("tournaments");
+                fetchTournaments();
+              }}
+            >
+              <div className="flex items-center gap-2.5">
+                <Trophy size={16} />
+                <span>Turnamen &amp; Peserta</span>
+              </div>
+              {(() => {
+                const totalPending = tournamentsList.reduce((acc, t) => acc + (t.participants?.filter((p: any) => p.paymentStatus === "PENDING_PAYMENT").length || 0), 0);
+                return totalPending > 0 ? (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "tournaments" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                    {totalPending}
+                  </span>
+                ) : null;
+              })()}
+            </button>
+
+            {/* 3. VERIFIKASI KAS DONASI & REKBER */}
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+                tab === "treasury"
+                  ? "bg-[#9D4EDD] text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+              }`}
+              onClick={() => setTab("treasury")}
+            >
+              <div className="flex items-center gap-2.5">
+                <Coins size={16} />
+                <span>Kas Donasi &amp; Rekber</span>
+              </div>
+              {Boolean(data?.stats.pendingDonations) && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "treasury" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                  {data?.stats.pendingDonations}
+                </span>
+              )}
+            </button>
+
+            {/* 4. MANAJEMEN MEMBER & KASTA */}
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+                tab === "members"
+                  ? "bg-[#9D4EDD] text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+              }`}
+              onClick={() => setTab("members")}
+            >
+              <div className="flex items-center gap-2.5">
+                <Users size={16} />
+                <span>Member, Kasta &amp; Staf</span>
+              </div>
+            </button>
+
+            {/* 5. MODERASI & LOG KEAMANAN SATPAM AI */}
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+                tab === "moderation" || tab === "security_logs"
+                  ? "bg-[#9D4EDD] text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+              }`}
+              onClick={() => setTab("moderation")}
+            >
+              <div className="flex items-center gap-2.5">
+                <ShieldAlert size={16} />
+                <span>Moderasi &amp; Log AI</span>
+              </div>
+              {Boolean(data?.stats.pendingReports) && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "moderation" ? "bg-white text-[#9D4EDD]" : "bg-rose-500/20 text-rose-400"}`}>
+                  {data?.stats.pendingReports}
+                </span>
+              )}
+            </button>
+
+            {/* 6. PENGATURAN WEB (CMS), OTAK AI & BROADCAST */}
             {isAdmin && (
               <button
                 type="button"
@@ -1014,129 +1143,10 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               >
                 <div className="flex items-center gap-2.5">
                   <Settings size={16} />
-                  <span>Pengaturan Web (CMS)</span>
+                  <span>Pengaturan Web &amp; AI</span>
                 </div>
               </button>
             )}
-
-            <button
-              type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
-                tab === "tournaments"
-                  ? "bg-[#9D4EDD] text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
-              }`}
-              onClick={() => {
-                setTab("tournaments");
-                fetchTournaments();
-              }}
-            >
-              <div className="flex items-center gap-2.5">
-                <Trophy size={16} />
-                <span>Kelola Turnamen</span>
-              </div>
-              {(() => {
-                const totalPending = tournamentsList.reduce((acc, t) => acc + (t.participants?.filter((p: any) => p.paymentStatus === "PENDING_PAYMENT").length || 0), 0);
-                return totalPending > 0 ? (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "tournaments" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
-                    {totalPending}
-                  </span>
-                ) : null;
-              })()}
-            </button>
-
-            <button
-              type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
-                tab === "hall_of_winners"
-                  ? "bg-[#9D4EDD] text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
-              }`}
-              onClick={() => {
-                setTab("hall_of_winners");
-                fetchHallOfWinners();
-              }}
-            >
-              <div className="flex items-center gap-2.5">
-                <Crown size={16} />
-                <span>Hall of Winners 🏆</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
-                tab === "treasury"
-                  ? "bg-[#9D4EDD] text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
-              }`}
-              onClick={() => setTab("treasury")}
-            >
-              <div className="flex items-center gap-2.5">
-                <Coins size={16} />
-                <span>Verifikasi Kas &amp; Rekber</span>
-              </div>
-              {Boolean(data?.stats.pendingDonations) && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "treasury" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
-                  {data?.stats.pendingDonations}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
-                tab === "members"
-                  ? "bg-[#9D4EDD] text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
-              }`}
-              onClick={() => setTab("members")}
-            >
-              <div className="flex items-center gap-2.5">
-                <Users size={16} />
-                <span>Member &amp; Kasta</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
-                tab === "moderation"
-                  ? "bg-[#9D4EDD] text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
-              }`}
-              onClick={() => setTab("moderation")}
-            >
-              <div className="flex items-center gap-2.5">
-                <ShieldAlert size={16} />
-                <span>Moderasi &amp; Broadcast</span>
-              </div>
-              {Boolean(data?.stats.pendingReports) && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "moderation" ? "bg-white text-[#9D4EDD]" : "bg-rose-500/20 text-rose-400"}`}>
-                  {data?.stats.pendingReports}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
-                tab === "security_logs"
-                  ? "bg-[#9D4EDD] text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
-              }`}
-              onClick={() => setTab("security_logs")}
-            >
-              <div className="flex items-center gap-2.5">
-                <ShieldCheck size={16} />
-                <span>Log Keamanan Satpam AI</span>
-              </div>
-              {Boolean(data?.securityLogs?.length) && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "security_logs" ? "bg-white text-[#9D4EDD]" : "bg-purple-500/20 text-purple-300"}`}>
-                  {data?.securityLogs?.length}
-                </span>
-              )}
-            </button>
 
             <Link
               href="/events?view=turnamen"
@@ -1144,7 +1154,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             >
               <div className="flex items-center gap-2.5 text-[#9D4EDD]">
                 <Trophy size={16} />
-                <span>Bagan Turnamen</span>
+                <span>Bagan Turnamen Live</span>
               </div>
               <ExternalLink size={12} className="text-gray-400" />
             </Link>
@@ -1159,30 +1169,20 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               }`}
               onClick={() => setTab("overview")}
             >
-              <LayoutDashboard size={14} /> Overview
+              <LayoutDashboard size={14} /> 1. Ringkasan
             </button>
-            {isAdmin && (
-              <button
-                type="button"
-                className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                  tab === "settings" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
-                }`}
-                onClick={() => setTab("settings")}
-              >
-                <Settings size={14} /> Web CMS
-              </button>
-            )}
+
             <button
               type="button"
               className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "tournaments" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                tab === "tournaments" || tab === "hall_of_winners" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => {
                 setTab("tournaments");
                 fetchTournaments();
               }}
             >
-              <Trophy size={14} /> Turnamen
+              <Trophy size={14} /> 2. Turnamen
               {(() => {
                 const totalPending = tournamentsList.reduce((acc, t) => acc + (t.participants?.filter((p: any) => p.paymentStatus === "PENDING_PAYMENT").length || 0), 0);
                 return totalPending > 0 ? (
@@ -1192,18 +1192,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                 ) : null;
               })()}
             </button>
-            <button
-              type="button"
-              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "hall_of_winners" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
-              }`}
-              onClick={() => {
-                setTab("hall_of_winners");
-                fetchHallOfWinners();
-              }}
-            >
-              <Crown size={14} /> Hall of Winners
-            </button>
+
             <button
               type="button"
               className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
@@ -1211,13 +1200,14 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               }`}
               onClick={() => setTab("treasury")}
             >
-              <Coins size={14} /> Kas &amp; Rekber
+              <Coins size={14} /> 3. Kas &amp; Rekber
               {Boolean(data?.stats.pendingDonations) && (
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500 text-black font-extrabold">
                   {data?.stats.pendingDonations}
                 </span>
               )}
             </button>
+
             <button
               type="button"
               className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
@@ -1225,36 +1215,36 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               }`}
               onClick={() => setTab("members")}
             >
-              <Users size={14} /> Member
+              <Users size={14} /> 4. Member &amp; Kasta
             </button>
+
             <button
               type="button"
               className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "moderation" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                tab === "moderation" || tab === "security_logs" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => setTab("moderation")}
             >
-              <ShieldAlert size={14} /> Moderasi
+              <ShieldAlert size={14} /> 5. Moderasi &amp; AI
               {Boolean(data?.stats.pendingReports) && (
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-extrabold">
                   {data?.stats.pendingReports}
                 </span>
               )}
             </button>
-            <button
-              type="button"
-              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "security_logs" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
-              }`}
-              onClick={() => setTab("security_logs")}
-            >
-              <ShieldCheck size={14} /> Log Keamanan AI
-              {Boolean(data?.securityLogs?.length) && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-600 text-white font-extrabold">
-                  {data?.securityLogs?.length}
-                </span>
-              )}
-            </button>
+
+            {isAdmin && (
+              <button
+                type="button"
+                className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
+                  tab === "settings" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                }`}
+                onClick={() => setTab("settings")}
+              >
+                <Settings size={14} /> 6. Web CMS &amp; AI
+              </button>
+            )}
+
             <Link
               href="/events?view=turnamen"
               className="px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-1.5 shrink-0 bg-[#9D4EDD]/10 text-[#9D4EDD] border border-[#9D4EDD]/30"
@@ -1270,6 +1260,28 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {/* ========================================================================= */}
             {tab === "overview" && (
               <section className="space-y-6" role="tabpanel">
+                {/* EXECUTIVE HEADER WITH CSV EXPORT */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
+                  <div>
+                    <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <DollarSign size={16} className="text-[#9D4EDD]" />
+                      <span>Ringkasan Eksekutif &amp; Kas Perbendaharaan Guild</span>
+                    </h2>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                      Pemasukan kas terverifikasi bersifat rahasia dan hanya dapat diakses oleh jajaran pengurus di sini.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => exportFinancialReportCSV()}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-none bg-[#9D4EDD] hover:bg-[#7B2CBF] text-white transition shadow-sm shrink-0"
+                    title="Unduh seluruh mutasi donasi kas dalam format spreadsheet CSV"
+                  >
+                    <Download size={14} />
+                    <span>Export Laporan Keuangan (.CSV)</span>
+                  </button>
+                </div>
+
                 {/* 5 METRIC CARDS */}
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
                   <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
@@ -1630,6 +1642,146 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                     </div>
                   </form>
                 </div>
+
+                {/* KELOLA SPONSOR RESMI (LOGO-ONLY & CLICKABLE) */}
+                <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Sparkles size={18} className="text-[#9D4EDD]" /> Kelola Sponsor Resmi (Section 06 Beranda)
+                      </h2>
+                      <p className="text-xs text-gray-500">
+                        Tambah atau hapus mitra dan sponsor resmi yang tampil di halaman depan LogHorizon.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Form Tambah Sponsor */}
+                  <form onSubmit={(e) => void handleAddSponsor(e)} className="p-4 rounded-none bg-slate-50 dark:bg-[#09040F] border border-slate-200 dark:border-[#2E1E45] mb-6 space-y-4">
+                    <p className="text-xs font-mono font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-[#7C3AED]" />
+                      <span>Tambah Sponsor Baru (Logo-Only &amp; Clickable)</span>
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                      <div>
+                        <ImageUploader
+                          value={sponsorLogo}
+                          onChange={setSponsorLogo}
+                          label="1. Upload Logo Sponsor"
+                          description="Pilih logo dari HP atau komputer (otomatis dikompres)."
+                          required
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-mono font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+                            2. Link Laman Tujuan Sponsor <span className="text-red-400">*</span>
+                          </label>
+                          <input
+                            type="url"
+                            required
+                            value={sponsorWebsite}
+                            onChange={(e) => setSponsorWebsite(e.target.value)}
+                            placeholder="https://instagram.com/... atau https://discord.gg/..."
+                            className="w-full px-3.5 py-2.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED]"
+                          />
+                          <p className="text-[10px] font-mono text-slate-500 dark:text-gray-400 mt-1">
+                            Pengunjung akan diarahkan ke link ini saat mengklik logo di halaman utama.
+                          </p>
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={savingSponsor || !sponsorLogo}
+                          className="w-full py-2.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-40 text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer"
+                        >
+                          <Plus size={14} />
+                          <span>{savingSponsor ? "Menyimpan..." : "Simpan Sponsor"}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+
+                  {/* List Sponsor Aktif */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {data?.sponsors?.map((sp) => (
+                      <div
+                        key={sp.id}
+                        className="p-3 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col items-center justify-between gap-3 text-center"
+                      >
+                        <div className="relative w-full h-14 rounded-none overflow-hidden flex items-center justify-center bg-slate-50 dark:bg-[#09040F] border border-slate-200 dark:border-[#2E1E45] p-2">
+                          {sp.logoUrl ? (
+                            <Image src={sp.logoUrl} alt={sp.name} fill className="object-contain p-1" unoptimized />
+                          ) : (
+                            <span className="font-mono text-xs text-purple-700 dark:text-[#A78BFA]">{sp.name}</span>
+                          )}
+                        </div>
+                        {sp.websiteUrl && (
+                          <a
+                            href={sp.websiteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] font-mono text-purple-600 dark:text-[#A78BFA] hover:text-[#7C3AED] hover:underline truncate max-w-full block"
+                            title={sp.websiteUrl}
+                          >
+                            🔗 {sp.websiteUrl}
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          disabled={busyId === sp.id}
+                          onClick={() => void handleDeleteSponsor(sp.id, sp.name)}
+                          className="w-full py-1 text-[11px] font-mono font-bold text-rose-400 hover:text-white hover:bg-rose-600/20 border border-rose-500/30 rounded-none transition flex items-center justify-center gap-1 cursor-pointer"
+                          title="Hapus Sponsor"
+                        >
+                          <Trash2 size={12} /> Hapus
+                        </button>
+                      </div>
+                    ))}
+                    {!data?.sponsors?.length && (
+                      <p className="text-xs font-mono text-gray-400 col-span-full py-6 text-center">
+                        Belum ada sponsor khusus yang ditambahkan.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* BROADCAST PENGUMUMAN RESMI (TAYANG 24 JAM) */}
+                <BroadcastSection
+                  announcements={data?.announcements ?? []}
+                  onNotice={setNotice}
+                  onError={setError}
+                  onRefresh={loadDashboard}
+                />
+
+                {/* FITUR KEBERSIHAN PRA-RILIS (OWNER EXCLUSIVE) */}
+                {isOwner && (
+                  <div className="p-6 rounded-none border-2 border-red-500/50 bg-red-500/5 dark:bg-red-950/20">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono font-bold text-red-500 uppercase tracking-wider">
+                            👑 KHUSUS GUILD OWNER (.ODYSSIA)
+                          </span>
+                        </div>
+                        <h3 className="text-base font-bold text-red-600 dark:text-red-400 mt-1">
+                          🧹 Bersihkan Data Percobaan (Reset Kas &amp; Hapus Dummy)
+                        </h3>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 max-w-2xl leading-relaxed">
+                          Menghapus seluruh transaksi donasi simulasi agar saldo kas terverifikasi kembali murni <strong className="text-red-500">Rp 0</strong>, serta menghapus turnamen uji coba sebelum link website resmi disiarkan ke Discord.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={busyId === "reset-donations"}
+                        onClick={() => void handleResetDonations()}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-none text-xs font-bold bg-red-600 hover:bg-red-700 text-white transition shadow-md shadow-red-600/30 shrink-0"
+                      >
+                        <RotateCcw size={14} className={busyId === "reset-donations" ? "animate-spin" : ""} />
+                        <span>Bersihkan Data Percobaan</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </section>
             )}
 
@@ -2917,113 +3069,11 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
             )}
 
             {/* ========================================================================= */}
-            {/* TAB 5: MODERASI KONTEN, SPONSOR & BROADCAST */}
+            {/* TAB 5: MODERASI KONTEN & LOG KEAMANAN SATPAM AI */}
             {/* ========================================================================= */}
-            {tab === "moderation" && (
+            {(tab === "moderation" || tab === "security_logs") && (
               <section className="space-y-8" role="tabpanel">
-                {/* 1. KELOLA SPONSOR RESMI */}
-                <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Sparkles size={18} className="text-[#9D4EDD]" /> Kelola Sponsor Resmi (Section 06 Beranda)
-                      </h2>
-                      <p className="text-xs text-gray-500">
-                        Tambah atau hapus mitra dan sponsor resmi yang tampil di halaman depan LogHorizon.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Form Tambah Sponsor (2 Input Saja: Upload Logo + Link Tujuan) */}
-                  <form onSubmit={(e) => void handleAddSponsor(e)} className="p-4 rounded-none bg-slate-50 dark:bg-[#09040F] border border-slate-200 dark:border-[#2E1E45] mb-6 space-y-4">
-                    <p className="text-xs font-mono font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                      <Sparkles size={14} className="text-[#7C3AED]" />
-                      <span>Tambah Sponsor Baru (Logo-Only &amp; Clickable)</span>
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-                      <div>
-                        <ImageUploader
-                          value={sponsorLogo}
-                          onChange={setSponsorLogo}
-                          label="1. Upload Logo Sponsor"
-                          description="Pilih logo dari HP atau komputer (otomatis dikompres)."
-                          required
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-xs font-mono font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
-                            2. Link Laman Tujuan Sponsor <span className="text-red-400">*</span>
-                          </label>
-                          <input
-                            type="url"
-                            required
-                            value={sponsorWebsite}
-                            onChange={(e) => setSponsorWebsite(e.target.value)}
-                            placeholder="https://instagram.com/... atau https://discord.gg/..."
-                            className="w-full px-3.5 py-2.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED]"
-                          />
-                          <p className="text-[10px] font-mono text-slate-500 dark:text-gray-400 mt-1">
-                            Pengunjung akan diarahkan ke link ini saat mengklik logo di halaman utama.
-                          </p>
-                        </div>
-                        <button
-                          type="submit"
-                          disabled={savingSponsor || !sponsorLogo}
-                          className="w-full py-2.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-40 text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer"
-                        >
-                          <Plus size={14} />
-                          <span>{savingSponsor ? "Menyimpan..." : "Simpan Sponsor"}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-
-                  {/* List Sponsor Aktif */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {data?.sponsors?.map((sp) => (
-                      <div
-                        key={sp.id}
-                        className="p-3 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col items-center justify-between gap-3 text-center"
-                      >
-                        <div className="relative w-full h-14 rounded-none overflow-hidden flex items-center justify-center bg-slate-50 dark:bg-[#09040F] border border-slate-200 dark:border-[#2E1E45] p-2">
-                          {sp.logoUrl ? (
-                            <Image src={sp.logoUrl} alt={sp.name} fill className="object-contain p-1" unoptimized />
-                          ) : (
-                            <span className="font-mono text-xs text-purple-700 dark:text-[#A78BFA]">{sp.name}</span>
-                          )}
-                        </div>
-                        {sp.websiteUrl && (
-                          <a
-                            href={sp.websiteUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[10px] font-mono text-purple-600 dark:text-[#A78BFA] hover:text-[#7C3AED] hover:underline truncate max-w-full block"
-                            title={sp.websiteUrl}
-                          >
-                            🔗 {sp.websiteUrl}
-                          </a>
-                        )}
-                        <button
-                          type="button"
-                          disabled={busyId === sp.id}
-                          onClick={() => void handleDeleteSponsor(sp.id, sp.name)}
-                          className="w-full py-1 text-[11px] font-mono font-bold text-rose-400 hover:text-white hover:bg-rose-600/20 border border-rose-500/30 rounded-none transition flex items-center justify-center gap-1 cursor-pointer"
-                          title="Hapus Sponsor"
-                        >
-                          <Trash2 size={12} /> Hapus
-                        </button>
-                      </div>
-                    ))}
-                    {!data?.sponsors?.length && (
-                      <p className="text-xs font-mono text-gray-400 col-span-full py-6 text-center">
-                        Belum ada sponsor khusus yang ditambahkan.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* 2. LAPORAN PELANGGARAN & MODERASI THREAD */}
+                {/* 1. LAPORAN PELANGGARAN FORUM */}
                 <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
                     <Flag size={18} className="text-amber-500" /> Moderasi Laporan Forum ({data?.reports.length ?? 0})
@@ -3134,15 +3184,75 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                   </div>
                 </div>
 
-                {/* 3. BROADCAST PENGUMUMAN RESMI (24 JAM) */}
-                {isAdmin && (
-                  <BroadcastSection
-                    announcements={data?.announcements ?? []}
-                    onNotice={setNotice}
-                    onError={setError}
-                    onRefresh={loadDashboard}
-                  />
-                )}
+                {/* 2. LOG KEAMANAN SATPAM AI */}
+                <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <ShieldCheck size={18} className="text-[#9D4EDD]" />
+                        <span>Log Keamanan Satpam AI ({data?.securityLogs?.length ?? 0} Kejadian)</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-none bg-purple-500/20 text-[#A78BFA] font-mono font-bold">
+                          LIVE SHIELD
+                        </span>
+                      </h2>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Audit jejak digital otomatis terhadap percobaan phishing, judi online, kata-kata kasar, dan anomali Rekber yang diblokir oleh AI.
+                      </p>
+                    </div>
+                  </div>
+
+                  <DragScrollContainer className="overflow-x-auto">
+                    <table className="w-full text-left text-xs whitespace-nowrap min-w-[650px]">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400 uppercase text-[10px] tracking-wider">
+                          <th className="pb-2.5">Waktu</th>
+                          <th className="pb-2.5">Tingkat Risiko</th>
+                          <th className="pb-2.5">User</th>
+                          <th className="pb-2.5">Aksi / Trigger</th>
+                          <th className="pb-2.5">Alasan Pemblokiran</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]/60">
+                        {data?.securityLogs?.slice(0, 30).map((log) => (
+                          <tr key={log.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02]">
+                            <td className="py-2.5 font-mono text-gray-500">
+                              {new Date(log.createdAt).toLocaleString("id-ID")}
+                            </td>
+                            <td className="py-2.5">
+                              <span
+                                className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-bold ${
+                                  log.severity === "CRITICAL"
+                                    ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                                    : log.severity === "HIGH"
+                                      ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                                      : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                }`}
+                              >
+                                {log.severity}
+                              </span>
+                            </td>
+                            <td className="py-2.5 font-bold text-gray-900 dark:text-white">
+                              @{log.username}
+                            </td>
+                            <td className="py-2.5 font-mono text-[#A78BFA]">
+                              {log.action}
+                            </td>
+                            <td className="py-2.5 text-gray-700 dark:text-gray-300 max-w-xs truncate" title={log.reason}>
+                              {log.reason}
+                            </td>
+                          </tr>
+                        ))}
+                        {!data?.securityLogs?.length && (
+                          <tr>
+                            <td colSpan={5} className="py-6 text-center text-gray-400">
+                              🛡️ Sistem aman! Belum ada insiden keamanan atau pelanggaran yang diblokir Satpam AI.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </DragScrollContainer>
+                </div>
               </section>
             )}
 

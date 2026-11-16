@@ -18,6 +18,7 @@ import {
   Moon,
   Newspaper,
   Settings,
+  ShieldAlert,
   ShieldCheck,
   Store,
   Sun,
@@ -265,6 +266,36 @@ export function Navbar() {
   const isStaff = user && (user.role === "ADMIN" || user.role === "MODERATOR");
   const isOwner = Boolean(user && (user.username === ".odyssia" || user.username === "odyssia" || user.name === ".odyssia" || user.discordId === "706661230835925042"));
 
+  const [adminPendingCount, setAdminPendingCount] = useState(0);
+
+  // Poll pending queue count for staff/owner
+  useEffect(() => {
+    if (!isStaff && !isOwner) {
+      setAdminPendingCount(0);
+      return;
+    }
+    let active = true;
+    const fetchPending = async () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      try {
+        const res = await fetch("/api/admin/pending-count");
+        if (!res.ok) return;
+        const json = (await res.json()) as { pendingCount?: number };
+        if (active && typeof json.pendingCount === "number") {
+          setAdminPendingCount(json.pendingCount);
+        }
+      } catch {
+        // Silently catch background errors
+      }
+    };
+    void fetchPending();
+    const interval = setInterval(fetchPending, 15000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [isStaff, isOwner]);
+
   // Determine active states for top nav items
   const isHomeActive = pathname === "/";
   const isMarketplaceActive = pathname.startsWith("/marketplace");
@@ -502,6 +533,28 @@ export function Navbar() {
                 <div className="h-10 w-24 rounded-lg bg-slate-100 dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] animate-pulse" />
               ) : user ? (
                 <div className="flex items-center gap-2">
+                  {(isStaff || isOwner) && (
+                    <Link
+                      href="/admin"
+                      className="relative h-10 px-3 rounded-lg border border-[#7C3AED]/70 bg-[#7C3AED]/10 hover:bg-[#7C3AED] text-[#7C3AED] dark:text-[#C4B5FD] hover:text-white transition-all flex items-center gap-1.5 font-mono text-xs font-bold shadow-sm group shrink-0"
+                      title="Admin Command Center"
+                    >
+                      <ShieldAlert size={15} className="group-hover:scale-110 transition-transform" />
+                      <span className="hidden lg:inline">ADMIN PANEL</span>
+                      <span className="lg:hidden">ADMIN</span>
+                      {adminPendingCount > 0 && (
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                        </span>
+                      )}
+                      {adminPendingCount > 0 && (
+                        <span className="px-1.5 py-0.2 bg-rose-500 text-white rounded-full text-[9px] font-mono font-bold leading-none">
+                          {adminPendingCount}
+                        </span>
+                      )}
+                    </Link>
+                  )}
                   <Link
                     href="/messages"
                     className="relative w-10 h-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white flex items-center justify-center shrink-0 shadow-sm dark:shadow-none"
@@ -766,6 +819,26 @@ export function Navbar() {
                         <span className="text-[10px] text-[#7C3AED] dark:text-[#A78BFA]">Buka ➔</span>
                       )}
                     </Link>
+
+                    {(isStaff || isOwner) && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileOpen(false)}
+                        className="mt-2 flex items-center justify-between p-2.5 rounded-none border border-[#7C3AED] bg-[#7C3AED]/15 text-xs font-mono font-bold text-[#7C3AED] dark:text-[#C4B5FD] hover:bg-[#7C3AED] hover:text-white transition"
+                      >
+                        <div className="flex items-center gap-2">
+                          <ShieldAlert size={14} className="text-[#7C3AED] dark:text-[#A78BFA]" />
+                          <span>🛡️ ADMIN COMMAND CENTER</span>
+                        </div>
+                        {adminPendingCount > 0 ? (
+                          <span className="px-1.5 py-0.5 rounded-none text-[10px] font-bold bg-rose-500 text-white animate-pulse">
+                            {adminPendingCount} Pending
+                          </span>
+                        ) : (
+                          <span className="text-[10px]">Akses ➔</span>
+                        )}
+                      </Link>
+                    )}
                   </div>
                 ) : (
                   <div className="mt-4">

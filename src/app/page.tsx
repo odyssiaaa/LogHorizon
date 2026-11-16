@@ -191,40 +191,40 @@ export default async function Home() {
 
               {/* Baris 4 Metrik Statistik (Data-Dense JetBrains Mono - 100% Real DB Data) */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-slate-200 dark:border-[#2E1E45]">
-                <div className="p-3 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none">
-                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase block">TOTAL PETUALANG</span>
-                  <strong className="font-mono text-xl sm:text-2xl font-bold text-slate-900 dark:text-[#F8FAFC] block mt-0.5">
+                <div className="p-3 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none min-w-0">
+                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase block truncate">TOTAL PETUALANG</span>
+                  <strong className="font-mono text-base sm:text-lg lg:text-xl font-bold text-slate-900 dark:text-[#F8FAFC] block mt-0.5 whitespace-nowrap truncate">
                     {totalMembers} Petualang
                   </strong>
-                  <span className="font-mono text-[10px] text-emerald-600 dark:text-[#10B981] mt-0.5 block">● 100% Akun Terdaftar</span>
+                  <span className="font-mono text-[10px] text-emerald-600 dark:text-[#10B981] mt-0.5 block truncate">● 100% Akun Terdaftar</span>
                 </div>
 
-                <div className="p-3 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none">
-                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase block">PRIZE POOL AKTIF</span>
-                  <strong className="font-mono text-xl sm:text-2xl font-bold text-amber-600 dark:text-[#F59E0B] block mt-0.5">
+                <div className="p-3 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none min-w-0">
+                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase block truncate">PRIZE POOL AKTIF</span>
+                  <strong className="font-mono text-base sm:text-lg lg:text-xl font-bold text-amber-600 dark:text-[#F59E0B] block mt-0.5 whitespace-nowrap truncate">
                     {formatRupiah(totalPrizePool)}
                   </strong>
-                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] mt-0.5 block">
+                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] mt-0.5 block truncate">
                     {activeTournamentCount} Turnamen Aktif
                   </span>
                 </div>
 
-                <div className="p-3 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none">
-                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase block">ACTIVE PARTY LFG</span>
-                  <strong className="font-mono text-xl sm:text-2xl font-bold text-slate-900 dark:text-[#F8FAFC] block mt-0.5">
+                <div className="p-3 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none min-w-0">
+                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase block truncate">ACTIVE PARTY LFG</span>
+                  <strong className="font-mono text-base sm:text-lg lg:text-xl font-bold text-slate-900 dark:text-[#F8FAFC] block mt-0.5 whitespace-nowrap truncate">
                     {activeLfgCount} Party
                   </strong>
-                  <span className="font-mono text-[10px] text-emerald-600 dark:text-[#10B981] mt-0.5 block">
+                  <span className="font-mono text-[10px] text-emerald-600 dark:text-[#10B981] mt-0.5 block truncate">
                     {activeLfgCount > 0 ? "Mabar Siap Tempur" : "Belum Ada Mabar"}
                   </span>
                 </div>
 
-                <div className="p-3 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none">
-                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase block">ESCROW &amp; REKBER</span>
-                  <strong className="font-mono text-xl sm:text-2xl font-bold text-emerald-600 dark:text-[#10B981] block mt-0.5">
+                <div className="p-3 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none min-w-0">
+                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase block truncate">ESCROW &amp; REKBER</span>
+                  <strong className="font-mono text-base sm:text-lg lg:text-xl font-bold text-emerald-600 dark:text-[#10B981] block mt-0.5 whitespace-nowrap truncate">
                     {escrowCount > 0 ? `${escrowCount} Transaksi` : "100% Aman"}
                   </strong>
-                  <span className="font-mono text-[10px] text-emerald-600 dark:text-[#10B981] mt-0.5 block">
+                  <span className="font-mono text-[10px] text-emerald-600 dark:text-[#10B981] mt-0.5 block truncate">
                     ● Kas Guild Terlindungi
                   </span>
                 </div>
