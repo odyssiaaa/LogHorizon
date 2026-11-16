@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { addXpInTransaction } from "@/lib/xp";
 import { sendDiscordNotice } from "@/lib/discord-webhook";
 import { sanitizePlainText, sanitizeText } from "@/lib/sanitize";
+import { checkContentSafety } from "@/lib/satpam-guardian";
 
 function isPostCategory(value: string | null): value is PostCategory {
   return value !== null && Object.values(PostCategory).includes(value as PostCategory);
@@ -122,6 +123,11 @@ export async function POST(request: Request) {
   if (isPinned && !isOwner && await prisma.post.count({ where: { authorId: user.id, isPinned: true } }) >= 3) {
     return jsonError("Benefit Premium membatasi maksimal tiga postingan tersemat.", 403);
   }
+
+  // Cek keamanan konten oleh Satpam AI (phishing, slot/judi online, toxic berat)
+  const safety = await checkContentSafety(`${title} ${content}`, category === PostCategory.MARKETPLACE ? "MARKET" : "POST", user);
+  if (!safety.isSafe) return jsonError(safety.reason ?? "Konten diblokir oleh Satpam AI.", 400);
+
   if (category === PostCategory.MARKETPLACE) {
     const market = data.marketData as Partial<MarketData> | undefined;
     if (

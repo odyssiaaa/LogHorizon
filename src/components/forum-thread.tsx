@@ -190,59 +190,77 @@ export function ForumThread({ id }: { id: string }) {
   if (loading) return <main className="community-page py-12 text-center text-[#A78BFA] font-mono text-xs"><div className="empty-state">MEMUAT THREAD…</div></main>;
   if (!thread) return <main className="community-page page-shell py-12 text-center max-w-xl mx-auto"><div className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none mb-4">{error || "Thread tidak ditemukan."}</div><Link className="inline-flex items-center gap-1.5 text-xs font-mono text-[#A78BFA] hover:text-[#F8FAFC]" href="/forum"><ArrowLeft size={16} /> KEMBALI KE FORUM</Link></main>;
 
-  const renderComments = (parentId: string | null, depth = 0): React.ReactNode => (commentsByParent.get(parentId) ?? []).map((item) => (
-    <article className="comment-card p-4 rounded-none border border-[#2E1E45] bg-[#130921] my-2" key={item.id} style={{ marginLeft: depth ? `${Math.min(depth, 3) * 16}px` : undefined }}>
-      <div className="flex items-start gap-3">
-        <DiscordAvatar className="comment-avatar shrink-0" src={item.author.avatar} username={item.author.username} size={28} />
-        <div className="comment-content min-w-0 flex-1">
-          <div className="comment-meta flex flex-wrap items-center gap-2">
-            <strong className={(item.author.isPremium || item.author.username === ".odyssia") ? "premium-username" : "text-[#F8FAFC] font-bold text-xs"}>{item.author.username ?? "Gamer"}</strong>
-            {(item.author.username?.toLowerCase() === ".odyssia" || item.author.username?.toLowerCase() === "odyssia") ? (
-              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30">👑 Emperor</span>
-            ) : item.author.role === "ADMIN" ? (
-              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30">✨ Prince</span>
-            ) : item.author.role === "MODERATOR" ? (
-              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-blue-500/15 text-blue-400 border border-blue-500/30">⚔️ Mod</span>
-            ) : null}
-            <time className="text-[11px] font-mono text-[#A78BFA]/70">{new Date(item.createdAt).toLocaleString("id-ID")}</time>
-          </div>
-          <div className="break-words mt-2 text-xs sm:text-sm leading-relaxed text-[#F8FAFC]/90 font-sans"><FormattedPostContent text={item.content} onImageClick={setLightboxImg} /></div>
-          {!user?.isBanned && (
-            <button
-              className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-mono text-[#A78BFA] hover:text-[#F8FAFC] uppercase tracking-wider"
-              onClick={() => {
-                if (!user) {
-                  setLoginAction("membalas komentar");
-                  return;
-                }
-                setReplyTo(replyTo === item.id ? null : item.id);
-                setReplyText("");
-              }}
-            >
-              <MessageCircle size={13} /> Balas
-            </button>
-          )}
-          {replyTo === item.id && (
-            <form className="reply-form mt-3 space-y-2" onSubmit={(event) => { event.preventDefault(); void sendComment(item.id, replyText); }}>
-              <textarea
-                required
-                maxLength={5000}
-                rows={2}
-                value={replyText}
-                onChange={(event) => setReplyText(event.target.value)}
-                placeholder={`Balas ${item.author.username ?? "gamer"}…`}
-                className="w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] font-sans text-xs focus:outline-none focus:border-[#7C3AED]"
-              />
-              <button className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED]" disabled={sending}>
-                <Send size={12} className="inline mr-1" /> Balas
+  const renderComments = (parentId: string | null, depth = 0): React.ReactNode => (commentsByParent.get(parentId) ?? []).map((item) => {
+    const isSatpamBot = item.author.username === "satpam-horizon" || item.author.username === "Satpam Horizon";
+
+    return (
+      <article
+        className={`comment-card p-4 rounded-none my-2 transition-all ${
+          isSatpamBot
+            ? "bg-[#7C3AED]/10 border-l-2 border-[#7C3AED] border-t border-r border-b border-[#2E1E45]"
+            : "border border-[#2E1E45] bg-[#130921]"
+        }`}
+        key={item.id}
+        style={{ marginLeft: depth ? `${Math.min(depth, 3) * 16}px` : undefined }}
+      >
+        <div className="flex items-start gap-3">
+          <DiscordAvatar className="comment-avatar shrink-0" src={item.author.avatar} username={item.author.username} size={28} />
+          <div className="comment-content min-w-0 flex-1">
+            <div className="comment-meta flex flex-wrap items-center gap-2">
+              <strong className={isSatpamBot ? "font-bold text-[#A78BFA]" : (item.author.isPremium || item.author.username === ".odyssia") ? "premium-username" : "text-[#F8FAFC] font-bold text-xs"}>
+                {isSatpamBot ? "Satpam Horizon" : (item.author.username ?? "Gamer")}
+              </strong>
+              {isSatpamBot ? (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#7C3AED] text-white border border-[#7C3AED] shadow-sm flex items-center gap-1">
+                  🛡️ SATPAM AI • BOT GUILD
+                </span>
+              ) : (item.author.username?.toLowerCase() === ".odyssia" || item.author.username?.toLowerCase() === "odyssia") ? (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30">👑 Emperor</span>
+              ) : item.author.role === "ADMIN" ? (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30">✨ Prince</span>
+              ) : item.author.role === "MODERATOR" ? (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-blue-500/15 text-blue-400 border border-blue-500/30">⚔️ Mod</span>
+              ) : null}
+              <time className="text-[11px] font-mono text-[#A78BFA]/70">{new Date(item.createdAt).toLocaleString("id-ID")}</time>
+            </div>
+            <div className="break-words mt-2 text-xs sm:text-sm leading-relaxed text-[#F8FAFC]/90 font-sans"><FormattedPostContent text={item.content} onImageClick={setLightboxImg} /></div>
+            {!user?.isBanned && !isSatpamBot && (
+              <button
+                className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-mono text-[#A78BFA] hover:text-[#F8FAFC] uppercase tracking-wider"
+                onClick={() => {
+                  if (!user) {
+                    setLoginAction("membalas komentar");
+                    return;
+                  }
+                  setReplyTo(replyTo === item.id ? null : item.id);
+                  setReplyText("");
+                }}
+              >
+                <MessageCircle size={13} /> Balas
               </button>
-            </form>
-          )}
-          <div className="nested-comments mt-2">{renderComments(item.id, depth + 1)}</div>
+            )}
+            {replyTo === item.id && (
+              <form className="reply-form mt-3 space-y-2" onSubmit={(event) => { event.preventDefault(); void sendComment(item.id, replyText); }}>
+                <textarea
+                  required
+                  maxLength={5000}
+                  rows={2}
+                  value={replyText}
+                  onChange={(event) => setReplyText(event.target.value)}
+                  placeholder={`Balas ${item.author.username ?? "gamer"}…`}
+                  className="w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] font-sans text-xs focus:outline-none focus:border-[#7C3AED]"
+                />
+                <button className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED]" disabled={sending}>
+                  <Send size={12} className="inline mr-1" /> Balas
+                </button>
+              </form>
+            )}
+            <div className="nested-comments mt-2">{renderComments(item.id, depth + 1)}</div>
+          </div>
         </div>
-      </div>
-    </article>
-  ));
+      </article>
+    );
+  });
 
   return (
     <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 overflow-x-hidden">
@@ -321,6 +339,10 @@ export function ForumThread({ id }: { id: string }) {
                   placeholder="Bagikan pendapatmu…"
                   className="w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] font-sans text-sm focus:outline-none focus:border-[#7C3AED]"
                 />
+                <p className="text-[11px] font-mono text-[#A78BFA] flex items-center gap-1.5 select-none">
+                  <span>💡</span>
+                  <span>Tips: Ketik <strong className="text-white bg-[#7C3AED]/25 px-1.5 py-0.5 border border-[#7C3AED]/40">@satpam</strong> di komentarmu untuk meminta pendapat atau rangkuman dari AI.</span>
+                </p>
                 <ImageUploader
                   value={commentImg}
                   onChange={setCommentImg}

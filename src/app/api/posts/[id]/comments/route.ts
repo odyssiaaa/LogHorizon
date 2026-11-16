@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { addXpInTransaction } from "@/lib/xp";
 import { createNotification } from "@/lib/notifications";
 import { sanitizeText } from "@/lib/sanitize";
+import { checkContentSafety, checkSatpamCooldown, handleForumMention } from "@/lib/satpam-guardian";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -17,6 +18,12 @@ export async function POST(request: Request, { params }: RouteContext) {
   const content = sanitizeText(rawContent);
   const parentId = typeof data.parentId === "string" ? data.parentId : null;
   if (!content || content.length > 250000) return jsonError("Komentar wajib diisi (maksimal 250.000 karakter).", 400);
+
+  // Auto-Moderation Shield: Cek keamanan konten terhadap judi online, phishing, dan toxic berat
+  const safety = await checkContentSafety(content, "COMMENT", user);
+  if (!safety.isSafe) {
+    return jsonError(safety.reason ?? "Komentar diblokir oleh Satpam AI.", 400);
+  }
 
   const post = await prisma.post.findUnique({
     where: { id },
@@ -56,6 +63,20 @@ export async function POST(request: Request, { params }: RouteContext) {
     }
     return created;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+  // Pemicu Otomatis @satpam di Forum Diskusi (Mirip @grok di X/Twitter)
+  if (/@satpam\b/i.test(content)) {
+    const isOwnerOrStaff = user.role === "ADMIN" || user.role === "MODERATOR" || user.username === ".odyssia";
+    const cooldown = checkSatpamCooldown(user.id, isOwnerOrStaff);
+    if (cooldown.allowed) {
+      void handleForumMention({
+        postId: id,
+        commentId: comment.id,
+        userContent: content,
+        authorUsername: user.username ?? "Gamer",
+      });
+    }
+  }
 
   // Trigger notification if commenter is not post author
   if (post.authorId !== user.id) {

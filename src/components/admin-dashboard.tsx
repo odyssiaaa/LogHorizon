@@ -151,6 +151,18 @@ type EscrowRecord = {
   claimedBy: { id: string; username: string | null } | null;
 };
 
+type SecurityLogRecord = {
+  id: string;
+  userId: string | null;
+  username: string;
+  action: string;
+  reason: string;
+  content: string;
+  flagged: string | null;
+  severity: string;
+  createdAt: string | Date;
+};
+
 type DashboardData = {
   stats: {
     totalMembers: number;
@@ -171,6 +183,7 @@ type DashboardData = {
   siteConfig?: SiteConfig;
   sponsors?: Sponsor[];
   escrowTransactions?: EscrowRecord[];
+  securityLogs?: SecurityLogRecord[];
   pagination: { page: number; pageSize: number; total: number; totalPages: number };
   canManageRoles: boolean;
   canBanMembers: boolean;
@@ -178,7 +191,7 @@ type DashboardData = {
   currentUserId: string;
 };
 
-type Tab = "overview" | "settings" | "tournaments" | "hall_of_winners" | "treasury" | "members" | "moderation";
+type Tab = "overview" | "settings" | "tournaments" | "hall_of_winners" | "treasury" | "members" | "moderation" | "security_logs";
 
 const formatMoney = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
@@ -1102,6 +1115,26 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               )}
             </button>
 
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+                tab === "security_logs"
+                  ? "bg-[#9D4EDD] text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+              }`}
+              onClick={() => setTab("security_logs")}
+            >
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck size={16} />
+                <span>Log Keamanan Satpam AI</span>
+              </div>
+              {Boolean(data?.securityLogs?.length) && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "security_logs" ? "bg-white text-[#9D4EDD]" : "bg-purple-500/20 text-purple-300"}`}>
+                  {data?.securityLogs?.length}
+                </span>
+              )}
+            </button>
+
             <Link
               href="/events?view=turnamen"
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724] border border-dashed border-[#9D4EDD]/40 mt-3 bg-[#9D4EDD]/5 transition-colors"
@@ -1202,6 +1235,20 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               {Boolean(data?.stats.pendingReports) && (
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-extrabold">
                   {data?.stats.pendingReports}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "security_logs" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+              }`}
+              onClick={() => setTab("security_logs")}
+            >
+              <ShieldCheck size={14} /> Log Keamanan AI
+              {Boolean(data?.securityLogs?.length) && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-600 text-white font-extrabold">
+                  {data?.securityLogs?.length}
                 </span>
               )}
             </button>
@@ -3065,6 +3112,174 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     onRefresh={loadDashboard}
                   />
                 )}
+              </section>
+            )}
+
+            {/* ========================================================================= */}
+            {/* TAB 7: LOG KEAMANAN SATPAM AI */}
+            {/* ========================================================================= */}
+            {tab === "security_logs" && (
+              <section className="space-y-6" role="tabpanel">
+                {/* Header Banner */}
+                <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="p-2 rounded-none bg-purple-500/10 border border-purple-500/30 text-[#9D4EDD]">
+                          <ShieldCheck size={20} />
+                        </span>
+                        <div>
+                          <h2 className="text-base font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                            Log Keamanan Satpam AI
+                            <span className="text-[10px] px-2 py-0.5 rounded-none bg-purple-500/20 text-[#A78BFA] font-mono font-bold">
+                              LIVE SHIELD
+                            </span>
+                          </h2>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Audit jejak digital otomatis terhadap percobaan phishing, judi online, kata-kata kasar, dan anomali Rekber.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={loadDashboard}
+                      className="px-3 py-1.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 self-start sm:self-auto transition"
+                    >
+                      <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
+                      Segarkan Data
+                    </button>
+                  </div>
+
+                  {/* Summary Metric Counters */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-gray-100 dark:border-[#231738]">
+                    <div className="p-3 bg-gray-50 dark:bg-[#1A0F2E] border border-gray-200 dark:border-[#2E1E45]">
+                      <div className="text-[11px] font-mono text-gray-500 dark:text-gray-400">TOTAL INSIDEN</div>
+                      <div className="text-lg font-mono font-bold text-gray-900 dark:text-white mt-0.5">
+                        {data?.securityLogs?.length ?? 0}
+                      </div>
+                    </div>
+                    <div className="p-3 bg-red-500/5 dark:bg-red-950/20 border border-red-500/20">
+                      <div className="text-[11px] font-mono text-red-500 dark:text-red-400">PHISHING / SCAM</div>
+                      <div className="text-lg font-mono font-bold text-red-600 dark:text-red-400 mt-0.5">
+                        {data?.securityLogs?.filter((l) => l.action.includes("PHISHING") || l.severity === "CRITICAL").length ?? 0}
+                      </div>
+                    </div>
+                    <div className="p-3 bg-amber-500/5 dark:bg-amber-950/20 border border-amber-500/20">
+                      <div className="text-[11px] font-mono text-amber-600 dark:text-amber-400">JUDI ONLINE / SLOT</div>
+                      <div className="text-lg font-mono font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+                        {data?.securityLogs?.filter((l) => l.action.includes("JUDOL")).length ?? 0}
+                      </div>
+                    </div>
+                    <div className="p-3 bg-purple-500/5 dark:bg-purple-950/20 border border-purple-500/20">
+                      <div className="text-[11px] font-mono text-purple-600 dark:text-purple-400">REKBER ESCROW WARNING</div>
+                      <div className="text-lg font-mono font-bold text-purple-600 dark:text-purple-400 mt-0.5">
+                        {data?.securityLogs?.filter((l) => l.action.includes("ESCROW")).length ?? 0}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Log Entries Table */}
+                <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
+                  <h3 className="text-xs font-bold font-mono tracking-wider text-gray-700 dark:text-gray-300 uppercase mb-4 flex items-center gap-2">
+                    <Shield size={14} className="text-[#9D4EDD]" />
+                    Catatan Pelanggaran Terakhir (Maks. 50 Insiden)
+                  </h3>
+
+                  {!data?.securityLogs || data.securityLogs.length === 0 ? (
+                    <div className="py-12 px-4 text-center border border-dashed border-gray-200 dark:border-[#2E1E45] bg-gray-50/50 dark:bg-[#180E2B]/50">
+                      <div className="w-12 h-12 mx-auto rounded-none bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mb-3">
+                        <CheckCircle size={22} />
+                      </div>
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">Pertahanan Guild Aman</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-md mx-auto">
+                        Belum ada insiden atau upaya pelanggaran keamanan yang terdeteksi. Satpam Horizon AI aktif mengawasi komunitas 24/7.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400 font-mono text-[11px]">
+                            <th className="py-2.5 px-3">WAKTU</th>
+                            <th className="py-2.5 px-3">TINGKAT</th>
+                            <th className="py-2.5 px-3">PENGGUNA</th>
+                            <th className="py-2.5 px-3">AKSI & ALASAN</th>
+                            <th className="py-2.5 px-3">TRIGGER TERDETEKSI</th>
+                            <th className="py-2.5 px-3">CUPLIKAN KONTEN</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-[#1F1435]">
+                          {data.securityLogs.map((log) => {
+                            const isCritical = log.severity === "CRITICAL";
+                            const isHigh = log.severity === "HIGH";
+                            const isMedium = log.severity === "MEDIUM";
+
+                            const badgeColor = isCritical
+                              ? "bg-red-500/20 text-red-400 border-red-500/30"
+                              : isHigh
+                              ? "bg-rose-500/20 text-rose-300 border-rose-500/30"
+                              : isMedium
+                              ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                              : "bg-purple-500/20 text-purple-300 border-purple-500/30";
+
+                            return (
+                              <tr key={log.id} className="hover:bg-gray-50/50 dark:hover:bg-[#1A0F2E]/50 transition-colors">
+                                <td className="py-3 px-3 font-mono text-[11px] text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                  {new Date(log.createdAt).toLocaleString("id-ID", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                  })}
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  <span className={`inline-block px-2 py-0.5 text-[10px] font-mono font-bold uppercase border ${badgeColor}`}>
+                                    {log.severity}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  <div className="font-semibold text-gray-900 dark:text-gray-200">
+                                    @{log.username}
+                                  </div>
+                                  {log.userId && (
+                                    <div className="text-[10px] font-mono text-gray-400">
+                                      ID: {log.userId.slice(0, 10)}...
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 max-w-[240px]">
+                                  <div className="font-mono text-[11px] font-bold text-[#A78BFA]">
+                                    {log.action}
+                                  </div>
+                                  <div className="text-gray-600 dark:text-gray-400 text-[11px] line-clamp-2 mt-0.5">
+                                    {log.reason}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  {log.flagged ? (
+                                    <span className="font-mono text-[11px] px-2 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 font-bold">
+                                      "{log.flagged}"
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-500 text-[11px] font-mono">-</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 max-w-[280px]">
+                                  <div className="p-1.5 bg-gray-100 dark:bg-[#0D0717] border border-gray-200 dark:border-[#2A1B42] font-mono text-[10px] text-gray-700 dark:text-gray-300 break-words line-clamp-2 max-h-12 overflow-hidden">
+                                    {log.content}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </section>
             )}
           </div>

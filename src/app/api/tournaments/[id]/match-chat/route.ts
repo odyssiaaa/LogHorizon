@@ -4,6 +4,7 @@ import { TournamentMatch, TournamentTeam } from "@/lib/tournament";
 import { NotificationType } from "@prisma/client";
 import { createNotification } from "@/lib/notifications";
 import { sendDiscordNotice } from "@/lib/discord-webhook";
+import { checkSatpamCooldown, handleMatchLobbyMention } from "@/lib/satpam-guardian";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -328,6 +329,20 @@ export async function POST(request: Request, { params }: RouteContext) {
       },
     },
   });
+
+  // Pemicu Otomatis @satpam Asisten Wasit di Match Lobby Chat
+  if (/@satpam\b/i.test(fullContent)) {
+    const isOwnerOrStaff = user.role === "ADMIN" || user.role === "MODERATOR" || user.username === ".odyssia";
+    const cooldown = checkSatpamCooldown(user.id, isOwnerOrStaff);
+    if (cooldown.allowed) {
+      void handleMatchLobbyMention({
+        tournamentId: id,
+        matchId,
+        userMessage: fullContent,
+        senderUsername: user.username ?? "Kapten",
+      });
+    }
+  }
 
   return Response.json({ success: true, message: created }, { status: 201 });
 }

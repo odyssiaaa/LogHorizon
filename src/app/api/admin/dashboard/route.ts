@@ -41,6 +41,7 @@ export async function GET(request: Request) {
     siteConfig,
     sponsors,
     escrowTransactions,
+    securityLogs,
   ] = await prisma.$transaction([
     prisma.user.count(),
     prisma.post.count({
@@ -155,6 +156,10 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
       take: 30,
     }),
+    prisma.securityLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
   ]);
 
   const defaultSiteConfig = {
@@ -190,6 +195,7 @@ export async function GET(request: Request) {
     siteConfig: siteConfig ?? defaultSiteConfig,
     sponsors,
     escrowTransactions,
+    securityLogs,
     pagination: { page, pageSize: PAGE_SIZE, total: totalUsers, totalPages: Math.ceil(totalUsers / PAGE_SIZE) },
     canManageRoles: access.user.role === Role.ADMIN,
     canBanMembers: true,

@@ -1,5 +1,6 @@
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { checkSatpamCooldown, processEscrowGuardian } from "@/lib/satpam-guardian";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -48,6 +49,15 @@ export async function POST(request: Request, { params }: RouteContext) {
     return jsonError("Akses ditolak. Anda bukan pihak yang terlibat dalam rekber ini.", 403);
   }
 
+  // Cek Cooldown jika mention @satpam
+  if (/@satpam\b/i.test(message)) {
+    const isOwnerOrStaff = user.username?.toLowerCase() === ".odyssia" || user.role === "ADMIN" || user.role === "MODERATOR";
+    const cooldown = checkSatpamCooldown(user.id, isOwnerOrStaff);
+    if (!cooldown.allowed) {
+      return jsonError(`Cooldown Satpam: Harap tunggu ${cooldown.remainingSec} detik sebelum memanggil @satpam kembali.`, 429);
+    }
+  }
+
   const createdMessage = await prisma.escrowMessage.create({
     data: {
       escrowId: id,
@@ -64,6 +74,13 @@ export async function POST(request: Request, { params }: RouteContext) {
         },
       },
     },
+  });
+
+  // Jalankan asisten Satpam (deteksi indikasi scam / respon @satpam) di background
+  void processEscrowGuardian({
+    escrowId: id,
+    userMessage: message,
+    senderUser: user,
   });
 
   return Response.json({

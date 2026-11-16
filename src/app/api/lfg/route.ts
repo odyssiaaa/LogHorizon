@@ -3,6 +3,7 @@ import { activeUser, authenticatedUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sendDiscordNotice } from "@/lib/discord-webhook";
 import { sanitizePlainText } from "@/lib/sanitize";
+import { checkContentSafety } from "@/lib/satpam-guardian";
 
 const VALID_DURATIONS = [1, 3, 6, 12, 24] as const;
 
@@ -110,6 +111,10 @@ export async function POST(request: Request) {
   ) {
     return jsonError("Nama game, deskripsi ajakan, dan slot pemain tidak valid.", 400);
   }
+
+  // Cek keamanan konten oleh Satpam AI
+  const safety = await checkContentSafety(`${game} ${description}`, "LFG", user);
+  if (!safety.isSafe) return jsonError(safety.reason ?? "Ajakan mabar diblokir oleh Satpam AI.", 400);
 
   // Durasi kustom dengan default 24 jam
   const durationInput = Number(data.durationHours ?? data.duration ?? 24);

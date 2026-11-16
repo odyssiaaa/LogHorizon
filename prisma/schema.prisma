@@ -471,4 +471,19 @@ model MatchMessage {
   @@index([expiresAt])
 }
 
+model SecurityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  username  String?
+  action    String
+  reason    String
+  content   String   @db.Text
+  flagged   String?
+  severity  String   @default("HIGH")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action, createdAt])
+}
+
 

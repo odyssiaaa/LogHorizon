@@ -1,6 +1,11 @@
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sanitizeText } from "@/lib/sanitize";
+import {
+  checkContentSafety,
+  checkSatpamCooldown,
+  handleDirectMessageMention,
+} from "@/lib/satpam-guardian";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -97,6 +102,22 @@ export async function POST(request: Request, { params }: RouteContext) {
     return jsonError("Pesan maksimal 250.000 karakter.", 400);
   }
 
+  // 1. Content Safety Check
+  const safety = await checkContentSafety(content, "COMMENT", me);
+  if (!safety.isSafe) {
+    return jsonError(safety.reason ?? "Pesan diblokir oleh Satpam AI.", 400);
+  }
+
+  // 2. Satpam mention check
+  const isSatpamMention = /@satpam\b/i.test(content);
+  if (isSatpamMention) {
+    const isOwnerOrStaff = me.username?.toLowerCase() === ".odyssia" || me.role === "ADMIN" || me.role === "MODERATOR";
+    const cooldown = checkSatpamCooldown(me.id, isOwnerOrStaff);
+    if (!cooldown.allowed) {
+      return jsonError(`Cooldown Satpam: Harap tunggu ${cooldown.remainingSec} detik sebelum memanggil @satpam kembali.`, 429);
+    }
+  }
+
   const message = await prisma.directMessage.create({
     data: {
       conversationId: id,
@@ -129,6 +150,14 @@ export async function POST(request: Request, { params }: RouteContext) {
       data: { lastReadAt: now },
     }),
   ]);
+
+  if (isSatpamMention) {
+    void handleDirectMessageMention({
+      conversationId: id,
+      userMessage: content,
+      senderUsername: me.username ?? "Petualang",
+    });
+  }
 
   return Response.json({ success: true, message });
 }
