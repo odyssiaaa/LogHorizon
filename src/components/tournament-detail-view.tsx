@@ -798,7 +798,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           </div>
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* INSTANT SEARCH BAR DI POHON BAGAN */}
-            <div className="relative w-64 sm:w-72">
+            <div className="relative w-64 sm:w-80">
               <div className="flex items-center gap-2 px-3 h-8 rounded-lg border border-gray-300 dark:border-[#211C2B] bg-gray-50 dark:bg-[#120F17] focus-within:border-[#9D4EDD] focus-within:ring-1 focus-within:ring-[#9D4EDD] transition-all">
                 <Search size={13} className="text-gray-400 shrink-0" />
                 <input
@@ -812,10 +812,11 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                   <button
                     type="button"
                     onClick={() => setBracketSearchQuery("")}
-                    className="p-0.5 rounded text-gray-400 hover:text-white"
-                    title="Reset pencarian"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium text-purple-300 bg-purple-500/20 hover:bg-purple-500/30 hover:text-white transition shrink-0 active:scale-95"
+                    title="Reset pencarian dan hilangkan efek sorotan"
                   >
-                    <X size={12} />
+                    <X size={11} />
+                    <span>Reset Pencarian</span>
                   </button>
                 )}
               </div>

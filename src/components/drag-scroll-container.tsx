@@ -22,12 +22,12 @@ export function DragScrollContainer({
 }: DragScrollContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeftState, setScrollLeftState] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const isDownRef = useRef(false);
   const hasDraggedRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
 
   const checkScroll = useCallback(() => {
     const el = containerRef.current;
@@ -35,6 +35,13 @@ export function DragScrollContainer({
     const hasOverflow = el.scrollWidth > el.clientWidth + 2;
     setCanScrollLeft(el.scrollLeft > 5);
     setCanScrollRight(hasOverflow && el.scrollLeft < el.scrollWidth - el.clientWidth - 5);
+  }, []);
+
+  // Membatalkan animasi scroll otomatis yang sedang berjalan secara instan
+  const cancelScrollAnimation = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.scrollTo({ left: el.scrollLeft, behavior: "auto" });
   }, []);
 
   useEffect(() => {
@@ -55,53 +62,97 @@ export function DragScrollContainer({
     };
   }, [checkScroll]);
 
-  // Global mouse handlers so dragging doesn't stutter or break when cursor leaves container
+  // Global mouse handlers: selalu aktif dengan ref, tidak pernah re-bind di tengah drag
   useEffect(() => {
     function handleGlobalMouseMove(e: MouseEvent) {
       if (!isDownRef.current) return;
       const el = containerRef.current;
       if (!el) return;
+
+      // Jika tombol mouse utama tidak lagi ditekan (misal dilepas di luar iframe/window)
+      if (e.buttons === 0) {
+        isDownRef.current = false;
+        setIsDragging(false);
+        hasDraggedRef.current = false;
+        return;
+      }
+
       const x = e.pageX - el.offsetLeft;
-      const walk = (x - startX) * 1.5;
-      if (Math.abs(x - startX) > 4) {
+      const walk = (x - startXRef.current) * 1.5;
+      if (Math.abs(x - startXRef.current) > 4) {
         hasDraggedRef.current = true;
       }
-      el.scrollLeft = scrollLeftState - walk;
+      el.scrollLeft = scrollLeftRef.current - walk;
     }
 
     function handleGlobalMouseUp() {
       if (isDownRef.current) {
         isDownRef.current = false;
         setIsDragging(false);
-        // Reset hasDragged after microtask so click event can be captured/cancelled
+        // Reset hasDragged setelah microtask agar event click dapat dicegah jika memang dragging
         setTimeout(() => {
           hasDraggedRef.current = false;
         }, 50);
       }
     }
 
+    function handleBlur() {
+      if (isDownRef.current) {
+        isDownRef.current = false;
+        setIsDragging(false);
+        hasDraggedRef.current = false;
+      }
+    }
+
     window.addEventListener("mousemove", handleGlobalMouseMove);
     window.addEventListener("mouseup", handleGlobalMouseUp);
+    window.addEventListener("blur", handleBlur);
 
     return () => {
       window.removeEventListener("mousemove", handleGlobalMouseMove);
       window.removeEventListener("mouseup", handleGlobalMouseUp);
+      window.removeEventListener("blur", handleBlur);
     };
-  }, [startX, scrollLeftState]);
+  }, []);
 
   function handleMouseDown(e: React.MouseEvent) {
     const el = containerRef.current;
     if (!el) return;
-    // Don't drag if clicking buttons or inputs directly
+
+    // Batalkan animasi auto-scroll seketika saat user menekan mouse
+    cancelScrollAnimation();
+
+    // Jangan memulai drag jika user mengklik tombol, link, atau input formulir
     const target = e.target as HTMLElement;
     if (target.closest("button, a, input, select, textarea")) {
       return;
     }
+
+    // Hanya tangani klik kiri (button 0)
+    if (e.button !== 0) return;
+
     isDownRef.current = true;
     hasDraggedRef.current = false;
+    startXRef.current = e.pageX - el.offsetLeft;
+    scrollLeftRef.current = el.scrollLeft;
     setIsDragging(true);
-    setStartX(e.pageX - el.offsetLeft);
-    setScrollLeftState(el.scrollLeft);
+  }
+
+  function handleWheel() {
+    // Batalkan animasi auto-scroll seketika saat user scroll dengan wheel / trackpad
+    cancelScrollAnimation();
+  }
+
+  function handleTouchStart() {
+    // Batalkan animasi auto-scroll seketika saat user menyentuh layar
+    cancelScrollAnimation();
+  }
+
+  function handleMouseLeave() {
+    // Jika kursor keluar dari kontainer dan mouse button tidak sedang ditekan
+    if (!isDownRef.current && isDragging) {
+      setIsDragging(false);
+    }
   }
 
   function handleClickCapture(e: React.MouseEvent) {
@@ -192,6 +243,9 @@ export function DragScrollContainer({
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
+        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onMouseLeave={handleMouseLeave}
         onClickCapture={handleClickCapture}
         className={`overflow-x-auto scrollbar-none select-none touch-pan-x overscroll-x-contain ${
           isDragging ? "cursor-grabbing" : "cursor-grab"

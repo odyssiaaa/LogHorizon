@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Fragment, useEffect, useState } from "react";
+import { FormEvent, Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
@@ -1385,7 +1385,7 @@ export function EventsBoard() {
 
                       <div className="flex items-center gap-2.5 flex-wrap">
                         {/* INSTANT SEARCH BAR DI POHON BAGAN */}
-                        <div className="relative w-64 sm:w-72">
+                        <div className="relative w-64 sm:w-80">
                           <div className="flex items-center gap-2 px-3 h-8 rounded-lg border border-gray-300 dark:border-[#211C2B] bg-gray-50 dark:bg-[#120F17] focus-within:border-[#9D4EDD] focus-within:ring-1 focus-within:ring-[#9D4EDD] transition-all">
                             <Search size={13} className="text-gray-400 shrink-0" />
                             <input
@@ -1409,10 +1409,11 @@ export function EventsBoard() {
                                     [tournament.id]: "",
                                   }))
                                 }
-                                className="p-0.5 rounded text-gray-400 hover:text-white"
-                                title="Reset pencarian"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium text-purple-300 bg-purple-500/20 hover:bg-purple-500/30 hover:text-white transition shrink-0 active:scale-95"
+                                title="Reset pencarian dan hilangkan efek sorotan"
                               >
-                                <X size={12} />
+                                <X size={11} />
+                                <span>Reset Pencarian</span>
                               </button>
                             )}
                           </div>
@@ -4299,15 +4300,34 @@ export function DualWingBracketView({
 }) {
   const totalRounds = sortedRoundNumbers.length;
 
-  // Auto-scroll (Smooth Scroll & Jump) to first matching match
+  // 1. Debounce kata kunci pencarian selama 350ms agar tidak memicu scroll berlebihan di setiap ketukan keyboard
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+
   useEffect(() => {
-    if (!searchQuery || !searchQuery.trim()) return;
-    const q = searchQuery.trim().toLowerCase();
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 350);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Simpan referensi data rounds & matches terbaru di ref agar useEffect auto-scroll
+  // TIDAK terpicu ulang oleh polling auto-refresh 4 detik
+  const latestDataRef = useRef({ sortedRoundNumbers, roundsMap });
+  useEffect(() => {
+    latestDataRef.current = { sortedRoundNumbers, roundsMap };
+  });
+
+  // 2. Auto-scroll HANYA 1 KALI per perubahan kata kunci debouncedSearchQuery
+  // Menggunakan scrollTo horizontal pada container pembungkus (.overflow-x-auto) tanpa scrollIntoView
+  useEffect(() => {
+    if (!debouncedSearchQuery || !debouncedSearchQuery.trim()) return;
+    const q = debouncedSearchQuery.trim().toLowerCase();
     const cleanQ = q.replace(/^#/, "");
 
+    const { sortedRoundNumbers: rNums, roundsMap: rMap } = latestDataRef.current;
     let targetMatchId: string | null = null;
-    for (const rNum of sortedRoundNumbers) {
-      const rMatches = roundsMap.get(rNum) || [];
+    for (const rNum of rNums) {
+      const rMatches = rMap.get(rNum) || [];
       const matched = rMatches.find(
         (m) =>
           (cleanQ.length > 0 && m.matchId.toLowerCase().includes(cleanQ)) ||
@@ -4321,12 +4341,27 @@ export function DualWingBracketView({
     }
 
     if (targetMatchId) {
-      const el = document.getElementById(`bracket-match-${targetMatchId}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      const targetEl = document.getElementById(`bracket-match-${targetMatchId}`);
+      if (targetEl) {
+        // Cari kontainer pembungkus scroll horizontal (.overflow-x-auto)
+        const scrollContainer = targetEl.closest(".overflow-x-auto") as HTMLDivElement | null;
+        if (scrollContainer) {
+          const containerRect = scrollContainer.getBoundingClientRect();
+          const targetRect = targetEl.getBoundingClientRect();
+          const targetOffset = targetRect.left - containerRect.left + scrollContainer.scrollLeft;
+          const targetLeft = Math.max(
+            0,
+            targetOffset - scrollContainer.clientWidth / 2 + targetEl.clientWidth / 2
+          );
+
+          scrollContainer.scrollTo({
+            left: targetLeft,
+            behavior: "smooth",
+          });
+        }
       }
     }
-  }, [searchQuery, sortedRoundNumbers, roundsMap]);
+  }, [debouncedSearchQuery]);
 
   // Format tunggal di tengah untuk 1 ronde saja (2-3 tim)
   if (totalRounds <= 1) {
