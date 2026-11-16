@@ -53,13 +53,16 @@ export async function GET() {
       const matches = (t.matches as unknown as TournamentMatch[]) || [];
       if (!Array.isArray(matches) || matches.length === 0) continue;
 
-      // Find Grand Final match (highest round or roundName containing 'Final'/'Grand Final')
+      // Find Grand Final match (highest round or roundName containing 'Final'/'Grand Final', excluding Bronze Match)
       const maxRound = Math.max(...matches.map((m) => m.round || 1));
       const gfMatch = matches.find(
         (m) =>
-          m.round === maxRound ||
-          m.roundName?.toLowerCase().includes("grand final") ||
-          m.roundName?.toLowerCase() === "final"
+          m.matchId !== "BRONZE-01" &&
+          !m.roundName?.toLowerCase().includes("bronze") &&
+          !m.roundName?.toLowerCase().includes("juara 3") &&
+          (m.roundName?.toLowerCase().includes("grand final") ||
+            m.roundName?.toLowerCase() === "final" ||
+            m.round === maxRound)
       );
 
       if (!gfMatch || !gfMatch.winner) {
@@ -77,6 +80,7 @@ export async function GET() {
       // Find Bronze Match (Juara 3)
       const bronzeMatch = matches.find(
         (m) =>
+          m.matchId === "BRONZE-01" ||
           m.roundName?.toLowerCase().includes("juara 3") ||
           m.roundName?.toLowerCase().includes("bronze")
       );

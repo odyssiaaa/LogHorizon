@@ -15,13 +15,30 @@ export async function POST(request: Request) {
   const payload: unknown = await request.json();
   const body = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
 
-  const name = typeof body.name === "string" ? body.name.trim() : "";
+  let name = typeof body.name === "string" ? body.name.trim() : "";
   const logoUrl = typeof body.logoUrl === "string" ? body.logoUrl.trim() : null;
-  const websiteUrl = typeof body.websiteUrl === "string" ? body.websiteUrl.trim() : null;
-  const tier = typeof body.tier === "string" ? body.tier.trim() : "Benefactor";
+  let websiteUrl = typeof body.websiteUrl === "string" ? body.websiteUrl.trim() : null;
+  const tier = typeof body.tier === "string" ? body.tier.trim() : "Official Sponsor";
+
+  if (!logoUrl) {
+    return Response.json({ error: "Logo sponsor wajib diunggah." }, { status: 400 });
+  }
+
+  if (websiteUrl && !websiteUrl.startsWith("http://") && !websiteUrl.startsWith("https://")) {
+    websiteUrl = `https://${websiteUrl}`;
+  }
 
   if (!name) {
-    return Response.json({ error: "Nama sponsor wajib diisi." }, { status: 400 });
+    if (websiteUrl) {
+      try {
+        const u = new URL(websiteUrl);
+        name = u.hostname.replace(/^www\./, "");
+      } catch {
+        name = "Official Partner";
+      }
+    } else {
+      name = "Official Partner";
+    }
   }
 
   const sponsor = await prisma.sponsor.create({
@@ -29,7 +46,7 @@ export async function POST(request: Request) {
       name,
       logoUrl: logoUrl || null,
       websiteUrl: websiteUrl || null,
-      tier: tier || "Benefactor",
+      tier: tier || "Official Sponsor",
     },
   });
 

@@ -249,6 +249,21 @@ export function generateTemplateBracket(
     allMatches.push(...rList);
   }
 
+  // 🥉 BABAK PEREBUTAN JUARA 3 (BRONZE MATCH) OTOMATIS
+  // Jika turnamen memiliki minimal 4 tim (memiliki babak Semifinal), buat kotak match BRONZE-01
+  if (bracketSize >= 4) {
+    allMatches.push({
+      matchId: "BRONZE-01",
+      round: totalRounds,
+      roundName: "🥉 BRONZE MATCH (PEREBUTAN JUARA 3)",
+      teamA: { name: "Kalah Semifinal 1", score: 0 },
+      teamB: { name: "Kalah Semifinal 2", score: 0 },
+      winner: null,
+      winnerId: null,
+      matchStatus: "UPCOMING",
+    });
+  }
+
   return { teams, matches: allMatches };
 }
 
@@ -273,6 +288,7 @@ export function advanceMatchWinner(
   if (scoreA !== undefined) current.teamA = { ...current.teamA, score: scoreA };
   if (scoreB !== undefined) current.teamB = { ...current.teamB, score: scoreB };
 
+  // 1. Pemenang melaju ke babak berikutnya (Grand Final / Babak Lanjutan)
   if (current.nextMatchId && current.nextSlot) {
     const nextMatch = updatedMatches.find((m) => m.matchId === current.nextMatchId);
     if (nextMatch) {
@@ -280,6 +296,49 @@ export function advanceMatchWinner(
         nextMatch.teamA = { ...nextMatch.teamA, id: winnerId, name: winnerName };
       } else {
         nextMatch.teamB = { ...nextMatch.teamB, id: winnerId, name: winnerName };
+      }
+    }
+  }
+
+  // 2. Jika pertandingan yang selesai adalah SEMIFINAL, masukkan tim yang kalah ke BRONZE MATCH (BRONZE-01)
+  const isSemi =
+    current.roundName?.toLowerCase().includes("semifinal") ||
+    (current.nextMatchId &&
+      updatedMatches.find((m) => m.matchId === current.nextMatchId)?.roundName?.toLowerCase().includes("final"));
+
+  if (isSemi) {
+    const isWinnerA = current.teamA?.name === winnerName;
+    const loser = isWinnerA ? current.teamB : current.teamA;
+    const loserName = loser?.name;
+    const loserId = loser?.id;
+
+    if (loserName && loserName !== "BYE" && loserName !== "TBD") {
+      let bronzeMatch = updatedMatches.find(
+        (m) => m.matchId === "BRONZE-01" || m.roundName?.toLowerCase().includes("bronze")
+      );
+
+      // Auto-buat BRONZE-01 jika belum ada pada data turnamen lama
+      if (!bronzeMatch) {
+        const maxRound = Math.max(...updatedMatches.map((m) => m.round || 1));
+        bronzeMatch = {
+          matchId: "BRONZE-01",
+          round: maxRound,
+          roundName: "🥉 BRONZE MATCH (PEREBUTAN JUARA 3)",
+          teamA: { name: "Kalah Semifinal 1", score: 0 },
+          teamB: { name: "Kalah Semifinal 2", score: 0 },
+          winner: null,
+          winnerId: null,
+          matchStatus: "UPCOMING",
+        };
+        updatedMatches.push(bronzeMatch);
+      }
+
+      // Semifinal 1 (nextSlot teamA / m1) masuk ke teamA, Semifinal 2 (nextSlot teamB / m2) masuk ke teamB
+      const isSlotA = current.nextSlot === "teamA" || current.matchId.endsWith("-m1");
+      if (isSlotA) {
+        bronzeMatch.teamA = { ...bronzeMatch.teamA, id: loserId, name: loserName, score: 0 };
+      } else {
+        bronzeMatch.teamB = { ...bronzeMatch.teamB, id: loserId, name: loserName, score: 0 };
       }
     }
   }
@@ -318,6 +377,38 @@ export function resetMatchResult(
           nextMatch.winner = null;
           nextMatch.winnerId = null;
           nextMatch.matchStatus = "UPCOMING";
+        }
+      }
+    }
+  }
+
+  // Jika pertandingan yang direset adalah SEMIFINAL, reset juga tim di BRONZE-01
+  const isSemi =
+    current.roundName?.toLowerCase().includes("semifinal") ||
+    (current.nextMatchId &&
+      updatedMatches.find((m) => m.matchId === current.nextMatchId)?.roundName?.toLowerCase().includes("final"));
+
+  if (isSemi) {
+    const bronzeMatch = updatedMatches.find(
+      (m) => m.matchId === "BRONZE-01" || m.roundName?.toLowerCase().includes("bronze")
+    );
+    if (bronzeMatch) {
+      const isSlotA = current.nextSlot === "teamA" || current.matchId.endsWith("-m1");
+      if (isSlotA) {
+        const prevLoser = bronzeMatch.teamA?.name;
+        bronzeMatch.teamA = { id: undefined, name: "Kalah Semifinal 1", score: 0 };
+        if (bronzeMatch.winner === prevLoser) {
+          bronzeMatch.winner = null;
+          bronzeMatch.winnerId = null;
+          bronzeMatch.matchStatus = "UPCOMING";
+        }
+      } else {
+        const prevLoser = bronzeMatch.teamB?.name;
+        bronzeMatch.teamB = { id: undefined, name: "Kalah Semifinal 2", score: 0 };
+        if (bronzeMatch.winner === prevLoser) {
+          bronzeMatch.winner = null;
+          bronzeMatch.winnerId = null;
+          bronzeMatch.matchStatus = "UPCOMING";
         }
       }
     }

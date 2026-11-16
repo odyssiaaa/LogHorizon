@@ -503,10 +503,13 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     }
   }
 
-  // Add Sponsor
+  // Add Sponsor (Logo + Link Website saja)
   async function handleAddSponsor(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!sponsorName.trim()) return;
+    if (!sponsorLogo) {
+      setError("Logo sponsor wajib diunggah!");
+      return;
+    }
     setSavingSponsor(true);
     setError("");
     try {
@@ -514,10 +517,9 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: sponsorName.trim(),
-          logoUrl: sponsorLogo.trim() || undefined,
+          logoUrl: sponsorLogo.trim(),
           websiteUrl: sponsorWebsite.trim() || undefined,
-          tier: sponsorTier.trim() || "Benefactor",
+          tier: "Official Sponsor",
         }),
       });
       const result = await readApiResponse<{ sponsor: Sponsor }>(response, "Gagal menambahkan sponsor.");
@@ -532,7 +534,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
       setSponsorName("");
       setSponsorLogo("");
       setSponsorWebsite("");
-      setNotice(`Sponsor "${result.sponsor.name}" berhasil ditambahkan.`);
+      setNotice(`Sponsor baru berhasil ditambahkan.`);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Gagal menambahkan sponsor.");
     } finally {
@@ -2692,95 +2694,89 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     </div>
                   </div>
 
-                  {/* Form Tambah Sponsor */}
-                  <form onSubmit={(e) => void handleAddSponsor(e)} className="p-4 rounded-none bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45] mb-6 space-y-3">
-                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Tambah Sponsor Baru</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                      <div>
-                        <input
-                          type="text"
-                          required
-                          value={sponsorName}
-                          onChange={(e) => setSponsorName(e.target.value)}
-                          placeholder="Nama Sponsor / Brand *"
-                          className="w-full px-3 py-1.5 rounded border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                        />
-                      </div>
+                  {/* Form Tambah Sponsor (2 Input Saja: Upload Logo + Link Tujuan) */}
+                  <form onSubmit={(e) => void handleAddSponsor(e)} className="p-4 rounded-none bg-[#09040F] border border-[#2E1E45] mb-6 space-y-4">
+                    <p className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-[#7C3AED]" />
+                      <span>Tambah Sponsor Baru (Logo-Only &amp; Clickable)</span>
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                       <div>
                         <ImageUploader
                           value={sponsorLogo}
                           onChange={setSponsorLogo}
-                          label="Upload Logo Sponsor (Opsional)"
-                          description="Pilih logo sponsor dari HP atau komputer."
+                          label="1. Upload Logo Sponsor"
+                          description="Pilih logo dari HP atau komputer (otomatis dikompres)."
+                          required
                         />
                       </div>
-                      <div>
-                        <input
-                          type="url"
-                          value={sponsorWebsite}
-                          onChange={(e) => setSponsorWebsite(e.target.value)}
-                          placeholder="Link Website (Opsional)"
-                          className="w-full px-3 py-1.5 rounded border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={sponsorTier}
-                          onChange={(e) => setSponsorTier(e.target.value)}
-                          className="flex-1 px-2 py-1.5 rounded border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs text-gray-900 dark:text-white focus:outline-none"
-                        >
-                          <option value="Benefactor">Benefactor</option>
-                          <option value="Platinum Partner">Platinum</option>
-                          <option value="Gold Partner">Gold</option>
-                        </select>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-mono font-bold text-gray-300 uppercase tracking-wider mb-1.5">
+                            2. Link Laman Tujuan Sponsor <span className="text-red-400">*</span>
+                          </label>
+                          <input
+                            type="url"
+                            required
+                            value={sponsorWebsite}
+                            onChange={(e) => setSponsorWebsite(e.target.value)}
+                            placeholder="https://instagram.com/... atau https://discord.gg/..."
+                            className="w-full px-3.5 py-2.5 rounded-none border border-[#2E1E45] bg-[#130921] text-xs font-mono text-white placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED]"
+                          />
+                          <p className="text-[10px] font-mono text-gray-400 mt-1">
+                            Pengunjung akan diarahkan ke link ini saat mengklik logo di halaman utama.
+                          </p>
+                        </div>
                         <button
                           type="submit"
-                          disabled={savingSponsor}
-                          className="button button-primary px-3 py-1.5 rounded text-xs font-bold inline-flex items-center gap-1 shrink-0"
+                          disabled={savingSponsor || !sponsorLogo}
+                          className="w-full py-2.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-40 text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer"
                         >
-                          <Plus size={14} /> Tambah
+                          <Plus size={14} />
+                          <span>{savingSponsor ? "Menyimpan..." : "Simpan Sponsor"}</span>
                         </button>
                       </div>
                     </div>
                   </form>
 
                   {/* List Sponsor Aktif */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {data?.sponsors?.map((sp) => (
                       <div
                         key={sp.id}
-                        className="p-3 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex items-center justify-between gap-3"
+                        className="p-3 rounded-none border border-[#2E1E45] bg-[#130921] flex flex-col items-center justify-between gap-3 text-center"
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="relative w-full h-14 rounded-none overflow-hidden flex items-center justify-center bg-[#09040F] border border-[#2E1E45] p-2">
                           {sp.logoUrl ? (
-                            <div className="relative w-8 h-8 rounded overflow-hidden shrink-0">
-                              <Image src={sp.logoUrl} alt={sp.name} fill className="object-contain" />
-                            </div>
+                            <Image src={sp.logoUrl} alt={sp.name} fill className="object-contain p-1" unoptimized />
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-[#9D4EDD]/15 text-[#9D4EDD] flex items-center justify-center font-bold text-xs shrink-0">
-                              {sp.name.charAt(0)}
-                            </div>
+                            <span className="font-mono text-xs text-[#A78BFA]">{sp.name}</span>
                           )}
-                          <div className="min-w-0">
-                            <strong className="block text-xs font-bold text-gray-900 dark:text-white truncate">
-                              {sp.name}
-                            </strong>
-                            <span className="text-[10px] text-purple-400 font-semibold">{sp.tier}</span>
-                          </div>
                         </div>
+                        {sp.websiteUrl && (
+                          <a
+                            href={sp.websiteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] font-mono text-[#A78BFA] hover:text-[#7C3AED] hover:underline truncate max-w-full block"
+                            title={sp.websiteUrl}
+                          >
+                            🔗 {sp.websiteUrl}
+                          </a>
+                        )}
                         <button
                           type="button"
                           disabled={busyId === sp.id}
                           onClick={() => void handleDeleteSponsor(sp.id, sp.name)}
-                          className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded"
+                          className="w-full py-1 text-[11px] font-mono font-bold text-rose-400 hover:text-white hover:bg-rose-600/20 border border-rose-500/30 rounded-none transition flex items-center justify-center gap-1 cursor-pointer"
                           title="Hapus Sponsor"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={12} /> Hapus
                         </button>
                       </div>
                     ))}
                     {!data?.sponsors?.length && (
-                      <p className="text-xs text-gray-400 col-span-3 py-4 text-center">
+                      <p className="text-xs font-mono text-gray-400 col-span-full py-6 text-center">
                         Belum ada sponsor khusus yang ditambahkan.
                       </p>
                     )}

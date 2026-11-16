@@ -472,39 +472,36 @@ export default async function Home() {
           </div>
 
           {sponsors.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6">
-              {sponsors.map((sp) => (
-                <div
-                  key={sp.id}
-                  className="p-4 rounded-none border border-[#2E1E45] bg-[#130921] flex flex-col items-center text-center justify-between gap-3"
-                >
-                  {sp.logoUrl ? (
-                    <div className="relative w-16 h-16 rounded-none overflow-hidden">
-                      <Image src={sp.logoUrl} alt={sp.name} fill className="object-contain" />
-                    </div>
-                  ) : (
-                    <div className="size-12 rounded-none bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA] flex items-center justify-center font-display font-bold text-lg">
-                      {sp.name.charAt(0)}
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-display font-bold text-sm text-[#F8FAFC] uppercase">{sp.name}</h3>
-                    <span className="font-mono text-[10px] font-bold px-2 py-0.5 bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA] mt-1 inline-block">
-                      {sp.tier}
-                    </span>
-                  </div>
-                  {sp.websiteUrl && (
-                    <a
-                      href={sp.websiteUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-mono text-xs text-[#7C3AED] hover:underline inline-flex items-center gap-1 font-semibold"
-                    >
-                      Kunjungi <ArrowUpRight size={12} />
-                    </a>
-                  )}
-                </div>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 mt-8">
+              {sponsors.map((sp) => {
+                const linkHref = sp.websiteUrl || "#";
+                return (
+                  <a
+                    key={sp.id}
+                    href={linkHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-4 sm:p-5 rounded-none border border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED] flex items-center justify-center opacity-80 hover:opacity-100 hover:scale-105 transition duration-200 aspect-[16/9] group"
+                    title={sp.websiteUrl ? `Kunjungi ${sp.name}` : sp.name}
+                  >
+                    {sp.logoUrl ? (
+                      <div className="relative w-full h-full max-h-12 sm:max-h-14">
+                        <Image
+                          src={sp.logoUrl}
+                          alt={sp.name || "Sponsor"}
+                          fill
+                          className="object-contain filter grayscale group-hover:grayscale-0 transition duration-200"
+                          unoptimized
+                        />
+                      </div>
+                    ) : (
+                      <span className="font-display font-bold text-xs uppercase tracking-wider text-[#A78BFA] group-hover:text-white transition">
+                        {sp.name}
+                      </span>
+                    )}
+                  </a>
+                );
+              })}
             </div>
           )}
 

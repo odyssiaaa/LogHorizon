@@ -50,6 +50,7 @@ import { RosterPlayerRow } from "@/components/roster-player-row";
 import { QuickMatchScoreModal } from "@/components/quick-match-score-modal";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { MatchLobbyModal } from "@/components/match-lobby-modal";
+import { BracketZoomControl } from "@/components/bracket-zoom-control";
 
 type Participant = {
   id: string;
@@ -200,6 +201,8 @@ export function EventsBoard() {
 
   // Search State for Public Bracket Tree (per tournamentId)
   const [bracketSearchQueries, setBracketSearchQueries] = useState<Record<string, string>>({});
+  // Zoom State for Bracket Tree (per tournamentId, default 1.0 = 100%)
+  const [bracketZoomLevels, setBracketZoomLevels] = useState<Record<string, number>>({});
   const [massScheduleRound, setMassScheduleRound] = useState<number>(1);
   const [massScheduleInput, setMassScheduleInput] = useState<string>("");
   const [activeLobbyMatch, setActiveLobbyMatch] = useState<{ tournamentId: string; match: TournamentMatch } | null>(null);
@@ -1388,9 +1391,9 @@ export function EventsBoard() {
 
                       <div className="flex items-center gap-2.5 flex-wrap">
                         {/* INSTANT SEARCH BAR DI POHON BAGAN */}
-                        <div className="relative w-64 sm:w-80">
-                          <div className="flex items-center gap-2 px-3 h-8 rounded-lg border border-gray-300 dark:border-[#2E1E45] bg-gray-50 dark:bg-[#130921] focus-within:border-[#9D4EDD] focus-within:ring-1 focus-within:ring-[#9D4EDD] transition-all">
-                            <Search size={13} className="text-gray-400 shrink-0" />
+                        <div className="relative w-56 sm:w-72">
+                          <div className="flex items-center gap-2 px-3 h-8 rounded-none border border-[#2E1E45] bg-[#11091D] focus-within:border-[#7C3AED] transition-all">
+                            <Search size={13} className="text-[#A78BFA] shrink-0" />
                             <input
                               type="text"
                               value={bracketSearchQueries[tournament.id] || ""}
@@ -1400,8 +1403,8 @@ export function EventsBoard() {
                                   [tournament.id]: e.target.value,
                                 }))
                               }
-                              placeholder="Cari tim kamu atau kode #R1-M12 di bagan..."
-                              className="w-full bg-transparent text-[11px] text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none"
+                              placeholder="Cari tim kamu atau kode #R1-M12..."
+                              className="w-full bg-transparent text-[11px] text-white placeholder:text-gray-400 focus:outline-none font-sans"
                             />
                             {bracketSearchQueries[tournament.id] && (
                               <button
@@ -1412,17 +1415,28 @@ export function EventsBoard() {
                                     [tournament.id]: "",
                                   }))
                                 }
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium text-purple-300 bg-purple-500/20 hover:bg-purple-500/30 hover:text-white transition shrink-0 active:scale-95"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none text-[10px] font-mono font-medium text-[#A78BFA] bg-[#1A0E2E] hover:text-white transition shrink-0"
                                 title="Reset pencarian dan hilangkan efek sorotan"
                               >
                                 <X size={11} />
-                                <span>Reset Pencarian</span>
+                                <span>Reset</span>
                               </button>
                             )}
                           </div>
                         </div>
 
-                        <span className="text-[11px] text-gray-400 hidden lg:inline">
+                        {/* KONTROL ZOOM IN / ZOOM OUT ARSITEKTURAL */}
+                        <BracketZoomControl
+                          zoom={bracketZoomLevels[tournament.id] ?? 1.0}
+                          onZoomChange={(z) =>
+                            setBracketZoomLevels((prev) => ({
+                              ...prev,
+                              [tournament.id]: z,
+                            }))
+                          }
+                        />
+
+                        <span className="text-[11px] font-mono text-gray-400 hidden lg:inline">
                           Klik nama tim untuk melihat susunan pemain (roster)
                         </span>
                       </div>
@@ -1434,18 +1448,27 @@ export function EventsBoard() {
                         label="🖱️ Drag mouse / tombol ◀ ▶: Sayap Kiri ➔ GRAND FINAL 🏆 ⬅ Sayap Kanan"
                         className="pt-1 pb-3"
                       >
-                        <DualWingBracketView
-                          sortedRoundNumbers={sortedRoundNumbers}
-                          roundsMap={roundsMap}
-                          teams={teams}
-                          onTeamClick={(team) => setViewingRoster(team)}
-                          isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
-                          onAdminQuickUpdate={(matchId, action) => handleAdminQuickUpdate(tournament.id, matchId, action)}
-                          searchQuery={bracketSearchQueries[tournament.id] || ""}
-                          onOpenLobby={(m) => setActiveLobbyMatch({ tournamentId: tournament.id, match: m })}
-                          currentUserId={session?.user?.id}
-                          currentUsername={session?.user?.username || session?.user?.name || undefined}
-                        />
+                        <div
+                          style={{
+                            transform: `scale(${bracketZoomLevels[tournament.id] ?? 1.0})`,
+                            transformOrigin: "top center",
+                            transition: "transform 0.15s ease-out",
+                          }}
+                          className="w-fit min-w-full"
+                        >
+                          <DualWingBracketView
+                            sortedRoundNumbers={sortedRoundNumbers}
+                            roundsMap={roundsMap}
+                            teams={teams}
+                            onTeamClick={(team) => setViewingRoster(team)}
+                            isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
+                            onAdminQuickUpdate={(matchId, action) => handleAdminQuickUpdate(tournament.id, matchId, action)}
+                            searchQuery={bracketSearchQueries[tournament.id] || ""}
+                            onOpenLobby={(m) => setActiveLobbyMatch({ tournamentId: tournament.id, match: m })}
+                            currentUserId={session?.user?.id}
+                            currentUsername={session?.user?.username || session?.user?.name || undefined}
+                          />
+                        </div>
                       </DragScrollContainer>
                     ) : (
                       <p className="text-xs text-gray-500 text-center py-6">
@@ -4417,9 +4440,18 @@ export function DualWingBracketView({
   }
 
   // Format Bagan Simetris Dua Sayap (Left Wing - Center Final - Right Wing)
+  const allTournamentMatches: TournamentMatch[] = [];
+  roundsMap.forEach((mList) => allTournamentMatches.push(...mList));
+
+  const bronzeMatch = allTournamentMatches.find(
+    (m) => m.matchId === "BRONZE-01" || m.roundName?.toLowerCase().includes("bronze")
+  );
+
   const finalRoundNum = sortedRoundNumbers[sortedRoundNumbers.length - 1];
   const gfMatches = roundsMap.get(finalRoundNum) || [];
-  const gfMatch = gfMatches[0];
+  const gfMatch =
+    gfMatches.find((m) => m.matchId !== "BRONZE-01" && !m.roundName?.toLowerCase().includes("bronze")) ||
+    gfMatches[0];
 
   // Ronde sebelum final: 1, 2, ..., finalRoundNum - 1
   const preliminaryRounds = sortedRoundNumbers.slice(0, -1);
@@ -4488,14 +4520,14 @@ export function DualWingBracketView({
         );
       })}
 
-      {/* 2. TENGAH (CENTER STAGE): Kotak GRAND FINAL & PODIUM JUARA 1 */}
-      <div className="flex-1 flex flex-col min-w-[260px] max-w-[300px] px-3 py-4 rounded-none border-2 border-amber-500/40 bg-gradient-to-b from-amber-500/10 via-[#130F1A] to-purple-950/20 shadow-2xl shadow-amber-950/20">
-        <div className="h-10 text-center pb-2 border-b border-amber-500/30 shrink-0 mb-3 flex flex-col justify-center">
-          <span className="text-[10px] font-mono text-amber-400/80 uppercase tracking-widest block font-bold">
+      {/* 2. TENGAH (CENTER STAGE): Kotak GRAND FINAL & PODIUM JUARA 1, serta KOTAK BRONZE MATCH */}
+      <div className="flex-1 flex flex-col min-w-[280px] max-w-[320px] px-3 py-4 rounded-none border border-[#F59E0B]/50 bg-[#130921] shadow-2xl">
+        <div className="h-10 text-center pb-2 border-b border-[#2E1E45] shrink-0 mb-3 flex flex-col justify-center">
+          <span className="text-[10px] font-mono text-[#F59E0B] uppercase tracking-widest block font-bold">
             ⚔️ TITIK TEMU FINAL ⚔️
           </span>
-          <p className="text-xs sm:text-sm font-mono font-black text-amber-400 uppercase tracking-wider flex items-center justify-center gap-1.5 mt-0.5">
-            <Crown size={15} className="text-amber-400 animate-bounce" />
+          <p className="text-xs sm:text-sm font-display font-bold text-[#F8FAFC] uppercase tracking-tight flex items-center justify-center gap-1.5 mt-0.5">
+            <Crown size={15} className="text-[#F59E0B]" />
             <span>GRAND FINAL 🏆</span>
           </p>
         </div>
@@ -4521,6 +4553,39 @@ export function DualWingBracketView({
           {/* Podium Juara 1 */}
           {gfMatch?.winner && (
             <ChampionCelebrationCard winnerName={gfMatch.winner} teams={teams} />
+          )}
+
+          {/* 🥉 KOTAK PEREBUTAN JUARA 3 (BRONZE MATCH) */}
+          {bronzeMatch && (
+            <div className="pt-4 mt-2 border-t border-[#2E1E45] space-y-2">
+              <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[#F59E0B] px-1">
+                <span className="flex items-center gap-1 uppercase tracking-wider">
+                  <Award size={13} className="text-[#F59E0B]" />
+                  <span>🥉 BRONZE MATCH (PEREBUTAN JUARA 3)</span>
+                </span>
+                <span className="px-1.5 py-0.2 rounded-none bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-[#F59E0B] text-[9px]">
+                  3RD PLACE
+                </span>
+              </div>
+              <MatchCard
+                match={bronzeMatch}
+                teams={teams}
+                isFinal={false}
+                onTeamClick={onTeamClick}
+                isAdminOrMod={isAdminOrMod}
+                onAdminQuickUpdate={onAdminQuickUpdate}
+                searchQuery={searchQuery}
+                onOpenLobby={onOpenLobby}
+                currentUserId={currentUserId}
+                currentUsername={currentUsername}
+              />
+              {bronzeMatch.winner && (
+                <div className="p-2 rounded-none bg-[#09040F] border border-[#2E1E45] text-center">
+                  <span className="text-[10px] font-mono text-gray-400 block">JUARA 3 RESMI (BRONZE):</span>
+                  <span className="text-xs font-mono font-bold text-[#F59E0B] uppercase">{bronzeMatch.winner}</span>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

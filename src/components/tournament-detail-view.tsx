@@ -37,6 +37,7 @@ import { QuickMatchScoreModal } from "@/components/quick-match-score-modal";
 import { ChampionCertificateModal } from "@/components/champion-certificate-modal";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { MatchLobbyModal } from "@/components/match-lobby-modal";
+import { BracketZoomControl } from "@/components/bracket-zoom-control";
 
 type TournamentData = {
   id: string;
@@ -269,6 +270,8 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
   // Search State for Public Bracket Tree
   const [bracketSearchQuery, setBracketSearchQuery] = useState("");
+  // Zoom State for Bracket Tree (default 1.0 = 100%)
+  const [bracketZoomLevel, setBracketZoomLevel] = useState<number>(1.0);
 
   // SMART AUTO-POLLING (Setiap 4 Detik saat tab browser aktif)
   useEffect(() => {
@@ -800,7 +803,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           </div>
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* INSTANT SEARCH BAR DI POHON BAGAN */}
-            <div className="relative w-64 sm:w-80">
+            <div className="relative w-56 sm:w-72">
               <div className="flex items-center gap-2 px-3 h-9 rounded-none border border-[#2E1E45] bg-[#1A0E2E] focus-within:border-[#7C3AED] transition-all">
                 <Search size={13} className="text-[#A78BFA] shrink-0" />
                 <input
@@ -824,19 +827,25 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               </div>
             </div>
 
+            {/* KONTROL ZOOM IN / ZOOM OUT ARSITEKTURAL */}
+            <BracketZoomControl
+              zoom={bracketZoomLevel}
+              onZoomChange={setBracketZoomLevel}
+            />
+
             {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && tournament.status !== "COMPLETED" && (
               <button
                 type="button"
                 onClick={handleDetailGachaBracket}
-                className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-[#F59E0B]/50 bg-[#F59E0B]/10 text-[#F59E0B] hover:bg-[#F59E0B]/20 transition-all"
+                className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-[#F59E0B]/50 bg-[#F59E0B]/10 text-[#F59E0B] hover:bg-[#F59E0B]/20 transition-all cursor-pointer"
                 title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
               >
                 <Dices size={14} className="text-[#F59E0B]" />
                 <span>🎲 Gacha Bagan</span>
               </button>
             )}
-            <span className="text-xs text-gray-400 hidden xl:inline">
-              💡 Geser ke samping (Drag) atau gunakan tombol navigasi
+            <span className="text-xs font-mono text-gray-400 hidden xl:inline">
+              💡 Drag mouse / tombol ◀ ▶ untuk navigasi
             </span>
           </div>
         </div>
@@ -847,18 +856,27 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             label="🖱️ Drag mouse / tombol ◀ ▶: Sayap Kiri ➔ GRAND FINAL 🏆 ⬅ Sayap Kanan"
             className="pt-2 pb-4"
           >
-            <DualWingBracketView
-              sortedRoundNumbers={sortedRoundNumbers}
-              roundsMap={roundsMap}
-              teams={teams}
-              onTeamClick={(team) => setViewingRoster(team)}
-              isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
-              onAdminQuickUpdate={handleAdminQuickUpdate}
-              searchQuery={bracketSearchQuery}
-              onOpenLobby={(m) => setActiveLobbyMatch(m)}
-              currentUserId={session?.user?.id}
-              currentUsername={session?.user?.username || session?.user?.name || undefined}
-            />
+            <div
+              style={{
+                transform: `scale(${bracketZoomLevel})`,
+                transformOrigin: "top center",
+                transition: "transform 0.15s ease-out",
+              }}
+              className="w-fit min-w-full"
+            >
+              <DualWingBracketView
+                sortedRoundNumbers={sortedRoundNumbers}
+                roundsMap={roundsMap}
+                teams={teams}
+                onTeamClick={(team) => setViewingRoster(team)}
+                isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
+                onAdminQuickUpdate={handleAdminQuickUpdate}
+                searchQuery={bracketSearchQuery}
+                onOpenLobby={(m) => setActiveLobbyMatch(m)}
+                currentUserId={session?.user?.id}
+                currentUsername={session?.user?.username || session?.user?.name || undefined}
+              />
+            </div>
           </DragScrollContainer>
         ) : (
           <p className="text-xs text-gray-500 text-center py-10">
