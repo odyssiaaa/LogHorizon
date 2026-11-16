@@ -1,7 +1,7 @@
 import { Prisma, TournamentStatus } from "@prisma/client";
 import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { advanceMatchWinner, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES, updateMatchStatus } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES, updateMatchStatus, TournamentLossReason } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -88,19 +88,24 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     updatedMatches = data.matches as TournamentMatch[];
   } else if (typeof data.matchId === "string") {
     const matchId = data.matchId;
-    if (typeof data.matchStatus === "string") {
-      updatedMatches = updateMatchStatus(
-        updatedMatches,
-        matchId,
-        data.matchStatus as "UPCOMING" | "LIVE" | "FINISHED"
-      );
-    }
-    if (data.winner !== undefined) {
-      const winnerName = typeof data.winner === "string" ? data.winner : "";
-      const winnerId = typeof data.winnerId === "string" ? data.winnerId : undefined;
-      const scoreA = typeof data.scoreA === "number" ? data.scoreA : undefined;
-      const scoreB = typeof data.scoreB === "number" ? data.scoreB : undefined;
-      updatedMatches = advanceMatchWinner(updatedMatches, matchId, winnerName, winnerId, scoreA, scoreB);
+    if (data.resetMatch === true) {
+      updatedMatches = resetMatchResult(updatedMatches, matchId);
+    } else {
+      if (typeof data.matchStatus === "string") {
+        updatedMatches = updateMatchStatus(
+          updatedMatches,
+          matchId,
+          data.matchStatus as "UPCOMING" | "LIVE" | "FINISHED"
+        );
+      }
+      if (data.winner !== undefined) {
+        const winnerName = typeof data.winner === "string" ? data.winner : "";
+        const winnerId = typeof data.winnerId === "string" ? data.winnerId : undefined;
+        const scoreA = typeof data.scoreA === "number" ? data.scoreA : undefined;
+        const scoreB = typeof data.scoreB === "number" ? data.scoreB : undefined;
+        const lossReason = (typeof data.lossReason === "string" ? data.lossReason : "NORMAL") as TournamentLossReason;
+        updatedMatches = advanceMatchWinner(updatedMatches, matchId, winnerName, winnerId, scoreA, scoreB, lossReason);
+      }
     }
   }
 

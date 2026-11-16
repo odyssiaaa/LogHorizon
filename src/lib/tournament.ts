@@ -29,6 +29,8 @@ export type TournamentTeam = {
   paymentProof?: string;
 };
 
+export type TournamentLossReason = "NORMAL" | "WO" | "DQ";
+
 export type TournamentMatch = {
   matchId: string;
   round: number;
@@ -38,6 +40,7 @@ export type TournamentMatch = {
   winner: string | null;
   winnerId?: string | null;
   matchStatus?: "UPCOMING" | "LIVE" | "FINISHED";
+  lossReason?: TournamentLossReason;
   schedule?: string;
   nextMatchId?: string;
   nextSlot?: "teamA" | "teamB";
@@ -252,7 +255,8 @@ export function advanceMatchWinner(
   winnerName: string,
   winnerId?: string,
   scoreA?: number,
-  scoreB?: number
+  scoreB?: number,
+  lossReason: TournamentLossReason = "NORMAL"
 ): TournamentMatch[] {
   const updatedMatches = matches.map((match) => ({ ...match }));
   const current = updatedMatches.find((m) => m.matchId === matchId);
@@ -261,6 +265,7 @@ export function advanceMatchWinner(
   current.winner = winnerName;
   current.winnerId = winnerId;
   current.matchStatus = "FINISHED";
+  current.lossReason = lossReason;
   if (scoreA !== undefined) current.teamA = { ...current.teamA, score: scoreA };
   if (scoreB !== undefined) current.teamB = { ...current.teamB, score: scoreB };
 
@@ -271,6 +276,45 @@ export function advanceMatchWinner(
         nextMatch.teamA = { ...nextMatch.teamA, id: winnerId, name: winnerName };
       } else {
         nextMatch.teamB = { ...nextMatch.teamB, id: winnerId, name: winnerName };
+      }
+    }
+  }
+
+  return updatedMatches;
+}
+
+export function resetMatchResult(
+  matches: TournamentMatch[],
+  matchId: string
+): TournamentMatch[] {
+  const updatedMatches = matches.map((match) => ({ ...match }));
+  const current = updatedMatches.find((m) => m.matchId === matchId);
+  if (!current) return matches;
+
+  const previousWinner = current.winner;
+  current.winner = null;
+  current.winnerId = null;
+  current.matchStatus = "UPCOMING";
+  current.lossReason = "NORMAL";
+
+  // If this winner was advanced to next round, reset the next match's slot
+  if (current.nextMatchId && current.nextSlot && previousWinner) {
+    const nextMatch = updatedMatches.find((m) => m.matchId === current.nextMatchId);
+    if (nextMatch) {
+      if (current.nextSlot === "teamA" && nextMatch.teamA?.name === previousWinner) {
+        nextMatch.teamA = { id: undefined, name: "TBD", score: 0 };
+        if (nextMatch.winner === previousWinner) {
+          nextMatch.winner = null;
+          nextMatch.winnerId = null;
+          nextMatch.matchStatus = "UPCOMING";
+        }
+      } else if (current.nextSlot === "teamB" && nextMatch.teamB?.name === previousWinner) {
+        nextMatch.teamB = { id: undefined, name: "TBD", score: 0 };
+        if (nextMatch.winner === previousWinner) {
+          nextMatch.winner = null;
+          nextMatch.winnerId = null;
+          nextMatch.matchStatus = "UPCOMING";
+        }
       }
     }
   }

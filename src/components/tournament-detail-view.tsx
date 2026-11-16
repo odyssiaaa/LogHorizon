@@ -26,7 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
-import { advanceMatchWinner, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { DualWingBracketView } from "@/components/events-board";
@@ -300,7 +300,10 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   }, [tournamentId, tournament, lastSyncTime]);
 
   // Optimistic Quick Update handler for bracket cards
-  function handleAdminQuickUpdate(matchId: string, action: "SET_LIVE" | "FINISH_MATCH") {
+  function handleAdminQuickUpdate(
+    matchId: string,
+    action: "SET_LIVE" | "CANCEL_LIVE" | "RESET_MATCH" | "FINISH_MATCH"
+  ) {
     if (!tournament) return;
     const match = tournament.matches?.find((m) => m.matchId === matchId);
     if (!match) return;
@@ -319,6 +322,34 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       }).catch((err) => {
         console.error("Gagal sync match status LIVE:", err);
       });
+    } else if (action === "CANCEL_LIVE") {
+      // 0ms Optimistic UI update
+      const updatedMatches = updateMatchStatus(tournament.matches || [], matchId, "UPCOMING");
+      setTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
+      setNotice(`Status LIVE Match #${match.matchId} dibatalkan (kembali menunggu).`);
+
+      // Background DB Sync
+      fetch(`/api/tournaments/${tournament.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId, matchStatus: "UPCOMING" }),
+      }).catch((err) => {
+        console.error("Gagal batalkan match status LIVE:", err);
+      });
+    } else if (action === "RESET_MATCH") {
+      // 0ms Optimistic UI rollback
+      const updatedMatches = resetMatchResult(tournament.matches || [], matchId);
+      setTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
+      setNotice(`Match #${match.matchId} direset & kunci pertandingan dibuka kembali.`);
+
+      // Background DB Sync
+      fetch(`/api/tournaments/${tournament.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId, resetMatch: true }),
+      }).catch((err) => {
+        console.error("Gagal reset match:", err);
+      });
     } else if (action === "FINISH_MATCH") {
       setQuickScoreModalMatch(match);
     }
@@ -330,7 +361,8 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
     winnerName: string,
     winnerId?: string,
     scoreA?: number,
-    scoreB?: number
+    scoreB?: number,
+    lossReason: TournamentLossReason = "NORMAL"
   ) {
     if (!quickScoreModalMatch || !tournament) return;
 
@@ -341,12 +373,19 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       winnerName,
       winnerId,
       scoreA,
-      scoreB
+      scoreB,
+      lossReason
     );
 
     setTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
     setQuickScoreModalMatch(null);
-    setNotice(`Skor tersimpan! ${winnerName} lolos ke babak berikutnya.`);
+    setNotice(
+      lossReason === "WO"
+        ? `${winnerName} dinyatakan Menang WO (Lawan Tidak Hadir)!`
+        : lossReason === "DQ"
+        ? `${winnerName} dinyatakan Menang DQ (Lawan Diskualifikasi)!`
+        : `Skor tersimpan! ${winnerName} lolos ke babak berikutnya.`
+    );
 
     // Background DB Sync
     try {
@@ -359,6 +398,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           winnerId,
           scoreA,
           scoreB,
+          lossReason,
         }),
       });
     } catch (err) {
@@ -1307,6 +1347,10 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         match={quickScoreModalMatch}
         onClose={() => setQuickScoreModalMatch(null)}
         onSave={handleSaveQuickScore}
+        onReset={(matchId) => handleAdminQuickUpdate(matchId, "RESET_MATCH")}
+        onToggleStatus={(matchId, st) =>
+          handleAdminQuickUpdate(matchId, st === "LIVE" ? "SET_LIVE" : "CANCEL_LIVE")
+        }
       />
     </main>
   );

@@ -40,7 +40,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { readApiResponse } from "@/lib/api-response";
-import { advanceMatchWinner, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, DEFAULT_TOURNAMENT_RULES } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, DEFAULT_TOURNAMENT_RULES } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
@@ -385,7 +385,11 @@ export function EventsBoard() {
   }, [activeTab, tournaments, managingTournament, lastSyncTime]);
 
   // Optimistic Quick Update handler for bracket card admin action buttons
-  function handleAdminQuickUpdate(tournamentId: string, matchId: string, action: "SET_LIVE" | "FINISH_MATCH") {
+  function handleAdminQuickUpdate(
+    tournamentId: string,
+    matchId: string,
+    action: "SET_LIVE" | "CANCEL_LIVE" | "RESET_MATCH" | "FINISH_MATCH"
+  ) {
     const targetTournament = tournaments.find((t) => t.id === tournamentId);
     if (!targetTournament) return;
     const match = targetTournament.matches?.find((m) => m.matchId === matchId);
@@ -411,6 +415,46 @@ export function EventsBoard() {
       }).catch((err) => {
         console.error("Gagal sync match status LIVE:", err);
       });
+    } else if (action === "CANCEL_LIVE") {
+      // 0ms Optimistic UI update
+      const updatedMatches = updateMatchStatus(targetTournament.matches || [], matchId, "UPCOMING");
+      setTournaments((prev) =>
+        prev.map((t) => (t.id === tournamentId ? { ...t, matches: updatedMatches } : t))
+      );
+      if (managingTournament && managingTournament.id === tournamentId) {
+        setManageMatches(updatedMatches);
+        setManagingTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
+      }
+      setNotice(`Status LIVE Match #${match.matchId} dibatalkan (kembali menunggu).`);
+
+      // Background DB Sync
+      fetch(`/api/tournaments/${tournamentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId, matchStatus: "UPCOMING" }),
+      }).catch((err) => {
+        console.error("Gagal batalkan match status LIVE:", err);
+      });
+    } else if (action === "RESET_MATCH") {
+      // 0ms Optimistic UI rollback
+      const updatedMatches = resetMatchResult(targetTournament.matches || [], matchId);
+      setTournaments((prev) =>
+        prev.map((t) => (t.id === tournamentId ? { ...t, matches: updatedMatches } : t))
+      );
+      if (managingTournament && managingTournament.id === tournamentId) {
+        setManageMatches(updatedMatches);
+        setManagingTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
+      }
+      setNotice(`Match #${match.matchId} direset & kunci pertandingan dibuka kembali.`);
+
+      // Background DB Sync
+      fetch(`/api/tournaments/${tournamentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId, resetMatch: true }),
+      }).catch((err) => {
+        console.error("Gagal reset match:", err);
+      });
     } else if (action === "FINISH_MATCH") {
       setQuickScoreModalMatch({ tournamentId, match });
     }
@@ -422,7 +466,8 @@ export function EventsBoard() {
     winnerName: string,
     winnerId?: string,
     scoreA?: number,
-    scoreB?: number
+    scoreB?: number,
+    lossReason: TournamentLossReason = "NORMAL"
   ) {
     if (!quickScoreModalMatch) return;
     const { tournamentId } = quickScoreModalMatch;
@@ -436,7 +481,8 @@ export function EventsBoard() {
       winnerName,
       winnerId,
       scoreA,
-      scoreB
+      scoreB,
+      lossReason
     );
 
     setTournaments((prev) =>
@@ -447,7 +493,13 @@ export function EventsBoard() {
       setManagingTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
     }
     setQuickScoreModalMatch(null);
-    setNotice(`Skor tersimpan! ${winnerName} lolos ke babak berikutnya.`);
+    setNotice(
+      lossReason === "WO"
+        ? `${winnerName} dinyatakan Menang WO (Lawan Tidak Hadir)!`
+        : lossReason === "DQ"
+        ? `${winnerName} dinyatakan Menang DQ (Lawan Diskualifikasi)!`
+        : `Skor tersimpan! ${winnerName} lolos ke babak berikutnya.`
+    );
 
     // Background DB Sync
     try {
@@ -460,6 +512,7 @@ export function EventsBoard() {
           winnerId,
           scoreA,
           scoreB,
+          lossReason,
         }),
       });
     } catch (err) {
@@ -691,8 +744,17 @@ export function EventsBoard() {
   }
 
   // Auto Advance Winner & Update Score in Local Manage State
-  function handleSelectWinner(matchId: string, winnerName: string, winnerId?: string, scoreA?: number, scoreB?: number) {
-    setManageMatches((prev) => advanceMatchWinner(prev, matchId, winnerName, winnerId, scoreA, scoreB));
+  function handleSelectWinner(
+    matchId: string,
+    winnerName: string,
+    winnerId?: string,
+    scoreA?: number,
+    scoreB?: number,
+    lossReason: TournamentLossReason = "NORMAL"
+  ) {
+    setManageMatches((prev) =>
+      advanceMatchWinner(prev, matchId, winnerName, winnerId, scoreA, scoreB, lossReason)
+    );
   }
 
   // Save Managed Tournament to Database
@@ -2116,8 +2178,18 @@ export function EventsBoard() {
                               </span>
                             </div>
                             {m.winner && (
-                              <p className="text-[11px] text-emerald-400 font-mono mt-0.5">
-                                ✔ Pemenang: {m.winner}
+                              <p className="text-[11px] text-emerald-400 font-mono mt-0.5 flex items-center gap-1.5">
+                                <span>✔ Pemenang: <strong>{m.winner}</strong></span>
+                                {m.lossReason === "WO" && (
+                                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                                    MENANG WO
+                                  </span>
+                                )}
+                                {m.lossReason === "DQ" && (
+                                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-red-500/20 text-red-300 font-bold border border-red-500/30">
+                                    LAWAN DQ
+                                  </span>
+                                )}
                               </p>
                             )}
                           </div>
@@ -2161,42 +2233,123 @@ export function EventsBoard() {
                               />
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const nextStatus = m.matchStatus === "LIVE" ? "UPCOMING" : "LIVE";
-                                const updated = updateMatchStatus(manageMatches, m.matchId, nextStatus);
-                                setManageMatches(updated);
-                                if (managingTournament) {
-                                  fetch(`/api/tournaments/${managingTournament.id}`, {
-                                    method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ matchId: m.matchId, matchStatus: nextStatus }),
-                                  }).catch(() => {});
-                                }
-                              }}
-                              className={`px-2.5 py-1.5 rounded text-[11px] font-bold transition flex items-center gap-1 ${
-                                m.matchStatus === "LIVE"
-                                  ? "bg-red-500/20 text-red-300 border border-red-500/40"
-                                  : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30"
-                              }`}
-                            >
-                              {m.matchStatus === "LIVE" ? "⏹ Set Selesai/Upcoming" : "🔴 Mulai Match (Set LIVE)"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score)}
-                              className="px-2.5 py-1.5 rounded text-[11px] font-bold bg-purple-500/20 text-purple-300 hover:bg-purple-500/40 transition"
-                            >
-                              Menangkan Tim A ➔
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleSelectWinner(m.matchId, m.teamB.name, m.teamB.id, m.teamA.score, m.teamB.score)}
-                              className="px-2.5 py-1.5 rounded text-[11px] font-bold bg-purple-500/20 text-purple-300 hover:bg-purple-500/40 transition"
-                            >
-                              Menangkan Tim B ➔
-                            </button>
+                            {/* Flexible Status Toggle Button */}
+                            {m.matchStatus === "LIVE" ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = updateMatchStatus(manageMatches, m.matchId, "UPCOMING");
+                                  setManageMatches(updated);
+                                  if (managingTournament) {
+                                    fetch(`/api/tournaments/${managingTournament.id}`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ matchId: m.matchId, matchStatus: "UPCOMING" }),
+                                    }).catch(() => {});
+                                  }
+                                }}
+                                className="px-2.5 py-1.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition flex items-center gap-1"
+                                title="Batalkan status live dan kembali ke jadwal menunggu"
+                              >
+                                ⏸ Batalkan Live (Kembali Menunggu)
+                              </button>
+                            ) : (m.matchStatus === "FINISHED" || Boolean(m.winner)) ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = resetMatchResult(manageMatches, m.matchId);
+                                  setManageMatches(updated);
+                                  if (managingTournament) {
+                                    fetch(`/api/tournaments/${managingTournament.id}`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ matchId: m.matchId, resetMatch: true }),
+                                    }).catch(() => {});
+                                  }
+                                }}
+                                className="px-2.5 py-1.5 rounded text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition flex items-center gap-1"
+                                title="Buka kembali kunci match & reset pemenang"
+                              >
+                                ↺ Edit Ulang Match
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = updateMatchStatus(manageMatches, m.matchId, "LIVE");
+                                  setManageMatches(updated);
+                                  if (managingTournament) {
+                                    fetch(`/api/tournaments/${managingTournament.id}`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ matchId: m.matchId, matchStatus: "LIVE" }),
+                                    }).catch(() => {});
+                                  }
+                                }}
+                                className="px-2.5 py-1.5 rounded text-[11px] font-bold bg-red-500/20 text-red-300 border border-red-500/40 hover:bg-red-500/30 transition flex items-center gap-1"
+                                title="Mulai pertandingan dan tandai sedang live"
+                              >
+                                🔴 Set Live
+                              </button>
+                            )}
+
+                            {/* Tim A Outcome Options */}
+                            <div className="flex items-center gap-1 bg-purple-500/10 p-1 rounded border border-purple-500/20">
+                              <span className="text-[10px] font-mono font-bold text-purple-300 px-1">Tim A:</span>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score, "NORMAL")}
+                                className="px-2 py-1 rounded text-[10px] font-bold bg-purple-500/20 text-purple-200 hover:bg-purple-500/40 transition"
+                                title="Menang skor normal"
+                              >
+                                Skor ➔
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score, "WO")}
+                                className="px-2 py-1 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition"
+                                title="Menang WO (Lawan Tidak Hadir)"
+                              >
+                                Menang WO
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectWinner(m.matchId, m.teamA.name, m.teamA.id, m.teamA.score, m.teamB.score, "DQ")}
+                                className="px-2 py-1 rounded text-[10px] font-bold bg-red-500/20 text-red-300 hover:bg-red-500/30 transition"
+                                title="Menang DQ (Lawan Diskualifikasi)"
+                              >
+                                Menang DQ
+                              </button>
+                            </div>
+
+                            {/* Tim B Outcome Options */}
+                            <div className="flex items-center gap-1 bg-purple-500/10 p-1 rounded border border-purple-500/20">
+                              <span className="text-[10px] font-mono font-bold text-purple-300 px-1">Tim B:</span>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectWinner(m.matchId, m.teamB.name, m.teamB.id, m.teamA.score, m.teamB.score, "NORMAL")}
+                                className="px-2 py-1 rounded text-[10px] font-bold bg-purple-500/20 text-purple-200 hover:bg-purple-500/40 transition"
+                                title="Menang skor normal"
+                              >
+                                Skor ➔
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectWinner(m.matchId, m.teamB.name, m.teamB.id, m.teamA.score, m.teamB.score, "WO")}
+                                className="px-2 py-1 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition"
+                                title="Menang WO (Lawan Tidak Hadir)"
+                              >
+                                Menang WO
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectWinner(m.matchId, m.teamB.name, m.teamB.id, m.teamA.score, m.teamB.score, "DQ")}
+                                className="px-2 py-1 rounded text-[10px] font-bold bg-red-500/20 text-red-300 hover:bg-red-500/30 transition"
+                                title="Menang DQ (Lawan Diskualifikasi)"
+                              >
+                                Menang DQ
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))
@@ -3289,6 +3442,20 @@ export function EventsBoard() {
         match={quickScoreModalMatch?.match || null}
         onClose={() => setQuickScoreModalMatch(null)}
         onSave={handleSaveQuickScore}
+        onReset={(matchId) => {
+          if (quickScoreModalMatch) {
+            handleAdminQuickUpdate(quickScoreModalMatch.tournamentId, matchId, "RESET_MATCH");
+          }
+        }}
+        onToggleStatus={(matchId, st) => {
+          if (quickScoreModalMatch) {
+            handleAdminQuickUpdate(
+              quickScoreModalMatch.tournamentId,
+              matchId,
+              st === "LIVE" ? "SET_LIVE" : "CANCEL_LIVE"
+            );
+          }
+        }}
       />
     </main>
   );
@@ -3311,7 +3478,7 @@ export function MatchCard({
   isFinal?: boolean;
   onTeamClick: (team: TournamentTeam) => void;
   isAdminOrMod?: boolean;
-  onAdminQuickUpdate?: (matchId: string, action: "SET_LIVE" | "FINISH_MATCH") => void;
+  onAdminQuickUpdate?: (matchId: string, action: "SET_LIVE" | "CANCEL_LIVE" | "RESET_MATCH" | "FINISH_MATCH") => void;
   searchQuery?: string;
 }) {
   const teamAData = teams.find((t) => t.teamName.toLowerCase() === match.teamA.name.toLowerCase() || t.id === match.teamA.id);
@@ -3413,7 +3580,21 @@ export function MatchCard({
             </button>
             {isWinnerA && (
               <span className="text-[9px] font-mono font-bold text-emerald-400 shrink-0">
-                ✓ LOLOS
+                {match.lossReason === "WO"
+                  ? "✓ LOLOS (MENANG WO)"
+                  : match.lossReason === "DQ"
+                  ? "✓ LOLOS (LAWAN DQ)"
+                  : "✓ LOLOS"}
+              </span>
+            )}
+            {isLoserA && match.lossReason === "WO" && (
+              <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded shrink-0">
+                ✖ KALAH WO (TIDAK HADIR)
+              </span>
+            )}
+            {isLoserA && match.lossReason === "DQ" && (
+              <span className="text-[9px] font-mono font-bold text-red-400 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded shrink-0">
+                🚫 DISKUALIFIKASI (DQ)
               </span>
             )}
           </div>
@@ -3422,11 +3603,15 @@ export function MatchCard({
               isWinnerA
                 ? "bg-emerald-500/30 text-white font-black"
                 : isLoserA
-                ? "bg-black/20 text-zinc-500"
+                ? "bg-black/20 text-zinc-500 font-bold"
                 : "bg-black/20 font-bold"
             }`}
           >
-            {match.teamA.score}
+            {isLoserA && match.lossReason === "WO"
+              ? "WO"
+              : isLoserA && match.lossReason === "DQ"
+              ? "DQ"
+              : match.teamA.score}
           </span>
         </div>
 
@@ -3464,7 +3649,21 @@ export function MatchCard({
               </button>
               {isWinnerB && (
                 <span className="text-[9px] font-mono font-bold text-emerald-400 shrink-0">
-                  ✓ LOLOS
+                  {match.lossReason === "WO"
+                    ? "✓ LOLOS (MENANG WO)"
+                    : match.lossReason === "DQ"
+                    ? "✓ LOLOS (LAWAN DQ)"
+                    : "✓ LOLOS"}
+                </span>
+              )}
+              {isLoserB && match.lossReason === "WO" && (
+                <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded shrink-0">
+                  ✖ KALAH WO (TIDAK HADIR)
+                </span>
+              )}
+              {isLoserB && match.lossReason === "DQ" && (
+                <span className="text-[9px] font-mono font-bold text-red-400 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded shrink-0">
+                  🚫 DISKUALIFIKASI (DQ)
                 </span>
               )}
             </div>
@@ -3474,19 +3673,49 @@ export function MatchCard({
               isWinnerB
                 ? "bg-emerald-500/30 text-white font-black"
                 : isLoserB
-                ? "bg-black/20 text-zinc-500"
+                ? "bg-black/20 text-zinc-500 font-bold"
                 : "bg-black/20 font-bold"
             }`}
           >
-            {match.teamB.name === "BYE" ? "-" : match.teamB.score}
+            {match.teamB.name === "BYE"
+              ? "-"
+              : isLoserB && match.lossReason === "WO"
+              ? "WO"
+              : isLoserB && match.lossReason === "DQ"
+              ? "DQ"
+              : match.teamB.score}
           </span>
         </div>
       </div>
 
       {/* Admin Quick Control Toolbar on Match Card */}
-      {isAdminOrMod && onAdminQuickUpdate && !hasWinner && (
-        <div className="pt-2 mt-2 border-t border-gray-100 dark:border-white/5 flex items-center justify-between gap-1 text-[10px]">
-          {match.matchStatus !== "LIVE" ? (
+      {isAdminOrMod && onAdminQuickUpdate && (
+        <div className="pt-2 mt-2 border-t border-gray-100 dark:border-white/5 flex items-center justify-between gap-1 text-[10px] flex-wrap">
+          {match.matchStatus === "LIVE" ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAdminQuickUpdate(match.matchId, "CANCEL_LIVE");
+              }}
+              className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 font-bold flex items-center gap-1 transition"
+              title="Batalkan LIVE dan kembali menunggu"
+            >
+              ⏸ Batalkan Live
+            </button>
+          ) : isFinished ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAdminQuickUpdate(match.matchId, "RESET_MATCH");
+              }}
+              className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 font-bold flex items-center gap-1 transition"
+              title="Reset hasil dan buka kembali kunci match ini"
+            >
+              ↺ Edit Ulang Match
+            </button>
+          ) : (
             <button
               type="button"
               onClick={(e) => {
@@ -3498,11 +3727,6 @@ export function MatchCard({
             >
               🔴 Set LIVE
             </button>
-          ) : (
-            <span className="text-red-400 font-bold flex items-center gap-1 text-[9px]">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
-              LIVE
-            </span>
           )}
 
           <button
@@ -3824,7 +4048,7 @@ export function DualWingBracketView({
   teams: TournamentTeam[];
   onTeamClick: (team: TournamentTeam) => void;
   isAdminOrMod?: boolean;
-  onAdminQuickUpdate?: (matchId: string, action: "SET_LIVE" | "FINISH_MATCH") => void;
+  onAdminQuickUpdate?: (matchId: string, action: "SET_LIVE" | "CANCEL_LIVE" | "RESET_MATCH" | "FINISH_MATCH") => void;
   searchQuery?: string;
 }) {
   const totalRounds = sortedRoundNumbers.length;
