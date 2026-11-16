@@ -87,7 +87,7 @@ export default async function Home() {
       {/* HERO SECTION */}
       <section className="hero-section relative py-12 sm:py-16 md:py-20 lg:py-24 border-b border-gray-200 dark:border-[#211C2B]">
         <div className="hero-glow" aria-hidden="true" />
-        <div className="page-shell px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px]">
+        <div className="page-shell px-4 sm:px-6 lg:px-8 max-w-[1400px]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             <div className="hero-copy lg:col-span-7 text-left">
               <p className="eyebrow inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#9D4EDD] dark:text-[#C77DFF] uppercase mb-2">
@@ -267,9 +267,9 @@ export default async function Home() {
                 <h3 className="text-base font-extrabold text-gray-900 dark:text-white tracking-tight break-words">{group.title}</h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{group.subtitle}</p>
               </div>
-              <ul className="role-card-list space-y-2.5">
+              <ul className="role-card-list divide-y divide-gray-100 dark:divide-white/5">
                 {group.roles.map((role) => (
-                  <li key={role.name} className="p-3 rounded bg-gray-50 dark:bg-[#16121F] border border-gray-100 dark:border-[#262033] transition-colors hover:border-[#9D4EDD]/40">
+                  <li key={role.name} className="py-3 first:pt-0 last:pb-0">
                     <div className="role-pill-name font-bold text-xs tracking-wide text-purple-900 dark:text-purple-300 flex items-center gap-2">
                       {role.name}
                     </div>

@@ -343,13 +343,13 @@ export function EventsBoard() {
     };
   }, [refreshKey]);
 
-  // SMART AUTO-POLLING (Setiap 4 Detik saat tab browser aktif)
+  // SMART AUTO-POLLING (Setiap 4 Detik saat tab browser aktif + revalidate on focus)
   useEffect(() => {
     const tickInterval = setInterval(() => {
       setSyncSecondsAgo(Math.max(0, Math.floor((Date.now() - lastSyncTime) / 1000)));
     }, 1000);
 
-    const pollInterval = setInterval(async () => {
+    const poll = async () => {
       if (typeof document !== "undefined" && document.visibilityState !== "visible") {
         return;
       }
@@ -382,11 +382,22 @@ export function EventsBoard() {
       } catch {
         // Silently skip transient network failure during polling
       }
-    }, 4000);
+    };
+
+    const pollInterval = setInterval(poll, 4000);
+    const handleRevalidate = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void poll();
+      }
+    };
+    window.addEventListener("focus", handleRevalidate);
+    document.addEventListener("visibilitychange", handleRevalidate);
 
     return () => {
       clearInterval(tickInterval);
       clearInterval(pollInterval);
+      window.removeEventListener("focus", handleRevalidate);
+      document.removeEventListener("visibilitychange", handleRevalidate);
     };
   }, [activeTab, tournaments, managingTournament, lastSyncTime]);
 
@@ -1078,7 +1089,7 @@ export function EventsBoard() {
   const isAdminOrMod = session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR";
 
   return (
-    <main className="events-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
+    <main className="events-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
       <header className="events-heading mb-6 text-left">
         <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">
           GUILD ARENA &amp; OPERATIONS
@@ -1298,18 +1309,9 @@ export function EventsBoard() {
                       <ShareButton
                         url={`/events/turnamen/${tournament.id}`}
                         title={`🏆 ${tournament.title} - Turnamen LogHorizon`}
-                        text={`Ikuti turnamen ${tournament.game}! Hadiah: ${tournament.prizePool || "Prizepool Resmi"}. Cek bagan dan daftar sekarang:`}
-                        label="Bagikan Turnamen 🔗"
+                        text={`Ikuti turnamen ${tournament.game}! Hadiah: ${tournament.prizePool || "Prizepool Resmi"}. Cek bagan dan daftar:`}
+                        label="Bagikan Turnamen"
                         variant="secondary"
-                      />
-
-                      {/* Copy Registration Link Button */}
-                      <ShareButton
-                        url={`/events/turnamen/${tournament.id}#daftar`}
-                        title={`Daftar Turnamen ${tournament.title}`}
-                        text={`Link Pendaftaran Turnamen ${tournament.title} (${tournament.game}):`}
-                        label="Salin Link Pendaftaran"
-                        variant="outline"
                       />
 
                       {/* Dedicated Tournament Page Link */}

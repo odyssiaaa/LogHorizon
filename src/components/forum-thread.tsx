@@ -10,6 +10,7 @@ import { DiscordAvatar } from "@/components/discord-avatar";
 import { PostReactions, type PostReaction } from "@/components/post-reactions";
 import { ShareButton } from "@/components/share-button";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { useLiveSync } from "@/hooks/use-live-sync";
 
 type CommentRecord = {
   id: string;
@@ -104,6 +105,11 @@ export function ForumThread({ id }: { id: string }) {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [id, refreshKey]);
+
+  // Smart Live Sync: Refresh thread & komentar setiap 10 detik dan seketika saat tab kembali aktif
+  useLiveSync(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, { intervalMs: 10000, revalidateOnFocus: true });
 
   async function deleteThread() {
     if (!confirm("Apakah kamu yakin ingin menghapus thread ini secara permanen?")) return;

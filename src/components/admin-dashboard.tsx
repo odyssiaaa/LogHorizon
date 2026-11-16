@@ -49,6 +49,7 @@ import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 import { RosterPlayerRow } from "@/components/roster-player-row";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { useLiveSync } from "@/hooks/use-live-sync";
 
 type Role = "MEMBER" | "MODERATOR" | "ADMIN";
 
@@ -447,6 +448,17 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search]);
 
+  useLiveSync(() => {
+    const query = new URLSearchParams({ page: String(page), search });
+    fetch(`/api/admin/dashboard?${query}`)
+      .then((response) => readApiResponse<DashboardData>(response, "Gagal memuat dashboard."))
+      .then((result) => {
+        setData(result);
+      })
+      .catch(() => {});
+    fetchTournaments();
+  }, { intervalMs: 12000, revalidateOnFocus: true });
+
   // Save Site Config CMS
   async function handleSaveConfig(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -777,7 +789,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
   const processedDonationsList = data?.donations?.filter((d) => d.status !== "PENDING") ?? [];
 
   return (
-    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
+    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
       <div>
         <Link href="/" className="back-link inline-flex items-center gap-1.5 text-xs font-bold text-[#9D4EDD] mb-4">
           <ArrowLeft size={15} /> Kembali ke situs

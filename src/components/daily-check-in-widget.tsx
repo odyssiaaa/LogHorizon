@@ -63,8 +63,27 @@ export function DailyCheckInWidget() {
   async function handleClaim() {
     if (!session?.user || claiming || (data && !data.canCheckIn)) return;
 
+    // Snapshot state sebelumnya untuk rollback jika request gagal
+    const prevData = data;
+    const currentStreak = data?.streak ?? 0;
+    const currentXp = data?.xp ?? 0;
+
+    // Optimistic UI 0ms: langsung ubah tombol menjadi klaim sukses
+    startTransition(() => {
+      setData({
+        canCheckIn: false,
+        alreadyCheckedIn: true,
+        streak: currentStreak + 1,
+        lastCheckInAt: new Date().toISOString(),
+        secondsUntilReset: 86400,
+        level: data?.level ?? 1,
+        xp: currentXp + 15,
+      });
+      setCountdown(86400);
+      setSuccessMessage("Absen berhasil! +15 XP diperoleh!");
+    });
+
     setClaiming(true);
-    setSuccessMessage("");
 
     try {
       const res = await fetch("/api/user/checkin", {
@@ -92,6 +111,11 @@ export function DailyCheckInWidget() {
       });
     } catch (err) {
       console.error("Checkin error:", err);
+      // Rollback jika error
+      startTransition(() => {
+        setData(prevData);
+        setSuccessMessage("");
+      });
     } finally {
       setClaiming(false);
     }

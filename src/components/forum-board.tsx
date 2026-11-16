@@ -14,6 +14,7 @@ import { ShareButton } from "@/components/share-button";
 import { motion } from "framer-motion";
 import type { ForumPostRecord } from "@/types/community";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { useLiveSync } from "@/hooks/use-live-sync";
 
 type Category = "GENERAL_CHAT" | "PROMOTION" | "FEEDBACK";
 type ForumLiveRow = { id: string };
@@ -80,6 +81,11 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
       active = false;
     };
   }, [category, refreshKey, search]);
+
+  // Smart Live Sync: Polling 12 detik dan langsung refresh saat tab kembali aktif
+  useLiveSync(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, { intervalMs: 12000, revalidateOnFocus: true });
 
   useEffect(() => {
     if (!realtimeUrl) return;
@@ -183,7 +189,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   }
 
   return (
-    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
+    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
       <div>
         <div className="forum-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div className="text-left">

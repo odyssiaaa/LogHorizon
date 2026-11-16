@@ -17,6 +17,7 @@ import { ShareButton } from "@/components/share-button";
 import type { MarketplacePostRecord } from "@/types/community";
 import { motion } from "framer-motion";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { useLiveSync } from "@/hooks/use-live-sync";
 
 type MarketPost = MarketplacePostRecord;
 
@@ -116,6 +117,10 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Gagal memuat lapak."))
       .finally(() => setLoading(false));
   }, [type, game, sort, search, refreshKey]);
+
+  useLiveSync(() => {
+    setRefreshKey((k) => k + 1);
+  }, { intervalMs: 12000, revalidateOnFocus: true });
 
   useEffect(() => {
     if (!realtimeUrl) return;
@@ -276,7 +281,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   }
 
   return (
-    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
+    <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
       <div>
         <div className="market-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="text-left">
@@ -353,7 +358,9 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                 </span>
               </div>
               <div className="market-image"><MarketImage src={market.imageUrl} alt={`Bukti lapak ${post.title}`} /></div>
-              <div className="market-card-body text-left"><h2 className="text-base sm:text-lg font-bold break-words text-gray-900 dark:text-white">{post.title}</h2><p className="market-game">{market.game}</p><p className="market-price">{money.format(market.price)}</p><p className="market-description break-words text-xs sm:text-sm line-clamp-2">{post.content}</p>
+              <div className="market-card-body text-left">
+                <h2 className="text-base sm:text-lg font-bold break-words text-gray-900 dark:text-white">{post.title}</h2>
+                <p className="market-description break-words text-xs sm:text-sm line-clamp-2 mt-1 text-gray-600 dark:text-gray-300">{post.content}</p>
                 <div className="market-card-meta flex flex-wrap items-center justify-between gap-2">
                   <span className="post-author flex items-center gap-2">
                     <DiscordAvatar src={post.author.avatar} username={post.author.username} size={24} />

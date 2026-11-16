@@ -151,7 +151,7 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
   const qrisUrl = treasury?.qrisImageUrl || process.env.NEXT_PUBLIC_QRIS_IMAGE_URL || "/qris-guild.png";
 
   return (
-    <main className="donate-page treasury-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
+    <main className="donate-page treasury-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
       <header className="treasury-hero mb-8 text-left">
         <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">LOGHORIZON / COMMUNITY FUND</p>
         <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
@@ -262,11 +262,11 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
             </div>
 
             {/* QRIS OFFICIAL GUILD DISPLAY */}
-            <div className="bg-[#08060B] border border-purple-500/30 rounded-lg p-4 text-center my-4 flex flex-col items-center">
+            <div className="bg-black/20 dark:bg-white/5 rounded-xl p-4 text-center my-4 flex flex-col items-center">
               <div className="flex items-center gap-1.5 text-xs font-bold text-purple-400 mb-2">
                 <QrCode size={16} /> QRIS RESMI GUILD LOGHORIZON
               </div>
-              <div className="relative w-48 h-64 sm:w-56 sm:h-72 rounded overflow-hidden border border-white/10 shadow-lg bg-white">
+              <div className="relative w-48 h-64 sm:w-56 sm:h-72 rounded-lg overflow-hidden shadow-lg bg-white">
                 <Image
                   src={qrisUrl}
                   alt="QRIS Resmi Guild LogHorizon"

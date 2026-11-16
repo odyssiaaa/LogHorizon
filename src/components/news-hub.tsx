@@ -95,7 +95,7 @@ export function NewsHub() {
   });
 
   return (
-    <main className="min-h-screen py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
+    <main className="min-h-screen py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
       {/* ========================================================================= */}
       {/* 1. HEADER SECTION & STATUS SINKRONISASI */}
       {/* ========================================================================= */}

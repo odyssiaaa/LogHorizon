@@ -172,8 +172,8 @@ body {
   .page-shell,
   .section-shell,
   .community-container {
-    padding-inline: 2.5rem;
-    max-width: 1360px;
+    padding-inline: 2rem;
+    max-width: 1400px;
   }
 }
 

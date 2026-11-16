@@ -33,8 +33,38 @@ export function PostReactions({ postId, likes, dislikes, reaction, onLoginRequir
     }
     if (pending) return;
 
+    // Snapshot state sebelumnya untuk rollback jika request gagal
+    const prevCounts = { ...counts };
+
+    // Hitung optimistic UI secara lokal dalam 0ms
+    let nextLikes = counts.likes;
+    let nextDislikes = counts.dislikes;
+    let nextReaction: PostReaction = value;
+
+    if (counts.reaction === value) {
+      // Toggle off
+      nextReaction = null;
+      if (value === "LIKE") nextLikes = Math.max(0, nextLikes - 1);
+      if (value === "DISLIKE") nextDislikes = Math.max(0, nextDislikes - 1);
+    } else {
+      // Switch or new reaction
+      if (value === "LIKE") {
+        nextLikes += 1;
+        if (counts.reaction === "DISLIKE") nextDislikes = Math.max(0, nextDislikes - 1);
+      } else {
+        nextDislikes += 1;
+        if (counts.reaction === "LIKE") nextLikes = Math.max(0, nextLikes - 1);
+      }
+    }
+
+    const optimisticResult = { likes: nextLikes, dislikes: nextDislikes, reaction: nextReaction };
+
+    // Langsung update layar 0ms
+    setCounts(optimisticResult);
+    onChange?.(optimisticResult);
     setPending(true);
     setError("");
+
     try {
       const response = await fetch(`/api/posts/${postId}/vote`, {
         method: "POST",
@@ -45,6 +75,9 @@ export function PostReactions({ postId, likes, dislikes, reaction, onLoginRequir
       setCounts(result);
       onChange?.(result);
     } catch (reason) {
+      // Rollback ke state sebelumnya jika terjadi kegagalan jaringan
+      setCounts(prevCounts);
+      onChange?.(prevCounts);
       setError(reason instanceof Error ? reason.message : "Reaksi gagal disimpan.");
     } finally {
       setPending(false);

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { CheckCircle2, Lock, MessageSquare, Send, ShieldAlert, ShieldCheck, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { useLiveSync } from "@/hooks/use-live-sync";
 
 type EscrowMessage = {
   id: string;
@@ -112,11 +113,11 @@ export function EscrowChatModal({
 
   useEffect(() => {
     void fetchDetail();
-    const interval = setInterval(() => {
-      void fetchDetail();
-    }, 4000);
-    return () => clearInterval(interval);
   }, [escrowId]);
+
+  useLiveSync(() => {
+    void fetchDetail();
+  }, { intervalMs: 3500, revalidateOnFocus: true });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

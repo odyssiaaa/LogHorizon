@@ -8,6 +8,7 @@ import type { LeaderboardAdventurer, LeaderboardBenefactor } from "@/types/commu
 import { TacticalEmptyState } from "@/components/ui-feedback";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { DailyCheckInWidget } from "@/components/daily-check-in-widget";
+import { useLiveSync } from "@/hooks/use-live-sync";
 
 type LeaderboardMember = LeaderboardAdventurer;
 type Benefactor = LeaderboardBenefactor;
@@ -36,17 +37,33 @@ function benefactorTier(badges: string[]) {
 export function LeaderboardTable({ members, benefactors }: { members: LeaderboardMember[]; benefactors: Benefactor[] }) {
   const [activeTab, setActiveTab] = useState<"adventurers" | "benefactors">("adventurers");
   const [search, setSearch] = useState("");
+  const [currentMembers, setCurrentMembers] = useState<LeaderboardMember[]>(members);
+  const [currentBenefactors, setCurrentBenefactors] = useState<Benefactor[]>(benefactors);
+
+  useLiveSync(async () => {
+    try {
+      const res = await fetch("/api/leaderboard", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.success) {
+        if (Array.isArray(data.topXpMembers)) setCurrentMembers(data.topXpMembers);
+        if (Array.isArray(data.topBenefactors)) setCurrentBenefactors(data.topBenefactors);
+      }
+    } catch {
+      // Background revalidation silently skips
+    }
+  }, { intervalMs: 15000, revalidateOnFocus: true });
 
   const normalizedSearch = search.trim().toLowerCase();
-  const filteredMembers = members.filter((m) =>
+  const filteredMembers = currentMembers.filter((m) =>
     (m.username ?? "Gamer").toLowerCase().includes(normalizedSearch)
   );
-  const filteredBenefactors = benefactors.filter((b) =>
+  const filteredBenefactors = currentBenefactors.filter((b) =>
     (b.username ?? "Gamer").toLowerCase().includes(normalizedSearch)
   );
 
   return (
-    <main className="leaderboard-page py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1360px] 2xl:max-w-[1440px] mx-auto w-full overflow-x-hidden">
+    <main className="leaderboard-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
       <header className="leaderboard-heading mb-6 text-left">
         <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">KOMPETISI GUILD</p>
         <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Leaderboard</span></h1>

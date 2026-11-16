@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bell, CheckCheck, Heart, MessageCircle, ShieldCheck, Sparkles } from "lucide-react";
+import { useLiveSync } from "@/hooks/use-live-sync";
 
 type NotificationItem = {
   id: string;
@@ -46,10 +47,11 @@ export function NotificationBell() {
   }
 
   useEffect(() => {
-    loadNotifications();
-    const interval = setInterval(loadNotifications, 30_000);
-    return () => clearInterval(interval);
+    void loadNotifications();
   }, []);
+
+  // Smart Live Sync: Polling 12 detik dan langsung refresh saat tab kembali aktif
+  useLiveSync(loadNotifications, { intervalMs: 12000, revalidateOnFocus: true });
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

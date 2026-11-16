@@ -283,7 +283,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       });
     }, 1000);
 
-    const pollInterval = setInterval(async () => {
+    const poll = async () => {
       if (typeof document !== "undefined" && document.visibilityState !== "visible") {
         return;
       }
@@ -306,11 +306,22 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       } catch {
         // Silently skip transient network failure during background polling
       }
-    }, 4000);
+    };
+
+    const pollInterval = setInterval(poll, 4000);
+    const handleRevalidate = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void poll();
+      }
+    };
+    window.addEventListener("focus", handleRevalidate);
+    document.addEventListener("visibilitychange", handleRevalidate);
 
     return () => {
       clearInterval(tickInterval);
       clearInterval(pollInterval);
+      window.removeEventListener("focus", handleRevalidate);
+      document.removeEventListener("visibilitychange", handleRevalidate);
     };
   }, [tournamentId, tournament, lastSyncTime]);
 
@@ -665,15 +676,8 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             url={shareUrl}
             title={shareTitle}
             text={shareText}
-            label="Bagikan Turnamen 🔗"
+            label="Bagikan Turnamen"
             variant="secondary"
-          />
-          <ShareButton
-            url={`${shareUrl}#daftar`}
-            title={`Daftar Turnamen ${tournament.title}`}
-            text={`Link Pendaftaran Turnamen ${tournament.title}:`}
-            label="Salin Link Pendaftaran"
-            variant="outline"
           />
         </div>
       </div>
