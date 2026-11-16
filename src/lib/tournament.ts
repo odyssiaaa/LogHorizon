@@ -42,6 +42,8 @@ export type TournamentMatch = {
   matchStatus?: "UPCOMING" | "LIVE" | "FINISHED";
   lossReason?: TournamentLossReason;
   schedule?: string;
+  scheduledAt?: string | null;
+  manualOverride?: boolean;
   nextMatchId?: string;
   nextSlot?: "teamA" | "teamB";
 };
@@ -325,7 +327,156 @@ export function resetMatchResult(
 export function updateMatchStatus(
   matches: TournamentMatch[],
   matchId: string,
-  status: "UPCOMING" | "LIVE" | "FINISHED"
+  status: "UPCOMING" | "LIVE" | "FINISHED",
+  manualOverride?: boolean
 ): TournamentMatch[] {
-  return matches.map((m) => (m.matchId === matchId ? { ...m, matchStatus: status } : m));
+  return matches.map((m) => {
+    if (m.matchId === matchId) {
+      return {
+        ...m,
+        matchStatus: status,
+        ...(manualOverride !== undefined
+          ? { manualOverride }
+          : status === "UPCOMING"
+          ? { manualOverride: true }
+          : status === "LIVE"
+          ? { manualOverride: true }
+          : {}),
+      };
+    }
+    return m;
+  });
+}
+
+/**
+ * Evaluates and auto-transitions matches from UPCOMING to LIVE if their scheduledAt time has arrived/passed,
+ * unless they were manually set to UPCOMING by an Admin (manualOverride === true).
+ */
+export function evaluateAutoLiveMatches(
+  matches: TournamentMatch[],
+  currentTimeMs: number = Date.now()
+): { updatedMatches: TournamentMatch[]; hasChanges: boolean } {
+  let hasChanges = false;
+  const updatedMatches = matches.map((match) => {
+    if (
+      match.matchStatus === "UPCOMING" &&
+      match.scheduledAt &&
+      match.manualOverride !== true &&
+      !match.winner
+    ) {
+      const scheduledTime = new Date(match.scheduledAt).getTime();
+      if (!isNaN(scheduledTime) && currentTimeMs >= scheduledTime) {
+        hasChanges = true;
+        return {
+          ...match,
+          matchStatus: "LIVE" as const,
+        };
+      }
+    }
+    return match;
+  });
+
+  return { updatedMatches, hasChanges };
+}
+
+/**
+ * Format match schedule and countdown info for public UI display.
+ */
+export function formatMatchScheduleDisplay(
+  scheduledAt?: string | null,
+  fallbackSchedule?: string | null,
+  manualOverride?: boolean,
+  currentTimeMs: number = Date.now()
+): {
+  badgeText: string;
+  isStartingSoon: boolean;
+  isDue: boolean;
+  rawDateText?: string;
+} {
+  if (!scheduledAt) {
+    return {
+      badgeText: fallbackSchedule ? `⏳ ${fallbackSchedule}` : "⏳ MENUNGGU JADWAL",
+      isStartingSoon: false,
+      isDue: false,
+    };
+  }
+
+  const targetDate = new Date(scheduledAt);
+  const targetTime = targetDate.getTime();
+  if (isNaN(targetTime)) {
+    return {
+      badgeText: fallbackSchedule ? `⏳ ${fallbackSchedule}` : "⏳ MENUNGGU JADWAL",
+      isStartingSoon: false,
+      isDue: false,
+    };
+  }
+
+  const diffMs = targetTime - currentTimeMs;
+
+  // Format date in Indonesian WIB: e.g. "16 Nov • 20:00 WIB"
+  const day = targetDate.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Jakarta",
+  });
+  const time = targetDate.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jakarta",
+  });
+  const rawDateText = `🕒 ${day} • ${time} WIB`;
+
+  // If time has arrived/passed
+  if (diffMs <= 0) {
+    return {
+      badgeText: manualOverride ? `${rawDateText} (Menunggu)` : "🔴 SEDANG BERMAIN",
+      isStartingSoon: false,
+      isDue: true,
+      rawDateText,
+    };
+  }
+
+  // If starting in less than 1 hour (1 to 60 minutes)
+  if (diffMs <= 60 * 60 * 1000) {
+    const diffMins = Math.max(1, Math.ceil(diffMs / (60 * 1000)));
+    return {
+      badgeText: `⏳ Mulai dalam ${diffMins} menit`,
+      isStartingSoon: true,
+      isDue: false,
+      rawDateText,
+    };
+  }
+
+  return {
+    badgeText: rawDateText,
+    isStartingSoon: false,
+    isDue: false,
+    rawDateText,
+  };
+}
+
+/**
+ * Convert ISO string to YYYY-MM-DDTHH:mm string in local Asia/Jakarta or client timezone for <input type="datetime-local" />.
+ */
+export function isoToDateTimeLocal(isoString?: string | null): string {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+/**
+ * Convert YYYY-MM-DDTHH:mm string from <input type="datetime-local" /> to ISO timestamp string.
+ */
+export function dateTimeLocalToIso(localString: string): string | null {
+  if (!localString || !localString.trim()) return null;
+  const date = new Date(localString);
+  if (isNaN(date.getTime())) return null;
+  return date.toISOString();
 }

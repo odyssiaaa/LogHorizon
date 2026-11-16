@@ -26,7 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
-import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { DualWingBracketView } from "@/components/events-board";
@@ -272,6 +272,13 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   useEffect(() => {
     const tickInterval = setInterval(() => {
       setSyncSecondsAgo(Math.max(0, Math.floor((Date.now() - lastSyncTime) / 1000)));
+      // Auto-evaluate live matches every second if tournament is ONGOING
+      setTournament((prev) => {
+        if (!prev || prev.status !== "ONGOING" || !prev.matches) return prev;
+        const { updatedMatches, hasChanges } = evaluateAutoLiveMatches(prev.matches);
+        if (!hasChanges) return prev;
+        return { ...prev, matches: updatedMatches };
+      });
     }, 1000);
 
     const pollInterval = setInterval(async () => {
@@ -330,7 +337,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       });
     } else if (action === "CANCEL_LIVE") {
       // 0ms Optimistic UI update
-      const updatedMatches = updateMatchStatus(tournament.matches || [], matchId, "UPCOMING");
+      const updatedMatches = updateMatchStatus(tournament.matches || [], matchId, "UPCOMING", true);
       setTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
       setNotice(`Status LIVE Match #${match.matchId} dibatalkan (kembali menunggu).`);
 
@@ -338,7 +345,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       fetch(`/api/tournaments/${tournament.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matchId, matchStatus: "UPCOMING" }),
+        body: JSON.stringify({ matchId, matchStatus: "UPCOMING", manualOverride: true }),
       }).catch((err) => {
         console.error("Gagal batalkan match status LIVE:", err);
       });
@@ -359,6 +366,23 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
     } else if (action === "FINISH_MATCH") {
       setQuickScoreModalMatch(match);
     }
+  }
+
+  function handleUpdateMatchSchedule(matchId: string, scheduledAt: string | null) {
+    if (!tournament) return;
+    const updatedMatches = (tournament.matches || []).map((m) =>
+      m.matchId === matchId ? { ...m, scheduledAt, manualOverride: false } : m
+    );
+    setTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
+    setNotice(`Jadwal Match #${matchId} berhasil diperbarui.`);
+
+    fetch(`/api/tournaments/${tournament.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matchId, scheduledAt, manualOverride: false }),
+    }).catch((err) => {
+      console.error("Gagal sync jadwal match:", err);
+    });
   }
 
   // Handle saving score from QuickMatchScoreModal with 0ms Optimistic UI
@@ -1360,6 +1384,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         onToggleStatus={(matchId, st) =>
           handleAdminQuickUpdate(matchId, st === "LIVE" ? "SET_LIVE" : "CANCEL_LIVE")
         }
+        onUpdateSchedule={handleUpdateMatchSchedule}
       />
       {/* CHAMPION DIGITAL CERTIFICATE MODAL */}
       {showCertificate && gfWinner && (

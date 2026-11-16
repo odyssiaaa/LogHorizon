@@ -1575,6 +1575,14 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                 <BookOpen size={13} className="text-[#9D4EDD]" />
                                 <span>Peraturan</span>
                               </button>
+                              <Link
+                                href={`/events/turnamen/${curTournament.id}`}
+                                className="px-3.5 py-2 rounded-xl text-xs font-bold border border-[#9D4EDD]/40 bg-[#9D4EDD]/15 text-purple-300 hover:bg-[#9D4EDD]/25 flex items-center gap-1.5 transition"
+                                title="Buka Bagan & Kelola Jadwal Tanding Turnamen"
+                              >
+                                <ExternalLink size={13} className="text-[#9D4EDD]" />
+                                <span>Bagan &amp; Jadwal Tanding</span>
+                              </Link>
                               {curTournament.status !== "COMPLETED" && (
                                 <button
                                   type="button"

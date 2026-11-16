@@ -1,7 +1,7 @@
 import { Prisma, TournamentStatus } from "@prisma/client";
 import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { advanceMatchWinner, resetMatchResult, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES, updateMatchStatus, TournamentLossReason } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES, updateMatchStatus, TournamentLossReason, evaluateAutoLiveMatches } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -33,10 +33,25 @@ export async function GET(_request: Request, { params }: RouteContext) {
         representativePhone: undefined,
       }));
 
+  let matches = (tournament.matches as unknown as TournamentMatch[]) || [];
+  if (tournament.status === "ONGOING") {
+    const { updatedMatches, hasChanges } = evaluateAutoLiveMatches(matches);
+    if (hasChanges) {
+      matches = updatedMatches;
+      void prisma.tournament
+        .update({
+          where: { id },
+          data: { matches: updatedMatches as unknown as Prisma.InputJsonValue },
+        })
+        .catch((err) => console.error("[api/tournaments] Failed to persist auto-live matches:", err));
+    }
+  }
+
   return Response.json({
     success: true,
     tournament: {
       ...tournament,
+      matches,
       rules: tournament.rules || DEFAULT_TOURNAMENT_RULES,
       entryFee: tournament.entryFee ?? 0,
       isFreeEntry: tournament.isFreeEntry ?? (tournament.entryFee === 0),
@@ -83,6 +98,24 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     updatedTeams = data.teams as TournamentTeam[];
   }
 
+  // Mass schedule per round (Admin mass scheduling)
+  if (data.roundSchedule && typeof data.roundSchedule === "object") {
+    const rs = data.roundSchedule as { round?: number; scheduledAt?: string | null };
+    if (typeof rs.round === "number") {
+      const newSched = typeof rs.scheduledAt === "string" && rs.scheduledAt.trim() ? rs.scheduledAt.trim() : null;
+      updatedMatches = updatedMatches.map((m) => {
+        if (m.round === rs.round) {
+          return {
+            ...m,
+            scheduledAt: newSched,
+            manualOverride: false, // Reset override when a new schedule is established
+          };
+        }
+        return m;
+      });
+    }
+  }
+
   // Update a single match or whole matches list
   if (Array.isArray(data.matches)) {
     updatedMatches = data.matches as TournamentMatch[];
@@ -92,10 +125,35 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       updatedMatches = resetMatchResult(updatedMatches, matchId);
     } else {
       if (typeof data.matchStatus === "string") {
+        const manualOverride =
+          typeof data.manualOverride === "boolean"
+            ? data.manualOverride
+            : data.matchStatus === "UPCOMING"
+            ? true
+            : undefined;
         updatedMatches = updateMatchStatus(
           updatedMatches,
           matchId,
-          data.matchStatus as "UPCOMING" | "LIVE" | "FINISHED"
+          data.matchStatus as "UPCOMING" | "LIVE" | "FINISHED",
+          manualOverride
+        );
+      }
+      if (data.scheduledAt !== undefined) {
+        const newSched =
+          typeof data.scheduledAt === "string" && data.scheduledAt.trim() ? data.scheduledAt.trim() : null;
+        updatedMatches = updatedMatches.map((m) =>
+          m.matchId === matchId
+            ? {
+                ...m,
+                scheduledAt: newSched,
+                manualOverride: typeof data.manualOverride === "boolean" ? data.manualOverride : false,
+              }
+            : m
+        );
+      }
+      if (data.manualOverride !== undefined && data.matchStatus === undefined && data.scheduledAt === undefined) {
+        updatedMatches = updatedMatches.map((m) =>
+          m.matchId === matchId ? { ...m, manualOverride: Boolean(data.manualOverride) } : m
         );
       }
       if (data.winner !== undefined) {

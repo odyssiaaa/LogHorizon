@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   Award,
+  Calendar,
   CalendarDays,
   Check,
   CheckCircle,
@@ -40,7 +41,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { readApiResponse } from "@/lib/api-response";
-import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, DEFAULT_TOURNAMENT_RULES } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, DEFAULT_TOURNAMENT_RULES, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
@@ -198,6 +199,8 @@ export function EventsBoard() {
 
   // Search State for Public Bracket Tree (per tournamentId)
   const [bracketSearchQueries, setBracketSearchQueries] = useState<Record<string, string>>({});
+  const [massScheduleRound, setMassScheduleRound] = useState<number>(1);
+  const [massScheduleInput, setMassScheduleInput] = useState<string>("");
 
   // Gacha Bracket Modal State
   const [gachaModalState, setGachaModalState] = useState<{
@@ -432,7 +435,7 @@ export function EventsBoard() {
       fetch(`/api/tournaments/${tournamentId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matchId, matchStatus: "UPCOMING" }),
+        body: JSON.stringify({ matchId, matchStatus: "UPCOMING", manualOverride: true }),
       }).catch((err) => {
         console.error("Gagal batalkan match status LIVE:", err);
       });
@@ -459,6 +462,65 @@ export function EventsBoard() {
     } else if (action === "FINISH_MATCH") {
       setQuickScoreModalMatch({ tournamentId, match });
     }
+  }
+
+  function handleMatchScheduleChange(
+    tournamentId: string,
+    matchId: string,
+    scheduledAt: string | null
+  ) {
+    const targetTournament = tournaments.find((t) => t.id === tournamentId);
+    if (!targetTournament) return;
+
+    const updatedMatches = (targetTournament.matches || []).map((m) =>
+      m.matchId === matchId ? { ...m, scheduledAt, manualOverride: false } : m
+    );
+
+    setTournaments((prev) =>
+      prev.map((t) => (t.id === tournamentId ? { ...t, matches: updatedMatches } : t))
+    );
+    if (managingTournament && managingTournament.id === tournamentId) {
+      setManageMatches(updatedMatches);
+      setManagingTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
+    }
+    setNotice(`Jadwal Match #${matchId} berhasil diperbarui.`);
+
+    fetch(`/api/tournaments/${tournamentId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matchId, scheduledAt, manualOverride: false }),
+    }).catch((err) => {
+      console.error("Gagal sync jadwal match:", err);
+    });
+  }
+
+  function handleApplyMassSchedule() {
+    if (!managingTournament || !massScheduleInput) return;
+    const iso = dateTimeLocalToIso(massScheduleInput);
+    if (!iso) return;
+
+    const updated = manageMatches.map((m) =>
+      m.round === massScheduleRound ? { ...m, scheduledAt: iso, manualOverride: false } : m
+    );
+    setManageMatches(updated);
+    setManagingTournament((prev) => (prev ? { ...prev, matches: updated } : prev));
+    setTournaments((prev) =>
+      prev.map((t) => (t.id === managingTournament.id ? { ...t, matches: updated } : t))
+    );
+
+    const roundName =
+      manageMatches.find((m) => m.round === massScheduleRound)?.roundName || `Ronde ${massScheduleRound}`;
+    setNotice(`Jadwal massal untuk seluruh match di ${roundName} berhasil diterapkan serentak!`);
+
+    fetch(`/api/tournaments/${managingTournament.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        roundSchedule: { round: massScheduleRound, scheduledAt: iso },
+      }),
+    }).catch((err) => {
+      console.error("Gagal sync jadwal massal ronde:", err);
+    });
   }
 
   // Handle saving score from QuickMatchScoreModal with 0ms Optimistic UI
@@ -2153,6 +2215,56 @@ export function EventsBoard() {
                     </div>
                   </div>
 
+                  {/* SET JADWAL MASSAL PER RONDE */}
+                  <div className="p-3.5 rounded-xl border border-purple-500/30 bg-purple-950/20 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-mono text-[#9D4EDD] uppercase tracking-wider font-bold flex items-center gap-1.5">
+                        <Calendar size={13} />
+                        <span>Set Jadwal Massal per Ronde (Auto-Live Serentak)</span>
+                      </span>
+                      <p className="text-[11px] text-gray-400">
+                        Setel tanggal &amp; jam tanding sekaligus untuk seluruh pertandingan dalam satu ronde tertentu.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <select
+                        value={massScheduleRound}
+                        onChange={(e) => setMassScheduleRound(Number(e.target.value))}
+                        className="px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#120F17] text-xs font-bold text-gray-900 dark:text-white focus:outline-none"
+                      >
+                        {Array.from(new Set(manageMatches.map((m) => m.round || 1)))
+                          .sort((a, b) => a - b)
+                          .map((r) => {
+                            const sampleMatch = manageMatches.find((m) => m.round === r);
+                            const rMatchesCount = manageMatches.filter((m) => m.round === r).length;
+                            return (
+                              <option key={r} value={r}>
+                                {sampleMatch?.roundName || `Ronde ${r}`} ({rMatchesCount} Match)
+                              </option>
+                            );
+                          })}
+                      </select>
+
+                      <input
+                        type="datetime-local"
+                        value={massScheduleInput}
+                        onChange={(e) => setMassScheduleInput(e.target.value)}
+                        className="px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#120F17] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                      />
+
+                      <button
+                        type="button"
+                        disabled={!massScheduleInput}
+                        onClick={handleApplyMassSchedule}
+                        className="px-3 py-1.5 rounded-lg bg-[#9D4EDD] hover:bg-[#8338EC] disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition shrink-0"
+                      >
+                        <Clock size={13} />
+                        <span>Terapkan ke Semua Match di Ronde Ini</span>
+                      </button>
+                    </div>
+                  </div>
+
                   {/* MATCHES LIST */}
                   <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
                     {filteredMatches.length === 0 ? (
@@ -2239,13 +2351,13 @@ export function EventsBoard() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const updated = updateMatchStatus(manageMatches, m.matchId, "UPCOMING");
+                                  const updated = updateMatchStatus(manageMatches, m.matchId, "UPCOMING", true);
                                   setManageMatches(updated);
                                   if (managingTournament) {
                                     fetch(`/api/tournaments/${managingTournament.id}`, {
                                       method: "PATCH",
                                       headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ matchId: m.matchId, matchStatus: "UPCOMING" }),
+                                      body: JSON.stringify({ matchId: m.matchId, matchStatus: "UPCOMING", manualOverride: true }),
                                     }).catch(() => {});
                                   }
                                 }}
@@ -2350,6 +2462,70 @@ export function EventsBoard() {
                               >
                                 Menang DQ
                               </button>
+                            </div>
+                          </div>
+
+                          {/* Individual Match Schedule Row */}
+                          <div className="w-full flex items-center justify-between gap-2 pt-2 border-t border-gray-200 dark:border-white/5 flex-wrap text-xs">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Clock size={12} className="text-[#9D4EDD]" />
+                              <span className="text-[10px] font-mono uppercase font-bold text-gray-500 dark:text-gray-400">
+                                Jadwal:
+                              </span>
+                              <input
+                                type="datetime-local"
+                                value={isoToDateTimeLocal(m.scheduledAt)}
+                                onChange={(e) => {
+                                  const iso = dateTimeLocalToIso(e.target.value);
+                                  const updated = manageMatches.map((match) =>
+                                    match.matchId === m.matchId ? { ...match, scheduledAt: iso, manualOverride: false } : match
+                                  );
+                                  setManageMatches(updated);
+                                  if (managingTournament) {
+                                    fetch(`/api/tournaments/${managingTournament.id}`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ matchId: m.matchId, scheduledAt: iso, manualOverride: false }),
+                                    }).catch(() => {});
+                                  }
+                                }}
+                                className="px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#120F17] text-[11px] font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                              />
+                              {m.scheduledAt && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = manageMatches.map((match) =>
+                                      match.matchId === m.matchId ? { ...match, scheduledAt: null, manualOverride: false } : match
+                                    );
+                                    setManageMatches(updated);
+                                    if (managingTournament) {
+                                      fetch(`/api/tournaments/${managingTournament.id}`, {
+                                        method: "PATCH",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ matchId: m.matchId, scheduledAt: null, manualOverride: false }),
+                                      }).catch(() => {});
+                                    }
+                                  }}
+                                  className="p-1 rounded text-gray-400 hover:text-white"
+                                  title="Hapus jadwal"
+                                >
+                                  <X size={12} />
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {m.scheduledAt && (
+                                <span className="text-[10px] font-mono text-purple-300 bg-purple-500/10 border border-purple-500/30 px-2 py-0.5 rounded">
+                                  {formatMatchScheduleDisplay(m.scheduledAt, m.schedule, m.manualOverride).badgeText}
+                                </span>
+                              )}
+                              {m.manualOverride && (
+                                <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded">
+                                  Override Manual Aktif
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -3433,6 +3609,15 @@ export function EventsBoard() {
             );
           }
         }}
+        onUpdateSchedule={(matchId, scheduledAt) => {
+          if (quickScoreModalMatch) {
+            handleMatchScheduleChange(
+              quickScoreModalMatch.tournamentId,
+              matchId,
+              scheduledAt
+            );
+          }
+        }}
       />
     </main>
   );
@@ -3467,9 +3652,19 @@ export function MatchCard({
   const isLoserA = Boolean(hasWinner && !isWinnerA && match.teamA.name && match.teamA.name !== "TBD");
   const isLoserB = Boolean(hasWinner && !isWinnerB && match.teamB.name && match.teamB.name !== "TBD" && match.teamB.name !== "BYE");
 
-  const isLive = match.matchStatus === "LIVE" && !hasWinner;
+  const isScheduledDue = Boolean(
+    !hasWinner &&
+    match.matchStatus !== "FINISHED" &&
+    match.scheduledAt &&
+    match.manualOverride !== true &&
+    Date.now() >= new Date(match.scheduledAt).getTime()
+  );
+
+  const isLive = (match.matchStatus === "LIVE" || isScheduledDue) && !hasWinner;
   const isFinished = match.matchStatus === "FINISHED" || hasWinner || (match.teamA.score > 0 || match.teamB.score > 0);
   const isUpcoming = !isLive && !isFinished;
+
+  const scheduleInfo = formatMatchScheduleDisplay(match.scheduledAt, match.schedule, match.manualOverride);
 
   // Search match highlight
   const isSearchActive = Boolean(searchQuery && searchQuery.trim().length > 0);
@@ -3521,8 +3716,16 @@ export function MatchCard({
             ✓ ROUND SELESAI
           </span>
         ) : (
-          <span className="px-2 py-0.5 rounded-full bg-gray-500/10 border border-gray-500/20 text-gray-400 text-[9px]">
-            ⏳ {match.schedule ? match.schedule : "MENUNGGU JADWAL"}
+          <span
+            className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] ${
+              scheduleInfo.isStartingSoon
+                ? "bg-amber-500/15 border border-amber-500/40 text-amber-300 animate-pulse"
+                : match.scheduledAt
+                ? "bg-[#9D4EDD]/10 border border-[#9D4EDD]/30 text-purple-300"
+                : "bg-gray-500/10 border border-gray-500/20 text-gray-400"
+            }`}
+          >
+            {scheduleInfo.badgeText}
           </span>
         )}
       </div>

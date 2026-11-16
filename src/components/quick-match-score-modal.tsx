@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Trophy, Zap, AlertTriangle, UserX, RotateCcw, Play, Pause } from "lucide-react";
-import { TournamentMatch, TournamentLossReason } from "@/lib/tournament";
+import { X, Trophy, Zap, AlertTriangle, UserX, RotateCcw, Play, Pause, Calendar, Clock } from "lucide-react";
+import { TournamentMatch, TournamentLossReason, isoToDateTimeLocal, dateTimeLocalToIso, formatMatchScheduleDisplay } from "@/lib/tournament";
 
 interface QuickMatchScoreModalProps {
   isOpen: boolean;
@@ -18,6 +18,7 @@ interface QuickMatchScoreModalProps {
   ) => void;
   onReset?: (matchId: string) => void;
   onToggleStatus?: (matchId: string, status: "UPCOMING" | "LIVE" | "FINISHED") => void;
+  onUpdateSchedule?: (matchId: string, scheduledAt: string | null) => void;
 }
 
 export function QuickMatchScoreModal({
@@ -27,14 +28,19 @@ export function QuickMatchScoreModal({
   onSave,
   onReset,
   onToggleStatus,
+  onUpdateSchedule,
 }: QuickMatchScoreModalProps) {
   const [scoreA, setScoreA] = useState(0);
   const [scoreB, setScoreB] = useState(0);
+  const [schedInput, setSchedInput] = useState("");
+  const [schedSaved, setSchedSaved] = useState(false);
 
   useEffect(() => {
     if (match) {
       setScoreA(match.teamA?.score ?? 0);
       setScoreB(match.teamB?.score ?? 0);
+      setSchedInput(isoToDateTimeLocal(match.scheduledAt));
+      setSchedSaved(false);
     }
   }, [match]);
 
@@ -114,6 +120,69 @@ export function QuickMatchScoreModal({
             {match.roundName} (Match #{match.matchId})
           </p>
         </div>
+
+        {/* Jadwal Pertandingan & Auto-Live Trigger */}
+        {onUpdateSchedule && (
+          <div className="p-3 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-gray-50/70 dark:bg-[#161220] space-y-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <label className="text-[10px] font-mono font-bold text-[#9D4EDD] uppercase tracking-wider flex items-center gap-1.5">
+                <Calendar size={13} />
+                <span>Jadwal Jam Tanding (Auto-Live Saat Jam Tiba)</span>
+              </label>
+              {match.manualOverride && (
+                <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded">
+                  Override Manual Aktif
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="datetime-local"
+                value={schedInput}
+                onChange={(e) => {
+                  setSchedInput(e.target.value);
+                  setSchedSaved(false);
+                }}
+                className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#120F17] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const iso = dateTimeLocalToIso(schedInput);
+                  onUpdateSchedule(match.matchId, iso);
+                  setSchedSaved(true);
+                  setTimeout(() => setSchedSaved(false), 2500);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-[#9D4EDD] hover:bg-[#8338EC] text-white text-xs font-bold transition shrink-0"
+              >
+                {schedSaved ? "✓ Tersimpan" : "Set Jadwal"}
+              </button>
+              {schedInput && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSchedInput("");
+                    onUpdateSchedule(match.matchId, null);
+                    setSchedSaved(true);
+                    setTimeout(() => setSchedSaved(false), 2500);
+                  }}
+                  className="px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-400 hover:text-white text-xs transition"
+                  title="Hapus jadwal waktu"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+
+            {match.scheduledAt && (
+              <div className="text-[11px] text-gray-400 flex items-center gap-2 pt-0.5">
+                <Clock size={12} className="text-purple-400" />
+                <span>Status Waktu: <strong className="text-purple-300">{formatMatchScheduleDisplay(match.scheduledAt, match.schedule, match.manualOverride).badgeText}</strong></span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Input Skor Pertandingan */}
         <div>
