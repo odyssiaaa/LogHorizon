@@ -665,7 +665,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   const shareText = `Ikuti turnamen ${tournament.game}! Hadiah: ${tournament.prizePool || "Prizepool Resmi"}. Cek bagan pertandingan dan daftar timmu sekarang di LogHorizon:`;
 
   return (
-    <main className="py-6 sm:py-10 w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 text-left">
+    <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 text-left">
       {/* Back button & top bar */}
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap border-b border-[#2E1E45] pb-4">
         <Link

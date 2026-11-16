@@ -458,7 +458,7 @@ export function MessagesView() {
   });
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
+    <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12">
       {/* Top Header */}
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>

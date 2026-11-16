@@ -103,15 +103,15 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="relative p-2 rounded-full border border-gray-200 dark:border-[#211C2B] bg-white/60 dark:bg-[#120F17]/60 hover:border-[#9D4EDD]/60 transition-colors text-gray-700 dark:text-gray-300"
+        className="relative w-10 h-10 rounded-lg border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] transition-colors text-[#94A3B8] hover:text-white flex items-center justify-center shrink-0"
         aria-label="Notifikasi Guild"
         aria-expanded={open}
       >
         <Bell size={16} />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#9D4EDD] opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#9D4EDD]" />
+          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#7C3AED] opacity-75" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#7C3AED]" />
           </span>
         )}
       </button>
@@ -123,16 +123,16 @@ export function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.96 }}
             transition={{ duration: 0.16, ease: "easeOut" }}
-            className="absolute right-0 mt-2 w-80 sm:w-96 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-3 shadow-2xl z-50 backdrop-blur-xl"
+            className="absolute right-0 mt-2 w-80 sm:w-96 rounded-lg border border-[#7C3AED]/60 bg-[#11091D] p-3 shadow-2xl z-50 backdrop-blur-xl text-left"
             role="menu"
           >
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100 dark:border-[#211C2B]">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#2A1B42]">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-                  <Bell size={14} className="text-[#9D4EDD]" /> Notifikasi Guild
+                <span className="text-xs font-bold text-[#F8FAFC] flex items-center gap-1.5">
+                  <Bell size={14} className="text-[#A78BFA]" /> Notifikasi Guild
                 </span>
                 {unreadCount > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#9D4EDD]/15 text-[#9D4EDD] font-bold">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#7C3AED]/20 text-[#A78BFA] font-bold border border-[#7C3AED]/40">
                     {unreadCount} baru
                   </span>
                 )}

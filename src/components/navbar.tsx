@@ -274,48 +274,17 @@ export function Navbar() {
   return (
     <>
       {/* ========================================================================= */}
-      {/* 0. TOP TELEMETRY BAR (Data-Dense Real-Time Indicator Strip)               */}
-      {/* ========================================================================= */}
-      <div className="w-full bg-[#06020A] border-b border-[#2E1E45] text-[11px] font-mono py-1 px-4 sm:px-6 lg:px-8 select-none z-50">
-        <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between gap-4 overflow-x-auto scrollbar-none">
-          <div className="flex items-center gap-4 shrink-0 text-[#A78BFA]">
-            <span className="flex items-center gap-1.5 font-bold">
-              <span className="size-2 rounded-full bg-[#10B981] animate-pulse shrink-0" />
-              <strong className="text-[#F8FAFC]">2,480</strong> MEMBER ONLINE
-            </span>
-            <span className="text-[#2E1E45]">|</span>
-            <span className="flex items-center gap-1.5 font-medium">
-              <span className="size-2 rounded-full bg-[#F59E0B] shrink-0" />
-              <span>LEAGUE S1: INVITATIONAL #4</span>
-              <span className="text-[#10B981] font-bold">(LIVE)</span>
-            </span>
-            <span className="text-[#2E1E45] hidden md:inline">|</span>
-            <span className="hidden md:flex items-center gap-1.5 text-[#10B981] font-medium">
-              <ShieldCheck size={12} className="shrink-0" />
-              <span>REKBER ESCROW GUILD: AKTIF &amp; TERVERIFIKASI</span>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0 text-[10px] text-[#A78BFA] font-mono">
-            <span className="hidden sm:inline">VOICE NODE: SG-1 (4ms)</span>
-            <span className="text-[#2E1E45] hidden sm:inline">|</span>
-            <span className="text-[#F8FAFC] font-semibold">LOGHORIZON HQ // V2.5</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 1. MAIN TOP NAVBAR (Sticky z-40, Sharp Brutalism)                         */}
+      {/* 1. MAIN TOP NAVBAR (Sticky z-40, Slim 72px)                               */}
       {/* ========================================================================= */}
       <header
-        className={`sticky top-0 z-40 w-full transition-all duration-200 bg-[#09040F]/95 backdrop-blur-md border-b border-[#2E1E45] ${
-          scrolled ? "py-2.5 shadow-xl shadow-black/40" : "py-3 sm:py-3.5"
+        className={`sticky top-0 z-40 w-full transition-all duration-200 bg-[#09040F]/95 backdrop-blur-md border-b border-[#2A1B42] h-[72px] flex items-center ${
+          scrolled ? "shadow-xl shadow-black/40" : ""
         }`}
       >
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 flex items-center justify-between gap-4">
           {/* SISI KIRI: Logo & Nama Guild */}
           <Link href="/" className="flex items-center gap-3 group shrink-0" aria-label="LogHorizon Beranda">
-            <div className="relative size-9 rounded-none border border-[#2E1E45] group-hover:border-[#7C3AED] transition-colors bg-[#130921] flex items-center justify-center shadow-sm overflow-hidden">
+            <div className="relative size-9 rounded-lg border border-[#2A1B42] group-hover:border-[#7C3AED] transition-colors bg-[#11091D] flex items-center justify-center shadow-sm overflow-hidden">
               <Image
                 src="/loghorizon-logo.png"
                 alt="LogHorizon Emblem"
@@ -332,18 +301,18 @@ export function Navbar() {
             </div>
           </Link>
 
-          {/* SISI TENGAH: Menu Navigasi Terstruktur Desktop (Pill Capsule Exception) */}
+          {/* SISI TENGAH: Menu Navigasi 5 Menu Pill Desktop */}
           <nav
-            className="hidden md:flex desktop-navbar items-center gap-1 px-2.5 py-1 rounded-full border border-[#2E1E45] bg-[#130921]/90 backdrop-blur-sm shadow-inner shadow-black/40"
+            className="hidden md:flex desktop-navbar items-center gap-1 p-1 rounded-lg border border-[#2A1B42] bg-[#11091D]"
             aria-label="Navigasi Utama Desktop"
           >
             {/* 1. HOME */}
             <Link
               href="/"
-              className={`relative px-3.5 py-1.5 text-xs font-bold rounded-full transition-colors ${
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                 isHomeActive
-                  ? "bg-[#1A0E2E] text-[#F8FAFC] border border-[#7C3AED]/60"
-                  : "text-[#A78BFA] hover:text-[#F8FAFC]"
+                  ? "bg-[#7C3AED] text-white"
+                  : "text-[#94A3B8] hover:text-white hover:bg-[#1A0F2E]"
               }`}
             >
               Home
@@ -358,14 +327,14 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setActiveMenu(activeMenu === "komunitas" ? null : "komunitas")}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full transition-colors ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                   isKomunitasActive || activeMenu === "komunitas"
-                    ? "bg-[#1A0E2E] text-[#F8FAFC] border border-[#7C3AED]/60"
-                    : "text-[#A78BFA] hover:text-[#F8FAFC]"
+                    ? "bg-[#7C3AED] text-white"
+                    : "text-[#94A3B8] hover:text-white hover:bg-[#1A0F2E]"
                 }`}
               >
                 <span>Komunitas</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "komunitas" ? "rotate-180 text-[#7C3AED]" : "opacity-70"}`} />
+                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "komunitas" ? "rotate-180" : "opacity-70"}`} />
               </button>
 
               <AnimatePresence>
@@ -375,23 +344,23 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-none border border-[#2E1E45] bg-[#130921] shadow-2xl z-50 divide-y divide-[#2E1E45]/60 p-1.5"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-[#7C3AED]/60 bg-[#11091D] shadow-2xl z-50 divide-y divide-[#2A1B42]/60 p-1.5"
                   >
                     {navGroups[0].items.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
                         onClick={() => setActiveMenu(null)}
-                        className="flex items-start gap-3 p-2.5 rounded-none text-left transition-colors hover:bg-[#1A0E2E] group/item"
+                        className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-[#1A0F2E] group/item"
                       >
-                        <div className="size-8 rounded-none bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#F8FAFC] transition-colors">
+                        <div className="size-8 rounded-md bg-[#1A0F2E] border border-[#2A1B42] text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-white transition-colors">
                           <item.icon size={15} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-bold text-[#F8FAFC] group-hover/item:text-[#A78BFA] transition-colors">
                             {item.label}
                           </p>
-                          <p className="text-[11px] text-[#A78BFA] leading-snug line-clamp-1 mt-0.5">
+                          <p className="text-[11px] text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
                             {item.desc}
                           </p>
                         </div>
@@ -411,14 +380,14 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setActiveMenu(activeMenu === "arena" ? null : "arena")}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full transition-colors ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                   isArenaActive || activeMenu === "arena"
-                    ? "bg-[#1A0E2E] text-[#F8FAFC] border border-[#7C3AED]/60"
-                    : "text-[#A78BFA] hover:text-[#F8FAFC]"
+                    ? "bg-[#7C3AED] text-white"
+                    : "text-[#94A3B8] hover:text-white hover:bg-[#1A0F2E]"
                 }`}
               >
                 <span>Arena &amp; Mabar</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "arena" ? "rotate-180 text-[#7C3AED]" : "opacity-70"}`} />
+                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "arena" ? "rotate-180" : "opacity-70"}`} />
               </button>
 
               <AnimatePresence>
@@ -428,23 +397,23 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-none border border-[#2E1E45] bg-[#130921] shadow-2xl z-50 divide-y divide-[#2E1E45]/60 p-1.5"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-[#7C3AED]/60 bg-[#11091D] shadow-2xl z-50 divide-y divide-[#2A1B42]/60 p-1.5"
                   >
                     {navGroups[1].items.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
                         onClick={() => setActiveMenu(null)}
-                        className="flex items-start gap-3 p-2.5 rounded-none text-left transition-colors hover:bg-[#1A0E2E] group/item"
+                        className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-[#1A0F2E] group/item"
                       >
-                        <div className="size-8 rounded-none bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#F8FAFC] transition-colors">
+                        <div className="size-8 rounded-md bg-[#1A0F2E] border border-[#2A1B42] text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-white transition-colors">
                           <item.icon size={15} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-bold text-[#F8FAFC] group-hover/item:text-[#A78BFA] transition-colors">
                             {item.label}
                           </p>
-                          <p className="text-[11px] text-[#A78BFA] leading-snug line-clamp-1 mt-0.5">
+                          <p className="text-[11px] text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
                             {item.desc}
                           </p>
                         </div>
@@ -458,10 +427,10 @@ export function Navbar() {
             {/* 4. MARKETPLACE */}
             <Link
               href="/marketplace"
-              className={`relative px-3.5 py-1.5 text-xs font-bold rounded-full transition-colors ${
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                 isMarketplaceActive
-                  ? "bg-[#1A0E2E] text-[#F8FAFC] border border-[#7C3AED]/60"
-                  : "text-[#A78BFA] hover:text-[#F8FAFC]"
+                  ? "bg-[#7C3AED] text-white"
+                  : "text-[#94A3B8] hover:text-white hover:bg-[#1A0F2E]"
               }`}
             >
               Marketplace
@@ -476,14 +445,14 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setActiveMenu(activeMenu === "guild" ? null : "guild")}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full transition-colors ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                   isGuildActive || activeMenu === "guild"
-                    ? "bg-[#1A0E2E] text-[#F8FAFC] border border-[#7C3AED]/60"
-                    : "text-[#A78BFA] hover:text-[#F8FAFC]"
+                    ? "bg-[#7C3AED] text-white"
+                    : "text-[#94A3B8] hover:text-white hover:bg-[#1A0F2E]"
                 }`}
               >
                 <span>Guild</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "guild" ? "rotate-180 text-[#7C3AED]" : "opacity-70"}`} />
+                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "guild" ? "rotate-180" : "opacity-70"}`} />
               </button>
 
               <AnimatePresence>
@@ -493,23 +462,23 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-none border border-[#2E1E45] bg-[#130921] shadow-2xl z-50 divide-y divide-[#2E1E45]/60 p-1.5"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-[#7C3AED]/60 bg-[#11091D] shadow-2xl z-50 divide-y divide-[#2A1B42]/60 p-1.5"
                   >
                     {navGroups[2].items.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
                         onClick={() => setActiveMenu(null)}
-                        className="flex items-start gap-3 p-2.5 rounded-none text-left transition-colors hover:bg-[#1A0E2E] group/item"
+                        className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-[#1A0F2E] group/item"
                       >
-                        <div className="size-8 rounded-none bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#F8FAFC] transition-colors">
+                        <div className="size-8 rounded-md bg-[#1A0F2E] border border-[#2A1B42] text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-white transition-colors">
                           <item.icon size={15} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-bold text-[#F8FAFC] group-hover/item:text-[#A78BFA] transition-colors">
                             {item.label}
                           </p>
-                          <p className="text-[11px] text-[#A78BFA] leading-snug line-clamp-1 mt-0.5">
+                          <p className="text-[11px] text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
                             {item.desc}
                           </p>
                         </div>
@@ -523,35 +492,35 @@ export function Navbar() {
 
           {/* SISI KANAN: Aksi Desktop & Hamburger Mobile */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Theme Toggle (Kotak Tajam Brutalis) */}
+            {/* Theme Toggle */}
             <button
               type="button"
               onClick={toggleTheme}
-              className="size-9 rounded-none border border-[#2E1E45] bg-[#130921] text-[#A78BFA] hover:text-[#F8FAFC] hover:border-[#7C3AED] flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-lg border border-[#2A1B42] bg-[#11091D] text-[#94A3B8] hover:text-white hover:border-[#7C3AED] flex items-center justify-center transition-colors shrink-0"
               title={isDark ? "Ganti ke mode terang" : "Ganti ke mode gelap"}
               aria-label="Ganti mode tema"
             >
               {isDark ? (
-                <Sun size={15} className="text-[#F59E0B] transition-transform hover:rotate-45" />
+                <Sun size={16} className="text-[#F59E0B] transition-transform hover:rotate-45" />
               ) : (
-                <Moon size={15} className="text-[#7C3AED] transition-transform hover:-rotate-12" />
+                <Moon size={16} className="text-[#7C3AED] transition-transform hover:-rotate-12" />
               )}
             </button>
 
-            {/* Aksi Khusus Desktop (Lonceng Notifikasi & Profil) */}
+            {/* Aksi Khusus Desktop (Pesan, Lonceng Notifikasi & Profil) */}
             <div className="hidden md:flex desktop-navbar items-center gap-2">
               {status === "loading" ? (
-                <div className="h-9 w-24 rounded-none bg-[#130921] border border-[#2E1E45] animate-pulse" />
+                <div className="h-10 w-24 rounded-lg bg-[#11091D] border border-[#2A1B42] animate-pulse" />
               ) : user ? (
                 <div className="flex items-center gap-2">
                   <Link
                     href="/messages"
-                    className="relative size-9 rounded-none border border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED] transition-colors text-[#A78BFA] hover:text-[#F8FAFC] flex items-center justify-center"
+                    className="relative w-10 h-10 rounded-lg border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] transition-colors text-[#94A3B8] hover:text-white flex items-center justify-center shrink-0"
                     title="Pesan &amp; Obrolan Komunitas"
                   >
                     <MessageSquare size={16} />
                     {unreadMessages > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-[#7C3AED] text-white rounded-none text-[9px] font-mono font-bold flex items-center justify-center">
+                      <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-[#7C3AED] text-white rounded-full text-[9px] font-mono font-bold flex items-center justify-center">
                         {unreadMessages > 9 ? "9+" : unreadMessages}
                       </span>
                     )}
@@ -561,11 +530,11 @@ export function Navbar() {
                     <button
                       type="button"
                       onClick={() => setDropdownOpen((prev) => !prev)}
-                      className="h-9 px-3 rounded-none border border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED] transition-colors flex items-center gap-2 font-mono text-xs text-[#F8FAFC]"
+                      className="h-10 px-3 rounded-lg border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] transition-colors flex items-center gap-2 font-mono text-xs text-[#F8FAFC]"
                       aria-expanded={dropdownOpen}
                       aria-label="Menu profil pengguna"
                     >
-                      <div className="relative size-5 rounded-none border border-[#7C3AED]/40 bg-[#1A0E2E] flex items-center justify-center overflow-hidden">
+                      <div className="relative size-6 rounded-md border border-[#7C3AED]/40 bg-[#1A0E2E] flex items-center justify-center overflow-hidden">
                         {user.avatar ? (
                           <Image src={user.avatar} alt={user.username ?? "User"} fill className="object-cover" unoptimized />
                         ) : (
@@ -574,7 +543,7 @@ export function Navbar() {
                           </span>
                         )}
                       </div>
-                      <span className="text-xs font-semibold max-w-[90px] truncate">
+                      <span className="text-xs font-semibold max-w-[100px] truncate">
                         {user.username ?? user.name ?? "Gamer"}
                       </span>
                       <span className="size-2 rounded-full bg-[#10B981] shrink-0" title="Online" />
@@ -588,7 +557,7 @@ export function Navbar() {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 6, scale: 0.98 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute right-0 mt-2 w-56 rounded-none border border-[#2E1E45] bg-[#130921] p-2 shadow-2xl z-50 space-y-1 divide-y divide-[#2E1E45]/60"
+                          className="absolute right-0 mt-2 w-56 rounded-lg border border-[#7C3AED]/60 bg-[#11091D] p-2 shadow-2xl z-50 space-y-1 divide-y divide-[#2A1B42]/60"
                           role="menu"
                         >
                           <div className="px-3 py-2 pb-2.5">
@@ -608,7 +577,7 @@ export function Navbar() {
                                       ? "⚔️ Lord Commander"
                                       : "🎮 Adventurer"}
                               </p>
-                              <span className="text-[10px] font-mono px-1.5 py-0.2 bg-[#1A0E2E] border border-[#2E1E45] text-[#10B981] font-bold">
+                              <span className="text-[10px] font-mono px-1.5 py-0.2 bg-[#1A0E2E] border border-[#2A1B42] text-[#10B981] font-bold rounded">
                                 Lv. {user.level ?? 1}
                               </span>
                             </div>
@@ -619,7 +588,7 @@ export function Navbar() {
                               <Link
                                 href="/admin"
                                 onClick={() => setDropdownOpen(false)}
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-mono font-semibold text-[#A78BFA] hover:text-[#F8FAFC] hover:bg-[#1A0E2E] transition-colors"
+                                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono font-semibold text-[#A78BFA] hover:text-[#F8FAFC] hover:bg-[#1A0E2E] transition-colors"
                                 role="menuitem"
                               >
                                 <ShieldCheck size={14} className="shrink-0 text-[#10B981]" />
@@ -629,7 +598,7 @@ export function Navbar() {
                             <Link
                               href="/profile"
                               onClick={() => setDropdownOpen(false)}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-mono text-[#F8FAFC] hover:bg-[#1A0E2E] transition-colors"
+                              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono text-[#F8FAFC] hover:bg-[#1A0E2E] transition-colors"
                               role="menuitem"
                             >
                               <Settings size={14} className="shrink-0 text-[#A78BFA]" />
@@ -644,7 +613,7 @@ export function Navbar() {
                                 setDropdownOpen(false);
                                 void signOut();
                               }}
-                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-mono text-red-400 hover:bg-red-950/20 transition-colors"
+                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono text-red-400 hover:bg-red-950/20 transition-colors"
                               role="menuitem"
                             >
                               <LogOut size={14} className="shrink-0" />
@@ -662,7 +631,7 @@ export function Navbar() {
                   whileTap={{ scale: 0.98 }}
                   type="button"
                   onClick={() => void signIn("discord")}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-none bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition-all border border-[#5865F2] shrink-0"
+                  className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition-all border border-[#5865F2] shrink-0"
                 >
                   <span className="text-sm leading-none">◉</span>
                   <span>Connect Discord</span>
@@ -675,12 +644,12 @@ export function Navbar() {
               {user && (
                 <Link
                   href="/messages"
-                  className="relative size-9 rounded-none border border-[#2E1E45] bg-[#130921] text-[#A78BFA] flex items-center justify-center hover:border-[#7C3AED] transition-colors"
+                  className="relative w-10 h-10 rounded-lg border border-[#2A1B42] bg-[#11091D] text-[#94A3B8] hover:text-white flex items-center justify-center hover:border-[#7C3AED] transition-colors shrink-0"
                   aria-label="Pesan &amp; Obrolan Komunitas"
                 >
                   <MessageSquare size={16} />
                   {unreadMessages > 0 && (
-                    <span className="absolute -top-1 -right-1 size-3.5 bg-[#7C3AED] rounded-none text-[8px] font-mono font-bold text-white flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 min-w-3.5 h-3.5 px-1 bg-[#7C3AED] rounded-full text-[8px] font-mono font-bold text-white flex items-center justify-center">
                       {unreadMessages > 9 ? "9+" : unreadMessages}
                     </span>
                   )}
@@ -690,7 +659,7 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="mobile-only size-9 rounded-none border border-[#2E1E45] bg-[#130921] text-[#F8FAFC] flex items-center justify-center hover:border-[#7C3AED] transition-colors"
+                className="mobile-only w-10 h-10 rounded-lg border border-[#2A1B42] bg-[#11091D] text-[#F8FAFC] flex items-center justify-center hover:border-[#7C3AED] transition-colors shrink-0"
                 aria-label="Buka menu navigasi"
                 aria-expanded={mobileOpen}
               >

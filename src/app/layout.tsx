@@ -66,7 +66,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             {children}
           </div>
           <footer className="border-t border-[#2E1E45] bg-[#09040F] py-8 mt-auto rounded-none">
-            <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-5 text-center md:text-left">
+            <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-5 text-center md:text-left">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 justify-center md:justify-start">
                   <span className="font-display font-bold text-sm tracking-wider uppercase text-[#F8FAFC]">LOGHORIZON</span>

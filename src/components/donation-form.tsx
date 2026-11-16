@@ -151,7 +151,7 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
   const qrisUrl = treasury?.qrisImageUrl || process.env.NEXT_PUBLIC_QRIS_IMAGE_URL || "/qris-guild.png";
 
   return (
-    <main className="donate-page treasury-page py-6 sm:py-10 w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 overflow-x-hidden text-left">
+    <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 overflow-x-hidden text-left">
       <header className="treasury-hero mb-8 border-b border-[#2E1E45] pb-6">
         <p className="section-kicker text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-widest mb-1.5 flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-[#7C3AED]" />

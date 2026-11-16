@@ -245,7 +245,7 @@ export function ForumThread({ id }: { id: string }) {
   ));
 
   return (
-    <main className="community-page py-8 sm:py-12 w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 overflow-x-hidden">
+    <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 overflow-x-hidden">
       <div className="page-shell px-0 sm:px-0 thread-layout">
         <div>
           <Link className="back-link inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#A78BFA] hover:text-[#F8FAFC] mb-4 uppercase tracking-wider" href="/forum">

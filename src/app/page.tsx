@@ -142,7 +142,7 @@ export default async function Home() {
       {/* 3. HERO SECTION (Asymmetric 12-Column Grid: 7 Left : 5 Right)          */}
       {/* ===================================================================== */}
       <section className="relative py-10 sm:py-14 md:py-18 lg:py-20 border-b border-[#2E1E45]">
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
             {/* KOLOM KIRI (7 Kolom): Headline, Deskripsi, CTA, dan 4 Metrik Statistik */}
             <div className="lg:col-span-7 text-left space-y-6">
@@ -358,7 +358,7 @@ export default async function Home() {
       {/* 01 / TENTANG GUILD (Clean Editorial Block)                             */}
       {/* ===================================================================== */}
       <section className="py-12 md:py-16 border-b border-[#2E1E45]" id="about-section">
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
           <div className="font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider mb-2">01 / TENTANG GUILD</div>
           <div className="mt-2 max-w-3xl text-left space-y-3">
             <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#F8FAFC] uppercase">
@@ -376,7 +376,7 @@ export default async function Home() {
       {/* 02 / DIVISI GAME (Data-Dense Sharp Cards)                             */}
       {/* ===================================================================== */}
       <section className="py-12 md:py-16 border-b border-[#2E1E45]">
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
           <div className="mb-8 text-left">
             <div className="font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider mb-2">02 / PILIH PETUALANGANMU</div>
             <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#F8FAFC] uppercase">
@@ -431,7 +431,7 @@ export default async function Home() {
       {/* 03 / KEUNTUNGAN GUILD (Sharp Modular Grid)                            */}
       {/* ===================================================================== */}
       <section className="py-12 md:py-16 border-b border-[#2E1E45]">
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
           <div className="font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider mb-2">03 / KENAPA LOGHORIZON</div>
           <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#F8FAFC] uppercase text-left">
             Party yang baik mengubah <span className="text-[#A78BFA]">segalanya.</span>
@@ -464,7 +464,7 @@ export default async function Home() {
       {/* 04 / ATURAN KOMUNITAS                                                 */}
       {/* ===================================================================== */}
       <section className="py-12 md:py-16 border-b border-[#2E1E45]" id="rules">
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
             <div className="text-left space-y-3">
               <div className="font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider">04 / KODE ETIK PETUALANG</div>
@@ -503,7 +503,7 @@ export default async function Home() {
       {/* 05 / STRUKTUR KASTA & HIERARKI KOMUNITAS                              */}
       {/* ===================================================================== */}
       <section className="py-12 md:py-16 border-b border-[#2E1E45]" id="roles">
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div className="text-left">
               <div className="font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider mb-2">05 / STRUKTUR KOMUNITAS</div>
@@ -544,7 +544,7 @@ export default async function Home() {
       {/* 06 / SPONSOR RESMI                                                    */}
       {/* ===================================================================== */}
       <section className="py-12 border-y border-[#2A1B42] bg-[#0B0613]">
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
           <div className="text-left">
             <p className="font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider mb-2">
               06 / PARTNER &amp; SPONSOR RESMI GUILD
@@ -635,7 +635,7 @@ export default async function Home() {
       {/* 07 / CTA BANNER (Editorial Brutalism Strip)                           */}
       {/* ===================================================================== */}
       <section className="py-12 md:py-16" id="join">
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
           <div className="p-6 sm:p-10 rounded-none bg-[#130921] border border-[#7C3AED] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="space-y-1 text-left">
               <p className="font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider">07 / GABUNG GUILD</p>
