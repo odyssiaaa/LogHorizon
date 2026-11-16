@@ -454,7 +454,8 @@ export async function handleForumMention({
   authorUsername: string;
 }): Promise<void> {
   try {
-    const [post, recentComments, satpamBot] = await Promise.all([
+    const isSummarize = /@satpam\s+(rangkum|kesimpulan|ringkas|summary)/i.test(userContent);
+    const [post, recentComments, satpamBot, siteConfig, activeSponsors] = await Promise.all([
       prisma.post.findUnique({
         where: { id: postId },
         select: { title: true, content: true, category: true },
@@ -462,43 +463,59 @@ export async function handleForumMention({
       prisma.comment.findMany({
         where: { postId },
         orderBy: { createdAt: "desc" },
-        take: 8,
+        take: 10,
         include: { author: { select: { username: true } } },
       }),
       getOrCreateSatpamBotUser(),
+      prisma.siteConfig.findUnique({
+        where: { id: "default" },
+        select: { aiKnowledgeBase: true },
+      }).catch(() => null),
+      prisma.sponsor.findMany({
+        orderBy: { createdAt: "desc" },
+        select: { name: true, tier: true, websiteUrl: true },
+        take: 5,
+      }).catch(() => []),
     ]);
 
     if (!post) return;
 
-    const threadContext = `JUDUL THREAD: "${post.title}"\nKATEGORI: ${post.category}\nISI THREAD:\n${post.content.slice(0, 800)}`;
+    const threadContext = `JUDUL THREAD: "${post.title}"\nKATEGORI: ${post.category}\nISI THREAD:\n${post.content.slice(0, 1000)}`;
     const debateContext = recentComments
       .reverse()
-      .map((c) => `@${c.author.username || "Gamer"}: ${c.content.slice(0, 150)}`)
+      .map((c) => `@${c.author.username || "Gamer"}: ${c.content.slice(0, 200)}`)
       .join("\n");
+
+    const sponsorText = activeSponsors && activeSponsors.length > 0
+      ? activeSponsors.map((s) => `${s.name} (${s.tier || "Partner"}) - Link: ${s.websiteUrl || "#"}`).join(", ")
+      : "";
 
     const systemPrompt = [
       "Kamu adalah Satpam Horizon, AI Guardian resmi LogHorizon.",
       "Gaya bahasamu cerdas, santai, solutif, sedikit humor ala gamer Indonesia (GGWP, mabar, push rank, sepuh, gacor).",
       "Kamu baru saja dipanggil via mention @satpam oleh member di thread forum.",
-      "Tugasmu: Berikan tanggapan yang sangat relevan sesuai perintah/pertanyaan user (misal: merangkum perdebatan thread, memberi opini fair, atau menilai topik diskusi).",
-      "Tuliskan respon dalam 2-4 kalimat padat, jelas, dan berwibawa.",
-      "Format jawaban dengan format bersih dan sopan.",
-    ].join("\n");
+      isSummarize
+        ? "PERINTAH KHUSUS: User memintamu merangkum perdebatan/thread ini. Buatlah rangkuman eksekutif padat dalam 3-4 butir bullet Markdown: 1. Pokok Bahasan, 2. Pandangan/Argumen Komunitas, 3. Kesimpulan/Rekomendasi Satpam. Format bersih, to-the-point, dan berwibawa."
+        : "Tugasmu: Berikan tanggapan yang sangat relevan sesuai perintah/pertanyaan user (misal: analisis build, pendapat fair, atau tips). Jawab dalam 2-4 kalimat padat dan berwibawa.",
+      siteConfig?.aiKnowledgeBase ? `INGATAN & ATURAN KHUSUS DARI OWNER / ADMIN CMS:\n${siteConfig.aiKnowledgeBase}` : "",
+      sponsorText ? `PARTNER RESMI GUILD: ${sponsorText}. Jika user menanyakan voucher, gear, atau topup, sebutkan partner ini secara halus.` : "",
+      "Format jawaban dengan Markdown rapi tanpa backtick pada link.",
+    ].filter(Boolean).join("\n");
 
     const userPrompt = [
       `KONTEKS THREAD FORUM:`,
       threadContext,
       "",
-      `DISKUSI TERAKHIR:`,
+      `DISKUSI TERAKHIR DARI PARA PETUALANG:`,
       debateContext || "(Belum ada komentar lain)",
       "",
       `PESAN PEMANGGIL DARI @${authorUsername}:`,
       userContent,
       "",
-      `Berikan jawabanmu sekarang:`,
+      isSummarize ? "Buat rangkuman eksekutif padat (3-4 bullet) sekarang:" : "Berikan jawabanmu sekarang:",
     ].join("\n");
 
-    const reply = await callGemini(userPrompt, systemPrompt, 350);
+    const reply = await callGemini(userPrompt, systemPrompt, isSummarize ? 450 : 350);
 
     // Simpan komentar balasan bot di database (dikaitkan ke parentId komentar pemanggil)
     await prisma.comment.create({
@@ -533,12 +550,16 @@ export async function handleMatchLobbyMention({
   senderUsername: string;
 }): Promise<void> {
   try {
-    const [tournament, satpamBot] = await Promise.all([
+    const [tournament, satpamBot, siteConfig] = await Promise.all([
       prisma.tournament.findUnique({
         where: { id: tournamentId },
         select: { title: true, game: true, format: true, rules: true },
       }),
       getOrCreateSatpamBotUser(),
+      prisma.siteConfig.findUnique({
+        where: { id: "default" },
+        select: { aiKnowledgeBase: true },
+      }).catch(() => null),
     ]);
 
     if (!tournament) return;
@@ -553,9 +574,10 @@ export async function handleMatchLobbyMention({
       "3. Format Pertandingan: Babak kualifikasi menggunakan Best of 1 (BO1), sedangkan Semifinal & Grand Final menggunakan Best of 3 (BO3) / BO5.",
       "4. Pergantian Roster/Cadangan: Wajib dilaporkan ke panitia minimal 30 menit sebelum jadwal pertandingan dimulai.",
       "5. Keputusan Panitia & Wasit bersifat mutlak.",
+      siteConfig?.aiKnowledgeBase ? `ATURAN TAMBAHAN DARI ADMIN CMS:\n${siteConfig.aiKnowledgeBase}` : "",
       "",
       "Jawablah dengan nada wasit profesional, tegas, dan jelas (2-4 kalimat).",
-    ].join("\n");
+    ].filter(Boolean).join("\n");
 
     const userPrompt = [
       `TURNAMEN: ${tournament.title} (${tournament.game})`,
@@ -599,7 +621,7 @@ export async function handleDirectMessageMention({
   senderUsername: string;
 }): Promise<void> {
   try {
-    const [satpamBot, upcomingTournaments] = await Promise.all([
+    const [satpamBot, upcomingTournaments, siteConfig] = await Promise.all([
       getOrCreateSatpamBotUser(),
       prisma.tournament.findMany({
         where: { status: { in: ["OPEN", "REGISTRATION", "ONGOING"] } },
@@ -607,6 +629,10 @@ export async function handleDirectMessageMention({
         take: 3,
         orderBy: { eventDate: "asc" },
       }),
+      prisma.siteConfig.findUnique({
+        where: { id: "default" },
+        select: { aiKnowledgeBase: true },
+      }).catch(() => null),
     ]);
 
     // Pastikan bot terdaftar sebagai partisipan obrolan
@@ -635,9 +661,11 @@ export async function handleDirectMessageMention({
     const systemPrompt = [
       "Kamu adalah Satpam Horizon, AI Companion & Party Assistant di obrolan guild LogHorizon.",
       "Gaya bicaramu asik, suportif, dan membantu petualang menyusun strategi mabar, komposisi role, atau memberi info jadwal turnamen.",
+      "Hierarki Pengurus: Emperor (.odyssia), Prince/Princess (Abbasta), Grand Chancellor (Woozy's & Allegrio), Lord Commander (Fikkk01).",
+      siteConfig?.aiKnowledgeBase ? `INGATAN & KNOWLEDGE KHUSUS DARI OWNER / ADMIN:\n${siteConfig.aiKnowledgeBase}` : "",
       `Data Turnamen Aktif saat ini:\n${tournamentBrief}`,
       "Jawab pertanyaan user secara ringkas dan ramah (2-3 kalimat).",
-    ].join("\n");
+    ].filter(Boolean).join("\n");
 
     const reply = await callGemini(
       `Pesan dari @${senderUsername}: "${userMessage}"`,

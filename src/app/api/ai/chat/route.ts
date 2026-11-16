@@ -200,6 +200,10 @@ async function getLiveDatabaseContext(userId: string) {
       donorRaw,
       totalForumThreads,
       latestForumPosts,
+      hotForumPosts,
+      latestAnnouncements,
+      activeSponsors,
+      siteConfig,
       allMarketListings,
       openTournaments,
       openLfg,
@@ -232,7 +236,45 @@ async function getLiveDatabaseContext(userId: string) {
         where: { category: { not: "MARKETPLACE" } },
         orderBy: { createdAt: "desc" },
         take: 5,
-        select: { title: true, category: true },
+        select: { id: true, title: true, category: true },
+      }),
+      prisma.post.findMany({
+        where: { category: { not: "MARKETPLACE" } },
+        orderBy: [
+          { comments: { _count: "desc" } },
+          { createdAt: "desc" },
+        ],
+        take: 5,
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          author: { select: { username: true } },
+          _count: { select: { comments: true, votes: true } },
+        },
+      }),
+      prisma.announcement.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 3,
+        select: {
+          title: true,
+          content: true,
+          createdAt: true,
+          author: { select: { username: true } },
+        },
+      }),
+      prisma.sponsor.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 6,
+        select: {
+          name: true,
+          websiteUrl: true,
+          tier: true,
+        },
+      }),
+      prisma.siteConfig.findUnique({
+        where: { id: "default" },
+        select: { aiKnowledgeBase: true },
       }),
       prisma.post.findMany({
         where: { category: "MARKETPLACE" },
@@ -307,8 +349,32 @@ async function getLiveDatabaseContext(userId: string) {
       : "Belum ada donatur terverifikasi.";
 
     const forumSummary = latestForumPosts.length
-      ? `Total ${totalForumThreads} thread. 5 Thread terbaru: ` + latestForumPosts.map((p) => `"${p.title}"`).join(", ")
+      ? `Total ${totalForumThreads} thread forum. 5 Thread terbaru: ` + latestForumPosts.map((p) => `"${p.title}"`).join(", ")
       : `Total ${totalForumThreads} thread forum. Belum ada postingan terbaru.`;
+
+    const hotForumSummary = hotForumPosts.length
+      ? hotForumPosts.map((p, idx) => `${idx + 1}. "${p.title}" [${p.category}] oleh @${p.author.username ?? "Gamer"} (${p._count.comments} komentar, ${p._count.votes} reaksi)`).join(" | ")
+      : "Belum ada thread yang sedang ramai diperdebatkan.";
+
+    const announcementsSummary = latestAnnouncements.length
+      ? latestAnnouncements.map((a) => `• [Pengumuman Discord: ${a.title}] (${new Date(a.createdAt).toLocaleDateString("id-ID")}): ${a.content.slice(0, 100)}...`).join(" | ")
+      : "Belum ada pengumuman baru dari Discord guild.";
+
+    const globalNewsHeadlines = [
+      "• [Counter-Strike 2] Valve Rilis Update Sub-Tick & Integrasi VACNet 3.0",
+      "• [Valorant] Penyesuaian Meta Controller & Pool Map VCT Musim 2026",
+      "• [Mobile Legends] Revamp Hero & Penyesuaian Item Defense Patch Terbaru",
+      "• [Hardware & Tech] Era Kartu Grafis Generasi Baru RTX 50 Series & DisplayPort 2.1 Ultra-High Refresh Rate",
+      "• [Genshin Impact & RPG] Teaser Wilayah Baru & Rilis Karakter Berelemen Unik",
+    ].join(" | ");
+
+    const liveNewsSummary = `Warta Resmi Guild:\n${announcementsSummary}\n\nTopik Berita Global Gaming Terkini:\n${globalNewsHeadlines}`;
+
+    const sponsorsSummary = activeSponsors.length
+      ? activeSponsors.map((s) => `• ${s.name} (${s.tier}) -> Link: ${s.websiteUrl || "https://loghorizon.id"}`).join(" | ")
+      : "Belum ada sponsor aktif yang terdaftar.";
+
+    const aiKnowledgeBase = siteConfig?.aiKnowledgeBase?.trim() || "";
 
     const marketSummary = availableMarket.length
       ? `Total lapak aktif: ${allMarketListings.length}. Lapak tersedia: ` + availableMarket.join(", ")
@@ -356,6 +422,10 @@ async function getLiveDatabaseContext(userId: string) {
       xpLeaderboardSummary,
       donorSummary,
       forumSummary,
+      hotForumSummary,
+      liveNewsSummary,
+      sponsorsSummary,
+      aiKnowledgeBase,
       marketSummary,
       eventSummary,
       tournamentSummary,
@@ -367,6 +437,10 @@ async function getLiveDatabaseContext(userId: string) {
       xpLeaderboardSummary: "Papan peringkat sedang disinkronisasi.",
       donorSummary: "Data kas donatur sedang disinkronisasi.",
       forumSummary: "Forum komunitas sedang aktif.",
+      hotForumSummary: "Topik diskusi sedang aktif diperdebatkan di /forum.",
+      liveNewsSummary: "Warta berita komunitas dan gaming dapat diakses di /news.",
+      sponsorsSummary: "Partner resmi guild LogHorizon.",
+      aiKnowledgeBase: "",
       marketSummary: "Lapak marketplace tersedia dengan sistem Escrow aman.",
       eventSummary: "Turnamen & Party LFG tersedia di menu Events.",
       tournamentSummary: "Turnamen resmi dan bagan bracket live dapat dilihat di /events?view=turnamen.",
@@ -435,25 +509,38 @@ export async function POST(request: Request) {
     `- Top 5 Leaderboard XP: ${dbContext.xpLeaderboardSummary}`,
     `- Top 3 Donatur Kas: ${dbContext.donorSummary}`,
     `- Data Forum Diskusi: ${dbContext.forumSummary}`,
+    `- Topik Hot Forum Diskusi Terkini: ${dbContext.hotForumSummary}`,
+    `- Warta Berita & Pengumuman Discord Terkini: ${dbContext.liveNewsSummary}`,
+    `- Partner & Sponsor Resmi Guild: ${dbContext.sponsorsSummary}`,
     `- Data Lapak Marketplace: ${dbContext.marketSummary}`,
     `- Events & Party Aktif: ${dbContext.eventSummary}`,
     `- Turnamen Resmi & Bracket Aktif: ${dbContext.tournamentSummary}`,
+    dbContext.aiKnowledgeBase ? `\nINGATAN & ATURAN KHUSUS DARI OWNER / ADMIN CMS:\n${dbContext.aiKnowledgeBase}` : "",
     "",
     "INSTRUKSI KHUSUS TURNAMEN & BAGAN:",
     "- Jika user bertanya tentang turnamen, bagan, atau pertandingan, jawablah secara akurat sesuai data 'Turnamen Resmi & Bracket Aktif' di atas.",
     "- Perhatikan jumlah tim terdaftar dan sisa slot: Jika terdaftar 0 tim, berarti slot masih kosong dan pendaftaran terbuka penuh (BUKAN penuh!). Jangan pernah menganggap turnamen penuh kecuali jika sisa slot tertulis 0 (Penuh).",
     "- Sebutkan nama turnamen, game, format tim, status pendaftaran, sisa slot yang tersedia, dan prizepool-nya, lalu arahkan user dengan link Markdown bersih seperti [Buka Bagan Turnamen](/events?view=turnamen).",
+    "- Aturan Wasit: Toleransi keterlambatan 12 menit berhak klaim Menang WO. Jika lawan toxic di Chat All / Radio, screenshot bukti dan SEGERA surrender sebelum pertandingan usai, lalu lapor wasit untuk Menang DQ.",
+    "",
+    "INSTRUKSI WARTA BERITA & FORUM TERHANGAT:",
+    "- Jika user menanyakan berita komunitas, pengumuman discord terbaru, atau topik hangat yang sedang ramai diperdebatkan di forum, rujuklah ringkasan Warta Berita dan Hot Forum di atas.",
+    "- Selalu sertakan tautan Markdown bersih seperti [Halaman Warta](/news) atau [Buka Forum Komunitas](/forum).",
+    "",
+    "PROMOSI SPONSOR TIPIS-TIPIS (CONTEXTUAL SOFT-SELLING):",
+    "- Jika user bertanya atau menyinggung topik voucher, top-up diamond game, peripheral/gaming gear (keyboard, mouse, headset), atau event/merchandise, sebutkan secara natural dan halus partner resmi kami dari daftar 'Partner & Sponsor Resmi Guild' di atas.",
+    "- Sisipkan tautan Markdown bersih ke website resmi sponsor tersebut (contoh: [Cek Partner Resmi Kami](url) atau [Kunjungi Sponsor Resmi](url)). Jangan memaksa atau terkesan spam, kemas sebagai rekomendasi terpercaya sesama gamer.",
     "",
     "PANDUAN FORMAT TAUTAN HALAMAN (CLICKABLE ACTION LINK):",
     "- DILARANG KERAS menggunakan tanda backtick (`) saat menulis tautan URL atau nama rute halaman.",
-    "- Selalu tuliskan rute halaman menggunakan format link Markdown bersih di bagian akhir saranmu agar otomatis menjadi tombol klik interaktif di frontend. Contoh: [Daftar Turnamen Sekarang](/events?view=turnamen), [Cari Party Mabar](/events?view=mabar), [Buka Forum Komunitas](/forum), [Cek Marketplace](/marketplace), [Kunjungi Kas Donasi](/donate), [Lihat Papan Peringkat](/leaderboard), [Buka Hall of Winners](/hall-of-winners).",
+    "- Selalu tuliskan rute halaman menggunakan format link Markdown bersih di bagian akhir saranmu agar otomatis menjadi tombol klik interaktif di frontend. Contoh: [Daftar Turnamen Sekarang](/events?view=turnamen), [Cari Party Mabar](/events?view=mabar), [Buka Forum Komunitas](/forum), [Cek Marketplace](/marketplace), [Kunjungi Kas Donasi](/donate), [Lihat Papan Peringkat](/leaderboard), [Buka Hall of Winners](/hall-of-winners), [Halaman Warta](/news).",
     "",
     "PENGETAHUAN LENGKAP FITUR & STRUKTUR WEBSITE LOGHORIZON:",
     "1. Navigasi Utama: Beranda (/), Forum Komunitas (/forum), Marketplace Jual-Beli (/marketplace), Leaderboard (/leaderboard), Warta Berita (/news), Turnamen & LFG Party Finder (/events), Kas Donasi (/donate), Aturan & Hierarki (/rules), dan Pengaturan Profil (/profile).",
     "2. Sistem Keamanan Escrow: Lapak FJB menggunakan rekening bersama pihak ketiga aman (Escrow) agar transaksi anti-scam. Status lapak: AVAILABLE, IN_ESCROW, SOLD.",
-    "3. Sistem Perolehan Level & XP: Petualang mendapat +10 XP tiap membuat thread forum, +5 XP tiap mengirim komentar diskusi, dan +50 XP tiap transaksi lapak sukses selesai. Level otomatis naik seiring akumulasi XP.",
+    "3. Sistem Perolehan Level & XP: Petualang mendapat +15 XP setiap hari via Daily Check-in di [Papan Peringkat](/leaderboard), +10 XP tiap membuat thread forum, +5 XP tiap mengirim komentar diskusi, dan +50 XP tiap transaksi lapak sukses selesai.",
     "4. Kas Donasi & Role Discord: Donasi (/donate) mendukung server guild. Donatur mendapatkan badge dan role Discord: Knight (Rp 50.000+), High Merchant (Rp 250.000+), dan Noble Patron (Rp 500.000+).",
-    "5. Struktur Kasta Kerajaan: Emperor (.odyssia - Pemimpin Tertinggi), Prince/Princess (Wakil), Grand Chancellor & Lord Commander (Council/Moderator), Royal Guard, Knight, High Merchant, dan Adventurer (Member).",
+    "5. Struktur Pengurus & Hierarki Kerajaan: Emperor (.odyssia / Farrel - Pemimpin Tertinggi), Prince/Princess (Abbasta), Grand Chancellor (Woozy's & Allegrio), Lord Commander (Fikkk01), Royal Guard, Knight, High Merchant, dan Adventurer (Member).",
     "6. Aturan Inti: No toxic, junjung tinggi sportivitas fair play, dilarang cheat/scam, dan jaga persaudaraan sesama gamer.",
   ].join("\n");
 

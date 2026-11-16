@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   Ban,
   BookOpen,
+  Bot,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -127,6 +128,7 @@ type SiteConfig = {
   monthlyGoal: number;
   minDonation: number;
   discordInviteUrl: string;
+  aiKnowledgeBase?: string | null;
   updatedAt?: string;
 };
 
@@ -497,6 +499,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     monthlyGoal: 5000000,
     minDonation: 10000,
     discordInviteUrl: "https://discord.gg/aJvbVyTxNb",
+    aiKnowledgeBase: "",
   });
   const [savingConfig, setSavingConfig] = useState(false);
 
@@ -1578,6 +1581,34 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           required
                         />
                       </div>
+                    </div>
+
+                    {/* 5. OTAK & KNOWLEDGE BASE SATPAM AI */}
+                    <div className="border-t border-gray-200 dark:border-[#2E1E45] pt-4">
+                      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                        <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider flex items-center gap-1.5">
+                          <Bot size={15} />
+                          <span>05 / OTAK &amp; KNOWLEDGE BASE KHUSUS SATPAM AI</span>
+                        </h3>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-none bg-purple-500/10 text-purple-700 dark:text-[#A78BFA] border border-purple-500/20">
+                          Disuntikkan Langsung ke Memori Satpam AI
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                        Tuliskan instruksi atau ingatan khusus, susunan dewan pengurus resmi (contoh: Emperor .odyssia, Prince/Princess Abbasta, Grand Chancellor Woozy&apos;s &amp; Allegrio, Lord Commander Fikkk01), info jadwal kopdar, atau aturan dadakan komunitas. Satpam Horizon akan selalu mengingat teks ini saat menjawab pertanyaan member.
+                      </p>
+                      <textarea
+                        rows={6}
+                        value={configForm.aiKnowledgeBase ?? ""}
+                        onChange={(e) => setConfigForm({ ...configForm, aiKnowledgeBase: e.target.value })}
+                        className="w-full px-3 py-2.5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD] placeholder:text-gray-400 leading-relaxed"
+                        placeholder="Contoh: Susunan Pengurus Resmi Guild LogHorizon:
+- Emperor / Founder: .odyssia (Farrel)
+- Prince / Princess: Abbasta
+- Grand Chancellor: Woozy's, Allegrio
+- Lord Commander: Fikkk01
+Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng pengurus setiap malam Minggu di Discord!"
+                      />
                     </div>
 
                     <div className="pt-2">

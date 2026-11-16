@@ -18,6 +18,7 @@ export async function PATCH(request: Request) {
     monthlyGoal,
     minDonation,
     discordInviteUrl,
+    aiKnowledgeBase,
   } = body;
 
   const config = await prisma.siteConfig.upsert({
@@ -32,6 +33,7 @@ export async function PATCH(request: Request) {
       ...(Number.isSafeInteger(Number(monthlyGoal)) ? { monthlyGoal: Math.max(0, Number(monthlyGoal)) } : {}),
       ...(Number.isSafeInteger(Number(minDonation)) ? { minDonation: Math.max(1000, Number(minDonation)) } : {}),
       ...(typeof discordInviteUrl === "string" ? { discordInviteUrl: discordInviteUrl.trim() } : {}),
+      ...(typeof aiKnowledgeBase === "string" ? { aiKnowledgeBase: aiKnowledgeBase.trim() } : {}),
     },
     create: {
       id: "default",
@@ -44,6 +46,7 @@ export async function PATCH(request: Request) {
       monthlyGoal: Number(monthlyGoal) || 5000000,
       minDonation: Number(minDonation) || 10000,
       discordInviteUrl: typeof discordInviteUrl === "string" && discordInviteUrl.trim() ? discordInviteUrl.trim() : "https://discord.gg/aJvbVyTxNb",
+      aiKnowledgeBase: typeof aiKnowledgeBase === "string" ? aiKnowledgeBase.trim() : null,
     },
   });
 
