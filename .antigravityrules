@@ -1,0 +1,32 @@
+# DESIGN SYSTEM CONSTITUTION: "MATURE PURPLE & EDITORIAL BRUTALISM" (ANTI-AI SLOP)
+# Target: LogHorizon (loghorizon.vercel.app)
+
+## 1. CORE VISUAL PRINCIPLES
+- Anti-AI Slop: Zero generic rounded bloated bubbles (`rounded-xl`, `rounded-2xl`, `rounded-3xl` are strictly banned).
+- All cards, panels, buttons, badges, tables, modals MUST use crisp sharp corners (`rounded-none` or at most `rounded-sm`).
+- Single exception: The center navigation capsule pill on the main navbar (`rounded-full`).
+- No cheap neon cyan/blue/pink glows, no diffuse colored box-shadows.
+- Clear, crisp 1px borders using `#2E1E45` (`border-[#2E1E45]`). Active accents use solid violet `#7C3AED`.
+- Layout structure: Data-Dense Editorial Table / Flight Board inspired, high information density, clean typography hierarchy.
+
+## 2. STRICT COLOR PALETTE
+- Background Base: `#09040F` (Midnight Void - page body)
+- Surface / Card: `#130921` (Deep Obsidian - cards, panels, table headers)
+- Surface Hover / Elevated: `#1A0E2E` (Dropdowns, active rows, hover states)
+- Border Default: `#2E1E45` (1px solid crisp boundary)
+- Border Active / Accent: `#7C3AED` (Solid Violet highlight)
+- Primary CTA: `bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC]`
+- Text Primary: `#F8FAFC` (High legibility pure crisp white)
+- Text Secondary / Muted: `#A78BFA` (Muted violet for meta, labels, descriptions)
+- Status Emerald: `#10B981` (Live / Open / Verified / Escrow Ready)
+- Status Amber: `#F59E0B` (Check-in / Warning / Prize / Highlight)
+
+## 3. TYPOGRAPHY MATRIX
+- Heading (`font-display`): Space Grotesk (Bold, Uppercase for sectional headers, tracking-tight).
+- Body (`font-sans`): Inter / Geist (Clean, crisp, readable at all scales).
+- Technical Data (`font-mono`): JetBrains Mono (Numbers, currency Rp, XP values, tournament slots, date/time, ID tags, and Kasta badges).
+
+## 4. ARCHITECTURAL PATTERN
+- Background Grid: Subtle architectural grid (`background-size: 32px 32px` with `rgba(46, 30, 69, 0.25)`).
+- Asymmetric Layouts: Prefer structured editorial grids (e.g., 7-col : 5-col split, flight boards, dual-table comparisons).
+- Real-time Telemetry: Crisp status indicators with emerald dot `●` (`#10B981`).

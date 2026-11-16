@@ -135,7 +135,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
       </Link>
 
       {/* Profile Header Card */}
-      <div className="relative overflow-hidden rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-6 sm:p-8 shadow-xl mb-8">
+      <div className="relative overflow-hidden rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] p-6 sm:p-8 shadow-xl mb-8">
         {/* Ambient Glow */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-[#9D4EDD]/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -222,7 +222,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
         </div>
 
         {/* Level & XP Progression */}
-        <div className="mt-6 pt-6 border-t border-gray-100 dark:border-[#211C2B]">
+        <div className="mt-6 pt-6 border-t border-gray-100 dark:border-[#2E1E45]">
           <div className="flex items-center justify-between text-xs font-bold text-gray-800 dark:text-gray-200 mb-2">
             <span className="flex items-center gap-1.5">
               <Zap size={14} className="text-[#9D4EDD]" /> Level {user.level}
@@ -242,24 +242,24 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
       {/* Gamer Profile Card */}
       {(user.inGameName || user.primaryRole || user.highestRank || (user.favoriteGames && user.favoriteGames.length > 0)) && (
-        <div className="p-5 sm:p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] shadow-sm mb-8">
+        <div className="p-5 sm:p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm mb-8">
           <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
             <Gamepad2 size={18} className="text-[#9D4EDD]" /> Profil Gamer &amp; Posisi Main (Find Teammate)
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#211C2B]">
+            <div className="p-3 rounded-none bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45]">
               <span className="text-[10px] text-gray-400 block font-semibold uppercase">IGN / ID Game</span>
               <strong className="text-gray-900 dark:text-white block mt-0.5 truncate">{user.inGameName || "-"}</strong>
             </div>
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#211C2B]">
+            <div className="p-3 rounded-none bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45]">
               <span className="text-[10px] text-gray-400 block font-semibold uppercase">Role Utama</span>
               <strong className="text-[#9D4EDD] dark:text-[#C77DFF] block mt-0.5 truncate">{user.primaryRole || "-"}</strong>
             </div>
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#211C2B]">
+            <div className="p-3 rounded-none bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45]">
               <span className="text-[10px] text-gray-400 block font-semibold uppercase">Rank Tertinggi</span>
               <strong className="text-amber-500 block mt-0.5 truncate">{user.highestRank || "-"}</strong>
             </div>
-            <div className="p-3 rounded-lg bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#211C2B]">
+            <div className="p-3 rounded-none bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45]">
               <span className="text-[10px] text-gray-400 block font-semibold uppercase">Game Favorit</span>
               <strong className="text-gray-800 dark:text-gray-200 block mt-0.5 truncate">
                 {user.favoriteGames?.length ? user.favoriteGames.join(", ") : "-"}
@@ -274,7 +274,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
         {/* Left Column: Badges & Reputation */}
         <div className="space-y-6">
           {/* Achievements */}
-          <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+          <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
             <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
               <Award size={16} className="text-[#9D4EDD]" /> Pencapaian (Achievements)
             </h2>
@@ -282,10 +282,10 @@ export default async function PublicProfilePage({ params }: PageProps) {
               {achievements.map((ach) => (
                 <div
                   key={ach.id}
-                  className={`p-2.5 rounded-lg border flex items-center justify-between text-xs ${
+                  className={`p-2.5 rounded-none border flex items-center justify-between text-xs ${
                     ach.unlocked
                       ? "bg-purple-500/10 border-purple-500/30 text-gray-900 dark:text-white"
-                      : "bg-gray-50/50 dark:bg-[#08060B]/50 border-gray-100 dark:border-[#211C2B] opacity-50 text-gray-400"
+                      : "bg-gray-50/50 dark:bg-[#08060B]/50 border-gray-100 dark:border-[#2E1E45] opacity-50 text-gray-400"
                   }`}
                 >
                   <div>
@@ -300,7 +300,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
             </div>
           </div>
 
-          <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+          <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
             <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
               <Trophy size={16} className="text-amber-500" /> Lencana Kehormatan
             </h2>
@@ -321,16 +321,16 @@ export default async function PublicProfilePage({ params }: PageProps) {
             )}
           </div>
 
-          <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+          <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
             <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
               <ShieldCheck size={16} className="text-emerald-500" /> Reputasi Transaksi
             </h2>
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between py-1 border-b border-gray-100 dark:border-[#211C2B]">
+              <div className="flex justify-between py-1 border-b border-gray-100 dark:border-[#2E1E45]">
                 <span className="text-gray-500">Transaksi Sukses:</span>
                 <strong className="text-emerald-500 font-bold">{successfulSales}x</strong>
               </div>
-              <div className="flex justify-between py-1 border-b border-gray-100 dark:border-[#211C2B]">
+              <div className="flex justify-between py-1 border-b border-gray-100 dark:border-[#2E1E45]">
                 <span className="text-gray-500">Status Akun:</span>
                 <span className={user.isBanned ? "text-red-500 font-bold" : "text-emerald-500 font-bold"}>
                   {user.isBanned ? "Dibatasi (Banned)" : "Terverifikasi / Aktif"}
@@ -348,7 +348,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
         {/* Right Column: Recent Forum Posts */}
         <div className="md:col-span-2">
-          <div className="p-5 sm:p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+          <div className="p-5 sm:p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
             <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
               <MessageSquare size={16} className="text-[#9D4EDD]" /> Aktivitas Diskusi Forum
             </h2>
@@ -358,7 +358,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
                 Member ini belum pernah membuat postingan forum.
               </p>
             ) : (
-              <div className="divide-y divide-gray-100 dark:divide-[#211C2B]">
+              <div className="divide-y divide-gray-100 dark:divide-[#2E1E45]">
                 {user.posts.map((post) => (
                   <Link
                     key={post.id}

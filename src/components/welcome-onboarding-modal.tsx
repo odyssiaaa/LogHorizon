@@ -83,7 +83,7 @@ export function WelcomeOnboardingModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 16 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-[calc(100vw-2rem)] max-w-md rounded-2xl border border-purple-500/30 bg-[#0F0C15] text-white p-5 sm:p-7 shadow-2xl shadow-purple-950/60 overflow-hidden z-10"
+            className="relative w-[calc(100vw-2rem)] max-w-md rounded-none border border-purple-500/30 bg-[#0F0C15] text-white p-5 sm:p-7 shadow-2xl shadow-purple-950/60 overflow-hidden z-10"
           >
             {/* Ambient Cyber Glow */}
             <div className="absolute -top-24 -left-24 w-52 h-52 bg-[#9D4EDD]/25 rounded-full blur-3xl pointer-events-none" />
@@ -124,7 +124,7 @@ export function WelcomeOnboardingModal() {
               <button
                 type="button"
                 onClick={handleConnectDiscord}
-                className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-lg shadow-[#5865F2]/30 transition-all cursor-pointer group"
+                className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-none bg-[#5865F2] hover:bg-[#4752C4] active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-lg shadow-[#5865F2]/30 transition-all cursor-pointer group"
               >
                 <svg
                   className="w-4 h-4 shrink-0 fill-current"
@@ -141,7 +141,7 @@ export function WelcomeOnboardingModal() {
               <button
                 type="button"
                 onClick={handleDismiss}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white font-semibold text-xs sm:text-sm transition-colors cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-none border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white font-semibold text-xs sm:text-sm transition-colors cursor-pointer"
               >
                 <Compass size={14} className="text-gray-400" />
                 <span>Lihat-Lihat Dulu</span>

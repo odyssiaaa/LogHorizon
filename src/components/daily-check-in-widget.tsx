@@ -130,9 +130,9 @@ export function DailyCheckInWidget() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="w-full p-4 rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-white/50 dark:bg-[#120F17]/50 animate-pulse flex items-center justify-between">
-        <div className="h-5 bg-purple-500/20 rounded w-1/3"></div>
-        <div className="h-8 bg-purple-500/20 rounded-xl w-32"></div>
+      <div className="w-full p-4 rounded-none border border-[#2E1E45] bg-[#130921] animate-pulse flex items-center justify-between mb-6">
+        <div className="h-5 bg-[#1A0E2E] rounded-none w-1/3"></div>
+        <div className="h-8 bg-[#1A0E2E] rounded-none w-32"></div>
       </div>
     );
   }
@@ -140,16 +140,16 @@ export function DailyCheckInWidget() {
   // Not logged in
   if (!session?.user) {
     return (
-      <div className="w-full p-4 sm:p-5 rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-gradient-to-r from-purple-950/20 via-[#130F1A] to-[#161220] flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shadow-sm">
+      <div className="w-full p-4 sm:p-5 rounded-none border border-[#2E1E45] bg-[#130921] flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shadow-sm text-left">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#9D4EDD]/15 border border-[#9D4EDD]/30 flex items-center justify-center text-[#9D4EDD] shrink-0">
+          <div className="w-10 h-10 rounded-none bg-[#1A0E2E] border border-[#2E1E45] flex items-center justify-center text-[#7C3AED] shrink-0">
             <Zap size={20} />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-              <span>⚡ Absen Harian Guild (+15 XP)</span>
+            <h3 className="font-display text-sm font-extrabold uppercase tracking-tight text-[#F8FAFC] flex items-center gap-1.5">
+              <span>⚡ ABSEN HARIAN GUILD (+15 XP)</span>
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-[#A78BFA] font-sans mt-0.5">
               Masuk untuk klaim bonus XP harian dan kumpulkan streak kehadiranmu!
             </p>
           </div>
@@ -157,7 +157,7 @@ export function DailyCheckInWidget() {
         <button
           type="button"
           onClick={() => signIn("discord")}
-          className="px-4 py-2 rounded-xl text-xs font-bold bg-[#9D4EDD] text-white hover:bg-[#8338EC] transition shadow-xs whitespace-nowrap self-start sm:self-auto"
+          className="px-4 py-2 rounded-none text-xs font-mono font-bold uppercase tracking-wider bg-[#7C3AED] text-[#F8FAFC] hover:bg-[#6D28D9] border border-[#7C3AED] transition whitespace-nowrap self-start sm:self-auto"
         >
           Masuk Discord
         </button>
@@ -169,14 +169,14 @@ export function DailyCheckInWidget() {
   const streak = data?.streak ?? 0;
 
   return (
-    <div className="w-full p-4 sm:p-5 rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-gradient-to-r from-purple-950/30 via-[#130F1A] to-[#181324] relative overflow-hidden mb-6 shadow-md transition-all">
+    <div className="w-full p-4 sm:p-5 rounded-none border border-[#2E1E45] bg-[#130921] relative overflow-hidden mb-6 text-left">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
         <div className="flex items-center gap-3.5">
           <div
-            className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border transition-all ${
+            className={`w-11 h-11 rounded-none flex items-center justify-center shrink-0 border transition-all ${
               isClaimed
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                : "bg-gradient-to-br from-[#9D4EDD]/30 to-amber-500/30 border-[#9D4EDD]/50 text-amber-300 shadow-[0_0_15px_rgba(157,78,221,0.3)] animate-pulse"
+                ? "bg-[#10B981]/10 border-[#10B981]/30 text-[#10B981]"
+                : "bg-[#1A0E2E] border-[#7C3AED]/50 text-[#F59E0B]"
             }`}
           >
             {isClaimed ? <CheckCircle2 size={22} /> : <Zap size={22} />}
@@ -184,29 +184,29 @@ export function DailyCheckInWidget() {
 
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">
-                {isClaimed ? "Absen Harian Terverifikasi" : "Klaim Absen Harian"}
+              <h3 className="font-display text-sm sm:text-base font-extrabold uppercase tracking-tight text-[#F8FAFC]">
+                {isClaimed ? "ABSEN HARIAN TERVERIFIKASI" : "KLAIM ABSEN HARIAN"}
               </h3>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                <Flame size={12} className="text-amber-400 animate-bounce" />
-                <span>Streak: {streak} Hari</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-[11px] font-mono font-bold bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30">
+                <Flame size={12} className="text-[#F59E0B]" />
+                <span>STREAK: {streak} HARI</span>
               </span>
             </div>
 
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
+            <p className="text-xs text-[#A78BFA] mt-0.5 flex items-center gap-1.5 flex-wrap font-sans">
               {isClaimed ? (
                 <>
-                  <Clock size={12} className="text-gray-400 shrink-0" />
+                  <Clock size={12} className="text-[#A78BFA] shrink-0" />
                   <span>
                     Sudah absen hari ini • Reset kalender WIB dalam:{" "}
-                    <strong className="font-mono text-purple-300 font-bold">
+                    <strong className="font-mono text-[#F8FAFC] font-bold">
                       {formatTimeRemaining(countdown)}
                     </strong>
                   </span>
                 </>
               ) : (
                 <span>
-                  Klaim sekarang untuk mendapatkan <strong className="text-purple-300 font-bold">+15 XP</strong> dan tingkatkan level karaktermu.
+                  Klaim sekarang untuk mendapatkan <strong className="font-mono text-[#F8FAFC] font-bold">+15 XP</strong> dan tingkatkan level karaktermu.
                 </span>
               )}
             </p>
@@ -216,7 +216,7 @@ export function DailyCheckInWidget() {
         {/* Action Button */}
         <div className="shrink-0 self-start sm:self-auto">
           {isClaimed ? (
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 cursor-default">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-none text-xs font-mono font-bold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30 cursor-default">
               <CheckCircle2 size={14} />
               <span>TERKLAIM HARI INI</span>
             </div>
@@ -225,17 +225,17 @@ export function DailyCheckInWidget() {
               type="button"
               disabled={claiming}
               onClick={handleClaim}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-[#9D4EDD] to-purple-600 text-white hover:from-[#8338EC] hover:to-purple-700 active:scale-95 transition-all shadow-[0_0_20px_rgba(157,78,221,0.4)] disabled:opacity-50 disabled:pointer-events-none"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] transition-all disabled:opacity-50 disabled:pointer-events-none"
             >
-              <Sparkles size={14} className="animate-spin text-amber-300" />
-              <span>{claiming ? "Mengklaim…" : "⚡ Klaim Absen (+15 XP)"}</span>
+              <Sparkles size={14} className="text-[#F59E0B]" />
+              <span>{claiming ? "Mengklaim…" : "⚡ KLAIM ABSEN (+15 XP)"}</span>
             </button>
           )}
         </div>
       </div>
 
       {successMessage && (
-        <div className="mt-3 p-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="mt-3 p-2.5 rounded-none bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981] text-xs font-mono font-semibold flex items-center gap-2">
           <CheckCircle2 size={14} />
           <span>{successMessage}</span>
         </div>

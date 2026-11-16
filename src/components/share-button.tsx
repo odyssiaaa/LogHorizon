@@ -110,8 +110,8 @@ export function ShareButton({
         : variant === "ghost"
           ? "bg-transparent hover:bg-gray-100 dark:hover:bg-[#1E1A3A] text-gray-600 dark:text-gray-300 font-medium"
           : variant === "icon"
-            ? "p-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] hover:border-[#9D4EDD] text-gray-500 dark:text-gray-400 hover:text-[#9D4EDD]"
-            : "border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] hover:border-[#9D4EDD] text-gray-700 dark:text-gray-200 hover:text-[#9D4EDD] font-semibold";
+            ? "p-2 rounded-lg border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#9D4EDD] text-gray-500 dark:text-gray-400 hover:text-[#9D4EDD]"
+            : "border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#9D4EDD] text-gray-700 dark:text-gray-200 hover:text-[#9D4EDD] font-semibold";
 
   return (
     <div className="relative inline-flex items-center">
@@ -135,7 +135,7 @@ export function ShareButton({
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0F0C15] border border-purple-500/40 text-white text-xs font-semibold shadow-2xl shadow-purple-950/80 animate-in fade-in slide-in-from-bottom-3 duration-200"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-none bg-[#0F0C15] border border-purple-500/40 text-white text-xs font-semibold shadow-2xl shadow-purple-950/80 animate-in fade-in slide-in-from-bottom-3 duration-200"
         >
           <div className="size-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
             <Check size={12} />

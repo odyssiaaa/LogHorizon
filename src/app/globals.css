@@ -1,31 +1,50 @@
 @import "tailwindcss";
 
-:root {
-  color-scheme: light;
-  --background: #f8f9fa;
-  --card: #ffffff;
-  --foreground: #111827;
-  --muted: #4b5563;
-  --accent: #7b2cbf;
-  --discord: #5865f2;
-  --line: #e5e7eb;
-}
-
+:root,
 :root.dark {
   color-scheme: dark;
-  --background: #08060b;
-  --card: #120f17;
-  --foreground: #ffffff;
-  --muted: #9ca3af;
-  --accent: #9d4edd;
-  --line: #211c2b;
+  --background: #09040f;
+  --card: #130921;
+  --card-hover: #1a0e2e;
+  --foreground: #f8fafc;
+  --muted: #a78bfa;
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --discord: #5865f2;
+  --line: #2e1e45;
+  --border: #2e1e45;
+  --emerald: #10b981;
+  --amber: #f59e0b;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-jakarta-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-space-grotesk), sans-serif;
+  --font-sans: var(--font-inter), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+}
+
+.font-display {
+  font-family: var(--font-space-grotesk), sans-serif;
+  letter-spacing: -0.025em;
+}
+
+.font-sans {
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.editorial-grid {
+  background-size: 32px 32px;
+  background-image:
+    linear-gradient(to right, rgba(46, 30, 69, 0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(46, 30, 69, 0.25) 1px, transparent 1px);
 }
 
 * { box-sizing: border-box; }
@@ -111,9 +130,13 @@ body {
 /* ========================================================================= */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-jakarta-sans), Arial, Helvetica, sans-serif;
+  background-color: #09040f;
+  background-size: 32px 32px;
+  background-image:
+    linear-gradient(to right, rgba(46, 30, 69, 0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(46, 30, 69, 0.25) 1px, transparent 1px);
+  color: #f8fafc;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
   margin: 0;
   overflow-x: hidden !important;
   width: 100% !important;
@@ -264,12 +287,15 @@ button { cursor: pointer; }
 .nav-links a:hover, .admin-link:hover { color: white; }
 .nav-actions { gap: 16px; }
 .admin-link { color: #c4a8ff; font-weight: 700; white-space: nowrap; }
-.button { border: 0; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 11px 16px; font-size: 13px; font-weight: 700; transition: transform .18s ease, filter .18s ease, background .18s ease; }
-.button:hover { transform: translateY(-1px); filter: brightness(1.09); }
-.button:disabled { cursor: wait; opacity: .65; transform: none; }
-.button-discord { background: var(--discord); color: #fff; }
-.button-primary { background: var(--accent); color: #fff; }
-.button-quiet { color: #ddd7eb; border: 1px solid var(--line); background: rgba(255, 255, 255, .035); }
+.button { border: 1px solid #2e1e45; border-radius: 0px !important; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; font-size: 13px; font-weight: 700; transition: background .18s ease, border-color .18s ease; }
+.button:hover { border-color: #7c3aed; }
+.button:disabled { cursor: wait; opacity: .65; }
+.button-discord { background: #5865f2; color: #fff; border: 1px solid #5865f2; border-radius: 0px !important; }
+.button-discord:hover { background: #4752c4; }
+.button-primary { background: #7c3aed; color: #f8fafc; border: 1px solid #7c3aed; border-radius: 0px !important; }
+.button-primary:hover { background: #6d28d9; border-color: #6d28d9; }
+.button-quiet { color: #f8fafc; border: 1px solid #2e1e45; background: #130921; border-radius: 0px !important; }
+.button-quiet:hover { background: #1a0e2e; border-color: #7c3aed; }
 .nav-discord { padding: 10px 13px; font-size: 12px; }
 .discord-symbol { font-size: 17px; }
 .nav-user { display: flex; align-items: center; gap: 9px; }

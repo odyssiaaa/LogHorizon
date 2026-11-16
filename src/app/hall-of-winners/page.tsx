@@ -128,14 +128,15 @@ export default async function HallOfWinnersPage() {
   return (
     <main className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden min-h-screen">
       {/* HERO SECTION */}
-      <header className="mb-8 text-left space-y-2">
-        <p className="text-xs font-mono font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-widest flex items-center gap-1.5">
-          <span>🏆 AULA PARA JUARA • HALL OF FAME 🏆</span>
+      <header className="mb-8 text-left space-y-2 border-b border-[#2E1E45] pb-6">
+        <p className="text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-widest flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 bg-[#7C3AED]" />
+          <span>AULA PARA JUARA // HALL OF FAME</span>
         </p>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white">
-          Hall of <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Winners</span>
+        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold uppercase tracking-tight text-[#F8FAFC]">
+          HALL OF <span className="text-[#A78BFA]">WINNERS</span>
         </h1>
-        <p className="text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-3xl leading-relaxed">
+        <p className="text-xs sm:text-sm md:text-base text-[#A78BFA] max-w-3xl leading-relaxed font-sans">
           Catatan sejarah abadi dan penghargaan tertinggi bagi seluruh skuad yang sukses menjuarai turnamen resmi guild LogHorizon.
         </p>
       </header>

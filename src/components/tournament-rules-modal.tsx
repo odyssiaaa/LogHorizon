@@ -32,23 +32,23 @@ export function TournamentRulesModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="tournament-rules-title"
-      className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn"
+      className="fixed inset-0 z-[110] bg-[#09040F]/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn text-left"
     >
       <div
-        className="w-[calc(100vw-2rem)] max-w-2xl max-h-[85vh] flex flex-col bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl shadow-2xl relative my-auto overflow-hidden"
+        className="w-[calc(100vw-2rem)] max-w-2xl max-h-[85vh] flex flex-col bg-[#130921] border border-[#2E1E45] rounded-none shadow-2xl relative my-auto overflow-hidden text-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Modal */}
-        <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-[#211C2B] flex items-center justify-between gap-3 bg-gray-50/70 dark:bg-[#181322]">
+        <div className="p-4 sm:p-5 border-b border-[#2E1E45] flex items-center justify-between gap-3 bg-[#1A0E2E]">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-[#9D4EDD] shrink-0">
+            <div className="w-9 h-9 rounded-none bg-[#130921] border border-[#2E1E45] flex items-center justify-center text-[#A78BFA] shrink-0">
               <BookOpen size={18} />
             </div>
             <div>
-              <span className="text-[10px] font-mono font-bold text-[#9D4EDD] uppercase tracking-wider block">
-                WAJIB BACA &amp; SETUJU • {game}
+              <span className="text-[10px] font-mono font-bold text-[#A78BFA] uppercase tracking-wider block">
+                WAJIB BACA &amp; SETUJU // {game}
               </span>
-              <h3 id="tournament-rules-title" className="text-base sm:text-lg font-black text-gray-900 dark:text-white leading-tight">
+              <h3 id="tournament-rules-title" className="font-display text-base sm:text-lg font-extrabold text-[#F8FAFC] uppercase tracking-tight leading-tight">
                 Peraturan Resmi Turnamen
               </h3>
             </div>
@@ -56,7 +56,7 @@ export function TournamentRulesModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-700 dark:hover:text-white p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition"
+            className="text-[#A78BFA] hover:text-[#F8FAFC] p-1 rounded-none transition"
             aria-label="Tutup"
           >
             <X size={18} />
@@ -76,7 +76,7 @@ export function TournamentRulesModal({
           {rawRules === DEFAULT_TOURNAMENT_RULES ? (
             <>
               {/* PASAL 1 */}
-              <div className="p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] space-y-2">
+              <div className="p-4 rounded-none border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] space-y-2">
                 <h4 className="text-sm font-black text-gray-900 dark:text-white flex items-center gap-2 text-rose-500 dark:text-rose-400">
                   <span>1. MASALAH RADIO &amp; CHAT ALL</span>
                 </h4>
@@ -91,7 +91,7 @@ export function TournamentRulesModal({
               </div>
 
               {/* PASAL 2 */}
-              <div className="p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] space-y-2">
+              <div className="p-4 rounded-none border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] space-y-2">
                 <h4 className="text-sm font-black text-gray-900 dark:text-white flex items-center gap-2 text-amber-500 dark:text-amber-400">
                   <span>2. TENTANG JADWAL PERTANDINGAN</span>
                 </h4>
@@ -109,7 +109,7 @@ export function TournamentRulesModal({
               </div>
 
               {/* PASAL 3 */}
-              <div className="p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] space-y-2">
+              <div className="p-4 rounded-none border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] space-y-2">
                 <h4 className="text-sm font-black text-gray-900 dark:text-white flex items-center gap-2 text-purple-600 dark:text-purple-300">
                   <span>3. DETAIL PERATURAN TOURNAMENT LOGHORIZON</span>
                 </h4>
@@ -133,7 +133,7 @@ export function TournamentRulesModal({
               </div>
 
               {/* PASAL 4 */}
-              <div className="p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] space-y-2">
+              <div className="p-4 rounded-none border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] space-y-2">
                 <h4 className="text-sm font-black text-gray-900 dark:text-white flex items-center gap-2 text-emerald-500 dark:text-emerald-400">
                   <span>4. SISTEM MATCH TOURNAMENT LOGHORIZON</span>
                 </h4>
@@ -154,23 +154,23 @@ export function TournamentRulesModal({
               </div>
             </>
           ) : (
-            <div className="whitespace-pre-wrap font-sans text-xs sm:text-sm leading-relaxed p-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324]">
+            <div className="whitespace-pre-wrap font-sans text-xs sm:text-sm leading-relaxed p-4 rounded-none border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324]">
               {rawRules}
             </div>
           )}
         </div>
 
         {/* Footer Persetujuan & Tombol Lanjut */}
-        <div className="p-4 sm:p-5 border-t border-gray-200 dark:border-[#211C2B] bg-gray-50/70 dark:bg-[#181322] space-y-3 shrink-0">
+        <div className="p-4 sm:p-5 border-t border-[#2E1E45] bg-[#1A0E2E] space-y-3 shrink-0 font-mono">
           {/* Checkbox Wajib */}
           <label className="flex items-start gap-2.5 cursor-pointer select-none group">
             <input
               type="checkbox"
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-0.5 w-4 h-4 rounded border-gray-300 dark:border-white/20 text-[#9D4EDD] focus:ring-[#9D4EDD] focus:ring-offset-0 bg-white dark:bg-black/40 cursor-pointer"
+              className="mt-0.5 rounded-none border border-[#2E1E45] bg-[#09040F] text-[#7C3AED] focus:ring-0 cursor-pointer"
             />
-            <span className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition">
+            <span className="text-xs text-[#F8FAFC] group-hover:text-[#A78BFA] transition">
               Saya perwakilan tim telah membaca, memahami, dan menyetujui seluruh peraturan turnamen di atas untuk dibagikan kepada anggota tim saya.
             </span>
           </label>
@@ -180,7 +180,7 @@ export function TournamentRulesModal({
             <button
               type="button"
               onClick={onClose}
-              className="button button-quiet text-xs font-semibold px-4 py-2"
+              className="px-4 py-2 rounded-none font-mono text-xs uppercase tracking-wider bg-[#130921] text-[#A78BFA] border border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC]"
             >
               Batal
             </button>
@@ -191,10 +191,10 @@ export function TournamentRulesModal({
                 if (!agreed) return;
                 onAgree();
               }}
-              className={`button text-xs font-black px-4 py-2 flex items-center gap-1.5 transition ${
+              className={`px-4 py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition ${
                 agreed
-                  ? "button-primary shadow-lg shadow-[#9D4EDD]/25"
-                  : "bg-gray-300 dark:bg-gray-800 text-gray-500 cursor-not-allowed opacity-60"
+                  ? "bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED]"
+                  : "bg-[#1A0E2E] text-[#A78BFA]/50 border border-[#2E1E45] cursor-not-allowed opacity-60"
               }`}
             >
               <span>Lanjut ke Form Pendaftaran ➔</span>

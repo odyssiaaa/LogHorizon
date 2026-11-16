@@ -63,26 +63,22 @@ export function GachaBracketModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="gacha-title"
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-fadeIn"
     >
-      <div className="relative w-full max-w-md p-6 sm:p-8 rounded-2xl border-2 border-[#9D4EDD] bg-gradient-to-b from-[#1E142B] via-[#120F17] to-black shadow-2xl shadow-[#9D4EDD]/40 text-center overflow-hidden">
-        {/* Glow ambient circle */}
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#9D4EDD]/30 rounded-full blur-3xl pointer-events-none animate-pulse" />
-        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl pointer-events-none animate-pulse" />
-
-        {/* Dice & Aura Animation */}
+      <div className="relative w-full max-w-md p-6 sm:p-8 rounded-none border border-[#7C3AED] bg-[#130921] shadow-2xl text-center overflow-hidden">
+        {/* Dice Animation */}
         <div className="relative flex items-center justify-center my-4">
-          <div className="relative flex items-center justify-center w-24 h-24 rounded-2xl bg-gradient-to-br from-[#9D4EDD]/30 to-amber-500/20 border border-purple-500/50 shadow-inner">
+          <div className="relative flex items-center justify-center w-20 h-20 rounded-none bg-[#09040F] border border-[#2E1E45]">
             <Dices
-              size={54}
-              className={`text-amber-400 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)] ${
-                isRolling ? "animate-spin" : "scale-110 transition-transform duration-300"
+              size={44}
+              className={`text-[#7C3AED] ${
+                isRolling ? "animate-spin" : "scale-105 transition-transform duration-300 text-amber-400"
               }`}
             />
             {isRolling && (
-              <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-amber-500" />
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-amber-400 opacity-75" />
+                <span className="relative inline-flex rounded-none h-3 w-3 bg-amber-500" />
               </span>
             )}
           </div>
@@ -90,38 +86,38 @@ export function GachaBracketModal({
 
         {/* Title */}
         <div className="space-y-1 mb-4">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
-            <Flame size={13} className="text-amber-400" />
-            <span>GACHA / ACAK BAGAN RESMI</span>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-[#7C3AED]/20 text-[#A78BFA] border border-[#7C3AED]/40">
+            <Flame size={12} className="text-amber-400" />
+            <span>BRACKET SHUFFLE // SEEDING</span>
           </div>
-          <h3 id="gacha-title" className="text-lg sm:text-xl font-black text-white truncate px-2">
+          <h3 id="gacha-title" className="text-lg sm:text-xl font-bold font-display text-white truncate px-2 tracking-tight">
             {tournamentTitle}
           </h3>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 font-sans">
             {isRolling
-              ? "Mengundi susunan lawan secara adil dengan algoritma Fisher-Yates..."
-              : "Bagan berhasil diacak! Menyusun ulang bagan Ronde 1..."}
+              ? "Mengundi susunan lawan secara acak dengan algoritma Fisher-Yates..."
+              : "Bagan berhasil diacak. Menyusun ulang bagan Ronde 1..."}
           </p>
         </div>
 
         {/* Slot Machine Matchup Rolling Box */}
-        <div className="p-3.5 rounded-xl border border-purple-500/40 bg-black/60 shadow-inner my-4 min-h-[58px] flex items-center justify-center">
+        <div className="p-3.5 rounded-none border border-[#2E1E45] bg-[#09040F] my-4 min-h-[58px] flex items-center justify-center">
           {isRolling ? (
-            <p className="text-xs sm:text-sm font-mono font-black text-amber-300 animate-pulse tracking-wide truncate">
+            <p className="text-xs sm:text-sm font-mono font-bold text-amber-300 animate-pulse tracking-wide truncate">
               {shufflingMatchup}
             </p>
           ) : (
-            <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs sm:text-sm animate-bounce">
+            <div className="flex items-center gap-2 text-emerald-400 font-mono font-bold text-xs sm:text-sm">
               <Sparkles size={16} />
-              <span>Susunan Pertandingan Baru Siap!</span>
+              <span>SUSUNAN PERTANDINGAN BARU SIAP</span>
             </div>
           )}
         </div>
 
         {/* Footer Note */}
-        <div className="flex items-center justify-center gap-2 text-[11px] font-mono text-gray-400">
-          <Trophy size={13} className="text-amber-400" />
-          <span>Auto-BYE terdistribusi simetris kiri-kanan</span>
+        <div className="flex items-center justify-center gap-2 text-[10px] font-mono text-gray-400">
+          <Trophy size={13} className="text-[#A78BFA]" />
+          <span>AUTO-BYE TERDISTRIBUSI SIMETRIS KIRI-KANAN</span>
         </div>
       </div>
     </div>

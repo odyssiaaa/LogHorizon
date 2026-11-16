@@ -600,7 +600,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   if (!tournament || error) {
     return (
       <main className="py-12 px-4 max-w-4xl mx-auto w-full text-center">
-        <div className="p-6 rounded-xl border border-red-500/30 bg-red-950/20 text-red-300 mb-6">
+        <div className="p-6 rounded-none border border-red-500/30 bg-red-950/20 text-red-300 mb-6">
           <p className="font-bold">{error || "Turnamen tidak ditemukan."}</p>
         </div>
         <Link
@@ -660,15 +660,15 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   const shareText = `Ikuti turnamen ${tournament.game}! Hadiah: ${tournament.prizePool || "Prizepool Resmi"}. Cek bagan pertandingan dan daftar timmu sekarang di LogHorizon:`;
 
   return (
-    <main className="py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full">
+    <main className="py-6 sm:py-10 px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto w-full text-left">
       {/* Back button & top bar */}
-      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap border-b border-[#2E1E45] pb-4">
         <Link
           href="/events?view=turnamen"
-          className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#9D4EDD] hover:underline"
+          className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#A78BFA] hover:text-[#F8FAFC]"
         >
           <ArrowLeft size={16} />
-          <span>Kembali ke Semua Turnamen</span>
+          <span>KEMBALI KE SEMUA TURNAMEN</span>
         </Link>
 
         <div className="flex items-center gap-2">
@@ -683,72 +683,70 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       </div>
 
       {notice && (
-        <div className="mb-6 p-4 rounded-xl border border-emerald-500/40 bg-emerald-950/20 text-emerald-300 text-sm flex items-center justify-between">
+        <div className="mb-6 p-4 rounded-none border border-emerald-500/40 bg-emerald-950/20 text-emerald-300 text-xs font-mono flex items-center justify-between">
           <span>{notice}</span>
           <button onClick={() => setNotice("")}><X size={16} /></button>
         </div>
       )}
 
       {/* Tournament Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-gradient-to-br from-white via-white to-purple-50/30 dark:from-[#120F17] dark:via-[#130F1A] dark:to-[#1B112B] p-6 sm:p-8 shadow-xl mb-8">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#9D4EDD]/10 rounded-full blur-3xl pointer-events-none" />
-
+      <div className="relative overflow-hidden rounded-none border border-[#2E1E45] bg-[#130921] p-6 sm:p-8 shadow-xl mb-8">
         <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-3 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-1 rounded text-[11px] font-black uppercase tracking-wider bg-[#9D4EDD] text-white">
+              <span className="px-2.5 py-1 rounded-none text-[10px] font-mono font-extrabold uppercase tracking-wider bg-[#7C3AED] text-[#F8FAFC]">
                 {tournament.game}
               </span>
-              <span className="px-2.5 py-1 rounded text-[11px] font-mono font-bold uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                {tournament.format || `${tournament.maxSlots} Tim`}
+              <span className="px-2.5 py-1 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider bg-[#1A0E2E] text-[#A78BFA] border border-[#2E1E45]">
+                {tournament.format || `${tournament.maxSlots} TIM`}
               </span>
               <span
-                className={`px-2.5 py-1 rounded text-[11px] font-bold uppercase tracking-wider ${
+                className={`px-2.5 py-1 rounded-none text-[10px] font-mono font-bold uppercase tracking-wider ${
                   tournament.status === "COMPLETED"
                     ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
                     : tournament.status === "ONGOING"
                     ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
-                    : "bg-blue-500/10 text-blue-400 border border-blue-500/30"
+                    : "bg-[#7C3AED]/20 text-[#A78BFA] border border-[#7C3AED]/30"
                 }`}
               >
                 ● {tournament.status}
               </span>
               {tournament.isFreeEntry || !tournament.entryFee ? (
-                <span className="px-2.5 py-1 rounded text-[11px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                <span className="px-2.5 py-1 rounded-none text-[10px] font-mono font-extrabold uppercase tracking-wider bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
                   FREE ENTRY
                 </span>
               ) : (
-                <span className="px-2.5 py-1 rounded text-[11px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-300 border border-amber-500/40">
-                  BIAYA REGIST: Rp {tournament.entryFee.toLocaleString("id-ID")}
+                <span className="px-2.5 py-1 rounded-none text-[10px] font-mono font-extrabold uppercase tracking-wider bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30">
+                  BIAYA REGIST: RP {tournament.entryFee.toLocaleString("id-ID")}
                 </span>
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 dark:text-white leading-tight">
+            <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#F8FAFC] uppercase tracking-tight leading-tight">
               {tournament.title}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-              <span className="font-semibold text-[#9D4EDD] dark:text-[#C77DFF] flex items-center gap-1.5">
-                <Trophy size={16} /> Hadiah: {tournament.prizePool || "Prizepool Resmi Guild"}
+            <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-[#A78BFA]">
+              <span className="font-bold text-[#F8FAFC] flex items-center gap-1.5">
+                <Trophy size={16} className="text-[#F59E0B]" /> Hadiah: {tournament.prizePool || "Prizepool Resmi Guild"}
               </span>
               <span>•</span>
               <span className="flex items-center gap-1.5">
-                <Users size={16} /> Slot Terdaftar: <strong>{realTeams.length} / {tournament.maxSlots} Tim</strong>
+                <Users size={16} /> Slot Terdaftar: <strong className="text-[#F8FAFC]">{realTeams.length} / {tournament.maxSlots} TIM</strong>
               </span>
               <span>•</span>
-              <span className="text-gray-400">
-                Format Roster: {mainCount} Pemain Inti + Maks {subCount} Cadangan
+              <span className="text-[#A78BFA]/80">
+                Format: {mainCount} Inti + Maks {subCount} Cadangan
               </span>
             </div>
           </div>
 
-          <div className="shrink-0 flex flex-col sm:flex-row lg:flex-col gap-3 w-full sm:w-auto">
+          <div className="shrink-0 flex flex-col sm:flex-row lg:flex-col gap-3 w-full sm:w-auto font-mono">
             {gfWinner && (
               <button
                 type="button"
                 onClick={() => setShowCertificate(true)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs sm:text-sm font-extrabold bg-gradient-to-r from-amber-500 to-amber-600 text-black hover:from-amber-400 hover:to-amber-500 active:scale-95 transition shadow-[0_0_20px_rgba(245,158,11,0.4)]"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-none text-xs font-bold uppercase tracking-wider bg-[#F59E0B] text-black hover:bg-amber-400 transition"
               >
                 <span>Lihat &amp; Unduh Kartu Juara 🖼️</span>
               </button>
@@ -759,7 +757,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                 id="daftar"
                 type="button"
                 onClick={handleOpenRegister}
-                className="button button-primary font-bold text-sm px-6 py-3 shadow-lg shadow-[#9D4EDD]/20 inline-flex items-center justify-center gap-2"
+                className="px-6 py-2.5 rounded-none font-bold text-xs uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] inline-flex items-center justify-center gap-2"
               >
                 <Plus size={16} />
                 <span>Daftar Tim / Party Sekarang</span>
@@ -781,21 +779,21 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       </div>
 
       {/* Bracket Tree Section */}
-      <section className="p-5 sm:p-7 rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] shadow-xl mb-10">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+      <section className="p-5 sm:p-7 rounded-none border border-[#2E1E45] bg-[#130921] shadow-xl mb-10">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2 border-b border-[#2E1E45] pb-4">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <Flame size={20} className="text-[#9D4EDD]" />
-            <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+            <Flame size={20} className="text-[#7C3AED]" />
+            <h2 className="font-display text-base sm:text-lg font-extrabold uppercase tracking-tight text-[#F8FAFC]">
               Pohon Bagan Pertandingan (Bracket Tree Simetris)
             </h2>
             {/* 🔴 LIVE SYNC AKTIF BADGE */}
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-none text-[10px] font-mono font-bold bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981]">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-[#10B981] opacity-75"></span>
+                <span className="relative inline-flex rounded-none h-2 w-2 bg-[#10B981]"></span>
               </span>
               LIVE SYNC AKTIF
-              <span className="text-emerald-500/70 font-normal">
+              <span className="text-[#10B981]/70 font-normal">
                 ({syncSecondsAgo <= 1 ? "baru saja" : `${syncSecondsAgo}d lalu`})
               </span>
             </span>
@@ -803,24 +801,24 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           <div className="flex items-center gap-2.5 flex-wrap">
             {/* INSTANT SEARCH BAR DI POHON BAGAN */}
             <div className="relative w-64 sm:w-80">
-              <div className="flex items-center gap-2 px-3 h-8 rounded-lg border border-gray-300 dark:border-[#211C2B] bg-gray-50 dark:bg-[#120F17] focus-within:border-[#9D4EDD] focus-within:ring-1 focus-within:ring-[#9D4EDD] transition-all">
-                <Search size={13} className="text-gray-400 shrink-0" />
+              <div className="flex items-center gap-2 px-3 h-9 rounded-none border border-[#2E1E45] bg-[#1A0E2E] focus-within:border-[#7C3AED] transition-all">
+                <Search size={13} className="text-[#A78BFA] shrink-0" />
                 <input
                   type="text"
                   value={bracketSearchQuery}
                   onChange={(e) => setBracketSearchQuery(e.target.value)}
-                  placeholder="Cari tim kamu atau kode #R1-M12 di bagan..."
-                  className="w-full bg-transparent text-[11px] text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none"
+                  placeholder="Cari tim atau kode #R1-M12…"
+                  className="w-full bg-transparent text-xs text-[#F8FAFC] placeholder:text-[#A78BFA]/50 focus:outline-none font-sans"
                 />
                 {bracketSearchQuery && (
                   <button
                     type="button"
                     onClick={() => setBracketSearchQuery("")}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium text-purple-300 bg-purple-500/20 hover:bg-purple-500/30 hover:text-white transition shrink-0 active:scale-95"
-                    title="Reset pencarian dan hilangkan efek sorotan"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none text-[10px] font-mono font-medium text-[#A78BFA] bg-[#2E1E45] hover:text-[#F8FAFC] transition shrink-0"
+                    title="Reset pencarian"
                   >
                     <X size={11} />
-                    <span>Reset Pencarian</span>
+                    <span>Reset</span>
                   </button>
                 )}
               </div>
@@ -830,11 +828,11 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               <button
                 type="button"
                 onClick={handleDetailGachaBracket}
-                className="button button-quiet text-xs font-bold inline-flex items-center gap-1.5 border border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 shadow-xs hover:scale-105 transition-all"
+                className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-[#F59E0B]/50 bg-[#F59E0B]/10 text-[#F59E0B] hover:bg-[#F59E0B]/20 transition-all"
                 title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
               >
-                <Dices size={14} className="text-amber-400" />
-                <span>🎲 Gacha Bagan (Acak Lawan)</span>
+                <Dices size={14} className="text-[#F59E0B]" />
+                <span>🎲 Gacha Bagan</span>
               </button>
             )}
             <span className="text-xs text-gray-400 hidden xl:inline">
@@ -870,14 +868,14 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       </section>
 
       {/* Teams & Roster Section */}
-      <section className="p-5 sm:p-7 rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] shadow-xl">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <section className="p-5 sm:p-7 rounded-none border border-[#2E1E45] bg-[#130921] shadow-xl">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3 border-b border-[#2E1E45] pb-4">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <Shield size={18} className="text-[#9D4EDD]" />
-              <span>Daftar Tim Terdaftar ({realTeams.length} Tim)</span>
+            <h2 className="font-display text-base sm:text-lg font-extrabold uppercase tracking-tight text-[#F8FAFC] flex items-center gap-2">
+              <Shield size={18} className="text-[#7C3AED]" />
+              <span>Daftar Tim Terdaftar ({realTeams.length} TIM)</span>
             </h2>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-[#A78BFA] mt-0.5 font-sans">
               Klik kartu tim untuk memeriksa komposisi roster pemain inti dan cadangan.
             </p>
           </div>
@@ -886,7 +884,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             <button
               type="button"
               onClick={handleOpenRegister}
-              className="button button-primary text-xs font-bold inline-flex items-center gap-1.5"
+              className="px-4 py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] inline-flex items-center gap-1.5"
             >
               <Plus size={14} />
               <span>Tambah Tim</span>
@@ -895,7 +893,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         </div>
 
         {realTeams.length === 0 ? (
-          <div className="text-center py-12 text-sm text-gray-500 border border-dashed border-gray-200 dark:border-[#211C2B] rounded-xl">
+          <div className="text-center py-12 text-xs font-mono text-[#A78BFA] border border-dashed border-[#2E1E45] rounded-none bg-[#1A0E2E]">
             Belum ada tim yang mendaftar. Jadilah tim pertama yang mendaftar dan rebut gelarnya!
           </div>
         ) : (
@@ -909,31 +907,31 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                 <div
                   key={team.id || idx}
                   onClick={() => setViewingRoster(team)}
-                  className="p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-[#16121E] hover:border-[#9D4EDD]/50 transition cursor-pointer space-y-3"
+                  className="p-4 rounded-none border border-[#2E1E45] bg-[#1A0E2E] hover:border-[#7C3AED] transition cursor-pointer space-y-3 text-left"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="w-6 h-6 rounded-md bg-[#9D4EDD]/15 text-[#9D4EDD] text-xs font-mono font-bold flex items-center justify-center shrink-0">
+                    <span className="w-6 h-6 rounded-none bg-[#130921] border border-[#2E1E45] text-[#A78BFA] text-xs font-mono font-bold flex items-center justify-center shrink-0">
                       #{idx + 1}
                     </span>
-                    <span className="text-[10px] font-mono uppercase text-gray-400">
-                      {mainPlayers.length} Inti {subPlayers.length > 0 ? `+ ${subPlayers.length} Cad` : ""}
+                    <span className="text-[10px] font-mono uppercase text-[#A78BFA]">
+                      {mainPlayers.length} INTI {subPlayers.length > 0 ? `+ ${subPlayers.length} CAD` : ""}
                     </span>
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-sm text-gray-900 dark:text-white truncate">
+                    <h3 className="font-display font-bold text-sm text-[#F8FAFC] uppercase tracking-tight truncate">
                       {team.teamName}
                     </h3>
                     {team.captainName && (
-                      <p className="text-xs text-[#9D4EDD] truncate mt-0.5">
+                      <p className="text-xs font-mono text-[#A78BFA] truncate mt-0.5">
                         👑 Kapten: {team.captainName}
                       </p>
                     )}
                   </div>
 
-                  <div className="pt-2 border-t border-gray-200 dark:border-white/5 flex items-center justify-between text-[11px] text-gray-400">
+                  <div className="pt-2 border-t border-[#2E1E45] flex items-center justify-between text-[11px] font-mono text-[#A78BFA]">
                     <span>Lihat Susunan Roster</span>
-                    <span className="text-[#9D4EDD] font-bold">➔</span>
+                    <span className="text-[#7C3AED] font-bold">➔</span>
                   </div>
                 </div>
               );
@@ -944,29 +942,29 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
       {/* MODAL: VIEW ROSTER */}
       {viewingRoster && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-[#211C2B] pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09040F]/85 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-none border border-[#2E1E45] bg-[#130921] p-6 shadow-2xl space-y-5 text-left">
+            <div className="flex items-center justify-between border-b border-[#2E1E45] pb-3">
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[#9D4EDD] font-bold block">
-                  Informasi Tim & Roster
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[#A78BFA] font-bold block">
+                  INFORMASI TIM &amp; ROSTER
                 </span>
-                <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">
+                <h3 className="font-display text-lg font-extrabold uppercase tracking-tight text-[#F8FAFC]">
                   {viewingRoster.teamName}
                 </h3>
               </div>
               <button
                 onClick={() => setViewingRoster(null)}
-                className="p-1 rounded text-gray-400 hover:text-white"
+                className="p-1 rounded-none text-[#A78BFA] hover:text-[#F8FAFC]"
               >
                 <X size={18} />
               </button>
             </div>
 
             {viewingRoster.captainName && (
-              <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs">
-                <span className="font-bold text-purple-400">👑 Kapten Tim:</span>{" "}
-                <span className="text-white font-medium">{viewingRoster.captainName}</span>
+              <div className="p-3 rounded-none bg-[#1A0E2E] border border-[#2E1E45] text-xs font-mono">
+                <span className="font-bold text-[#A78BFA]">👑 Kapten Tim:</span>{" "}
+                <span className="text-[#F8FAFC] font-medium">{viewingRoster.captainName}</span>
               </div>
             )}
 
@@ -989,7 +987,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
                   {/* Pemain Inti */}
                   <div>
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    <h4 className="text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-wider mb-2">
                       ⚔️ Pemain Inti ({mainCount} Wajib)
                     </h4>
                     <div className="space-y-2">
@@ -1004,14 +1002,14 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                         />
                       ))}
                       {mainList.length === 0 && (
-                        <p className="text-xs text-gray-500 italic">Belum ada pemain inti terdaftar.</p>
+                        <p className="text-xs text-[#A78BFA] italic font-mono">Belum ada pemain inti terdaftar.</p>
                       )}
                     </div>
                   </div>
 
                   {/* Pemain Cadangan */}
                   <div>
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    <h4 className="text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-wider mb-2">
                       🛡️ Pemain Cadangan (Maks {subCount})
                     </h4>
                     <div className="space-y-2">
@@ -1026,7 +1024,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                         />
                       ))}
                       {subList.length === 0 && (
-                        <p className="text-xs text-gray-500 italic">Tidak ada pemain cadangan.</p>
+                        <p className="text-xs text-[#A78BFA] italic font-mono">Tidak ada pemain cadangan.</p>
                       )}
                     </div>
                   </div>
@@ -1036,7 +1034,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
             <button
               onClick={() => setViewingRoster(null)}
-              className="button button-quiet w-full text-xs font-bold"
+              className="w-full py-2.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#1A0E2E] text-[#A78BFA] border border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC]"
             >
               Tutup
             </button>
@@ -1046,9 +1044,9 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
       {/* MODAL: FORM PENDAFTARAN TIM */}
       {showRegisterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-lg rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-[#211C2B] pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09040F]/85 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg rounded-none border border-[#2E1E45] bg-[#130921] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-left">
+            <div className="flex items-center justify-between border-b border-[#2E1E45] pb-3">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-widest text-[#9D4EDD] font-bold block">
                   Formulir Pendaftaran
@@ -1108,7 +1106,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               </div>
 
               {/* Roster Inti */}
-              <div className="pt-2 border-t border-gray-100 dark:border-[#211C2B]">
+              <div className="pt-2 border-t border-gray-100 dark:border-[#2E1E45]">
                 <div className="flex items-center justify-between mb-2">
                   <label className="font-bold text-xs text-gray-800 dark:text-gray-200 flex items-center gap-1.5 uppercase tracking-wider">
                     <Users size={14} className="text-[#9D4EDD]" />
@@ -1120,7 +1118,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                   {registerMainPlayers.map((player, idx) => (
                     <div
                       key={`main-${idx}`}
-                      className="p-3 rounded-lg bg-gray-50 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 space-y-2"
+                      className="p-3 rounded-lg bg-gray-50 dark:bg-[#130921] border border-gray-200 dark:border-white/5 space-y-2"
                     >
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
@@ -1146,7 +1144,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                               );
                             }}
                             placeholder={idx === 0 ? "Nickname In-Game Kapten *" : `Nickname Pemain #${idx + 1} *`}
-                            className="w-full px-3 py-2 rounded-md bg-white/[0.03] border border-[#211C2B] text-xs font-bold text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
+                            className="w-full px-3 py-2 rounded-md bg-white/[0.03] border border-[#2E1E45] text-xs font-bold text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
                           />
                         </div>
 
@@ -1174,7 +1172,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
               {/* Roster Cadangan */}
               {subCount > 0 && (
-                <div className="pt-2 border-t border-gray-100 dark:border-[#211C2B]">
+                <div className="pt-2 border-t border-gray-100 dark:border-[#2E1E45]">
                   <div className="flex items-center justify-between mb-2">
                     <label className="font-bold text-xs text-amber-500 dark:text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
                       <Shield size={14} className="text-amber-400" />
@@ -1186,7 +1184,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                     {registerSubPlayers.map((player, idx) => (
                       <div
                         key={`sub-${idx}`}
-                        className="p-3 rounded-lg bg-gray-50 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 space-y-2"
+                        className="p-3 rounded-lg bg-gray-50 dark:bg-[#130921] border border-gray-200 dark:border-white/5 space-y-2"
                       >
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
@@ -1211,7 +1209,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                                 );
                               }}
                               placeholder={`Nickname Cadangan #${idx + 1}`}
-                              className="w-full px-3 py-2 rounded-md bg-white/[0.03] border border-[#211C2B] text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-amber-500"
+                              className="w-full px-3 py-2 rounded-md bg-white/[0.03] border border-[#2E1E45] text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-amber-500"
                             />
                           </div>
 
@@ -1239,7 +1237,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
               {/* BAGIAN PEMBAYARAN QRIS (KHUSUS TURNAMEN BERBAYAR) */}
               {!tournament.isFreeEntry && (tournament.entryFee ?? 0) > 0 && (
-                <div className="space-y-4 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/15">
+                <div className="space-y-4 p-4 rounded-none border border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/15">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                       <QrCode size={15} />
@@ -1251,7 +1249,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                   </div>
 
                   {/* QRIS Official Box */}
-                  <div className="p-4 rounded-xl bg-white dark:bg-[#120F17] border border-amber-500/20 text-center flex flex-col items-center">
+                  <div className="p-4 rounded-none bg-white dark:bg-[#130921] border border-amber-500/20 text-center flex flex-col items-center">
                     <p className="text-xs font-bold text-gray-800 dark:text-gray-200 mb-1">
                       Scan QRIS Resmi Kas Guild LogHorizon
                     </p>
@@ -1339,7 +1337,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           onClick={() => setSelectedProofModal(null)}
         >
           <div
-            className="relative max-w-xl max-h-[90vh] bg-white dark:bg-[#120F17] border border-gray-300 dark:border-white/20 rounded-2xl p-4 shadow-2xl flex flex-col items-center my-auto"
+            className="relative max-w-xl max-h-[90vh] bg-white dark:bg-[#130921] border border-gray-300 dark:border-white/20 rounded-none p-4 shadow-2xl flex flex-col items-center my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -1353,7 +1351,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               <QrCode size={16} className="text-[#9D4EDD]" />
               <span>Bukti Transfer QRIS Pendaftaran Turnamen</span>
             </p>
-            <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 max-h-[72vh] flex items-center justify-center bg-black/50">
+            <div className="rounded-none overflow-hidden border border-gray-200 dark:border-white/10 max-h-[72vh] flex items-center justify-center bg-black/50">
               <img
                 src={selectedProofModal}
                 alt="Bukti Transfer QRIS"

@@ -58,7 +58,7 @@ function FormattedPostContent({ text }: { text: string }) {
           src={src}
           alt={alt}
           loading="lazy"
-          className="max-h-96 max-w-full rounded-xl border border-gray-200 dark:border-[#211C2B] bg-black/40 object-contain shadow-md"
+          className="max-h-96 max-w-full rounded-none border border-[#2E1E45] bg-[#09040F] object-contain shadow-md"
         />
       </span>
     );
@@ -185,50 +185,164 @@ export function ForumThread({ id }: { id: string }) {
     }
   }
 
-  if (loading) return <main className="community-page"><div className="empty-state">Memuat thread…</div></main>;
-  if (!thread) return <main className="community-page page-shell"><div className="inline-error">{error || "Thread tidak ditemukan."}</div><Link className="text-link" href="/forum"><ArrowLeft size={16} /> Kembali ke forum</Link></main>;
+  if (loading) return <main className="community-page py-12 text-center text-[#A78BFA] font-mono text-xs"><div className="empty-state">MEMUAT THREAD…</div></main>;
+  if (!thread) return <main className="community-page page-shell py-12 text-center max-w-xl mx-auto"><div className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none mb-4">{error || "Thread tidak ditemukan."}</div><Link className="inline-flex items-center gap-1.5 text-xs font-mono text-[#A78BFA] hover:text-[#F8FAFC]" href="/forum"><ArrowLeft size={16} /> KEMBALI KE FORUM</Link></main>;
 
   const renderComments = (parentId: string | null, depth = 0): React.ReactNode => (commentsByParent.get(parentId) ?? []).map((item) => (
-    <article className="comment-card" key={item.id} style={{ marginLeft: depth ? `${Math.min(depth, 3) * 12}px` : undefined }}>
-      <DiscordAvatar className="comment-avatar" src={item.author.avatar} username={item.author.username} />
-      <div className="comment-content min-w-0 flex-1"><div className="comment-meta flex flex-wrap items-center gap-2"><strong className={(item.author.isPremium || item.author.username === ".odyssia") ? "premium-username" : undefined}>{item.author.username ?? "Gamer"}</strong>{(item.author.username?.toLowerCase() === ".odyssia" || item.author.username?.toLowerCase() === "odyssia") ? (<span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">👑 Emperor</span>) : item.author.role === "ADMIN" ? (<span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-400 border border-purple-500/30">✨ Prince</span>) : item.author.role === "MODERATOR" ? (<span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30">⚔️ Mod</span>) : null}<time className="text-[11px] text-gray-400">{new Date(item.createdAt).toLocaleString("id-ID")}</time></div><div className="break-words mt-1 text-xs sm:text-sm leading-relaxed"><FormattedPostContent text={item.content} /></div>
-        {!user?.isBanned && <button className="reply-button" onClick={() => {
-          if (!user) {
-            setLoginAction("membalas komentar");
-            return;
-          }
-          setReplyTo(replyTo === item.id ? null : item.id);
-          setReplyText("");
-        }}><MessageCircle size={13} /> Balas</button>}
-        {replyTo === item.id && <form className="reply-form mt-2" onSubmit={(event) => { event.preventDefault(); void sendComment(item.id, replyText); }}><textarea required maxLength={5000} rows={2} value={replyText} onChange={(event) => setReplyText(event.target.value)} placeholder={`Balas ${item.author.username ?? "gamer"}…`} className="w-full" /><button className="button button-primary button-small" disabled={sending}><Send size={14} /> Balas</button></form>}
-        <div className="nested-comments mt-2">{renderComments(item.id, depth + 1)}</div>
+    <article className="comment-card p-4 rounded-none border border-[#2E1E45] bg-[#130921] my-2" key={item.id} style={{ marginLeft: depth ? `${Math.min(depth, 3) * 16}px` : undefined }}>
+      <div className="flex items-start gap-3">
+        <DiscordAvatar className="comment-avatar shrink-0" src={item.author.avatar} username={item.author.username} size={28} />
+        <div className="comment-content min-w-0 flex-1">
+          <div className="comment-meta flex flex-wrap items-center gap-2">
+            <strong className={(item.author.isPremium || item.author.username === ".odyssia") ? "premium-username" : "text-[#F8FAFC] font-bold text-xs"}>{item.author.username ?? "Gamer"}</strong>
+            {(item.author.username?.toLowerCase() === ".odyssia" || item.author.username?.toLowerCase() === "odyssia") ? (
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30">👑 Emperor</span>
+            ) : item.author.role === "ADMIN" ? (
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30">✨ Prince</span>
+            ) : item.author.role === "MODERATOR" ? (
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-blue-500/15 text-blue-400 border border-blue-500/30">⚔️ Mod</span>
+            ) : null}
+            <time className="text-[11px] font-mono text-[#A78BFA]/70">{new Date(item.createdAt).toLocaleString("id-ID")}</time>
+          </div>
+          <div className="break-words mt-2 text-xs sm:text-sm leading-relaxed text-[#F8FAFC]/90 font-sans"><FormattedPostContent text={item.content} /></div>
+          {!user?.isBanned && (
+            <button
+              className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-mono text-[#A78BFA] hover:text-[#F8FAFC] uppercase tracking-wider"
+              onClick={() => {
+                if (!user) {
+                  setLoginAction("membalas komentar");
+                  return;
+                }
+                setReplyTo(replyTo === item.id ? null : item.id);
+                setReplyText("");
+              }}
+            >
+              <MessageCircle size={13} /> Balas
+            </button>
+          )}
+          {replyTo === item.id && (
+            <form className="reply-form mt-3 space-y-2" onSubmit={(event) => { event.preventDefault(); void sendComment(item.id, replyText); }}>
+              <textarea
+                required
+                maxLength={5000}
+                rows={2}
+                value={replyText}
+                onChange={(event) => setReplyText(event.target.value)}
+                placeholder={`Balas ${item.author.username ?? "gamer"}…`}
+                className="w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] font-sans text-xs focus:outline-none focus:border-[#7C3AED]"
+              />
+              <button className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED]" disabled={sending}>
+                <Send size={12} className="inline mr-1" /> Balas
+              </button>
+            </form>
+          )}
+          <div className="nested-comments mt-2">{renderComments(item.id, depth + 1)}</div>
+        </div>
       </div>
     </article>
   ));
 
-  return <main className="community-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full max-w-full overflow-x-hidden"><div className="page-shell px-0 sm:px-0 thread-layout"><div><Link className="back-link inline-flex items-center gap-1.5 text-xs font-bold text-[#9D4EDD] mb-4" href="/forum"><ArrowLeft size={16} /> Kembali ke forum</Link>
-    <article className="thread-card p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">{thread.isPinned && <span className="pinned-label"><Pin size={13} /> PINNED</span>}<p className="section-kicker text-xs font-bold text-[#9D4EDD] uppercase tracking-wider">{thread.category.toLowerCase().replaceAll("_", " ")}</p><h1 className="page-title text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white break-words mt-2 leading-tight">{thread.title}</h1><div className="thread-meta flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-gray-500 my-3"><span className="post-author"><DiscordAvatar src={thread.author.avatar} username={thread.author.username} /><span>oleh <Link href={`/u/${thread.author.username ?? "user"}`} className={`hover:underline ${(thread.author.isPremium || thread.author.username === ".odyssia") ? "premium-username" : "font-semibold text-gray-800 dark:text-gray-200"}`}>{thread.author.username ?? "Gamer"}</Link>{(thread.author.username?.toLowerCase() === ".odyssia" || thread.author.username?.toLowerCase() === "odyssia") ? (<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 ml-1.5">👑 Emperor</span>) : thread.author.role === "ADMIN" ? (<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/30 ml-1.5">✨ Prince / Princess</span>) : thread.author.role === "MODERATOR" ? (<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 ml-1.5">⚔️ Lord Commander</span>) : null}</span></span> · {new Date(thread.createdAt).toLocaleString("id-ID")}</div><PostReactions postId={thread.id} likes={thread.likes} dislikes={thread.dislikes} reaction={thread.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} /><div className="thread-body break-words leading-relaxed text-sm sm:text-base my-4 text-gray-700 dark:text-gray-300"><FormattedPostContent text={thread.content} /></div><div className="thread-actions flex flex-wrap items-center gap-2 sm:gap-3"><ShareButton url={`/forum/${thread.id}`} title={thread.title} text={`Baca dan diskusikan di Forum LogHorizon: ${thread.title}`} label="Bagikan Diskusi 🔗" variant="outline" /><button className="report-button" onClick={reportPost}><Flag size={14} /> Report Post</button>{user && (user.role === "ADMIN" || user.role === "MODERATOR") && <button className={`report-button ${thread.isPinned ? "text-[#9D4EDD] font-bold" : "text-gray-400 hover:text-[#9D4EDD]"}`} onClick={() => void togglePin()} title={thread.isPinned ? "Lepas Pin" : "Pin Thread"}><Pin size={14} /> {thread.isPinned ? "Lepas Pin" : "Pin Thread"}</button>}{user && (user.role === "ADMIN" || user.role === "MODERATOR" || user.id === thread.author?.id) && <button className="report-button text-red-500 hover:text-red-400" onClick={() => void deleteThread()}><Trash2 size={14} /> Hapus Thread</button>}</div></article>
-    {error && <div className={error.startsWith("Laporan berhasil") ? "inline-notice mt-3" : "inline-error mt-3"} role="status">{error}<button onClick={() => setError("")} aria-label="Tutup"><X size={15} /></button></div>}
-    <section className="comments-section mt-8"><div className="section-heading flex items-center justify-between gap-3 mb-4"><h2 className="text-xl sm:text-2xl font-bold">Diskusi</h2><span className="text-xs text-gray-400">{thread.comments.length} komentar</span></div>
-      {user && !user.isBanned ? (
-        <form className="comment-compose space-y-3" onSubmit={(event) => { event.preventDefault(); void sendComment(null, comment); }}>
-          <textarea required maxLength={5000} rows={3} value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Bagikan pendapatmu…" className="w-full" />
-          <ImageUploader
-            value={commentImg}
-            onChange={setCommentImg}
-            label="Lampiran Gambar (Opsional)"
-            description="Pilih foto langsung dari galeri HP atau PC. Otomatis dikompresi."
-          />
-          <button className="button button-primary w-full sm:w-auto" disabled={sending}>
-            <Send size={15} /> Kirim komentar
-          </button>
-        </form>
-      ) : user?.isBanned ? <p className="banned-note">Akun kamu sedang dibatasi dan tidak dapat berkomentar.</p> : <button className="button button-quiet w-full sm:w-auto" onClick={() => setLoginAction("berkomentar")}>Login untuk ikut berdiskusi</button>}
-      <div className="comments-list space-y-4 mt-6">{renderComments(null)}</div>
-      {!thread.comments.length && <div className="empty-state mt-4">Belum ada komentar. Jadilah yang pertama membalas.</div>}
-    </section>
-  </div></div>
-    <LoginPrompt open={Boolean(loginAction)} action={loginAction} onClose={() => setLoginAction("")} />
-    <ReportDialog postId={id} open={reportOpen} onClose={() => setReportOpen(false)} onSuccess={setError} />
-  </main>;
+  return (
+    <main className="community-page py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full max-w-full overflow-x-hidden">
+      <div className="page-shell px-0 sm:px-0 thread-layout">
+        <div>
+          <Link className="back-link inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#A78BFA] hover:text-[#F8FAFC] mb-4 uppercase tracking-wider" href="/forum">
+            <ArrowLeft size={16} /> KEMBALI KE FORUM
+          </Link>
+          <article className="thread-card p-5 sm:p-7 rounded-none border border-[#2E1E45] bg-[#130921]">
+            {thread.isPinned && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-[#A78BFA] uppercase tracking-wider mb-2">
+                <Pin size={12} className="text-[#7C3AED]" /> PINNED THREAD
+              </span>
+            )}
+            <p className="section-kicker font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider">
+              {thread.category.toLowerCase().replaceAll("_", " ")}
+            </p>
+            <h1 className="page-title font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#F8FAFC] uppercase tracking-tight break-words mt-2 leading-tight">
+              {thread.title}
+            </h1>
+            <div className="thread-meta flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-[#A78BFA] font-mono my-3 pt-2 border-t border-[#2E1E45]">
+              <span className="post-author flex items-center gap-1.5">
+                <DiscordAvatar src={thread.author.avatar} username={thread.author.username} size={20} />
+                <span>oleh <Link href={`/u/${thread.author.username ?? "user"}`} className={`hover:underline ${(thread.author.isPremium || thread.author.username === ".odyssia") ? "premium-username" : "font-semibold text-[#F8FAFC]"}`}>{thread.author.username ?? "Gamer"}</Link>
+                  {(thread.author.username?.toLowerCase() === ".odyssia" || thread.author.username?.toLowerCase() === "odyssia") ? (
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 ml-1.5">👑 Emperor</span>
+                  ) : thread.author.role === "ADMIN" ? (
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30 ml-1.5">✨ Prince / Princess</span>
+                  ) : thread.author.role === "MODERATOR" ? (
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-blue-500/15 text-blue-400 border border-blue-500/30 ml-1.5">⚔️ Lord Commander</span>
+                  ) : null}
+                </span>
+              </span>
+              <span>•</span>
+              <span>{new Date(thread.createdAt).toLocaleString("id-ID")}</span>
+            </div>
+            <PostReactions postId={thread.id} likes={thread.likes} dislikes={thread.dislikes} reaction={thread.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} />
+            <div className="thread-body break-words leading-relaxed text-sm sm:text-base my-5 text-[#F8FAFC]/90 font-sans">
+              <FormattedPostContent text={thread.content} />
+            </div>
+            <div className="thread-actions flex flex-wrap items-center gap-2 sm:gap-3 pt-3 border-t border-[#2E1E45]">
+              <ShareButton url={`/forum/${thread.id}`} title={thread.title} text={`Baca dan diskusikan di Forum LogHorizon: ${thread.title}`} label="Bagikan Diskusi 🔗" variant="outline" />
+              <button className="text-xs font-mono text-[#A78BFA] hover:text-rose-400 inline-flex items-center gap-1.5" onClick={reportPost}>
+                <Flag size={14} /> Report
+              </button>
+              {user && (user.role === "ADMIN" || user.role === "MODERATOR") && (
+                <button
+                  className={`text-xs font-mono inline-flex items-center gap-1.5 ${thread.isPinned ? "text-[#A78BFA] font-bold" : "text-[#A78BFA]/70 hover:text-[#F8FAFC]"}`}
+                  onClick={() => void togglePin()}
+                  title={thread.isPinned ? "Lepas Pin" : "Pin Thread"}
+                >
+                  <Pin size={14} /> {thread.isPinned ? "Lepas Pin" : "Pin Thread"}
+                </button>
+              )}
+              {user && (user.role === "ADMIN" || user.role === "MODERATOR" || user.id === thread.author?.id) && (
+                <button className="text-xs font-mono text-red-400 hover:text-red-300 inline-flex items-center gap-1.5 ml-auto" onClick={() => void deleteThread()}>
+                  <Trash2 size={14} /> Hapus
+                </button>
+              )}
+            </div>
+          </article>
+          {error && <div className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none mt-3" role="status">{error}<button className="ml-2" onClick={() => setError("")} aria-label="Tutup"><X size={15} /></button></div>}
+          <section className="comments-section mt-8">
+            <div className="section-heading flex items-center justify-between gap-3 mb-4 border-b border-[#2E1E45] pb-3">
+              <h2 className="font-display text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-[#F8FAFC]">Diskusi</h2>
+              <span className="text-xs font-mono text-[#A78BFA]">{thread.comments.length} KOMENTAR</span>
+            </div>
+            {user && !user.isBanned ? (
+              <form className="comment-compose space-y-3 p-4 rounded-none border border-[#2E1E45] bg-[#130921]" onSubmit={(event) => { event.preventDefault(); void sendComment(null, comment); }}>
+                <textarea
+                  required
+                  maxLength={5000}
+                  rows={3}
+                  value={comment}
+                  onChange={(event) => setComment(event.target.value)}
+                  placeholder="Bagikan pendapatmu…"
+                  className="w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] font-sans text-sm focus:outline-none focus:border-[#7C3AED]"
+                />
+                <ImageUploader
+                  value={commentImg}
+                  onChange={setCommentImg}
+                  label="Lampiran Gambar (Opsional)"
+                  description="Pilih foto langsung dari galeri HP atau PC. Otomatis dikompresi."
+                />
+                <button className="w-full sm:w-auto px-4 py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] flex items-center justify-center gap-2" disabled={sending}>
+                  <Send size={15} /> Kirim komentar
+                </button>
+              </form>
+            ) : user?.isBanned ? (
+              <p className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none">Akun kamu sedang dibatasi dan tidak dapat berkomentar.</p>
+            ) : (
+              <button className="w-full sm:w-auto px-4 py-2.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#1A0E2E] text-[#A78BFA] border border-[#2E1E45] hover:border-[#7C3AED]" onClick={() => setLoginAction("berkomentar")}>
+                Login untuk ikut berdiskusi
+              </button>
+            )}
+            <div className="comments-list space-y-3 mt-6">{renderComments(null)}</div>
+            {!thread.comments.length && <div className="p-8 text-center font-mono text-xs text-[#A78BFA] rounded-none border border-[#2E1E45] bg-[#130921] mt-4">Belum ada komentar. Jadilah yang pertama membalas.</div>}
+          </section>
+        </div>
+      </div>
+      <LoginPrompt open={Boolean(loginAction)} action={loginAction} onClose={() => setLoginAction("")} />
+      <ReportDialog postId={id} open={reportOpen} onClose={() => setReportOpen(false)} onSuccess={setError} />
+    </main>
+  );
 }

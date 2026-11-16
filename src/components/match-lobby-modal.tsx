@@ -212,47 +212,47 @@ export function MatchLobbyModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-[#09040F]/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto text-left"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto animate-in zoom-in-95 duration-200"
+        className="bg-[#130921] border border-[#2E1E45] rounded-none w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto animate-in zoom-in-95 duration-150 text-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* HEADER MODAL */}
-        <div className="p-4 border-b border-gray-200 dark:border-[#211C2B] flex items-center justify-between bg-gray-50/70 dark:bg-[#0E0A16]">
+        <div className="p-4 border-b border-[#2E1E45] flex items-center justify-between bg-[#1A0E2E]">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-2 rounded-xl bg-purple-500/15 text-[#9D4EDD] border border-purple-500/30 shrink-0">
+            <div className="p-2 rounded-none bg-[#130921] text-[#A78BFA] border border-[#2E1E45] shrink-0">
               <Swords size={20} />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-extrabold text-sm sm:text-base text-gray-900 dark:text-white truncate">
+                <h3 className="font-display font-extrabold uppercase tracking-tight text-sm sm:text-base text-[#F8FAFC] truncate">
                   Ruang Koordinasi Match
                 </h3>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#9D4EDD]/15 text-purple-300 border border-[#9D4EDD]/30">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30 uppercase">
                   #{match.matchId} · {match.roundName}
                 </span>
                 {isMatchFinished && (
-                  <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-none bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40 uppercase">
                     ARSIP PEMERIKSAAN (READ-ONLY)
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                <strong className="text-purple-400">{match.teamA.name || "Tim A"}</strong> VS{" "}
-                <strong className="text-purple-400">{match.teamB.name || "Tim B"}</strong>
+              <p className="text-xs font-mono text-[#A78BFA] truncate mt-0.5">
+                <strong className="text-[#F8FAFC]">{match.teamA.name || "Tim A"}</strong> VS{" "}
+                <strong className="text-[#F8FAFC]">{match.teamB.name || "Tim B"}</strong>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 font-mono">
             {!isMatchFinished && (
               <button
                 type="button"
                 onClick={handleCallReferee}
                 disabled={callingReferee}
-                className="px-2.5 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/40 text-red-400 font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
+                className="px-2.5 py-1.5 rounded-none bg-red-500/15 hover:bg-red-500/25 border border-red-500/40 text-red-400 font-bold text-xs flex items-center gap-1.5 transition uppercase"
                 title="Panggil Panitia/Wasit ke ruang koordinasi ini"
               >
                 <ShieldAlert size={14} className="text-red-400 animate-pulse" />
@@ -262,7 +262,7 @@ export function MatchLobbyModal({
             <button
               type="button"
               onClick={onClose}
-              className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5"
+              className="text-[#A78BFA] hover:text-[#F8FAFC] p-1.5 rounded-none transition"
               aria-label="Tutup"
             >
               <X size={18} />
@@ -272,8 +272,8 @@ export function MatchLobbyModal({
 
         {/* 24-HOUR POST-MATCH AUDIT ARCHIVE BANNER */}
         {isMatchFinished && (
-          <div className="p-3 bg-amber-500/10 border-b border-amber-500/25 flex items-center gap-2 text-xs text-amber-300 animate-in fade-in">
-            <AlertTriangle size={16} className="text-amber-400 shrink-0" />
+          <div className="p-3 bg-[#F59E0B]/10 border-b border-[#F59E0B]/20 flex items-center gap-2 text-xs text-[#F59E0B] font-mono">
+            <AlertTriangle size={16} className="text-[#F59E0B] shrink-0" />
             <span className="leading-snug">
               Pertandingan ini telah selesai. Riwayat chat disimpan selama 24 jam untuk keperluan audit panitia sebelum terhapus otomatis.
             </span>
@@ -282,13 +282,13 @@ export function MatchLobbyModal({
 
         {/* FEEDBACK & NOTICE */}
         {notice && (
-          <div className="mx-4 mt-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between animate-in fade-in">
+          <div className="mx-4 mt-3 p-2.5 rounded-none bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between animate-in fade-in">
             <span>{notice}</span>
             <button onClick={() => setNotice("")}><X size={13} /></button>
           </div>
         )}
         {error && (
-          <div className="mx-4 mt-3 p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center justify-between animate-in fade-in">
+          <div className="mx-4 mt-3 p-2.5 rounded-none bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center justify-between animate-in fade-in">
             <span>{error}</span>
             <button onClick={() => setError("")}><X size={13} /></button>
           </div>
@@ -317,7 +317,7 @@ export function MatchLobbyModal({
                 return (
                   <div
                     key={msg.id}
-                    className={`p-2.5 rounded-xl border text-xs text-center leading-relaxed ${
+                    className={`p-2.5 rounded-none border text-xs text-center leading-relaxed ${
                       msg.roleLabel === "[ALARM PANITIA]"
                         ? "bg-red-500/15 border-red-500/30 text-red-300 font-semibold"
                         : "bg-purple-950/25 border-purple-500/25 text-purple-200"
@@ -364,7 +364,7 @@ export function MatchLobbyModal({
                   </div>
 
                   <div
-                    className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-relaxed shadow-xs ${
+                    className={`max-w-[85%] rounded-none px-3.5 py-2 text-xs leading-relaxed shadow-xs ${
                       isMe
                         ? "bg-gradient-to-r from-[#8338EC] to-[#9D4EDD] text-white rounded-br-none"
                         : isStaffMsg
@@ -383,16 +383,16 @@ export function MatchLobbyModal({
 
         {/* INPUT BAR OR READ-ONLY ARCHIVE NOTICE */}
         {isMatchFinished ? (
-          <div className="p-3 bg-gray-50/80 dark:bg-[#120F17] border-t border-gray-200 dark:border-[#211C2B] text-center text-xs text-gray-500 font-mono">
+          <div className="p-3 bg-gray-50/80 dark:bg-[#130921] border-t border-gray-200 dark:border-[#2E1E45] text-center text-xs text-gray-500 font-mono">
             🔒 Mode Arsip Pemeriksaan (Read-Only) · Pertandingan telah berakhir
           </div>
         ) : (
           <form
             onSubmit={handleSendMessage}
-            className="p-3 bg-gray-50 dark:bg-[#120F17] border-t border-gray-200 dark:border-[#211C2B] flex flex-col gap-2"
+            className="p-3 bg-gray-50 dark:bg-[#130921] border-t border-gray-200 dark:border-[#2E1E45] flex flex-col gap-2"
           >
             {attachedImage && (
-              <div className="flex items-center gap-2 p-1.5 px-3 bg-[#9D4EDD]/15 border border-[#9D4EDD]/30 rounded-xl w-fit max-w-full">
+              <div className="flex items-center gap-2 p-1.5 px-3 bg-[#9D4EDD]/15 border border-[#9D4EDD]/30 rounded-none w-fit max-w-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={attachedImage} alt="Lampiran" className="w-10 h-10 object-cover rounded border border-purple-500/40" />
                 <span className="text-[11px] text-purple-300 font-medium truncate max-w-[180px]">Bukti screenshot terlampir</span>
@@ -414,14 +414,14 @@ export function MatchLobbyModal({
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Tulis pesan ke kapten lawan / panitia..."
-                className="flex-1 bg-white dark:bg-[#0A070F] border border-gray-200 dark:border-[#211C2B] rounded-xl px-3.5 py-2.5 text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
+                className="flex-1 bg-white dark:bg-[#0A070F] border border-gray-200 dark:border-[#2E1E45] rounded-none px-3.5 py-2.5 text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
                 maxLength={2000}
                 disabled={sending}
               />
               <button
                 type="submit"
                 disabled={(!inputText.trim() && !attachedImage) || sending}
-                className="px-4 py-2.5 rounded-xl bg-[#9D4EDD] hover:bg-[#8338EC] disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 shadow-sm"
+                className="px-4 py-2.5 rounded-none bg-[#9D4EDD] hover:bg-[#8338EC] disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 shadow-sm"
               >
                 <Send size={14} />
                 <span className="hidden sm:inline">Kirim</span>

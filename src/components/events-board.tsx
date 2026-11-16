@@ -1090,30 +1090,31 @@ export function EventsBoard() {
 
   return (
     <main className="events-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
-      <header className="events-heading mb-6 text-left">
-        <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">
-          GUILD ARENA &amp; OPERATIONS
+      <header className="events-heading mb-6 text-left border-b border-[#2E1E45] pb-6">
+        <p className="section-kicker text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-widest mb-1.5 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 bg-[#7C3AED]" />
+          GUILD ARENA &amp; OPERATIONS // MATCH BOARD
         </p>
-        <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
-          Arena &amp; <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Mabar Guild</span>
+        <h1 className="page-title font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-[#F8FAFC] break-words">
+          ARENA &amp; <span className="text-[#A78BFA]">MABAR GUILD</span>
         </h1>
-        <p className="muted-copy text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+        <p className="muted-copy text-xs sm:text-sm md:text-base text-[#A78BFA] mt-1.5 leading-relaxed font-sans">
           Koordinasikan jadwal mabar cepat atau berkompetisi di turnamen resmi dengan bagan terstruktur.
         </p>
       </header>
 
-      {error && <p className="inline-error mb-4" role="alert">{error}</p>}
-      {notice && <p className="inline-notice mb-4" role="status">{notice}</p>}
+      {error && <p className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none mb-4" role="alert">{error}</p>}
+      {notice && <p className="p-3 text-xs font-mono text-emerald-400 bg-emerald-950/20 border border-emerald-500/30 rounded-none mb-4" role="status">{notice}</p>}
 
       {/* TOP FILTER NAVIGATION: ALL / MABAR / TURNAMEN */}
-      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-gray-100 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 overflow-x-auto scrollbar-none mb-6">
+      <div className="flex items-center gap-1.5 p-1 rounded-none bg-[#130921] border border-[#2E1E45] overflow-x-auto scrollbar-none mb-6">
         <button
           type="button"
           onClick={() => setActiveTab("all")}
-          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
+          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0 border ${
             activeTab === "all"
-              ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
-              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
+              : "bg-[#1A0E2E] text-[#A78BFA] border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC]"
           }`}
         >
           Semua Kegiatan
@@ -1121,10 +1122,10 @@ export function EventsBoard() {
         <button
           type="button"
           onClick={() => setActiveTab("turnamen")}
-          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 shrink-0 ${
+          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border ${
             activeTab === "turnamen"
-              ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
-              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
+              : "bg-[#1A0E2E] text-[#A78BFA] border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC]"
           }`}
         >
           <Trophy size={14} />
@@ -1133,10 +1134,10 @@ export function EventsBoard() {
         <button
           type="button"
           onClick={() => setActiveTab("mabar")}
-          className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 shrink-0 ${
+          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border ${
             activeTab === "mabar"
-              ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
-              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
+              : "bg-[#1A0E2E] text-[#A78BFA] border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC]"
           }`}
         >
           <Swords size={14} />
@@ -1145,21 +1146,21 @@ export function EventsBoard() {
       </div>
 
       {/* QUICK SEARCH BAR */}
-      <div className="flex items-center gap-3 px-3.5 h-11 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors mb-6" role="search">
-        <Search size={16} className="shrink-0 text-gray-400 pointer-events-none" />
+      <div className="flex items-center gap-3 px-3.5 h-11 rounded-none border border-[#2E1E45] bg-[#130921] focus-within:border-[#7C3AED] transition-colors mb-6" role="search">
+        <Search size={16} className="shrink-0 text-[#A78BFA] pointer-events-none" />
         <input
           type="search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Cari turnamen, tim, game, atau ajakan mabar…"
           aria-label="Cari turnamen dan jadwal party"
-          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
+          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-[#F8FAFC] placeholder:text-[#A78BFA]/50 p-0 font-sans"
         />
         {search && (
           <button
             type="button"
             onClick={() => setSearch("")}
-            className="shrink-0 text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            className="shrink-0 text-[#A78BFA] hover:text-[#F8FAFC] font-mono text-xs uppercase"
           >
             <X size={15} />
           </button>
@@ -1173,11 +1174,11 @@ export function EventsBoard() {
         <section className="events-section mb-12">
           <div className="events-section-heading flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div className="text-left">
-              <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">
-                COMPETITIVE ARENA
+              <p className="section-kicker font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider mb-1">
+                COMPETITIVE ARENA // TOURNAMENTS
               </p>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Trophy size={20} className="text-[#9D4EDD]" />
+              <h2 className="font-display text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-[#F8FAFC] flex items-center gap-2">
+                <Trophy size={20} className="text-[#A78BFA]" />
                 <span>Turnamen Resmi &amp; Bagan Pertandingan</span>
               </h2>
             </div>
@@ -1186,7 +1187,7 @@ export function EventsBoard() {
               <button
                 type="button"
                 onClick={() => setShowTemplateModal(true)}
-                className="button button-primary text-xs font-bold inline-flex items-center gap-2 self-start sm:self-auto"
+                className="px-4 py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] inline-flex items-center gap-2 self-start sm:self-auto"
               >
                 <Plus size={15} />
                 <span>+ Buat Turnamen dari Template</span>
@@ -1195,7 +1196,7 @@ export function EventsBoard() {
           </div>
 
           {/* CONTACT PERSON PROPOSAL BANNER */}
-          <div className="mb-6 rounded-xl border border-purple-500/15 bg-purple-950/15 p-4 text-xs leading-relaxed text-gray-300 text-left">
+          <div className="mb-6 rounded-none border border-[#2E1E45] bg-[#130921] p-4 text-xs leading-relaxed text-[#A78BFA] text-left">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <p className="font-bold text-xs sm:text-sm text-purple-300 mb-0.5 flex items-center gap-1.5">
@@ -1242,10 +1243,10 @@ export function EventsBoard() {
               return (
                 <article
                   key={tournament.id}
-                  className="p-5 sm:p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] shadow-lg relative overflow-hidden"
+                  className="p-5 sm:p-6 rounded-none border border-[#2E1E45] bg-[#130921] shadow-lg relative overflow-hidden mb-6 text-left"
                 >
                   {/* Top Bar Turnamen */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-200 dark:border-[#211C2B]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#2E1E45]">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-[#9D4EDD] text-white uppercase">
@@ -1388,7 +1389,7 @@ export function EventsBoard() {
                       <div className="flex items-center gap-2.5 flex-wrap">
                         {/* INSTANT SEARCH BAR DI POHON BAGAN */}
                         <div className="relative w-64 sm:w-80">
-                          <div className="flex items-center gap-2 px-3 h-8 rounded-lg border border-gray-300 dark:border-[#211C2B] bg-gray-50 dark:bg-[#120F17] focus-within:border-[#9D4EDD] focus-within:ring-1 focus-within:ring-[#9D4EDD] transition-all">
+                          <div className="flex items-center gap-2 px-3 h-8 rounded-lg border border-gray-300 dark:border-[#2E1E45] bg-gray-50 dark:bg-[#130921] focus-within:border-[#9D4EDD] focus-within:ring-1 focus-within:ring-[#9D4EDD] transition-all">
                             <Search size={13} className="text-gray-400 shrink-0" />
                             <input
                               type="text"
@@ -1515,7 +1516,7 @@ export function EventsBoard() {
 
           {/* COLLAPSIBLE 4-INPUT LFG FORM */}
           {showLfgForm && (
-            <form className="mb-6 p-4 sm:p-5 rounded-xl border border-purple-500/30 bg-purple-950/10 space-y-4 shadow-lg animate-in fade-in duration-200" onSubmit={createLfg}>
+            <form className="mb-6 p-4 sm:p-5 rounded-none border border-purple-500/30 bg-purple-950/10 space-y-4 shadow-lg animate-in fade-in duration-200" onSubmit={createLfg}>
               <div className="flex items-center justify-between pb-2 border-b border-purple-500/20">
                 <span className="text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider">
                   AJAKAN MABAR CEPAT
@@ -1536,7 +1537,7 @@ export function EventsBoard() {
                   <select
                     value={lfgGame}
                     onChange={(e) => setLfgGame(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
+                    className="w-full px-3 py-2 rounded-md bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
                   >
                     <option value="Mobile Legends">Mobile Legends</option>
                     <option value="Valorant">Valorant</option>
@@ -1552,7 +1553,7 @@ export function EventsBoard() {
                       placeholder="Ketik nama game..."
                       value={customGame}
                       onChange={(e) => setCustomGame(e.target.value)}
-                      className="mt-2 w-full px-3 py-1.5 rounded-md bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
+                      className="mt-2 w-full px-3 py-1.5 rounded-md bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
                       required
                     />
                   )}
@@ -1563,7 +1564,7 @@ export function EventsBoard() {
                   <select
                     value={neededSlots}
                     onChange={(e) => setNeededSlots(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
+                    className="w-full px-3 py-2 rounded-md bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
                   >
                     <option value="1">1 - Butuh 1 Orang</option>
                     <option value="2">2 - Butuh 2 Orang</option>
@@ -1579,7 +1580,7 @@ export function EventsBoard() {
                       placeholder="Masukkan jumlah orang (misal: 15)"
                       value={customSlots}
                       onChange={(e) => setCustomSlots(e.target.value)}
-                      className="mt-2 w-full px-3 py-1.5 rounded-md bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
+                      className="mt-2 w-full px-3 py-1.5 rounded-md bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
                       required
                     />
                   )}
@@ -1590,7 +1591,7 @@ export function EventsBoard() {
                   <select
                     value={durationHours}
                     onChange={(e) => setDurationHours(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
+                    className="w-full px-3 py-2 rounded-md bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
                   >
                     <option value="1">Mabar Sekarang (1 Jam)</option>
                     <option value="3">Sesi Santai (3 Jam)</option>
@@ -1608,7 +1609,7 @@ export function EventsBoard() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Contoh: Push Rank Mythic Immortal, butuh Roamer/Mage asik no toxic."
-                    className="w-full px-3 py-2 rounded-md bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
+                    className="w-full px-3 py-2 rounded-md bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] text-xs text-gray-900 dark:text-white outline-none focus:border-[#9D4EDD]"
                   />
                 </div>
               </div>
@@ -1635,47 +1636,65 @@ export function EventsBoard() {
 
               return (
                 <article
-                  className={`p-4 sm:p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col justify-between shadow-md transition-all ${
-                    isFull ? "opacity-75" : "hover:border-[#9D4EDD]/40"
+                  className={`p-4 sm:p-5 rounded-none border border-[#2E1E45] bg-[#130921] flex flex-col justify-between shadow-md transition-all text-left ${
+                    isFull ? "opacity-75" : "hover:border-[#7C3AED]"
                   }`}
                   key={post.id}
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-[#9D4EDD] text-white uppercase">
+                        <span className="px-2.5 py-0.5 rounded-none text-[10px] font-mono font-extrabold bg-[#7C3AED] text-[#F8FAFC] uppercase">
                           {post.game}
                         </span>
-                        <span className="text-[11px] font-mono text-gray-400">
-                          {post.joins.length + 1}/{post.maxSlots} Orang
+                        <span className="text-[11px] font-mono text-[#A78BFA]">
+                          {post.joins.length + 1}/{post.maxSlots} SLOT
                         </span>
                       </div>
-                      <span className="text-[11px] font-mono text-gray-400 flex items-center gap-1">
+                      <span className="text-[11px] font-mono text-[#A78BFA] flex items-center gap-1">
                         <Clock size={12} /> {formatRemainingTime(post.expiresAt)}
                       </span>
                     </div>
 
-                    <p className="font-bold text-sm text-gray-900 dark:text-white mb-2 leading-snug">
+                    {/* Visual Slot Matrix */}
+                    <div className="flex items-center gap-1.5 my-2.5">
+                      <span className="text-[9px] font-mono text-[#A78BFA] uppercase tracking-wider">Slot:</span>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: post.maxSlots }).map((_, idx) => (
+                          <span
+                            key={idx}
+                            className={`w-3.5 h-3.5 rounded-none border ${
+                              idx < currentFilled
+                                ? "bg-[#7C3AED] border-[#7C3AED]"
+                                : "bg-[#1A0E2E] border-[#2E1E45]"
+                            }`}
+                            title={`Slot ${idx + 1}: ${idx < currentFilled ? "Terisi" : "Kosong"}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <p className="font-display font-bold text-sm text-[#F8FAFC] mb-2 leading-snug uppercase tracking-tight">
                       {post.description}
                     </p>
 
-                    <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1 mb-4">
+                    <div className="text-xs text-[#A78BFA] font-mono space-y-1 mb-4">
                       <p>
-                        Host: <strong className="text-gray-800 dark:text-gray-200">{post.author.username ?? "Gamer"}</strong>
+                        Host: <strong className="text-[#F8FAFC]">{post.author.username ?? "Gamer"}</strong>
                         {(post.author.username?.toLowerCase() === ".odyssia" || post.author.username?.toLowerCase() === "odyssia") && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 ml-1">👑 Emperor</span>
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 ml-1">👑 Emperor</span>
                         )}
                         {post.author.inGameName && ` (IGN: ${post.author.inGameName})`}
                       </p>
                       {post.joins.length > 0 && (
-                        <p className="text-[11px]">
-                          Bergabung: {post.joins.map((j) => j.username ?? "Gamer").join(", ")}
+                        <p className="text-[11px] text-[#A78BFA]/80">
+                          Party: {post.joins.map((j) => j.username ?? "Gamer").join(", ")}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-gray-100 dark:border-[#211C2B] flex items-center justify-between gap-2 flex-wrap">
+                  <div className="pt-3 border-t border-[#2E1E45] flex items-center justify-between gap-2 flex-wrap font-mono">
                     <div className="flex items-center gap-2">
                       <a
                         href="https://discord.gg/aJvbVyTxNb"
@@ -1683,7 +1702,7 @@ export function EventsBoard() {
                         rel="noreferrer"
                         className="text-xs font-semibold text-[#5865F2] hover:underline inline-flex items-center gap-1"
                       >
-                        <Headphones size={13} /> <span>Voice Discord</span>
+                        <Headphones size={13} /> <span>Voice</span>
                       </a>
                       <ShareButton
                         url={`/events?view=mabar&post=${post.id}`}
@@ -1695,7 +1714,7 @@ export function EventsBoard() {
                       <button
                         type="button"
                         onClick={() => setActivePartyChat(activePartyChat === post.id ? null : post.id)}
-                        className="text-xs font-semibold text-gray-400 hover:text-white inline-flex items-center gap-1 ml-2"
+                        className="text-xs text-[#A78BFA] hover:text-[#F8FAFC] inline-flex items-center gap-1 ml-1"
                       >
                         <MessageSquare size={13} />
                         <span>Chat ({partyChatMessages[post.id]?.length ?? 0})</span>
@@ -1707,7 +1726,7 @@ export function EventsBoard() {
                         <button
                           type="button"
                           onClick={() => deleteParty(post.id, post.game)}
-                          className="p-1.5 rounded text-red-400 hover:bg-red-950/20"
+                          className="p-1.5 rounded-none border border-red-500/30 text-red-400 hover:bg-red-950/20"
                           title="Tutup Party"
                         >
                           <Trash2 size={14} />
@@ -1718,12 +1737,12 @@ export function EventsBoard() {
                           type="button"
                           disabled={!post.joinedByViewer && isFull}
                           onClick={() => toggleJoin(post.id, post.joinedByViewer)}
-                          className={`px-3 py-1.5 rounded text-xs font-bold transition ${
+                          className={`px-3 py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition ${
                             post.joinedByViewer
                               ? "bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30"
                               : isFull
-                                ? "bg-gray-200 dark:bg-white/10 text-gray-400 cursor-not-allowed"
-                                : "bg-[#9D4EDD] text-white hover:bg-[#8338ec]"
+                                ? "bg-[#1A0E2E] text-[#A78BFA]/50 border border-[#2E1E45] cursor-not-allowed"
+                                : "bg-[#7C3AED] text-[#F8FAFC] hover:bg-[#6D28D9] border border-[#7C3AED]"
                           }`}
                         >
                           {post.joinedByViewer ? "Keluar Party" : isFull ? "Penuh" : "Gabung Party"}
@@ -1734,7 +1753,7 @@ export function EventsBoard() {
 
                   {/* MINI PARTY CHAT */}
                   {activePartyChat === post.id && (
-                    <div className="mt-4 pt-3 border-t border-gray-200 dark:border-[#211C2B] space-y-2">
+                    <div className="mt-4 pt-3 border-t border-gray-200 dark:border-[#2E1E45] space-y-2">
                       <div className="max-h-36 overflow-y-auto space-y-1.5 text-xs pr-1">
                         {(partyChatMessages[post.id] || []).map((msg, i) => (
                           <div key={i} className="p-1.5 rounded bg-gray-50 dark:bg-[#1a1526]">
@@ -1752,7 +1771,7 @@ export function EventsBoard() {
                           onChange={(e) => setChatInput(e.target.value)}
                           onKeyDown={(e) => e.key === "Enter" && handleSendPartyChat(post.id)}
                           placeholder="Pesan koordinasi party…"
-                          className="flex-1 px-2.5 py-1.5 rounded bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] text-xs"
+                          className="flex-1 px-2.5 py-1.5 rounded bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] text-xs"
                         />
                         <button
                           type="button"
@@ -1776,7 +1795,7 @@ export function EventsBoard() {
       {/* ========================================================================= */}
       {showTemplateModal && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
+          <div className="bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] rounded-none w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setShowTemplateModal(false)}
@@ -1808,7 +1827,7 @@ export function EventsBoard() {
                   value={templateTitle}
                   onChange={(e) => setTemplateTitle(e.target.value)}
                   placeholder="Contoh: LogHorizon Valorant Champions S1"
-                  className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                  className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#2E1E45] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                 />
               </div>
 
@@ -1823,7 +1842,7 @@ export function EventsBoard() {
                     value={templateGame}
                     onChange={(e) => setTemplateGame(e.target.value)}
                     placeholder="Valorant / Mobile Legends / CS2"
-                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#2E1E45] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                   />
                 </div>
                 <div>
@@ -1844,7 +1863,7 @@ export function EventsBoard() {
                       max={128}
                       value={templateTeamCount}
                       onChange={(e) => setTemplateTeamCount(Math.min(128, Math.max(2, parseInt(e.target.value, 10) || 2)))}
-                      className="w-24 px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                      className="w-24 px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#2E1E45] text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                     />
                     <div className="flex items-center gap-1 flex-wrap">
                       {[4, 8, 16, 32, 64].map((n) => (
@@ -1876,7 +1895,7 @@ export function EventsBoard() {
                     value={templatePrize}
                     onChange={(e) => setTemplatePrize(e.target.value)}
                     placeholder="Contoh: Rp 1.000.000 + Discord Role"
-                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#2E1E45] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                   />
                 </div>
                 <div>
@@ -1887,7 +1906,7 @@ export function EventsBoard() {
                     type="datetime-local"
                     value={templateDate}
                     onChange={(e) => setTemplateDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#2E1E45] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                   />
                 </div>
               </div>
@@ -1905,7 +1924,7 @@ export function EventsBoard() {
                     max={10}
                     value={templateMainPlayers}
                     onChange={(e) => setTemplateMainPlayers(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#2E1E45] text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                   />
                   <span className="text-[10px] text-gray-400 mt-0.5 block">1 untuk Solo, 4 untuk BR, 5 untuk MOBA/FPS</span>
                 </div>
@@ -1919,14 +1938,14 @@ export function EventsBoard() {
                     max={5}
                     value={templateSubPlayers}
                     onChange={(e) => setTemplateSubPlayers(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                    className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#2E1E45] text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                   />
                   <span className="text-[10px] text-gray-400 mt-0.5 block">0 s/d 5 cadangan (isi 0 jika tanpa cadangan)</span>
                 </div>
               </div>
 
               {/* Pengaturan Biaya Pendaftaran (Gratis vs Berbayar QRIS) */}
-              <div className="p-3 sm:p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-gray-50/50 dark:bg-[#16121E]/60 space-y-3">
+              <div className="p-3 sm:p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-gray-50/50 dark:bg-[#16121E]/60 space-y-3">
                 <label className="text-xs font-bold text-gray-800 dark:text-gray-200 block">
                   Mode Biaya Pendaftaran Tim
                 </label>
@@ -1940,7 +1959,7 @@ export function EventsBoard() {
                     className={`px-3 py-2 rounded-lg text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
                       templateIsFree
                         ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-400"
-                        : "border-gray-200 dark:border-[#211C2B] text-gray-400 hover:text-white"
+                        : "border-gray-200 dark:border-[#2E1E45] text-gray-400 hover:text-white"
                     }`}
                   >
                     <span>🟢 Free Entry (Gratis)</span>
@@ -1954,7 +1973,7 @@ export function EventsBoard() {
                     className={`px-3 py-2 rounded-lg text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
                       !templateIsFree
                         ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
-                        : "border-gray-200 dark:border-[#211C2B] text-gray-400 hover:text-white"
+                        : "border-gray-200 dark:border-[#2E1E45] text-gray-400 hover:text-white"
                     }`}
                   >
                     <span>💰 Berbayar (QRIS)</span>
@@ -1994,7 +2013,7 @@ export function EventsBoard() {
                   rows={4}
                   value={templateRules}
                   onChange={(e) => setTemplateRules(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                  className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#2E1E45] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                   placeholder="Peraturan resmi turnamen..."
                 />
                 <span className="text-[10px] text-gray-400 mt-0.5 block">
@@ -2009,7 +2028,7 @@ export function EventsBoard() {
                 <select
                   value={templateStatus}
                   onChange={(e) => setTemplateStatus(e.target.value as "REGISTRATION" | "ONGOING")}
-                  className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                  className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#2E1E45] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                 >
                   <option value="REGISTRATION">Pendaftaran Dibuka (REGISTRATION)</option>
                   <option value="ONGOING">Langsung Dimulai (ONGOING)</option>
@@ -2042,7 +2061,7 @@ export function EventsBoard() {
       {/* ========================================================================= */}
       {managingTournament && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-3xl max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
+          <div className="bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] rounded-none w-[calc(100vw-2rem)] sm:max-w-3xl max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setManagingTournament(null)}
@@ -2064,7 +2083,7 @@ export function EventsBoard() {
             </div>
 
             {/* TAB SELECTOR DALAM MODAL */}
-            <div className="flex items-center justify-between gap-2 border-b border-gray-200 dark:border-[#211C2B] pb-2 mb-4 overflow-x-auto scrollbar-none">
+            <div className="flex items-center justify-between gap-2 border-b border-gray-200 dark:border-[#2E1E45] pb-2 mb-4 overflow-x-auto scrollbar-none">
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
                 <button
                   type="button"
@@ -2160,9 +2179,9 @@ export function EventsBoard() {
               return (
                 <div className="space-y-3">
                   {/* SEARCH & QUICK FILTER BAR */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-200 dark:border-[#211C2B]">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-200 dark:border-[#2E1E45]">
                     <div className="relative flex-1">
-                      <div className="flex items-center gap-2.5 px-3.5 h-10 rounded-xl border border-gray-300 dark:border-[#211C2B] bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] focus-within:ring-1 focus-within:ring-[#9D4EDD] transition-all">
+                      <div className="flex items-center gap-2.5 px-3.5 h-10 rounded-none border border-gray-300 dark:border-[#2E1E45] bg-white dark:bg-[#130921] focus-within:border-[#9D4EDD] focus-within:ring-1 focus-within:ring-[#9D4EDD] transition-all">
                         <Search size={15} className="text-gray-400 shrink-0" />
                         <input
                           type="text"
@@ -2185,7 +2204,7 @@ export function EventsBoard() {
                     </div>
 
                     {/* QUICK FILTERS */}
-                    <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl shrink-0 overflow-x-auto scrollbar-none">
+                    <div className="flex items-center gap-1 bg-black/20 p-1 rounded-none shrink-0 overflow-x-auto scrollbar-none">
                       <button
                         type="button"
                         onClick={() => setAdminMatchFilter("ALL")}
@@ -2224,7 +2243,7 @@ export function EventsBoard() {
                   </div>
 
                   {/* SET JADWAL MASSAL PER RONDE */}
-                  <div className="p-3.5 rounded-xl border border-purple-500/30 bg-purple-950/20 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="p-3.5 rounded-none border border-purple-500/30 bg-purple-950/20 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div className="space-y-0.5">
                       <span className="text-[10px] font-mono text-[#9D4EDD] uppercase tracking-wider font-bold flex items-center gap-1.5">
                         <Calendar size={13} />
@@ -2239,7 +2258,7 @@ export function EventsBoard() {
                       <select
                         value={massScheduleRound}
                         onChange={(e) => setMassScheduleRound(Number(e.target.value))}
-                        className="px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#120F17] text-xs font-bold text-gray-900 dark:text-white focus:outline-none"
+                        className="px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#130921] text-xs font-bold text-gray-900 dark:text-white focus:outline-none"
                       >
                         {Array.from(new Set(manageMatches.map((m) => m.round || 1)))
                           .sort((a, b) => a - b)
@@ -2258,7 +2277,7 @@ export function EventsBoard() {
                         type="datetime-local"
                         value={massScheduleInput}
                         onChange={(e) => setMassScheduleInput(e.target.value)}
-                        className="px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#120F17] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                        className="px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#130921] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                       />
 
                       <button
@@ -2276,14 +2295,14 @@ export function EventsBoard() {
                   {/* MATCHES LIST */}
                   <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
                     {filteredMatches.length === 0 ? (
-                      <div className="p-8 text-center text-xs text-gray-400 rounded-xl border border-dashed border-gray-300 dark:border-white/10">
+                      <div className="p-8 text-center text-xs text-gray-400 rounded-none border border-dashed border-gray-300 dark:border-white/10">
                         Tidak ada pertandingan yang cocok dengan filter atau kata kunci &quot;{adminMatchSearch}&quot;.
                       </div>
                     ) : (
                       filteredMatches.map((m) => (
                         <div
                           key={m.matchId}
-                          className="p-3.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-gray-50 dark:bg-[#181324] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                          className="p-3.5 rounded-lg border border-gray-200 dark:border-[#2E1E45] bg-gray-50 dark:bg-[#181324] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                         >
                           <div>
                             <span className="text-[10px] font-mono text-purple-400 font-bold uppercase">
@@ -2332,7 +2351,7 @@ export function EventsBoard() {
                                     )
                                   );
                                 }}
-                                className="w-10 text-center py-1 rounded bg-white dark:bg-[#120F17] text-xs font-bold border border-gray-300 dark:border-gray-700"
+                                className="w-10 text-center py-1 rounded bg-white dark:bg-[#130921] text-xs font-bold border border-gray-300 dark:border-gray-700"
                               />
                               <span className="text-xs text-gray-400">-</span>
                               <input
@@ -2350,7 +2369,7 @@ export function EventsBoard() {
                                     )
                                   );
                                 }}
-                                className="w-10 text-center py-1 rounded bg-white dark:bg-[#120F17] text-xs font-bold border border-gray-300 dark:border-gray-700"
+                                className="w-10 text-center py-1 rounded bg-white dark:bg-[#130921] text-xs font-bold border border-gray-300 dark:border-gray-700"
                               />
                             </div>
 
@@ -2497,7 +2516,7 @@ export function EventsBoard() {
                                     }).catch(() => {});
                                   }
                                 }}
-                                className="px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#120F17] text-[11px] font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                                className="px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#130921] text-[11px] font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                               />
                               {m.scheduledAt && (
                                 <button
@@ -2563,7 +2582,7 @@ export function EventsBoard() {
                   return (
                     <div
                       key={team.id || idx}
-                      className="p-3.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-gray-50 dark:bg-[#181324] space-y-2.5"
+                      className="p-3.5 rounded-lg border border-gray-200 dark:border-[#2E1E45] bg-gray-50 dark:bg-[#181324] space-y-2.5"
                     >
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
@@ -2579,7 +2598,7 @@ export function EventsBoard() {
                                 prev.map((t, i) => (i === idx ? { ...t, teamName: val } : t))
                               );
                             }}
-                            className="w-full px-3 py-1.5 rounded bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white"
+                            className="w-full px-3 py-1.5 rounded bg-white dark:bg-[#130921] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white"
                           />
                         </div>
                         <div>
@@ -2595,7 +2614,7 @@ export function EventsBoard() {
                                 prev.map((t, i) => (i === idx ? { ...t, captainName: val } : t))
                               );
                             }}
-                            className="w-full px-3 py-1.5 rounded bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+                            className="w-full px-3 py-1.5 rounded bg-white dark:bg-[#130921] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
                           />
                         </div>
                       </div>
@@ -2677,7 +2696,7 @@ export function EventsBoard() {
                               );
                             }}
                             placeholder="Contoh: TenZ, aspas, Boaster, Derke, Chronicle"
-                            className="w-full px-3 py-1.5 rounded bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
+                            className="w-full px-3 py-1.5 rounded bg-white dark:bg-[#130921] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white"
                           />
                         </div>
                       )}
@@ -2690,7 +2709,7 @@ export function EventsBoard() {
             {/* SUB-PANEL 3: UBAH / RESIZE JUMLAH SLOT TIM & REGENERATE */}
             {manageTab === "settings" && (
               <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
-                <div className="p-4 sm:p-5 rounded-xl border border-purple-500/30 bg-purple-950/15 space-y-4">
+                <div className="p-4 sm:p-5 rounded-none border border-purple-500/30 bg-purple-950/15 space-y-4">
                   <div>
                     <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                       <Settings size={16} className="text-[#9D4EDD]" />
@@ -2702,7 +2721,7 @@ export function EventsBoard() {
                   </div>
 
                   {/* Kontrol Tambah & Kurangi Slot */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                     <div>
                       <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">
                         Kapasitas Slot Turnamen:
@@ -2761,7 +2780,7 @@ export function EventsBoard() {
                   </div>
 
                   {/* Pengaturan Slot Pemain Inti & Cadangan */}
-                  <div className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] space-y-3">
+                  <div className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] space-y-3">
                     <div>
                       <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block">
                         Konfigurasi Roster Pemain per Tim:
@@ -2803,7 +2822,7 @@ export function EventsBoard() {
                   </div>
 
                   {/* Mode Biaya Pendaftaran (Gratis vs Berbayar) */}
-                  <div className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] space-y-3">
+                  <div className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] space-y-3">
                     <label className="text-xs font-bold text-gray-800 dark:text-gray-200 block">
                       Mode Biaya Pendaftaran Turnamen
                     </label>
@@ -2817,7 +2836,7 @@ export function EventsBoard() {
                         className={`px-3 py-2 rounded-lg text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
                           manageIsFree
                             ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-400"
-                            : "border-gray-200 dark:border-[#211C2B] text-gray-400 hover:text-white"
+                            : "border-gray-200 dark:border-[#2E1E45] text-gray-400 hover:text-white"
                         }`}
                       >
                         <span>🟢 Free Entry (Gratis)</span>
@@ -2831,7 +2850,7 @@ export function EventsBoard() {
                         className={`px-3 py-2 rounded-lg text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
                           !manageIsFree
                             ? "bg-amber-500/15 border-amber-500/50 text-amber-300"
-                            : "border-gray-200 dark:border-[#211C2B] text-gray-400 hover:text-white"
+                            : "border-gray-200 dark:border-[#2E1E45] text-gray-400 hover:text-white"
                         }`}
                       >
                         <span>💰 Berbayar (QRIS)</span>
@@ -2869,7 +2888,7 @@ export function EventsBoard() {
                       rows={5}
                       value={manageRules}
                       onChange={(e) => setManageRules(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#211C2B] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                      className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-[#1A1624] border border-gray-200 dark:border-[#2E1E45] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                       placeholder="Tuliskan peraturan turnamen di sini..."
                     />
                     <span className="text-[10px] text-gray-400 mt-0.5 block">
@@ -2906,7 +2925,7 @@ export function EventsBoard() {
             {manageTab === "verifications" && (
               <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
                 {(!managingTournament.participants || managingTournament.participants.length === 0) ? (
-                  <div className="p-8 text-center border border-dashed border-gray-300 dark:border-gray-800 rounded-xl text-xs text-gray-400">
+                  <div className="p-8 text-center border border-dashed border-gray-300 dark:border-gray-800 rounded-none text-xs text-gray-400">
                     Belum ada tim yang mendaftar ke turnamen ini.
                   </div>
                 ) : (
@@ -2920,7 +2939,7 @@ export function EventsBoard() {
                     return (
                       <div
                         key={p.id}
-                        className={`p-4 rounded-xl border transition-all ${
+                        className={`p-4 rounded-none border transition-all ${
                           isPending
                             ? "border-amber-500/40 bg-amber-500/5 dark:bg-amber-950/10"
                             : isApproved
@@ -2999,7 +3018,7 @@ export function EventsBoard() {
                         {/* Roster & Info Pembayaran */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-gray-200/40 dark:border-white/5 text-xs">
                           {/* Info Pembayaran */}
-                          <div className="space-y-1.5 p-2.5 rounded-lg bg-white/60 dark:bg-[#120F17]/60 border border-gray-200 dark:border-white/5">
+                          <div className="space-y-1.5 p-2.5 rounded-lg bg-white/60 dark:bg-[#130921]/60 border border-gray-200 dark:border-white/5">
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
                               DATA PEMBAYARAN TRANSFER
                             </span>
@@ -3041,7 +3060,7 @@ export function EventsBoard() {
                           </div>
 
                           {/* Susunan Pemain / Roster */}
-                          <div className="space-y-1.5 p-2.5 rounded-lg bg-white/60 dark:bg-[#120F17]/60 border border-gray-200 dark:border-white/5">
+                          <div className="space-y-1.5 p-2.5 rounded-lg bg-white/60 dark:bg-[#130921]/60 border border-gray-200 dark:border-white/5">
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
                               SUSUNAN PEMAIN ({mains.length} Inti {subs.length ? `+ ${subs.length} Cad` : ""})
                             </span>
@@ -3072,7 +3091,7 @@ export function EventsBoard() {
               </div>
             )}
 
-            <div className="flex justify-between items-center gap-2 pt-4 border-t border-gray-200 dark:border-[#211C2B] mt-4">
+            <div className="flex justify-between items-center gap-2 pt-4 border-t border-gray-200 dark:border-[#2E1E45] mt-4">
               <span className="text-[11px] text-gray-400">
                 Pemenang pertandingan otomatis mengisi slot babak selanjutnya.
               </span>
@@ -3103,7 +3122,7 @@ export function EventsBoard() {
       {/* ========================================================================= */}
       {registeringTournament && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[88vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
+          <div className="bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] rounded-none w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[88vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setRegisteringTournament(null)}
@@ -3112,7 +3131,7 @@ export function EventsBoard() {
               <X size={18} />
             </button>
 
-            <div className="mb-5 pb-3 border-b border-gray-200 dark:border-[#211C2B]">
+            <div className="mb-5 pb-3 border-b border-gray-200 dark:border-[#2E1E45]">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-mono font-bold text-[#9D4EDD] uppercase tracking-wider">
                   PENDAFTARAN TURNAMEN GUILD
@@ -3131,7 +3150,7 @@ export function EventsBoard() {
 
             <form onSubmit={handleRegisterTeam} className="space-y-5">
               {/* BAGIAN A: IDENTITAS TIM & KONTAK PERWAKILAN */}
-              <div className="space-y-3.5 p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-gray-50/50 dark:bg-[#181324]/50">
+              <div className="space-y-3.5 p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-gray-50/50 dark:bg-[#181324]/50">
                 <h4 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider flex items-center gap-1.5">
                   <Shield size={14} />
                   <span>Bagian A: Identitas Tim &amp; Kontak Perwakilan</span>
@@ -3150,7 +3169,7 @@ export function EventsBoard() {
                       value={registerTeamName}
                       onChange={(e) => setRegisterTeamName(e.target.value)}
                       placeholder="Contoh: LogHorizon Vanguard"
-                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#130921] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                     />
                   </div>
 
@@ -3164,7 +3183,7 @@ export function EventsBoard() {
                       value={registerPhone}
                       onChange={(e) => setRegisterPhone(e.target.value)}
                       placeholder="Contoh: 081234567890"
-                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#130921] border border-gray-300 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                     />
                     <span className="text-[10px] text-gray-400 mt-0.5 block">Hanya untuk koordinasi panitia turnamen</span>
                   </div>
@@ -3188,7 +3207,7 @@ export function EventsBoard() {
               </div>
 
               {/* BAGIAN B: PEMAIN INTI WAJIB */}
-              <div className="space-y-3 p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-gray-50/50 dark:bg-[#181324]/50">
+              <div className="space-y-3 p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-gray-50/50 dark:bg-[#181324]/50">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                     <Users size={14} className="text-[#9D4EDD]" />
@@ -3201,7 +3220,7 @@ export function EventsBoard() {
                   {registerMainPlayers.map((player, idx) => (
                     <div
                       key={idx}
-                      className="p-3 rounded-lg bg-white dark:bg-[#120F17] border border-gray-200 dark:border-gray-800 space-y-2"
+                      className="p-3 rounded-lg bg-white dark:bg-[#130921] border border-gray-200 dark:border-gray-800 space-y-2"
                     >
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
@@ -3227,7 +3246,7 @@ export function EventsBoard() {
                               );
                             }}
                             placeholder={idx === 0 ? "Nickname In-Game Kapten *" : `Nickname Pemain #${idx + 1} *`}
-                            className="w-full px-3 py-2 rounded-md bg-white/[0.03] border border-[#211C2B] text-xs font-bold text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
+                            className="w-full px-3 py-2 rounded-md bg-white/[0.03] border border-[#2E1E45] text-xs font-bold text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#9D4EDD]"
                           />
                         </div>
 
@@ -3255,7 +3274,7 @@ export function EventsBoard() {
 
               {/* BAGIAN C: PEMAIN CADANGAN OPSIONAL */}
               {registerSubPlayers.length > 0 && (
-                <div className="space-y-3 p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-gray-50/50 dark:bg-[#181324]/50">
+                <div className="space-y-3 p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-gray-50/50 dark:bg-[#181324]/50">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
                       <Users size={14} className="text-amber-400" />
@@ -3268,7 +3287,7 @@ export function EventsBoard() {
                     {registerSubPlayers.map((sub, idx) => (
                       <div
                         key={idx}
-                        className="p-3 rounded-lg bg-white dark:bg-[#120F17] border border-gray-200 dark:border-gray-800 space-y-2"
+                        className="p-3 rounded-lg bg-white dark:bg-[#130921] border border-gray-200 dark:border-gray-800 space-y-2"
                       >
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
@@ -3293,7 +3312,7 @@ export function EventsBoard() {
                                 );
                               }}
                               placeholder={`Nickname Cadangan #${idx + 1} (Opsional)`}
-                              className="w-full px-3 py-2 rounded-md bg-white/[0.03] border border-[#211C2B] text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-amber-500"
+                              className="w-full px-3 py-2 rounded-md bg-white/[0.03] border border-[#2E1E45] text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-amber-500"
                             />
                           </div>
 
@@ -3321,7 +3340,7 @@ export function EventsBoard() {
 
               {/* BAGIAN D: PEMBAYARAN QRIS (KHUSUS TURNAMEN BERBAYAR) */}
               {!registeringTournament.isFreeEntry && (registeringTournament.entryFee ?? 0) > 0 && (
-                <div className="space-y-4 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/15">
+                <div className="space-y-4 p-4 rounded-none border border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/15">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                       <QrCode size={15} />
@@ -3333,7 +3352,7 @@ export function EventsBoard() {
                   </div>
 
                   {/* QRIS Official Box */}
-                  <div className="p-4 rounded-xl bg-white dark:bg-[#120F17] border border-amber-500/20 text-center flex flex-col items-center">
+                  <div className="p-4 rounded-none bg-white dark:bg-[#130921] border border-amber-500/20 text-center flex flex-col items-center">
                     <p className="text-xs font-bold text-gray-800 dark:text-gray-200 mb-1">
                       Scan QRIS Resmi Kas Guild LogHorizon
                     </p>
@@ -3364,7 +3383,7 @@ export function EventsBoard() {
                         value={registerSenderName}
                         onChange={(e) => setRegisterSenderName(e.target.value)}
                         placeholder="Contoh: Budi Santoso / Akun Dana"
-                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#120F17] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-amber-400"
+                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#130921] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-amber-400"
                       />
                       <span className="text-[10px] text-gray-400 mt-0.5 block">
                         Nama yang tertera pada mutasi transfer
@@ -3389,7 +3408,7 @@ export function EventsBoard() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-200 dark:border-[#211C2B]">
+              <div className="flex justify-end gap-2 pt-3 border-t border-gray-200 dark:border-[#2E1E45]">
                 <button
                   type="button"
                   onClick={() => setRegisteringTournament(null)}
@@ -3435,7 +3454,7 @@ export function EventsBoard() {
 
         return (
           <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150 my-auto">
+            <div className="bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] rounded-none w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150 my-auto">
               <button
                 type="button"
                 onClick={() => setViewingRoster(null)}
@@ -3444,8 +3463,8 @@ export function EventsBoard() {
                 <X size={16} />
               </button>
 
-              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200 dark:border-[#211C2B]">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[#9D4EDD] shrink-0">
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200 dark:border-[#2E1E45]">
+                <div className="w-10 h-10 rounded-none bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[#9D4EDD] shrink-0">
                   <Shield size={20} />
                 </div>
                 <div>
@@ -3552,7 +3571,7 @@ export function EventsBoard() {
           onClick={() => setSelectedProofModal(null)}
         >
           <div
-            className="relative max-w-xl max-h-[90vh] bg-white dark:bg-[#120F17] border border-gray-300 dark:border-white/20 rounded-2xl p-4 shadow-2xl flex flex-col items-center my-auto"
+            className="relative max-w-xl max-h-[90vh] bg-white dark:bg-[#130921] border border-gray-300 dark:border-white/20 rounded-none p-4 shadow-2xl flex flex-col items-center my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -3566,7 +3585,7 @@ export function EventsBoard() {
               <QrCode size={16} className="text-[#9D4EDD]" />
               <span>Bukti Transfer QRIS Pendaftaran Turnamen</span>
             </p>
-            <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 max-h-[72vh] flex items-center justify-center bg-black/50">
+            <div className="rounded-none overflow-hidden border border-gray-200 dark:border-white/10 max-h-[72vh] flex items-center justify-center bg-black/50">
               <img
                 src={selectedProofModal}
                 alt="Bukti Transfer QRIS"
@@ -3718,27 +3737,27 @@ export function MatchCard({
   return (
     <div
       id={`bracket-match-${match.matchId}`}
-      className={`rounded-xl border transition-all duration-300 ${
+      className={`rounded-none border transition-all duration-150 ${
         isMatched
-          ? "ring-2 ring-[#9D4EDD] shadow-[0_0_25px_rgba(157,78,221,0.6)] border-[#9D4EDD] bg-[#9D4EDD]/15 scale-[1.03] z-20"
+          ? "border-[#7C3AED] bg-[#7C3AED]/20 z-20"
           : isSearchActive
-          ? "opacity-35 grayscale-[50%] border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#0E0B14]"
+          ? "opacity-35 grayscale-[50%] border-[#2E1E45] bg-[#130921]"
           : isLive
-          ? "border-[#9D4EDD] shadow-[0_0_15px_rgba(157,78,221,0.35)] ring-1 ring-[#9D4EDD] bg-gradient-to-b from-purple-950/25 via-[#130F1A] to-[#0E0B14]"
+          ? "border-[#7C3AED] bg-[#1A0E2E]"
           : isFinal
-          ? "border-amber-500/40 bg-amber-950/10 shadow-amber-950/20 shadow-lg"
-          : "border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#0E0B14] hover:border-[#9D4EDD]/50"
+          ? "border-[#F59E0B]/50 bg-[#1A0E2E]"
+          : "border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED]"
       } p-3 relative overflow-hidden`}
     >
-      <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-gray-100 dark:border-[#211C2B]/80 text-[10px] font-mono">
-        <span className="font-bold flex items-center gap-1.5 text-gray-400">
-          {isFinal && <Crown size={12} className="text-amber-400" />}
-          <span>{match.roundName}</span>
+      <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-[#2E1E45] text-[10px] font-mono">
+        <span className="font-bold flex items-center gap-1.5 text-[#A78BFA]">
+          {isFinal && <Crown size={12} className="text-[#F59E0B]" />}
+          <span className="uppercase">{match.roundName}</span>
           <span
-            className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
+            className={`text-[9px] px-1.5 py-0.2 rounded-none font-mono ${
               matchIdMatched
-                ? "bg-[#9D4EDD] text-white font-black ring-1 ring-[#9D4EDD]"
-                : "text-gray-500 bg-black/10 dark:bg-white/5"
+                ? "bg-[#7C3AED] text-[#F8FAFC] font-black"
+                : "text-[#A78BFA] bg-[#1A0E2E] border border-[#2E1E45]"
             }`}
           >
             #{match.matchId}
@@ -3751,7 +3770,7 @@ export function MatchCard({
             <button
               type="button"
               onClick={() => onOpenLobby(match)}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#9D4EDD]/20 text-[#D8B4FE] hover:bg-[#9D4EDD]/40 border border-[#9D4EDD]/50 transition shadow-xs active:scale-95"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-[9px] font-mono font-bold bg-[#1A0E2E] text-[#A78BFA] hover:text-[#F8FAFC] hover:border-[#7C3AED] border border-[#2E1E45] transition"
               title="Buka Ruang Koordinasi Match (Khusus Kapten & Panitia)"
             >
               <MessageSquare size={10} />
@@ -3760,22 +3779,22 @@ export function MatchCard({
           )}
 
           {isLive ? (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 font-bold text-[9px] animate-pulse">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-              <span>SEDANG BERMAIN</span>
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-none bg-red-500/15 border border-red-500/30 text-red-400 font-mono font-bold text-[9px] animate-pulse">
+              <span className="w-1.5 h-1.5 bg-red-500"></span>
+              <span>LIVE</span>
             </span>
           ) : isFinished ? (
-            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-bold text-[9px]">
-              ✓ ROUND SELESAI
+            <span className="px-2 py-0.5 rounded-none bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981] font-mono font-bold text-[9px]">
+              ✓ SELESAI
             </span>
           ) : (
             <span
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] ${
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-none font-mono font-bold text-[9px] ${
                 scheduleInfo.isStartingSoon
-                  ? "bg-amber-500/15 border border-amber-500/40 text-amber-300 animate-pulse"
+                  ? "bg-[#F59E0B]/15 border border-[#F59E0B]/40 text-[#F59E0B] animate-pulse"
                   : match.scheduledAt
-                  ? "bg-[#9D4EDD]/10 border border-[#9D4EDD]/30 text-purple-300"
-                  : "bg-gray-500/10 border border-gray-500/20 text-gray-400"
+                  ? "bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#A78BFA]"
+                  : "bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA]"
               }`}
             >
               {scheduleInfo.badgeText}
@@ -3784,15 +3803,15 @@ export function MatchCard({
         </div>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 font-mono">
         {/* TEAM A */}
         <div
-          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-all ${
+          className={`flex items-center justify-between px-2.5 py-1.5 rounded-none transition-all ${
             isWinnerA
-              ? "bg-emerald-500/15 border border-emerald-500/40 border-l-4 border-l-emerald-400 text-white font-bold shadow-xs"
+              ? "bg-[#10B981]/15 border border-[#10B981]/40 border-l-4 border-l-[#10B981] text-[#F8FAFC] font-bold"
               : isLoserA
-              ? "opacity-40 grayscale text-zinc-500 line-through decoration-zinc-600/60 bg-black/10 dark:bg-black/30"
-              : "bg-gray-50 dark:bg-[#161220] text-gray-800 dark:text-gray-200"
+              ? "opacity-40 grayscale text-zinc-500 line-through decoration-zinc-600/60 bg-[#09040F]"
+              : "bg-[#1A0E2E] border border-[#2E1E45] text-[#F8FAFC]"
           }`}
         >
           <div className="flex items-center gap-1.5 min-w-0">
@@ -3801,44 +3820,44 @@ export function MatchCard({
               onClick={() => teamAData && onTeamClick(teamAData)}
               className={`text-xs truncate max-w-[135px] text-left hover:underline ${
                 teamAMatched
-                  ? "text-amber-300 font-black underline underline-offset-2"
+                  ? "text-[#F59E0B] font-black underline underline-offset-2"
                   : isWinnerA
-                  ? "text-white font-bold"
+                  ? "text-[#F8FAFC] font-bold"
                   : isLoserA
                   ? "text-zinc-500"
-                  : ""
+                  : "text-[#F8FAFC]"
               }`}
               title={teamAData ? "Klik untuk melihat susunan pemain" : undefined}
             >
               {match.teamA.name || "TBD"}
             </button>
             {isWinnerA && (
-              <span className="text-[9px] font-mono font-bold text-emerald-400 shrink-0">
+              <span className="text-[9px] font-mono font-bold text-[#10B981] shrink-0">
                 {match.lossReason === "WO"
-                  ? "✓ LOLOS (MENANG WO)"
+                  ? "✓ MENANG WO"
                   : match.lossReason === "DQ"
-                  ? "✓ LOLOS (LAWAN DQ)"
+                  ? "✓ LAWAN DQ"
                   : "✓ LOLOS"}
               </span>
             )}
             {isLoserA && match.lossReason === "WO" && (
-              <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded shrink-0">
-                ✖ KALAH WO (TIDAK HADIR)
+              <span className="text-[9px] font-mono font-bold text-[#F59E0B] bg-[#F59E0B]/15 border border-[#F59E0B]/30 px-1.5 py-0.5 rounded-none shrink-0">
+                ✖ WO
               </span>
             )}
             {isLoserA && match.lossReason === "DQ" && (
-              <span className="text-[9px] font-mono font-bold text-red-400 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded shrink-0">
-                🚫 DISKUALIFIKASI (DQ)
+              <span className="text-[9px] font-mono font-bold text-red-400 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded-none shrink-0">
+                🚫 DQ
               </span>
             )}
           </div>
           <span
-            className={`text-xs font-mono px-1.5 py-0.5 rounded ml-2 ${
+            className={`text-xs font-mono px-2 py-0.5 rounded-none ml-2 border ${
               isWinnerA
-                ? "bg-emerald-500/30 text-white font-black"
+                ? "bg-[#10B981]/30 border-[#10B981]/50 text-[#F8FAFC] font-black"
                 : isLoserA
-                ? "bg-black/20 text-zinc-500 font-bold"
-                : "bg-black/20 font-bold"
+                ? "bg-[#09040F] border-[#2E1E45] text-zinc-500 font-bold"
+                : "bg-[#09040F] border-[#2E1E45] text-[#F8FAFC] font-bold"
             }`}
           >
             {isLoserA && match.lossReason === "WO"
@@ -3851,18 +3870,18 @@ export function MatchCard({
 
         {/* TEAM B */}
         <div
-          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-all ${
+          className={`flex items-center justify-between px-2.5 py-1.5 rounded-none transition-all ${
             isWinnerB
-              ? "bg-emerald-500/15 border border-emerald-500/40 border-l-4 border-l-emerald-400 text-white font-bold shadow-xs"
+              ? "bg-[#10B981]/15 border border-[#10B981]/40 border-l-4 border-l-[#10B981] text-[#F8FAFC] font-bold"
               : isLoserB
-              ? "opacity-40 grayscale text-zinc-500 line-through decoration-zinc-600/60 bg-black/10 dark:bg-black/30"
+              ? "opacity-40 grayscale text-zinc-500 line-through decoration-zinc-600/60 bg-[#09040F]"
               : match.teamB.name === "BYE"
-              ? "bg-gray-100/40 dark:bg-[#120F17]/40 text-gray-400 dark:text-gray-500 italic"
-              : "bg-gray-50 dark:bg-[#161220] text-gray-800 dark:text-gray-200"
+              ? "bg-[#1A0E2E]/40 border border-[#2E1E45] text-[#A78BFA] italic"
+              : "bg-[#1A0E2E] border border-[#2E1E45] text-[#F8FAFC]"
           }`}
         >
           {match.teamB.name === "BYE" ? (
-            <span className="text-[11px] font-mono text-gray-400 italic">BYE (Lolos Otomatis)</span>
+            <span className="text-[11px] font-mono text-[#A78BFA] italic">BYE (Lolos Otomatis)</span>
           ) : (
             <div className="flex items-center gap-1.5 min-w-0">
               <button
@@ -3870,45 +3889,45 @@ export function MatchCard({
                 onClick={() => teamBData && onTeamClick(teamBData)}
                 className={`text-xs truncate max-w-[135px] text-left hover:underline ${
                   teamBMatched
-                    ? "text-amber-300 font-black underline underline-offset-2"
+                    ? "text-[#F59E0B] font-black underline underline-offset-2"
                     : isWinnerB
-                    ? "text-white font-bold"
+                    ? "text-[#F8FAFC] font-bold"
                     : isLoserB
                     ? "text-zinc-500"
-                    : ""
+                    : "text-[#F8FAFC]"
                 }`}
                 title={teamBData ? "Klik untuk melihat susunan pemain" : undefined}
               >
                 {match.teamB.name || "TBD"}
               </button>
               {isWinnerB && (
-                <span className="text-[9px] font-mono font-bold text-emerald-400 shrink-0">
+                <span className="text-[9px] font-mono font-bold text-[#10B981] shrink-0">
                   {match.lossReason === "WO"
-                    ? "✓ LOLOS (MENANG WO)"
+                    ? "✓ MENANG WO"
                     : match.lossReason === "DQ"
-                    ? "✓ LOLOS (LAWAN DQ)"
+                    ? "✓ LAWAN DQ"
                     : "✓ LOLOS"}
                 </span>
               )}
               {isLoserB && match.lossReason === "WO" && (
-                <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded shrink-0">
-                  ✖ KALAH WO (TIDAK HADIR)
+                <span className="text-[9px] font-mono font-bold text-[#F59E0B] bg-[#F59E0B]/15 border border-[#F59E0B]/30 px-1.5 py-0.5 rounded-none shrink-0">
+                  ✖ WO
                 </span>
               )}
               {isLoserB && match.lossReason === "DQ" && (
-                <span className="text-[9px] font-mono font-bold text-red-400 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded shrink-0">
-                  🚫 DISKUALIFIKASI (DQ)
+                <span className="text-[9px] font-mono font-bold text-red-400 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded-none shrink-0">
+                  🚫 DQ
                 </span>
               )}
             </div>
           )}
           <span
-            className={`text-xs font-mono px-1.5 py-0.5 rounded ml-2 ${
+            className={`text-xs font-mono px-2 py-0.5 rounded-none ml-2 border ${
               isWinnerB
-                ? "bg-emerald-500/30 text-white font-black"
+                ? "bg-[#10B981]/30 border-[#10B981]/50 text-[#F8FAFC] font-black"
                 : isLoserB
-                ? "bg-black/20 text-zinc-500 font-bold"
-                : "bg-black/20 font-bold"
+                ? "bg-[#09040F] border-[#2E1E45] text-zinc-500 font-bold"
+                : "bg-[#09040F] border-[#2E1E45] text-[#F8FAFC] font-bold"
             }`}
           >
             {match.teamB.name === "BYE"
@@ -4229,7 +4248,7 @@ export function ChampionCelebrationCard({
     [];
 
   return (
-    <div className="p-4 rounded-xl border-2 border-amber-500/80 bg-gradient-to-b from-amber-500/25 via-[#1a1424] to-amber-950/40 text-center shadow-[0_0_25px_rgba(234,179,8,0.25)] animate-in zoom-in-95 duration-300 space-y-2">
+    <div className="p-4 rounded-none border-2 border-amber-500/80 bg-gradient-to-b from-amber-500/25 via-[#1a1424] to-amber-950/40 text-center shadow-[0_0_25px_rgba(234,179,8,0.25)] animate-in zoom-in-95 duration-300 space-y-2">
       <div className="w-10 h-10 mx-auto rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-400/60 shadow-[0_0_15px_rgba(234,179,8,0.4)]">
         <Trophy size={20} className="text-amber-300 animate-pulse" />
       </div>
@@ -4470,7 +4489,7 @@ export function DualWingBracketView({
       })}
 
       {/* 2. TENGAH (CENTER STAGE): Kotak GRAND FINAL & PODIUM JUARA 1 */}
-      <div className="flex-1 flex flex-col min-w-[260px] max-w-[300px] px-3 py-4 rounded-2xl border-2 border-amber-500/40 bg-gradient-to-b from-amber-500/10 via-[#130F1A] to-purple-950/20 shadow-2xl shadow-amber-950/20">
+      <div className="flex-1 flex flex-col min-w-[260px] max-w-[300px] px-3 py-4 rounded-none border-2 border-amber-500/40 bg-gradient-to-b from-amber-500/10 via-[#130F1A] to-purple-950/20 shadow-2xl shadow-amber-950/20">
         <div className="h-10 text-center pb-2 border-b border-amber-500/30 shrink-0 mb-3 flex flex-col justify-center">
           <span className="text-[10px] font-mono text-amber-400/80 uppercase tracking-widest block font-bold">
             ⚔️ TITIK TEMU FINAL ⚔️

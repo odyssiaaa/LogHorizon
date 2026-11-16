@@ -181,11 +181,11 @@ export function ImageUploader({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={isCompressing}
-          className="p-2 rounded-xl text-gray-400 hover:text-[#9D4EDD] hover:bg-[#9D4EDD]/10 active:scale-95 transition-all"
+          className="p-2 rounded-none text-gray-400 hover:text-[#A78BFA] hover:bg-[#7C3AED]/20 transition"
           title="Kirim Foto / Bukti Screenshot"
         >
           {isCompressing ? (
-            <Loader2 size={18} className="animate-spin text-[#9D4EDD]" />
+            <Loader2 size={18} className="animate-spin text-[#7C3AED]" />
           ) : (
             <Camera size={18} />
           )}
@@ -199,9 +199,9 @@ export function ImageUploader({
     return (
       <div className={`space-y-2.5 ${className}`}>
         {label && (
-          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
+          <label className="block text-xs font-mono font-bold text-gray-300 uppercase tracking-wider">
             {label} {required && <span className="text-red-400">*</span>}
-            <span className="text-gray-400 font-normal ml-1">
+            <span className="text-gray-500 font-mono font-normal ml-1">
               ({values.length}/{maxFiles} foto)
             </span>
           </label>
@@ -213,7 +213,7 @@ export function ImageUploader({
             {values.map((url, idx) => (
               <div
                 key={idx}
-                className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 bg-black/30 aspect-video group"
+                className="relative rounded-none overflow-hidden border border-[#2E1E45] bg-[#09040F] aspect-video group"
               >
                 <Image
                   src={url}
@@ -229,7 +229,7 @@ export function ImageUploader({
                       onMultiChange(values.filter((_, i) => i !== idx));
                     }
                   }}
-                  className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/70 text-white hover:bg-red-600 transition"
+                  className="absolute top-1.5 right-1.5 p-1 rounded-none bg-black/80 text-white hover:bg-rose-600 transition"
                   title="Hapus foto ini"
                 >
                   <X size={13} />
@@ -246,10 +246,10 @@ export function ImageUploader({
             onDragLeave={onDragLeave}
             onDrop={onDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-4 sm:p-5 text-center cursor-pointer transition-all ${
+            className={`border border-dashed rounded-none p-4 sm:p-5 text-center cursor-pointer transition ${
               isDragging
-                ? "border-[#9D4EDD] bg-[#9D4EDD]/10 scale-[0.99]"
-                : "border-gray-300 dark:border-[#211C2B] bg-gray-50/50 dark:bg-[#120F17]/50 hover:border-[#9D4EDD]/60 hover:bg-[#9D4EDD]/5"
+                ? "border-[#7C3AED] bg-[#7C3AED]/15"
+                : "border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED] hover:bg-[#1A0E2E]"
             }`}
           >
             <input
@@ -266,26 +266,26 @@ export function ImageUploader({
 
             {isCompressing ? (
               <div className="flex flex-col items-center justify-center py-2 space-y-1.5">
-                <Loader2 size={24} className="animate-spin text-[#9D4EDD]" />
-                <span className="text-xs font-semibold text-purple-300">
+                <Loader2 size={24} className="animate-spin text-[#7C3AED]" />
+                <span className="text-xs font-mono font-medium text-purple-300">
                   Mengompresi gambar otomatis...
                 </span>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center space-y-1.5">
-                <div className="w-9 h-9 rounded-full bg-[#9D4EDD]/15 text-[#9D4EDD] flex items-center justify-center mb-0.5">
-                  <UploadCloud size={18} />
+                <div className="w-8 h-8 rounded-none bg-[#7C3AED]/20 text-[#A78BFA] border border-[#7C3AED]/40 flex items-center justify-center mb-0.5">
+                  <UploadCloud size={16} />
                 </div>
-                <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                  Klik untuk pilih foto dari galeri / drag &amp; drop
+                <p className="text-xs font-bold text-white font-display">
+                  Pilih foto dari galeri / drag &amp; drop
                 </p>
-                <p className="text-[10px] text-gray-400">{description}</p>
+                <p className="text-[10px] text-gray-400 font-mono">{description}</p>
               </div>
             )}
           </div>
         )}
 
-        {errorMsg && <p className="text-xs text-red-400">{errorMsg}</p>}
+        {errorMsg && <p className="text-xs font-mono text-red-400">{errorMsg}</p>}
       </div>
     );
   }
@@ -296,7 +296,7 @@ export function ImageUploader({
   return (
     <div className={`space-y-2 ${className}`}>
       {label && (
-        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
+        <label className="block text-xs font-mono font-bold text-gray-300 uppercase tracking-wider">
           {label} {required && <span className="text-red-400">*</span>}
         </label>
       )}
@@ -313,8 +313,8 @@ export function ImageUploader({
       />
 
       {hasValue ? (
-        <div className="relative rounded-xl overflow-hidden border border-[#9D4EDD]/40 bg-gradient-to-r from-purple-950/20 via-[#130F1A] to-[#120F17] p-2.5 flex items-center gap-3">
-          <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-black/40 border border-white/10 shrink-0">
+        <div className="relative rounded-none overflow-hidden border border-[#2E1E45] bg-[#130921] p-2.5 flex items-center gap-3">
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-none overflow-hidden bg-[#09040F] border border-[#2E1E45] shrink-0">
             <Image
               src={value!}
               alt="Pratinjau"
@@ -325,26 +325,26 @@ export function ImageUploader({
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+            <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-400">
               <CheckCircle2 size={14} />
-              <span>Foto Siap (Terkompresi Ringan)</span>
+              <span>FOTO SIAP // TERKOMPRESI</span>
             </div>
-            <p className="text-[11px] text-gray-400 truncate mt-0.5">
+            <p className="text-[11px] text-gray-400 truncate mt-0.5 font-sans">
               Otomatis dioptimalkan untuk performa cepat.
             </p>
             <div className="flex items-center gap-2 mt-2">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-[11px] font-bold text-[#9D4EDD] hover:underline"
+                className="text-[11px] font-mono font-bold text-[#A78BFA] hover:text-white transition"
               >
                 Ganti Foto
               </button>
-              <span className="text-gray-600 dark:text-gray-400 text-xs">•</span>
+              <span className="text-[#2E1E45] text-xs">&bull;</span>
               <button
                 type="button"
                 onClick={() => onChange && onChange("")}
-                className="text-[11px] font-bold text-red-400 hover:underline flex items-center gap-0.5"
+                className="text-[11px] font-mono font-bold text-rose-400 hover:text-rose-300 flex items-center gap-0.5 transition"
               >
                 <X size={12} />
                 <span>Hapus Foto</span>
@@ -358,39 +358,39 @@ export function ImageUploader({
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-4 sm:p-6 text-center cursor-pointer transition-all ${
+          className={`border border-dashed rounded-none p-4 sm:p-6 text-center cursor-pointer transition ${
             isDragging
-              ? "border-[#9D4EDD] bg-[#9D4EDD]/15 scale-[0.99]"
-              : "border-gray-300 dark:border-[#211C2B] bg-gray-50/50 dark:bg-[#120F17]/50 hover:border-[#9D4EDD]/60 hover:bg-[#9D4EDD]/5"
+              ? "border-[#7C3AED] bg-[#7C3AED]/15"
+              : "border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED] hover:bg-[#1A0E2E]"
           }`}
         >
           {isCompressing ? (
             <div className="flex flex-col items-center justify-center py-2 space-y-2">
-              <Loader2 size={24} className="animate-spin text-[#9D4EDD]" />
-              <span className="text-xs font-semibold text-purple-300">
+              <Loader2 size={24} className="animate-spin text-[#7C3AED]" />
+              <span className="text-xs font-mono font-semibold text-purple-300">
                 Mengompresi foto otomatis di browser...
               </span>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center space-y-2">
-              <div className="w-10 h-10 rounded-full bg-[#9D4EDD]/15 text-[#9D4EDD] flex items-center justify-center mb-0.5">
-                <ImageIcon size={20} />
+              <div className="w-9 h-9 rounded-none bg-[#7C3AED]/20 text-[#A78BFA] border border-[#7C3AED]/40 flex items-center justify-center mb-0.5">
+                <ImageIcon size={18} />
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                <p className="text-xs font-bold text-white font-display">
                   Pilih Foto dari Galeri HP / Komputer
                 </p>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className="text-[11px] text-gray-400 mt-0.5 font-sans">
                   atau geser &amp; lepas (drag &amp; drop) file ke sini
                 </p>
               </div>
-              <p className="text-[10px] text-gray-400">{description}</p>
+              <p className="text-[10px] text-gray-400 font-mono">{description}</p>
             </div>
           )}
         </div>
       )}
 
-      {errorMsg && <p className="text-xs text-red-400">{errorMsg}</p>}
+      {errorMsg && <p className="text-xs font-mono text-red-400">{errorMsg}</p>}
     </div>
   );
 }

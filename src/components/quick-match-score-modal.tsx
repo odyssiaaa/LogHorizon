@@ -53,26 +53,26 @@ export function QuickMatchScoreModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-full max-w-lg p-5 shadow-2xl relative space-y-4 my-auto animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
+        className="bg-[#130921] border border-[#2E1E45] rounded-none w-full max-w-lg p-6 shadow-2xl relative space-y-4 my-auto animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+          className="absolute top-4 right-4 text-gray-400 hover:text-white transition"
         >
           <X size={18} />
         </button>
 
-        <div className="pb-3 border-b border-gray-200 dark:border-[#211C2B]">
+        <div className="pb-3 border-b border-[#2E1E45]">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="text-[10px] font-mono font-bold text-[#9D4EDD] uppercase tracking-wider flex items-center gap-1.5">
-              <Zap size={13} />
-              <span>KONTROL PERTANDINGAN ADMIN</span>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#A78BFA] flex items-center gap-1.5">
+              <Zap size={13} className="text-[#7C3AED]" />
+              <span>CONTROL // ADMIN TOURNAMENT</span>
             </span>
 
             {/* Quick Status Toggle Button */}
@@ -85,15 +85,15 @@ export function QuickMatchScoreModal({
                       onToggleStatus(match.matchId, "UPCOMING");
                       onClose();
                     }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-none text-[10px] font-mono font-bold bg-amber-500/10 text-amber-300 border border-amber-500/40 hover:bg-amber-500/20 transition"
                     title="Batalkan status live dan kembali ke jadwal menunggu"
                   >
                     <Pause size={12} />
-                    <span>⏸ Batalkan Live (Kembali Menunggu)</span>
+                    <span>⏸ BATALKAN LIVE</span>
                   </button>
                 ) : isFinished ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                    ✓ SELESAI
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    ✓ FINISHED
                   </span>
                 ) : (
                   <button
@@ -102,36 +102,36 @@ export function QuickMatchScoreModal({
                       onToggleStatus(match.matchId, "LIVE");
                       onClose();
                     }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/40 hover:bg-red-500/30 transition"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-none text-[10px] font-mono font-bold bg-rose-500/10 text-rose-300 border border-rose-500/40 hover:bg-rose-500/20 transition"
                     title="Mulai pertandingan dan tandai sedang live"
                   >
                     <Play size={12} />
-                    <span>🔴 Set Live</span>
+                    <span>🔴 SET LIVE</span>
                   </button>
                 )}
               </div>
             )}
           </div>
 
-          <h3 className="text-base font-black text-gray-900 dark:text-white mt-1">
-            Atur Skor &amp; Keputusan Pertandingan
+          <h3 className="text-lg font-bold text-white font-display mt-1 tracking-tight">
+            Skor &amp; Keputusan Pertandingan
           </h3>
-          <p className="text-xs text-gray-500 font-mono mt-0.5">
-            {match.roundName} (Match #{match.matchId})
+          <p className="text-xs text-gray-400 font-mono mt-0.5">
+            {match.roundName} &bull; MATCH #{match.matchId}
           </p>
         </div>
 
         {/* Jadwal Pertandingan & Auto-Live Trigger */}
         {onUpdateSchedule && (
-          <div className="p-3 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-gray-50/70 dark:bg-[#161220] space-y-2">
+          <div className="p-3 rounded-none border border-[#2E1E45] bg-[#09040F] space-y-2">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <label className="text-[10px] font-mono font-bold text-[#9D4EDD] uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar size={13} />
-                <span>Jadwal Jam Tanding (Auto-Live Saat Jam Tiba)</span>
+              <label className="text-[10px] font-mono uppercase tracking-wider text-[#A78BFA] flex items-center gap-1.5">
+                <Calendar size={13} className="text-[#7C3AED]" />
+                <span>Jadwal Jam Tanding (Auto-Live)</span>
               </label>
               {match.manualOverride && (
-                <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded">
-                  Override Manual Aktif
+                <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded-none">
+                  MANUAL OVERRIDE
                 </span>
               )}
             </div>
@@ -144,7 +144,7 @@ export function QuickMatchScoreModal({
                   setSchedInput(e.target.value);
                   setSchedSaved(false);
                 }}
-                className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#120F17] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                className="flex-1 px-3 py-1.5 rounded-none border border-[#2E1E45] bg-[#130921] text-xs font-mono text-white focus:outline-none focus:border-[#7C3AED]"
               />
               <button
                 type="button"
@@ -154,9 +154,9 @@ export function QuickMatchScoreModal({
                   setSchedSaved(true);
                   setTimeout(() => setSchedSaved(false), 2500);
                 }}
-                className="px-3 py-1.5 rounded-lg bg-[#9D4EDD] hover:bg-[#8338EC] text-white text-xs font-bold transition shrink-0"
+                className="px-3 py-1.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-mono font-bold transition shrink-0"
               >
-                {schedSaved ? "✓ Tersimpan" : "Set Jadwal"}
+                {schedSaved ? "✓ TERSIMPAN" : "SET JADWAL"}
               </button>
               {schedInput && (
                 <button
@@ -167,7 +167,7 @@ export function QuickMatchScoreModal({
                     setSchedSaved(true);
                     setTimeout(() => setSchedSaved(false), 2500);
                   }}
-                  className="px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-400 hover:text-white text-xs transition"
+                  className="px-2 py-1.5 rounded-none border border-[#2E1E45] text-gray-400 hover:text-white text-xs transition"
                   title="Hapus jadwal waktu"
                 >
                   <X size={13} />
@@ -176,9 +176,9 @@ export function QuickMatchScoreModal({
             </div>
 
             {match.scheduledAt && (
-              <div className="text-[11px] text-gray-400 flex items-center gap-2 pt-0.5">
-                <Clock size={12} className="text-purple-400" />
-                <span>Status Waktu: <strong className="text-purple-300">{formatMatchScheduleDisplay(match.scheduledAt, match.schedule, match.manualOverride).badgeText}</strong></span>
+              <div className="text-[11px] text-gray-400 font-mono flex items-center gap-2 pt-0.5">
+                <Clock size={12} className="text-[#A78BFA]" />
+                <span>Status Waktu: <strong className="text-purple-300 font-mono">{formatMatchScheduleDisplay(match.scheduledAt, match.schedule, match.manualOverride).badgeText}</strong></span>
               </div>
             )}
           </div>
@@ -187,11 +187,11 @@ export function QuickMatchScoreModal({
         {/* Input Skor Pertandingan */}
         <div>
           <label className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-wider block mb-1.5 text-center">
-            Papan Skor Akhir (Manual)
+            PAPAN SKOR AKHIR (MANUAL)
           </label>
           <div className="grid grid-cols-2 gap-3 items-center">
-            <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-[#161220] space-y-2 text-center">
-              <span className="text-xs font-bold text-gray-900 dark:text-white truncate block">
+            <div className="p-3 rounded-none border border-[#2E1E45] bg-[#09040F] space-y-2 text-center">
+              <span className="text-xs font-bold text-white truncate block font-display">
                 {teamAName}
               </span>
               <input
@@ -200,12 +200,12 @@ export function QuickMatchScoreModal({
                 max={99}
                 value={scoreA}
                 onChange={(e) => setScoreA(Math.max(0, Number(e.target.value)))}
-                className="w-16 h-10 text-center mx-auto rounded-lg bg-white dark:bg-[#120F17] text-sm font-black border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                className="w-16 h-10 text-center mx-auto rounded-none bg-[#130921] text-sm font-mono font-black border border-[#2E1E45] text-white focus:outline-none focus:border-[#7C3AED]"
               />
             </div>
 
-            <div className="p-3 rounded-xl border border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-[#161220] space-y-2 text-center">
-              <span className="text-xs font-bold text-gray-900 dark:text-white truncate block">
+            <div className="p-3 rounded-none border border-[#2E1E45] bg-[#09040F] space-y-2 text-center">
+              <span className="text-xs font-bold text-white truncate block font-display">
                 {teamBName}
               </span>
               <input
@@ -214,17 +214,17 @@ export function QuickMatchScoreModal({
                 max={99}
                 value={scoreB}
                 onChange={(e) => setScoreB(Math.max(0, Number(e.target.value)))}
-                className="w-16 h-10 text-center mx-auto rounded-lg bg-white dark:bg-[#120F17] text-sm font-black border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                className="w-16 h-10 text-center mx-auto rounded-none bg-[#130921] text-sm font-mono font-black border border-[#2E1E45] text-white focus:outline-none focus:border-[#7C3AED]"
               />
             </div>
           </div>
         </div>
 
         {/* Keputusan Pemenang: Tim A */}
-        <div className="p-3 rounded-xl border border-purple-500/20 bg-purple-500/5 space-y-2">
+        <div className="p-3 rounded-none border border-[#2E1E45] bg-[#09040F] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-purple-300 truncate">
-              Keputusan untuk Tim A: <span className="text-white font-black">{teamAName}</span>
+            <span className="text-xs font-medium text-gray-300 truncate">
+              Keputusan untuk Tim A: <span className="text-white font-bold">{teamAName}</span>
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
@@ -234,10 +234,10 @@ export function QuickMatchScoreModal({
                 onSave(match.matchId, teamAName, match.teamA?.id, scoreA, scoreB, "NORMAL");
                 onClose();
               }}
-              className="px-2.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-[11px] shadow-xs transition flex items-center justify-center gap-1"
+              className="px-2.5 py-2 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-mono font-bold text-[11px] transition flex items-center justify-center gap-1"
             >
               <Trophy size={13} className="text-amber-300" />
-              <span>Menang Skor</span>
+              <span>MENANG SKOR</span>
             </button>
             <button
               type="button"
@@ -245,11 +245,11 @@ export function QuickMatchScoreModal({
                 onSave(match.matchId, teamAName, match.teamA?.id, 1, 0, "WO");
                 onClose();
               }}
-              className="px-2.5 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-[11px] shadow-xs transition flex items-center justify-center gap-1"
+              className="px-2.5 py-2 rounded-none bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold text-[11px] transition flex items-center justify-center gap-1"
               title="Menang karena Tim B tidak hadir / WalkOut"
             >
               <UserX size={13} />
-              <span>Menang WO</span>
+              <span>MENANG WO</span>
             </button>
             <button
               type="button"
@@ -257,20 +257,20 @@ export function QuickMatchScoreModal({
                 onSave(match.matchId, teamAName, match.teamA?.id, 1, 0, "DQ");
                 onClose();
               }}
-              className="px-2.5 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 font-bold text-[11px] shadow-xs transition flex items-center justify-center gap-1"
+              className="px-2.5 py-2 rounded-none bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/40 font-mono font-bold text-[11px] transition flex items-center justify-center gap-1"
               title="Menang karena Tim B didiskualifikasi (pelanggaran aturan)"
             >
               <AlertTriangle size={13} />
-              <span>Menang DQ</span>
+              <span>MENANG DQ</span>
             </button>
           </div>
         </div>
 
         {/* Keputusan Pemenang: Tim B */}
-        <div className="p-3 rounded-xl border border-purple-500/20 bg-purple-500/5 space-y-2">
+        <div className="p-3 rounded-none border border-[#2E1E45] bg-[#09040F] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-purple-300 truncate">
-              Keputusan untuk Tim B: <span className="text-white font-black">{teamBName}</span>
+            <span className="text-xs font-medium text-gray-300 truncate">
+              Keputusan untuk Tim B: <span className="text-white font-bold">{teamBName}</span>
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
@@ -280,10 +280,10 @@ export function QuickMatchScoreModal({
                 onSave(match.matchId, teamBName, match.teamB?.id, scoreA, scoreB, "NORMAL");
                 onClose();
               }}
-              className="px-2.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-[11px] shadow-xs transition flex items-center justify-center gap-1"
+              className="px-2.5 py-2 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-mono font-bold text-[11px] transition flex items-center justify-center gap-1"
             >
               <Trophy size={13} className="text-amber-300" />
-              <span>Menang Skor</span>
+              <span>MENANG SKOR</span>
             </button>
             <button
               type="button"
@@ -291,11 +291,11 @@ export function QuickMatchScoreModal({
                 onSave(match.matchId, teamBName, match.teamB?.id, 0, 1, "WO");
                 onClose();
               }}
-              className="px-2.5 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-[11px] shadow-xs transition flex items-center justify-center gap-1"
+              className="px-2.5 py-2 rounded-none bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold text-[11px] transition flex items-center justify-center gap-1"
               title="Menang karena Tim A tidak hadir / WalkOut"
             >
               <UserX size={13} />
-              <span>Menang WO</span>
+              <span>MENANG WO</span>
             </button>
             <button
               type="button"
@@ -303,11 +303,11 @@ export function QuickMatchScoreModal({
                 onSave(match.matchId, teamBName, match.teamB?.id, 0, 1, "DQ");
                 onClose();
               }}
-              className="px-2.5 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 font-bold text-[11px] shadow-xs transition flex items-center justify-center gap-1"
+              className="px-2.5 py-2 rounded-none bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/40 font-mono font-bold text-[11px] transition flex items-center justify-center gap-1"
               title="Menang karena Tim A didiskualifikasi (pelanggaran aturan)"
             >
               <AlertTriangle size={13} />
-              <span>Menang DQ</span>
+              <span>MENANG DQ</span>
             </button>
           </div>
         </div>
@@ -326,10 +326,10 @@ export function QuickMatchScoreModal({
                   onClose();
                 }
               }}
-              className="w-full py-2.5 rounded-xl border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 text-red-300 text-xs font-bold transition flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 rounded-none border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-mono font-bold transition flex items-center justify-center gap-1.5"
             >
               <RotateCcw size={14} />
-              <span>↺ Edit Ulang Match (Reset Pemenang &amp; Buka Kunci)</span>
+              <span>↺ RESET PEMENANG &amp; BUKA KUNCI MATCH</span>
             </button>
           </div>
         )}
@@ -337,9 +337,9 @@ export function QuickMatchScoreModal({
         <button
           type="button"
           onClick={onClose}
-          className="button button-quiet w-full text-xs font-semibold"
+          className="w-full py-2 rounded-none border border-[#2E1E45] bg-[#1A0E2E] hover:bg-[#251540] text-gray-300 font-mono text-xs transition"
         >
-          Tutup
+          TUTUP
         </button>
       </div>
     </div>

@@ -151,42 +151,45 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
   const qrisUrl = treasury?.qrisImageUrl || process.env.NEXT_PUBLIC_QRIS_IMAGE_URL || "/qris-guild.png";
 
   return (
-    <main className="donate-page treasury-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
-      <header className="treasury-hero mb-8 text-left">
-        <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">LOGHORIZON / COMMUNITY FUND</p>
-        <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">
-          GUILD TREASURY <span className="text-[#9D4EDD] dark:text-[#C77DFF]">&amp; BENEFACTOR</span>
+    <main className="donate-page treasury-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden text-left">
+      <header className="treasury-hero mb-8 border-b border-[#2E1E45] pb-6">
+        <p className="section-kicker text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-widest mb-1.5 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 bg-[#7C3AED]" />
+          LOGHORIZON // COMMUNITY FUND &amp; TREASURY
+        </p>
+        <h1 className="page-title font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-[#F8FAFC] break-words">
+          GUILD TREASURY <span className="text-[#A78BFA]">&amp; BENEFACTOR</span>
         </h1>
-        <p className="muted-copy text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-2xl mt-2 leading-relaxed">
+        <p className="muted-copy text-xs sm:text-sm md:text-base text-[#A78BFA] max-w-2xl mt-2 leading-relaxed font-sans">
           Dukung operasional server, kembangkan ekosistem, dan danai turnamen komunitas berhadiah massal. Setiap kontribusi kamu akan diverifikasi langsung oleh Admin untuk membuka kasta benefit eksklusif.
         </p>
 
-        <div className="treasury-progress mt-6 p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17]">
-          <div className="flex flex-wrap items-center justify-between gap-3 text-xs mb-3">
+        <div className="treasury-progress mt-6 p-4 rounded-none border border-[#2E1E45] bg-[#130921]">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs mb-3 font-mono">
             <div>
-              <span className="text-gray-400 block text-[11px]">Kas terverifikasi:</span>
-              <strong className="text-lg sm:text-xl font-black text-gray-900 dark:text-white">{treasury ? formatMoney.format(treasury.total) : "Memuat…"}</strong>
+              <span className="text-[#A78BFA] block text-[11px] uppercase">Kas terverifikasi:</span>
+              <strong className="text-lg sm:text-xl font-black text-[#10B981]">{treasury ? formatMoney.format(treasury.total) : "Memuat…"}</strong>
             </div>
             <div className="text-right">
-              <span className="text-gray-400 block text-[11px]">Target kas bulanan:</span>
-              <strong className="text-lg sm:text-xl font-black text-purple-600 dark:text-purple-300">{treasury?.goal ? formatMoney.format(treasury.goal) : "Rp 5.000.000"}</strong>
+              <span className="text-[#A78BFA] block text-[11px] uppercase">Target kas bulanan:</span>
+              <strong className="text-lg sm:text-xl font-black text-[#F8FAFC]">{treasury?.goal ? formatMoney.format(treasury.goal) : "Rp 5.000.000"}</strong>
             </div>
           </div>
-          <div className="w-full h-2.5 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden" role="progressbar" aria-label="Progres kas komunitas" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
-            <div className="h-full rounded-full bg-gradient-to-r from-[#9D4EDD] to-[#C77DFF] transition-all duration-500" style={{ width: `${progress}%` }} />
+          <div className="w-full h-2 rounded-none bg-[#1A0E2E] border border-[#2E1E45] overflow-hidden" role="progressbar" aria-label="Progres kas komunitas" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
+            <div className="h-full bg-[#7C3AED] transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
-          <small className="text-[11px] text-gray-500 dark:text-gray-400 mt-2 block">{treasury?.goal ? `${Math.round(progress)}% dari target bulanan guild` : "Target pendanaan operasional guild"}</small>
+          <small className="text-[11px] font-mono text-[#A78BFA] mt-2 block">{treasury?.goal ? `${Math.round(progress)}% DARI TARGET BULANAN GUILD` : "TARGET PENDANAAN OPERASIONAL GUILD"}</small>
         </div>
       </header>
 
       {message && (
-        <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-sm font-semibold mb-6 flex items-center justify-between">
+        <div className="p-4 rounded-none bg-[#10B981]/15 border border-[#10B981]/30 text-[#10B981] text-xs font-mono font-semibold mb-6 flex items-center justify-between">
           <span>{message}</span>
           <button onClick={() => setMessage("")} aria-label="Tutup"><X size={16} /></button>
         </div>
       )}
       {error && (
-        <div className="p-4 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-sm font-semibold mb-6 flex items-center justify-between">
+        <div className="p-4 rounded-none bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-mono font-semibold mb-6 flex items-center justify-between">
           <span>{error}</span>
           <button onClick={() => setError("")} aria-label="Tutup"><X size={16} /></button>
         </div>
@@ -194,42 +197,42 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
 
       <div className="treasury-tier-grid grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 my-6">
         {tiers.map(({ id, name, icon: Icon, price, badge, benefits }, index) => (
-          <article className={`treasury-tier tier-${index + 1} p-5 sm:p-6 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] hover:border-[#9D4EDD]/40 transition-all flex flex-col justify-between`} key={id}>
+          <article className={`treasury-tier tier-${index + 1} p-5 sm:p-6 rounded-none border border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED] transition-all flex flex-col justify-between text-left`} key={id}>
             <div>
-              <div className="treasury-tier-icon w-10 h-10 rounded bg-[#9D4EDD]/10 text-[#9D4EDD] dark:text-[#C77DFF] flex items-center justify-center mb-3">
+              <div className="treasury-tier-icon w-10 h-10 rounded-none bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA] flex items-center justify-center mb-3">
                 <Icon size={20} />
               </div>
-              <p className="section-kicker text-[10px] font-bold text-[#9D4EDD] uppercase tracking-wider">TIER 0{index + 1}</p>
-              <h2 className="text-lg md:text-xl font-bold break-words text-gray-900 dark:text-white mt-1">{name}</h2>
-              <strong className="treasury-tier-price text-sm sm:text-base font-extrabold text-purple-600 dark:text-purple-300 block my-1">{price}</strong>
-              <span className="treasury-badge inline-block px-2.5 py-1 text-xs font-bold rounded bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800 my-2">
+              <p className="section-kicker text-[10px] font-mono font-bold text-[#A78BFA] uppercase tracking-wider">TIER 0{index + 1}</p>
+              <h2 className="font-display text-lg md:text-xl font-bold uppercase tracking-tight break-words text-[#F8FAFC] mt-1">{name}</h2>
+              <strong className="treasury-tier-price text-sm sm:text-base font-mono font-extrabold text-[#10B981] block my-1">{price}</strong>
+              <span className="treasury-badge inline-block px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30 my-2">
                 {badge}
               </span>
-              <ul className="space-y-2 mt-3">
+              <ul className="space-y-2 mt-3 font-sans">
                 {benefits.map((benefit) => (
-                  <li key={benefit} className="flex items-start gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-snug">
-                    <BadgeCheck size={15} className="text-[#9D4EDD] shrink-0 mt-0.5" />
+                  <li key={benefit} className="flex items-start gap-2 text-xs sm:text-sm text-[#A78BFA] leading-snug">
+                    <BadgeCheck size={15} className="text-[#7C3AED] shrink-0 mt-0.5" />
                     <span>{benefit}</span>
                   </li>
                 ))}
               </ul>
               {(session?.user?.username === ".odyssia" || session?.user?.username === "odyssia") ? (
-                <p className="premium-state text-xs font-bold text-amber-400 flex items-center gap-1.5 mt-3">
+                <p className="premium-state text-xs font-mono font-bold text-[#F59E0B] flex items-center gap-1.5 mt-3">
                   <ShieldCheck size={15} /> Benefit Guild Emperor &amp; Noble Patron Aktif
                 </p>
               ) : session?.user?.role === "ADMIN" ? (
-                <p className="premium-state text-xs font-bold text-purple-400 flex items-center gap-1.5 mt-3">
+                <p className="premium-state text-xs font-mono font-bold text-[#A78BFA] flex items-center gap-1.5 mt-3">
                   <ShieldCheck size={15} /> Hak Istimewa Prince / Princess (High Council) Aktif
                 </p>
               ) : (id === "ELITE_PARTY_MEMBER" && session?.user?.isPremium) && (
-                <p className="premium-state text-xs font-bold text-amber-500 flex items-center gap-1.5 mt-3">
+                <p className="premium-state text-xs font-mono font-bold text-[#10B981] flex items-center gap-1.5 mt-3">
                   <ShieldCheck size={15} /> Status Premium aktif
                 </p>
               )}
             </div>
             <button
               type="button"
-              className="button button-primary w-full mt-6 justify-center flex items-center gap-2"
+              className="w-full mt-6 py-2.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] justify-center flex items-center gap-2 transition-colors"
               onClick={() => {
                 setTier(id);
                 setAmount(id === "ADVENTURER_SUPPORT" ? "25000" : id === "ELITE_PARTY_MEMBER" ? "50000" : "100000");
@@ -242,31 +245,31 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
         ))}
       </div>
 
-      <p className="donation-disclaimer treasury-disclaimer text-xs text-gray-500 dark:text-gray-400 mt-4 leading-relaxed">
+      <p className="donation-disclaimer treasury-disclaimer text-xs text-[#A78BFA] font-mono mt-4 leading-relaxed">
         Seluruh donasi disalurkan via QRIS resmi perbendaharaan guild LogHorizon. Demi keamanan dan akurasi kas, setiap transaksi wajib dikonfirmasi dan diverifikasi oleh jajaran Admin sebelum status kasta diaktifkan.
       </p>
 
       {/* QRIS PAYMENT & CONFIRMATION MODAL */}
       {tier && selectedTier && (
-        <div className="modal-backdrop fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-3 sm:p-4 overflow-y-auto" onMouseDown={(event) => { if (event.target === event.currentTarget && !loading) setTier(null); }}>
-          <section className="modal-card treasury-modal bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-xl p-5 sm:p-8 w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl relative my-auto" role="dialog" aria-modal="true" aria-labelledby="treasury-modal-title">
-            <button type="button" className="modal-close absolute top-4 right-4 text-gray-400 hover:text-white" onClick={() => setTier(null)} disabled={loading} aria-label="Tutup">
+        <div className="modal-backdrop fixed inset-0 z-50 bg-[#09040F]/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto" onMouseDown={(event) => { if (event.target === event.currentTarget && !loading) setTier(null); }}>
+          <section className="modal-card treasury-modal bg-[#130921] border border-[#2E1E45] rounded-none p-5 sm:p-8 w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl relative my-auto text-left" role="dialog" aria-modal="true" aria-labelledby="treasury-modal-title">
+            <button type="button" className="modal-close absolute top-4 right-4 text-[#A78BFA] hover:text-[#F8FAFC]" onClick={() => setTier(null)} disabled={loading} aria-label="Tutup">
               <X size={20} />
             </button>
 
             <div className="text-center mb-4">
-              <p className="section-kicker text-xs font-bold text-[#9D4EDD] uppercase tracking-wider">KAS PERBENDAHARAAN GUILD</p>
-              <h2 id="treasury-modal-title" className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mt-1">
+              <p className="section-kicker text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-wider">KAS PERBENDAHARAAN GUILD</p>
+              <h2 id="treasury-modal-title" className="font-display text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-[#F8FAFC] mt-1">
                 {selectedTier.name}
               </h2>
             </div>
 
             {/* QRIS OFFICIAL GUILD DISPLAY */}
-            <div className="bg-black/20 dark:bg-white/5 rounded-xl p-4 text-center my-4 flex flex-col items-center">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-purple-400 mb-2">
+            <div className="bg-[#1A0E2E] border border-[#2E1E45] rounded-none p-4 text-center my-4 flex flex-col items-center">
+              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#A78BFA] mb-2 uppercase">
                 <QrCode size={16} /> QRIS RESMI GUILD LOGHORIZON
               </div>
-              <div className="relative w-48 h-64 sm:w-56 sm:h-72 rounded-lg overflow-hidden shadow-lg bg-white">
+              <div className="relative w-48 h-64 sm:w-56 sm:h-72 rounded-none overflow-hidden shadow-lg bg-white border border-[#2E1E45]">
                 <Image
                   src={qrisUrl}
                   alt="QRIS Resmi Guild LogHorizon"
@@ -276,19 +279,19 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
                   priority
                 />
               </div>
-              <p className="text-[11px] text-gray-400 mt-2">
-                NMID: <strong>ID1025450776899</strong> (odyssiavault)
+              <p className="text-[11px] font-mono text-[#A78BFA] mt-2">
+                NMID: <strong className="text-[#F8FAFC]">ID1025450776899</strong> (odyssiavault)
               </p>
-              <p className="text-[11px] text-gray-500">
+              <p className="text-[10px] font-mono text-[#A78BFA]/70">
                 Mendukung semua Bank &amp; E-Wallet (BCA, Mandiri, BRI, GoPay, OVO, Dana, ShopeePay)
               </p>
             </div>
 
             {/* TRANSFER CONFIRMATION FORM */}
-            <div className="space-y-3 mt-4 text-left">
+            <div className="space-y-3 mt-4 text-left font-mono">
               <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  Nominal Transfer (IDR) <span className="text-red-500">*</span>
+                <label className="block text-xs font-bold text-[#A78BFA] mb-1 uppercase">
+                  Nominal Transfer (IDR) <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="number"
@@ -297,7 +300,7 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
                   step={5000}
                   value={amount}
                   onChange={(event) => handleAmountChange(event.target.value)}
-                  className="w-full px-3 py-2 rounded border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                  className="w-full px-3 py-2 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-sm text-[#F8FAFC] focus:outline-none focus:border-[#7C3AED]"
                   placeholder="50000"
                 />
               </div>

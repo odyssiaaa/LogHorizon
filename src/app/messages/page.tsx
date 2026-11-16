@@ -17,8 +17,8 @@ export default async function MessagesPage() {
   if (!session?.user) {
     return (
       <main className="py-16 px-4 text-center max-w-md mx-auto w-full">
-        <div className="p-8 rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] shadow-xl space-y-4">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-500/10 border border-purple-500/20 text-[#9D4EDD] flex items-center justify-center">
+        <div className="p-8 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl space-y-4">
+          <div className="w-14 h-14 mx-auto rounded-none bg-purple-500/10 border border-purple-500/20 text-[#9D4EDD] flex items-center justify-center">
             <MessageSquare size={28} />
           </div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">

@@ -812,7 +812,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             <button
               type="button"
               onClick={() => loadDashboard()}
-              className="p-2 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-gray-600 dark:text-gray-300 hover:border-[#9D4EDD]"
+              className="p-2 rounded-md border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-gray-600 dark:text-gray-300 hover:border-[#9D4EDD]"
               title="Refresh Data"
             >
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
@@ -838,7 +838,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
         {/* Global Notifications */}
         {notice && (
-          <div className="inline-notice mb-4 p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center justify-between" role="status">
+          <div className="inline-notice mb-4 p-3 rounded-none bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center justify-between" role="status">
             <span>{notice}</span>
             <button onClick={() => setNotice("")} aria-label="Tutup notifikasi">
               <X size={15} />
@@ -846,7 +846,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
           </div>
         )}
         {error && (
-          <div className="inline-error mb-4 p-3 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center justify-between" role="alert">
+          <div className="inline-error mb-4 p-3 rounded-none bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center justify-between" role="alert">
             <span>{error}</span>
             <button onClick={() => setError("")} aria-label="Tutup pesan">
               <X size={15} />
@@ -859,13 +859,13 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
         {/* ========================================================================= */}
         <div className="md:grid md:grid-cols-[230px_1fr] md:gap-8 items-start">
           {/* DESKTOP SIDEBAR (< md hidden) */}
-          <aside className="hidden md:flex flex-col gap-1.5 sticky top-24 p-3 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] shadow-sm">
+          <aside className="hidden md:flex flex-col gap-1.5 sticky top-24 p-3 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm">
             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-1.5">
               PANEL KENDALI
             </p>
             <button
               type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
                 tab === "overview"
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -881,7 +881,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {isAdmin && (
               <button
                 type="button"
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
                   tab === "settings"
                     ? "bg-[#9D4EDD] text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -897,7 +897,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
             <button
               type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
                 tab === "tournaments"
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -914,7 +914,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               {(() => {
                 const totalPending = tournamentsList.reduce((acc, t) => acc + (t.participants?.filter((p: any) => p.paymentStatus === "PENDING_PAYMENT").length || 0), 0);
                 return totalPending > 0 ? (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${tab === "tournaments" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "tournaments" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
                     {totalPending}
                   </span>
                 ) : null;
@@ -923,7 +923,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
             <button
               type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
                 tab === "hall_of_winners"
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -941,7 +941,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
             <button
               type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
                 tab === "treasury"
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -953,7 +953,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                 <span>Verifikasi Kas &amp; Rekber</span>
               </div>
               {Boolean(data?.stats.pendingDonations) && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${tab === "treasury" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "treasury" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
                   {data?.stats.pendingDonations}
                 </span>
               )}
@@ -961,7 +961,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
             <button
               type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
                 tab === "members"
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -976,7 +976,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
             <button
               type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
                 tab === "moderation"
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -988,7 +988,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                 <span>Moderasi &amp; Broadcast</span>
               </div>
               {Boolean(data?.stats.pendingReports) && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${tab === "moderation" ? "bg-white text-[#9D4EDD]" : "bg-rose-500/20 text-rose-400"}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "moderation" ? "bg-white text-[#9D4EDD]" : "bg-rose-500/20 text-rose-400"}`}>
                   {data?.stats.pendingReports}
                 </span>
               )}
@@ -996,7 +996,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
             <Link
               href="/events?view=turnamen"
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724] border border-dashed border-[#9D4EDD]/40 mt-3 bg-[#9D4EDD]/5 transition-colors"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724] border border-dashed border-[#9D4EDD]/40 mt-3 bg-[#9D4EDD]/5 transition-colors"
             >
               <div className="flex items-center gap-2.5 text-[#9D4EDD]">
                 <Trophy size={16} />
@@ -1007,11 +1007,11 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
           </aside>
 
           {/* MOBILE HORIZONTAL SCROLLABLE TABS (>= md hidden) */}
-          <div className="md:hidden flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-2 mb-6 border-b border-gray-200 dark:border-[#211C2B] -mx-4 px-4">
+          <div className="md:hidden flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-2 mb-6 border-b border-gray-200 dark:border-[#2E1E45] -mx-4 px-4">
             <button
               type="button"
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "overview" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "overview" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => setTab("overview")}
             >
@@ -1020,8 +1020,8 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {isAdmin && (
               <button
                 type="button"
-                className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
-                  tab === "settings" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+                className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
+                  tab === "settings" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
                 }`}
                 onClick={() => setTab("settings")}
               >
@@ -1030,8 +1030,8 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             )}
             <button
               type="button"
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "tournaments" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "tournaments" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => {
                 setTab("tournaments");
@@ -1050,8 +1050,8 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             </button>
             <button
               type="button"
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "hall_of_winners" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "hall_of_winners" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => {
                 setTab("hall_of_winners");
@@ -1062,8 +1062,8 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             </button>
             <button
               type="button"
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "treasury" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "treasury" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => setTab("treasury")}
             >
@@ -1076,8 +1076,8 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             </button>
             <button
               type="button"
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "members" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "members" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => setTab("members")}
             >
@@ -1085,8 +1085,8 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             </button>
             <button
               type="button"
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "moderation" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "moderation" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => setTab("moderation")}
             >
@@ -1099,7 +1099,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             </button>
             <Link
               href="/events?view=turnamen"
-              className="px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 shrink-0 bg-[#9D4EDD]/10 text-[#9D4EDD] border border-[#9D4EDD]/30"
+              className="px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-1.5 shrink-0 bg-[#9D4EDD]/10 text-[#9D4EDD] border border-[#9D4EDD]/30"
             >
               <Trophy size={14} /> Bagan Turnamen
             </Link>
@@ -1114,7 +1114,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               <section className="space-y-6" role="tabpanel">
                 {/* 5 METRIC CARDS */}
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-                  <article className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                     <div className="flex items-center justify-between text-[#9D4EDD]">
                       <Users size={20} />
                     </div>
@@ -1124,7 +1124,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     </strong>
                   </article>
 
-                  <article className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                     <div className="flex items-center justify-between text-purple-400">
                       <DollarSign size={20} />
                     </div>
@@ -1134,7 +1134,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     </strong>
                   </article>
 
-                  <article className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                     <div className="flex items-center justify-between text-amber-500">
                       <Coins size={20} />
                       {Boolean(data?.stats.pendingDonations) && (
@@ -1149,7 +1149,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     </strong>
                   </article>
 
-                  <article className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                     <div className="flex items-center justify-between text-blue-500">
                       <Store size={20} />
                     </div>
@@ -1159,7 +1159,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     </strong>
                   </article>
 
-                  <article className="p-4 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] col-span-2 lg:col-span-1">
+                  <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] col-span-2 lg:col-span-1">
                     <div className="flex items-center justify-between text-rose-500">
                       <Flag size={20} />
                     </div>
@@ -1172,7 +1172,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
                 {/* QUICK ACTIONS & STATUS */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                     <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
                       <Sparkles size={18} className="text-[#9D4EDD]" /> Pintasan Manajemen
                     </h2>
@@ -1181,7 +1181,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                         <button
                           type="button"
                           onClick={() => setTab("settings")}
-                          className="w-full text-left px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                          className="w-full text-left px-3.5 py-2.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
                         >
                           <span>⚙️ Pengaturan Konten Website (CMS)</span>
                           <ChevronRight size={14} className="text-gray-400" />
@@ -1190,7 +1190,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                       <button
                         type="button"
                         onClick={() => setTab("treasury")}
-                        className="w-full text-left px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                        className="w-full text-left px-3.5 py-2.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
                       >
                         <span>💎 Verifikasi Kas Donasi &amp; Rekber</span>
                         <span className="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">
@@ -1200,7 +1200,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                       <button
                         type="button"
                         onClick={() => setTab("members")}
-                        className="w-full text-left px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                        className="w-full text-left px-3.5 py-2.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
                       >
                         <span>👥 Kelola Member, Kasta &amp; Status Banned</span>
                         <ChevronRight size={14} className="text-gray-400" />
@@ -1208,7 +1208,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                       <button
                         type="button"
                         onClick={() => setTab("moderation")}
-                        className="w-full text-left px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                        className="w-full text-left px-3.5 py-2.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
                       >
                         <span>🛡️ Moderasi Konten, Sponsor &amp; Broadcast</span>
                         <ChevronRight size={14} className="text-gray-400" />
@@ -1216,22 +1216,22 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     </div>
                   </div>
 
-                  <div className="p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                  <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                     <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
                       <ShieldCheck size={18} className="text-emerald-500" /> Status Ekosistem Guild
                     </h2>
                     <ul className="space-y-3 text-xs text-gray-600 dark:text-gray-300">
-                      <li className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-[#211C2B]">
+                      <li className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-[#2E1E45]">
                         <span>Database Neon PostgreSQL:</span>
                         <span className="font-semibold text-emerald-500 flex items-center gap-1">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Terhubung / Online
                         </span>
                       </li>
-                      <li className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-[#211C2B]">
+                      <li className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-[#2E1E45]">
                         <span>Otentikasi Member:</span>
                         <span className="font-semibold text-emerald-500">OAuth Discord Aman</span>
                       </li>
-                      <li className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-[#211C2B]">
+                      <li className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-[#2E1E45]">
                         <span>Target Kas Terverifikasi:</span>
                         <span className="font-bold text-purple-400">
                           {formatMoney.format(configForm.monthlyGoal || 5000000)}
@@ -1254,7 +1254,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {/* ========================================================================= */}
             {tab === "settings" && isAdmin && (
               <section className="space-y-6" role="tabpanel">
-                <div className="p-6 sm:p-8 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                <div className="p-6 sm:p-8 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <div className="mb-6">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                       <Settings size={20} className="text-[#9D4EDD]" /> Pengaturan Konten Website (Site Settings CMS)
@@ -1266,7 +1266,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
                   <form onSubmit={(e) => void handleSaveConfig(e)} className="space-y-6">
                     {/* 1. STATISTIK BERANDA */}
-                    <div className="border-t border-gray-200 dark:border-[#211C2B] pt-4">
+                    <div className="border-t border-gray-200 dark:border-[#2E1E45] pt-4">
                       <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-3">
                         01 / STATISTIK COUNTER BERANDA
                       </h3>
@@ -1279,7 +1279,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             type="text"
                             value={configForm.statMembers}
                             onChange={(e) => setConfigForm({ ...configForm, statMembers: e.target.value })}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                             placeholder="1,200+"
                             required
                           />
@@ -1292,7 +1292,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             type="text"
                             value={configForm.statParties}
                             onChange={(e) => setConfigForm({ ...configForm, statParties: e.target.value })}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                             placeholder="450+"
                             required
                           />
@@ -1305,7 +1305,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             type="text"
                             value={configForm.statVoice}
                             onChange={(e) => setConfigForm({ ...configForm, statVoice: e.target.value })}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                             placeholder="24/7"
                             required
                           />
@@ -1314,7 +1314,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     </div>
 
                     {/* 2. PEMBAYARAN & QRIS */}
-                    <div className="border-t border-gray-200 dark:border-[#211C2B] pt-4">
+                    <div className="border-t border-gray-200 dark:border-[#2E1E45] pt-4">
                       <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-3">
                         02 / INFO PEMBAYARAN, QRIS &amp; REKBER
                       </h3>
@@ -1336,7 +1336,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             type="text"
                             value={configForm.rekberAccount}
                             onChange={(e) => setConfigForm({ ...configForm, rekberAccount: e.target.value })}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                             placeholder="BCA 1234567890 a.n LogHorizon"
                             required
                           />
@@ -1352,7 +1352,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             step={1000}
                             value={configForm.rekberFee}
                             onChange={(e) => setConfigForm({ ...configForm, rekberFee: Number(e.target.value) })}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                             placeholder="5000"
                             required
                           />
@@ -1361,7 +1361,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     </div>
 
                     {/* 3. TARGET KAS & MINIMAL DONASI */}
-                    <div className="border-t border-gray-200 dark:border-[#211C2B] pt-4">
+                    <div className="border-t border-gray-200 dark:border-[#2E1E45] pt-4">
                       <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-3">
                         03 / TARGET KAS &amp; BATAS MINIMAL DONASI
                       </h3>
@@ -1376,7 +1376,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             step={50000}
                             value={configForm.monthlyGoal}
                             onChange={(e) => setConfigForm({ ...configForm, monthlyGoal: Number(e.target.value) })}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                             placeholder="5000000"
                             required
                           />
@@ -1392,7 +1392,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             step={5000}
                             value={configForm.minDonation}
                             onChange={(e) => setConfigForm({ ...configForm, minDonation: Number(e.target.value) })}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                             placeholder="10000"
                             required
                           />
@@ -1401,7 +1401,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     </div>
 
                     {/* 4. LINK KOMUNITAS */}
-                    <div className="border-t border-gray-200 dark:border-[#211C2B] pt-4">
+                    <div className="border-t border-gray-200 dark:border-[#2E1E45] pt-4">
                       <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-3">
                         04 / LINK TAUTAN DISCORD RESMI
                       </h3>
@@ -1413,7 +1413,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           type="url"
                           value={configForm.discordInviteUrl}
                           onChange={(e) => setConfigForm({ ...configForm, discordInviteUrl: e.target.value })}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                          className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                           placeholder="https://discord.gg/aJvbVyTxNb"
                           required
                         />
@@ -1424,7 +1424,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                       <button
                         type="submit"
                         disabled={savingConfig}
-                        className="button button-primary px-6 py-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-2"
+                        className="button button-primary px-6 py-2.5 rounded-none text-xs font-bold inline-flex items-center gap-2"
                       >
                         {savingConfig ? (
                           <>
@@ -1448,7 +1448,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {tab === "tournaments" && (
               <section className="space-y-6" role="tabpanel">
                 {/* TOOLBAR TURNAMEN */}
-                <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                       <Trophy size={18} className="text-[#9D4EDD]" />
@@ -1494,7 +1494,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
                 {/* DAFTAR PILIHAN TURNAMEN */}
                 {tournamentsList.length === 0 ? (
-                  <div className="p-8 text-center border border-dashed border-gray-300 dark:border-gray-800 rounded-xl bg-white dark:bg-[#120F17] text-xs text-gray-400">
+                  <div className="p-8 text-center border border-dashed border-gray-300 dark:border-gray-800 rounded-none bg-white dark:bg-[#130921] text-xs text-gray-400">
                     Belum ada data turnamen dibuat. Buat turnamen baru melalui tombol di atas atau di halaman Events.
                   </div>
                 ) : (
@@ -1509,10 +1509,10 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             key={t.id}
                             type="button"
                             onClick={() => setSelectedTournamentId(t.id)}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition shrink-0 flex items-center gap-2 ${
+                            className={`px-3.5 py-2 rounded-none text-xs font-bold border transition shrink-0 flex items-center gap-2 ${
                               isSelected
                                 ? "bg-[#9D4EDD] text-white border-[#9D4EDD] shadow-sm shadow-[#9D4EDD]/25"
-                                : "bg-white dark:bg-[#120F17] border-gray-200 dark:border-[#211C2B] text-gray-700 dark:text-gray-300 hover:border-[#9D4EDD]"
+                                : "bg-white dark:bg-[#130921] border-gray-200 dark:border-[#2E1E45] text-gray-700 dark:text-gray-300 hover:border-[#9D4EDD]"
                             }`}
                           >
                             <span>{t.title}</span>
@@ -1547,7 +1547,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                       return (
                         <div className="space-y-4">
                           {/* Info Ringkas Turnamen */}
-                          <div className="p-4 sm:p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="p-4 sm:p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>
                               <div className="flex items-center gap-2 flex-wrap mb-1">
                                 <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#9D4EDD] text-white uppercase">
@@ -1581,7 +1581,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               <button
                                 type="button"
                                 onClick={() => setAdminRulesViewModal(curTournament)}
-                                className="px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] text-gray-700 dark:text-gray-300 hover:text-white flex items-center gap-1.5 transition"
+                                className="px-3 py-2 rounded-none text-xs font-bold border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] text-gray-700 dark:text-gray-300 hover:text-white flex items-center gap-1.5 transition"
                                 title="Lihat Peraturan Resmi Turnamen"
                               >
                                 <BookOpen size={13} className="text-[#9D4EDD]" />
@@ -1589,7 +1589,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               </button>
                               <Link
                                 href={`/events/turnamen/${curTournament.id}`}
-                                className="px-3.5 py-2 rounded-xl text-xs font-bold border border-[#9D4EDD]/40 bg-[#9D4EDD]/15 text-purple-300 hover:bg-[#9D4EDD]/25 flex items-center gap-1.5 transition"
+                                className="px-3.5 py-2 rounded-none text-xs font-bold border border-[#9D4EDD]/40 bg-[#9D4EDD]/15 text-purple-300 hover:bg-[#9D4EDD]/25 flex items-center gap-1.5 transition"
                                 title="Buka Bagan & Kelola Jadwal Tanding Turnamen"
                               >
                                 <ExternalLink size={13} className="text-[#9D4EDD]" />
@@ -1599,7 +1599,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                 <button
                                   type="button"
                                   onClick={() => handleAdminGachaBracket(curTournament)}
-                                  className="px-3.5 py-2 rounded-xl text-xs font-bold border border-amber-500/50 bg-gradient-to-r from-amber-500/20 to-purple-500/20 text-amber-300 hover:from-amber-500/30 hover:to-purple-500/30 flex items-center gap-2 transition shadow-sm shadow-amber-500/10 hover:scale-105"
+                                  className="px-3.5 py-2 rounded-none text-xs font-bold border border-amber-500/50 bg-gradient-to-r from-amber-500/20 to-purple-500/20 text-amber-300 hover:from-amber-500/30 hover:to-purple-500/30 flex items-center gap-2 transition shadow-sm shadow-amber-500/10 hover:scale-105"
                                   title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
                                 >
                                   <Dices size={15} className="text-amber-400" />
@@ -1619,11 +1619,11 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
                           {/* Filter Tabs Antrean */}
                           <div className="flex items-center justify-between gap-3 flex-wrap">
-                            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-gray-100 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 overflow-x-auto">
+                            <div className="flex items-center gap-1.5 p-1 rounded-none bg-gray-100 dark:bg-[#130921] border border-gray-200 dark:border-white/5 overflow-x-auto">
                               <button
                                 type="button"
                                 onClick={() => setTournamentFilterStatus("ALL")}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                                className={`px-3 py-1.5 rounded-none text-xs font-bold transition ${
                                   tournamentFilterStatus === "ALL"
                                     ? "bg-[#9D4EDD] text-white shadow-xs"
                                     : "text-gray-600 dark:text-gray-400 hover:text-white"
@@ -1634,7 +1634,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               <button
                                 type="button"
                                 onClick={() => setTournamentFilterStatus("PENDING")}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                                className={`px-3 py-1.5 rounded-none text-xs font-bold transition flex items-center gap-1.5 ${
                                   tournamentFilterStatus === "PENDING"
                                     ? "bg-amber-500 text-black shadow-xs font-black"
                                     : "text-amber-400 hover:text-amber-300"
@@ -1645,7 +1645,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               <button
                                 type="button"
                                 onClick={() => setTournamentFilterStatus("APPROVED")}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                                className={`px-3 py-1.5 rounded-none text-xs font-bold transition ${
                                   tournamentFilterStatus === "APPROVED"
                                     ? "bg-emerald-600 text-white shadow-xs"
                                     : "text-emerald-400 hover:text-emerald-300"
@@ -1656,7 +1656,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               <button
                                 type="button"
                                 onClick={() => setTournamentFilterStatus("REJECTED")}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                                className={`px-3 py-1.5 rounded-none text-xs font-bold transition ${
                                   tournamentFilterStatus === "REJECTED"
                                     ? "bg-rose-600 text-white shadow-xs"
                                     : "text-rose-400 hover:text-rose-300"
@@ -1670,7 +1670,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           {/* List Pendaftar */}
                           <div className="space-y-3">
                             {filteredParticipants.length === 0 ? (
-                              <div className="p-8 text-center border border-dashed border-gray-300 dark:border-gray-800 rounded-xl bg-white dark:bg-[#120F17] text-xs text-gray-400">
+                              <div className="p-8 text-center border border-dashed border-gray-300 dark:border-gray-800 rounded-none bg-white dark:bg-[#130921] text-xs text-gray-400">
                                 Tidak ada pendaftar dengan filter status ini.
                               </div>
                             ) : (
@@ -1684,7 +1684,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                 return (
                                   <div
                                     key={p.id}
-                                    className={`p-4 sm:p-5 rounded-xl border bg-white dark:bg-[#120F17] shadow-sm transition-all ${
+                                    className={`p-4 sm:p-5 rounded-none border bg-white dark:bg-[#130921] shadow-sm transition-all ${
                                       isPending
                                         ? "border-amber-500/40"
                                         : isApproved
@@ -1743,7 +1743,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                             type="button"
                                             disabled={adminVerificationLoading === p.id}
                                             onClick={() => handleAdminVerification(curTournament.id, p.id, "APPROVE")}
-                                            className="px-3.5 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm transition"
+                                            className="px-3.5 py-2 rounded-none text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm transition"
                                           >
                                             <CheckCircle size={15} />
                                             <span>{adminVerificationLoading === p.id ? "Memproses..." : "ACC & Masukkan ke Bagan"}</span>
@@ -1752,7 +1752,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                             type="button"
                                             disabled={adminVerificationLoading === p.id}
                                             onClick={() => handleAdminVerification(curTournament.id, p.id, "REJECT")}
-                                            className="px-3 py-2 rounded-lg text-xs font-bold bg-rose-600/80 hover:bg-rose-600 text-white flex items-center gap-1 shadow-sm transition"
+                                            className="px-3 py-2 rounded-none text-xs font-bold bg-rose-600/80 hover:bg-rose-600 text-white flex items-center gap-1 shadow-sm transition"
                                           >
                                             <X size={15} />
                                             <span>Tolak Pendaftaran</span>
@@ -1764,7 +1764,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                     {/* Data Verifikasi Pembayaran & Roster */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-gray-100 dark:border-white/5 text-xs">
                                       {/* Data Pembayaran */}
-                                      <div className="p-3 rounded-xl bg-gray-50 dark:bg-[#181324] border border-gray-200 dark:border-white/5 space-y-2">
+                                      <div className="p-3 rounded-none bg-gray-50 dark:bg-[#181324] border border-gray-200 dark:border-white/5 space-y-2">
                                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
                                           DATA BUKTI TRANSFER PEMBAYARAN
                                         </span>
@@ -1786,7 +1786,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                             <button
                                               type="button"
                                               onClick={() => setAdminProofLightbox(p.paymentProof)}
-                                              className="group relative inline-block rounded-lg overflow-hidden border border-purple-500/30 hover:border-purple-500 transition"
+                                              className="group relative inline-block rounded-none overflow-hidden border border-purple-500/30 hover:border-purple-500 transition"
                                             >
                                               <img
                                                 src={p.paymentProof}
@@ -1806,7 +1806,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                       </div>
 
                                       {/* Data Roster Pemain */}
-                                      <div className="p-3 rounded-xl bg-gray-50 dark:bg-[#181324] border border-gray-200 dark:border-white/5 space-y-2">
+                                      <div className="p-3 rounded-none bg-gray-50 dark:bg-[#181324] border border-gray-200 dark:border-white/5 space-y-2">
                                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
                                           SUSUNAN PEMAIN TIM ({mains.length} Inti {subs.length ? `+ ${subs.length} Cad` : ""})
                                         </span>
@@ -1852,7 +1852,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {/* ========================================================================= */}
             {tab === "hall_of_winners" && (
               <section className="space-y-6" role="tabpanel">
-                <div className="p-5 sm:p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="p-5 sm:p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
                       <Crown size={20} className="text-amber-400" />
@@ -1889,7 +1889,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     onClick={() => setHowModalOpen(false)}
                   >
                     <div
-                      className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl relative space-y-4 my-auto max-h-[90vh] overflow-y-auto"
+                      className="bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] rounded-none w-full max-w-lg p-5 sm:p-6 shadow-2xl relative space-y-4 my-auto max-h-[90vh] overflow-y-auto"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
@@ -1900,7 +1900,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                         <X size={18} />
                       </button>
 
-                      <div className="pb-2 border-b border-gray-200 dark:border-[#211C2B]">
+                      <div className="pb-2 border-b border-gray-200 dark:border-[#2E1E45]">
                         <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
                           <Crown size={18} className="text-amber-400" />
                           <span>Catat Arsip Juara Season Manual</span>
@@ -1921,7 +1921,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             value={howForm.tournamentTitle}
                             onChange={(e) => setHowForm((prev) => ({ ...prev, tournamentTitle: e.target.value }))}
                             placeholder="Contoh: LogHorizon Community Invitational S1"
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                            className="w-full px-3 py-2 rounded-none border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
                           />
                         </div>
 
@@ -1936,7 +1936,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               value={howForm.game}
                               onChange={(e) => setHowForm((prev) => ({ ...prev, game: e.target.value }))}
                               placeholder="Mobile Legends / Valorant / dll"
-                              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                              className="w-full px-3 py-2 rounded-none border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
                             />
                           </div>
                           <div>
@@ -1948,7 +1948,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               value={howForm.season}
                               onChange={(e) => setHowForm((prev) => ({ ...prev, season: e.target.value }))}
                               placeholder="Season 1 / New Year Cup"
-                              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                              className="w-full px-3 py-2 rounded-none border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
                             />
                           </div>
                         </div>
@@ -1963,7 +1963,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               value={howForm.prizePool}
                               onChange={(e) => setHowForm((prev) => ({ ...prev, prizePool: e.target.value }))}
                               placeholder="Contoh: Rp 1.500.000"
-                              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                              className="w-full px-3 py-2 rounded-none border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
                             />
                           </div>
                           <div>
@@ -1974,12 +1974,12 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               type="date"
                               value={howForm.eventDate}
                               onChange={(e) => setHowForm((prev) => ({ ...prev, eventDate: e.target.value }))}
-                              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                              className="w-full px-3 py-2 rounded-none border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
                             />
                           </div>
                         </div>
 
-                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                        <div className="p-3 rounded-none bg-amber-500/10 border border-amber-500/30 space-y-2">
                           <label className="block text-amber-300 font-bold flex items-center gap-1">
                             <Crown size={14} />
                             <span>Tim Juara 1 (Grand Champion) *</span>
@@ -1990,7 +1990,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             value={howForm.championTeam}
                             onChange={(e) => setHowForm((prev) => ({ ...prev, championTeam: e.target.value }))}
                             placeholder="Nama Tim Pemenang Juara 1"
-                            className="w-full px-3 py-2 rounded-lg border border-amber-500/30 bg-black/40 text-white font-bold"
+                            className="w-full px-3 py-2 rounded-none border border-amber-500/30 bg-black/40 text-white font-bold"
                           />
                           <div>
                             <label className="block text-gray-300 text-[11px] mb-1">
@@ -2001,7 +2001,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               value={howForm.championRosterStr}
                               onChange={(e) => setHowForm((prev) => ({ ...prev, championRosterStr: e.target.value }))}
                               placeholder="Contoh: Vyn, R7, Lemon, Alberttt, Skylar"
-                              className="w-full px-3 py-1.5 rounded-lg border border-white/10 bg-black/30 text-white text-xs"
+                              className="w-full px-3 py-1.5 rounded-none border border-white/10 bg-black/30 text-white text-xs"
                             />
                           </div>
                         </div>
@@ -2016,7 +2016,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               value={howForm.runnerUpTeam}
                               onChange={(e) => setHowForm((prev) => ({ ...prev, runnerUpTeam: e.target.value }))}
                               placeholder="Nama Tim Runner-Up"
-                              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                              className="w-full px-3 py-2 rounded-none border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
                             />
                           </div>
                           <div>
@@ -2028,7 +2028,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               value={howForm.thirdPlaceTeam}
                               onChange={(e) => setHowForm((prev) => ({ ...prev, thirdPlaceTeam: e.target.value }))}
                               placeholder="Nama Tim Juara 3"
-                              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                              className="w-full px-3 py-2 rounded-none border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
                             />
                           </div>
                         </div>
@@ -2037,7 +2037,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <button
                             type="button"
                             onClick={() => setHowModalOpen(false)}
-                            className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-white/10 font-bold"
+                            className="px-4 py-2 rounded-none bg-gray-200 dark:bg-white/10 font-bold"
                           >
                             Batal
                           </button>
@@ -2054,11 +2054,11 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                 )}
 
                 {/* TABLE ARSIP HALL OF WINNERS */}
-                <div className="rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] overflow-hidden">
+                <div className="rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] overflow-hidden">
                   <DragScrollContainer>
                     <table className="w-full text-left text-xs min-w-[750px]">
                       <thead>
-                        <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400 bg-gray-50/50 dark:bg-black/20">
+                        <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400 bg-gray-50/50 dark:bg-black/20">
                           <th className="p-3.5 font-bold">Turnamen &amp; Season</th>
                           <th className="p-3.5 font-bold">Game</th>
                           <th className="p-3.5 font-bold">Tanggal</th>
@@ -2069,7 +2069,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <th className="p-3.5 font-bold text-right">Aksi</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]/80 font-mono">
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]/80 font-mono">
                         {hallOfWinnersList.length === 0 ? (
                           <tr>
                             <td colSpan={8} className="p-8 text-center text-gray-400 font-sans">
@@ -2149,7 +2149,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {tab === "treasury" && (
               <section className="space-y-8" role="tabpanel">
                 {/* TOOLBAR & RESET DATA SIMULASI */}
-                <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                       <Coins size={18} className="text-[#9D4EDD]" /> Verifikasi Donasi &amp; Kas Perbendaharaan
@@ -2163,7 +2163,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                       type="button"
                       disabled={busyId === "reset-donations"}
                       onClick={() => void handleResetDonations()}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-red-600 dark:text-red-400 border border-red-300 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-none text-xs font-bold text-red-600 dark:text-red-400 border border-red-300 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0"
                     >
                       <RotateCcw size={14} className={busyId === "reset-donations" ? "animate-spin" : ""} />
                       <span>Reset Data Simulasi (Kembali Rp 0)</span>
@@ -2172,7 +2172,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                 </div>
 
                 {/* 1. ANTREAN DONASI PENDING */}
-                <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-base font-bold text-gray-900 dark:text-white">
@@ -2188,7 +2188,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   >
                     <table className="w-full text-left text-xs min-w-[700px]">
                       <thead>
-                        <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
+                        <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400">
                           <th className="py-2.5">Pengirim Rekening</th>
                           <th className="py-2.5">Akun Member</th>
                           <th className="py-2.5">Nominal</th>
@@ -2198,7 +2198,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <th className="py-2.5 text-right">Aksi</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]">
                         {pendingDonationsList.map((item) => (
                           <tr key={item.id}>
                             <td className="py-3 font-bold text-gray-900 dark:text-white">
@@ -2265,7 +2265,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                 </div>
 
                 {/* 2. RIWAYAT DONASI TERVERIFIKASI */}
-                <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <h3 className="text-base font-bold text-gray-900 dark:text-white mb-3">
                     Riwayat Donasi Selesai / Terverifikasi
                   </h3>
@@ -2275,7 +2275,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   >
                     <table className="w-full text-left text-xs min-w-[650px]">
                       <thead>
-                        <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
+                        <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400">
                           <th className="py-2.5">User</th>
                           <th className="py-2.5">Pengirim</th>
                           <th className="py-2.5">Nominal</th>
@@ -2283,7 +2283,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <th className="py-2.5">Status</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]">
                         {processedDonationsList.map((item) => (
                           <tr key={item.id}>
                             <td className="py-3">
@@ -2325,7 +2325,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                 </div>
 
                 {/* 3. TIKET REKBER 3-PIHAK (CLAIM & RUANG CHAT) */}
-                <div className="p-5 rounded-xl border border-purple-500/30 bg-white dark:bg-[#120F17] shadow-lg">
+                <div className="p-5 rounded-none border border-purple-500/30 bg-white dark:bg-[#130921] shadow-lg">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                     <div>
                       <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -2344,7 +2344,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   >
                     <table className="w-full text-left text-xs min-w-[700px]">
                       <thead>
-                        <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
+                        <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400">
                           <th className="py-2.5">Lapak Transaksi</th>
                           <th className="py-2.5">Buyer &amp; Seller</th>
                           <th className="py-2.5">Nominal</th>
@@ -2353,7 +2353,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <th className="py-2.5 text-right">Aksi</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]">
                         {data?.escrowTransactions?.map((escrow) => {
                           const isClaimedByMe = escrow.claimedById === data.currentUserId;
                           const isUnclaimed = !escrow.claimedById;
@@ -2429,7 +2429,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                 </div>
 
                 {/* 4. PANTAUAN REKBER MARKETPLACE */}
-                <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
                     Pantauan Transaksi Lapak &amp; Rekber Marketplace
                   </h3>
@@ -2442,7 +2442,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   >
                     <table className="w-full text-left text-xs min-w-[650px]">
                       <thead>
-                        <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
+                        <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400">
                           <th className="py-2.5">Judul Lapak</th>
                           <th className="py-2.5">Penjual</th>
                           <th className="py-2.5">Harga</th>
@@ -2450,7 +2450,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <th className="py-2.5 text-right">Aksi Status</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]">
                         {data?.marketplaceListings?.map((listing) => {
                           const mData = (listing.marketData && typeof listing.marketData === "object" ? listing.marketData : {}) as Record<string, unknown>;
                           const statusStr = String(mData.status ?? "AVAILABLE");
@@ -2481,7 +2481,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                   type="button"
                                   disabled={busyId === listing.id}
                                   onClick={() => void updateListingStatus(listing.id, statusStr === "SOLD" ? "AVAILABLE" : "SOLD")}
-                                  className="px-2.5 py-1 rounded text-xs border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD]"
+                                  className="px-2.5 py-1 rounded text-xs border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD]"
                                 >
                                   {statusStr === "SOLD" ? "Batalkan Rekber (Tersedia)" : "Selesaikan Rekber (Terjual)"}
                                 </button>
@@ -2516,7 +2516,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {/* ========================================================================= */}
             {tab === "members" && (
               <section className="space-y-6" role="tabpanel">
-                <div className="p-5 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                     <div>
                       <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -2526,7 +2526,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                         Atur role web, sesuaikan Level &amp; XP, berikan status Premium, dan berikan sanksi Ban.
                       </p>
                     </div>
-                    <div className="flex items-center gap-2.5 px-3 h-9 w-full sm:w-64 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] focus-within:border-[#9D4EDD] transition-colors">
+                    <div className="flex items-center gap-2.5 px-3 h-9 w-full sm:w-64 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] focus-within:border-[#9D4EDD] transition-colors">
                       <Search size={14} className="shrink-0 text-gray-400 pointer-events-none" />
                       <input
                         type="search"
@@ -2547,7 +2547,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   >
                     <table className="w-full text-left text-xs min-w-[700px]">
                       <thead>
-                        <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400">
+                        <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400">
                           <th className="py-2.5">Member</th>
                           <th className="py-2.5">Role Web</th>
                           <th className="py-2.5">Level / XP</th>
@@ -2555,7 +2555,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <th className="py-2.5 text-right">Aksi Akun</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]">
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]">
                         {data?.users.map((member) => {
                           const isSelf = member.id === data.currentUserId;
                           const isOwnerMember =
@@ -2586,7 +2586,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                     disabled={!isAdmin || isSelf || busyId === member.id}
                                     value={member.role}
                                     onChange={(e) => void updateMember(member, { role: e.target.value as Role })}
-                                    className="px-2 py-1 rounded text-xs border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none"
+                                    className="px-2 py-1 rounded text-xs border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none"
                                   >
                                     <option value="MEMBER">MEMBER (Adventurer)</option>
                                     <option value="MODERATOR">MODERATOR (⚔️ Lord Commander)</option>
@@ -2646,7 +2646,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
                   {/* Pagination */}
                   {Boolean(data?.pagination && data.pagination.totalPages > 1) && (
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-[#211C2B] mt-4">
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-[#2E1E45] mt-4">
                       <span className="text-xs text-gray-500">
                         Halaman {data?.pagination.page} dari {data?.pagination.totalPages}
                       </span>
@@ -2655,7 +2655,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           type="button"
                           disabled={page <= 1}
                           onClick={() => setPage(page - 1)}
-                          className="px-2.5 py-1 rounded border border-gray-200 dark:border-[#211C2B] text-xs disabled:opacity-50"
+                          className="px-2.5 py-1 rounded border border-gray-200 dark:border-[#2E1E45] text-xs disabled:opacity-50"
                         >
                           Sebelumnya
                         </button>
@@ -2663,7 +2663,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           type="button"
                           disabled={Boolean(data?.pagination && page >= data.pagination.totalPages)}
                           onClick={() => setPage(page + 1)}
-                          className="px-2.5 py-1 rounded border border-gray-200 dark:border-[#211C2B] text-xs disabled:opacity-50"
+                          className="px-2.5 py-1 rounded border border-gray-200 dark:border-[#2E1E45] text-xs disabled:opacity-50"
                         >
                           Selanjutnya
                         </button>
@@ -2680,7 +2680,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {tab === "moderation" && (
               <section className="space-y-8" role="tabpanel">
                 {/* 1. KELOLA SPONSOR RESMI */}
-                <div className="p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                     <div>
                       <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -2693,7 +2693,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   </div>
 
                   {/* Form Tambah Sponsor */}
-                  <form onSubmit={(e) => void handleAddSponsor(e)} className="p-4 rounded-lg bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#211C2B] mb-6 space-y-3">
+                  <form onSubmit={(e) => void handleAddSponsor(e)} className="p-4 rounded-none bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45] mb-6 space-y-3">
                     <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Tambah Sponsor Baru</p>
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                       <div>
@@ -2703,7 +2703,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           value={sponsorName}
                           onChange={(e) => setSponsorName(e.target.value)}
                           placeholder="Nama Sponsor / Brand *"
-                          className="w-full px-3 py-1.5 rounded border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                          className="w-full px-3 py-1.5 rounded border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                         />
                       </div>
                       <div>
@@ -2720,14 +2720,14 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           value={sponsorWebsite}
                           onChange={(e) => setSponsorWebsite(e.target.value)}
                           placeholder="Link Website (Opsional)"
-                          className="w-full px-3 py-1.5 rounded border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                          className="w-full px-3 py-1.5 rounded border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                         />
                       </div>
                       <div className="flex items-center gap-2">
                         <select
                           value={sponsorTier}
                           onChange={(e) => setSponsorTier(e.target.value)}
-                          className="flex-1 px-2 py-1.5 rounded border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] text-xs text-gray-900 dark:text-white focus:outline-none"
+                          className="flex-1 px-2 py-1.5 rounded border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs text-gray-900 dark:text-white focus:outline-none"
                         >
                           <option value="Benefactor">Benefactor</option>
                           <option value="Platinum Partner">Platinum</option>
@@ -2749,7 +2749,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     {data?.sponsors?.map((sp) => (
                       <div
                         key={sp.id}
-                        className="p-3 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex items-center justify-between gap-3"
+                        className="p-3 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex items-center justify-between gap-3"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           {sp.logoUrl ? (
@@ -2788,7 +2788,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                 </div>
 
                 {/* 2. LAPORAN PELANGGARAN & MODERASI THREAD */}
-                <div className="p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17]">
+                <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
                     <Flag size={18} className="text-amber-500" /> Moderasi Laporan Forum ({data?.reports.length ?? 0})
                   </h2>
@@ -2797,7 +2797,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   <div className="space-y-3">
                     {data?.reports.map((report) => (
                       <article
-                        className="p-4 rounded-lg border border-amber-200 dark:border-amber-900/40 bg-white dark:bg-[#120F17] flex flex-col md:flex-row md:items-center justify-between gap-4"
+                        className="p-4 rounded-none border border-amber-200 dark:border-amber-900/40 bg-white dark:bg-[#130921] flex flex-col md:flex-row md:items-center justify-between gap-4"
                         key={report.id}
                       >
                         <div className="min-w-0 flex-1">
@@ -2812,7 +2812,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <p className="text-xs text-gray-500">
                             Penulis: <strong>{report.post.author.username ?? "Gamer"}</strong> • Pelapor: <strong>{report.reporter.username ?? "Gamer"}</strong>
                           </p>
-                          <p className="text-xs text-gray-700 dark:text-gray-300 mt-2 bg-gray-50 dark:bg-[#1A1526] p-2 rounded border border-gray-200 dark:border-[#211C2B]">
+                          <p className="text-xs text-gray-700 dark:text-gray-300 mt-2 bg-gray-50 dark:bg-[#1A1526] p-2 rounded border border-gray-200 dark:border-[#2E1E45]">
                             <strong>Alasan:</strong> {report.reason}
                           </p>
                         </div>
@@ -2822,7 +2822,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                             type="button"
                             disabled={busyId === report.id}
                             onClick={() => void handleReport(report, "dismiss")}
-                            className="px-2.5 py-1 rounded text-xs border border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD]"
+                            className="px-2.5 py-1 rounded text-xs border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD]"
                           >
                             Abaikan
                           </button>
@@ -2845,7 +2845,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   </div>
 
                   {/* DAFTAR POST TERKINI + PIN / UNPIN */}
-                  <div className="mt-8 pt-6 border-t border-gray-200 dark:border-[#211C2B]">
+                  <div className="mt-8 pt-6 border-t border-gray-200 dark:border-[#2E1E45]">
                     <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">
                       Daftar Thread Terkini (Pin &amp; Hapus Konten)
                     </h3>
@@ -2853,7 +2853,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                       {data?.recentPosts?.slice(0, 10).map((post) => (
                         <div
                           key={post.id}
-                          className="p-3 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex items-center justify-between gap-3 text-xs"
+                          className="p-3 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex items-center justify-between gap-3 text-xs"
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             {post.isPinned && (
@@ -2876,7 +2876,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                               className={`p-1.5 rounded border ${
                                 post.isPinned
                                   ? "text-[#9D4EDD] border-[#9D4EDD]/40 bg-[#9D4EDD]/10"
-                                  : "text-gray-500 border-gray-200 dark:border-[#211C2B] hover:border-[#9D4EDD]"
+                                  : "text-gray-500 border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD]"
                               }`}
                               title={post.isPinned ? "Lepas Pin" : "Sematkan (Pin)"}
                             >
@@ -2929,7 +2929,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
           onClick={() => setAdminProofLightbox(null)}
         >
           <div
-            className="relative max-w-xl max-h-[90vh] bg-white dark:bg-[#120F17] border border-gray-300 dark:border-white/20 rounded-2xl p-4 shadow-2xl flex flex-col items-center my-auto"
+            className="relative max-w-xl max-h-[90vh] bg-white dark:bg-[#130921] border border-gray-300 dark:border-white/20 rounded-none p-4 shadow-2xl flex flex-col items-center my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -2943,7 +2943,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               <QrCode size={16} className="text-[#9D4EDD]" />
               <span>Bukti Transfer QRIS Pendaftaran Turnamen</span>
             </p>
-            <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 max-h-[72vh] flex items-center justify-center bg-black/50">
+            <div className="rounded-none overflow-hidden border border-gray-200 dark:border-white/10 max-h-[72vh] flex items-center justify-center bg-black/50">
               <img
                 src={adminProofLightbox}
                 alt="Bukti Transfer QRIS"
@@ -3021,7 +3021,7 @@ function BroadcastSection({
   const activeAnnouncements = announcements.filter((a) => new Date(a.expiresAt) > now);
 
   return (
-    <div className="p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] space-y-6">
+    <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] space-y-6">
       <div>
         <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Megaphone size={18} className="text-[#9D4EDD]" /> Broadcast Pengumuman Resmi Guild (Tayang 24 Jam)
@@ -3042,7 +3042,7 @@ function BroadcastSection({
             maxLength={120}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
             placeholder="Contoh: Maintenance Server Guild & Pendaftaran Turnamen"
           />
         </div>
@@ -3057,7 +3057,7 @@ function BroadcastSection({
             maxLength={1000}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
             placeholder="Tuliskan instruksi, detail jadwal, atau pengumuman penting untuk seluruh anggota…"
           />
         </div>
@@ -3074,14 +3074,14 @@ function BroadcastSection({
         <button
           type="submit"
           disabled={saving}
-          className="button button-primary px-5 py-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-2"
+          className="button button-primary px-5 py-2.5 rounded-none text-xs font-bold inline-flex items-center gap-2"
         >
           {saving ? "Menyiarkan pengumuman…" : "Siarkan Pengumuman (Web + Discord)"}
         </button>
       </form>
 
       {/* Daftar Pengumuman Aktif */}
-      <div className="pt-4 border-t border-gray-200 dark:border-[#211C2B]">
+      <div className="pt-4 border-t border-gray-200 dark:border-[#2E1E45]">
         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
           Pengumuman Sedang Tayang ({activeAnnouncements.length})
         </h3>
@@ -3089,7 +3089,7 @@ function BroadcastSection({
           {activeAnnouncements.map((item) => (
             <div
               key={item.id}
-              className="p-3 rounded-lg bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#211C2B] flex items-center justify-between text-xs"
+              className="p-3 rounded-none bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45] flex items-center justify-between text-xs"
             >
               <div>
                 <strong className="block font-bold text-gray-900 dark:text-white">{item.title}</strong>

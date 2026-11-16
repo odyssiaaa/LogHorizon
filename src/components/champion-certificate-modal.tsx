@@ -240,70 +240,70 @@ export function ChampionCertificateModal({
 
   return (
     <div
-      className="fixed inset-0 z-60 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+      className="fixed inset-0 z-60 bg-black/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="bg-[#0C0914] border-2 border-[#9D4EDD]/60 rounded-2xl w-full max-w-4xl p-4 sm:p-6 shadow-2xl relative space-y-4 my-auto animate-in zoom-in-95 duration-200 text-white max-h-[95vh] overflow-y-auto"
+        className="bg-[#130921] border border-[#7C3AED] rounded-none w-full max-w-4xl p-4 sm:p-6 shadow-2xl relative space-y-4 my-auto animate-in zoom-in-95 duration-200 text-white max-h-[95vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white p-1.5 rounded-full bg-white/5 hover:bg-white/10 transition z-20"
+          className="absolute top-4 right-4 text-gray-400 hover:text-white p-1 rounded-none bg-white/5 hover:bg-white/10 transition z-20"
         >
           <X size={20} />
         </button>
 
-        <div className="flex items-center gap-2 pb-2 border-b border-white/10">
+        <div className="flex items-center gap-2 pb-2 border-b border-[#2E1E45]">
           <Crown className="text-amber-400" size={20} />
           <div>
-            <h2 className="text-base sm:text-lg font-black tracking-wide text-white">
+            <h2 className="text-base sm:text-lg font-bold font-display tracking-tight text-white">
               Sertifikat Digital Resmi Juara 1 Turnamen
             </h2>
-            <p className="text-xs text-gray-400">
-              Poster prestasi resmi LogHorizon siap unduh & bagikan ke media sosial.
+            <p className="text-xs text-gray-400 font-sans">
+              Poster prestasi resmi LogHorizon siap unduh &amp; bagikan ke media sosial.
             </p>
           </div>
         </div>
 
         {/* Visual Poster Card Responsive Preview */}
-        <div className="relative rounded-xl overflow-hidden border border-amber-500/30 bg-gradient-to-b from-[#160F26] via-[#100A1D] to-[#0A0713] p-5 sm:p-7 shadow-inner text-center">
-          <div className="flex items-center justify-center gap-2 text-xs font-mono font-bold text-purple-300 uppercase tracking-widest mb-1">
+        <div className="relative rounded-none overflow-hidden border border-[#2E1E45] bg-[#09040F] p-5 sm:p-7 text-center">
+          <div className="flex items-center justify-center gap-2 text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-widest mb-1">
             <ShieldCheck size={14} className="text-amber-400" />
-            <span>LogHorizon Esports • Official Champion</span>
+            <span>LOGHORIZON ESPORTS // OFFICIAL CHAMPION</span>
           </div>
 
-          <h3 className="text-lg sm:text-2xl font-black text-white uppercase tracking-wider">
+          <h3 className="text-lg sm:text-2xl font-bold font-display text-white uppercase tracking-tight">
             {tournamentTitle}
           </h3>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold font-mono mt-2 mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-none bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold font-mono mt-2 mb-4">
             <span>{game}</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>{season}</span>
             {prizePool && (
               <>
-                <span>•</span>
+                <span>&bull;</span>
                 <span>{prizePool}</span>
               </>
             )}
           </div>
 
           <div className="my-2 flex flex-col items-center">
-            <span className="text-4xl sm:text-5xl my-1 animate-bounce">🏆</span>
+            <span className="text-4xl sm:text-5xl my-1">🏆</span>
             <span className="text-xs font-mono font-bold text-amber-400 tracking-widest uppercase">
-              1ST PLACE • GRAND CHAMPION
+              1ST PLACE // GRAND CHAMPION
             </span>
-            <h1 className="text-2xl sm:text-4xl font-black text-amber-300 mt-1 mb-3 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+            <h1 className="text-2xl sm:text-4xl font-bold font-display text-amber-300 mt-1 mb-3">
               {teamName}
             </h1>
           </div>
 
           {/* Roster Preview */}
-          <div className="max-w-2xl mx-auto rounded-xl border border-white/10 bg-black/40 p-3 sm:p-4 text-left">
-            <p className="text-[11px] font-mono text-purple-300 font-bold uppercase tracking-wider mb-2">
-              Susunan Pemain Juara:
+          <div className="max-w-2xl mx-auto rounded-none border border-[#2E1E45] bg-[#130921] p-3 sm:p-4 text-left">
+            <p className="text-[10px] font-mono text-[#A78BFA] font-bold uppercase tracking-wider mb-2">
+              SUSUNAN PEMAIN JUARA:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               {(roster.length > 0 ? roster : [
@@ -315,12 +315,12 @@ export function ChampionCertificateModal({
               ]).map((player, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5"
+                  className="flex items-center justify-between p-2 rounded-none bg-[#09040F] border border-[#2E1E45]"
                 >
-                  <span className="font-semibold text-white truncate max-w-[140px]">
+                  <span className="font-semibold text-white truncate max-w-[140px] font-sans">
                     {idx + 1}. {player.name}
                   </span>
-                  <span className="font-mono text-[11px] text-amber-300/80 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                  <span className="font-mono text-[10px] text-amber-300/80 bg-amber-500/10 px-1.5 py-0.5 rounded-none border border-amber-500/20">
                     {player.inGameId || "VERIFIED"}
                   </span>
                 </div>
@@ -328,9 +328,9 @@ export function ChampionCertificateModal({
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] font-mono text-gray-500 mt-5 pt-3 border-t border-white/5">
-            <span>Tanggal Verifikasi: {formattedDate}</span>
-            <span className="text-[#9D4EDD]">Official Guild Record • LogHorizon</span>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] font-mono text-gray-500 mt-5 pt-3 border-t border-[#2E1E45]">
+            <span>TANGGAL VERIFIKASI: {formattedDate}</span>
+            <span className="text-[#A78BFA]">OFFICIAL GUILD RECORD // LOGHORIZON</span>
           </div>
         </div>
 
@@ -339,25 +339,25 @@ export function ChampionCertificateModal({
 
         {/* Action Controls */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-          <p className="text-xs text-gray-400">
-            Format resolusi tinggi (1200x675 HD) optimal untuk Instagram Story & Discord.
+          <p className="text-xs text-gray-400 font-sans">
+            Format resolusi tinggi (1200x675 HD) optimal untuk Instagram Story &amp; Discord.
           </p>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={handleDownloadPNG}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-black hover:from-amber-400 hover:to-amber-500 active:scale-95 transition shadow-[0_0_15px_rgba(245,158,11,0.4)]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-none text-xs font-mono font-bold bg-[#F59E0B] hover:bg-[#D97706] text-black transition"
             >
               <Download size={15} />
-              <span>Download PNG 📥</span>
+              <span>DOWNLOAD PNG</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-white/10 text-white hover:bg-white/20 transition"
+              className="px-4 py-2.5 rounded-none text-xs font-mono font-bold bg-[#1A0E2E] hover:bg-[#251540] text-gray-300 border border-[#2E1E45] transition"
             >
-              Tutup
+              TUTUP
             </button>
           </div>
         </div>

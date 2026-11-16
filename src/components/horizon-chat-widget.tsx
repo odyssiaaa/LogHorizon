@@ -155,7 +155,7 @@ export function HorizonChatWidget() {
           onClick={() => setIsOpen((prev) => !prev)}
           className={`relative group w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-200 shadow-xl focus:outline-none ${
             isOpen
-              ? "bg-[#211C2B] text-white border border-[#9D4EDD]/50 hover:bg-[#2A2338]"
+              ? "bg-[#2E1E45] text-white border border-[#9D4EDD]/50 hover:bg-[#2A2338]"
               : "bg-[#9D4EDD] text-white hover:bg-[#8338EC] shadow-[#9D4EDD]/35 hover:scale-105 active:scale-95"
           }`}
           aria-label={isOpen ? "Tutup chat Satpam Horizon" : "Buka chat Satpam Horizon"}
@@ -167,7 +167,7 @@ export function HorizonChatWidget() {
             <>
               <Shield className="size-5 sm:size-6 animate-pulse" />
               {/* Online indicator dot */}
-              <span className="absolute top-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-400 border-2 border-[#120F17] shadow-sm animate-pulse" />
+              <span className="absolute top-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-400 border-2 border-[#130921] shadow-sm animate-pulse" />
             </>
           )}
         </button>
@@ -178,14 +178,14 @@ export function HorizonChatWidget() {
         <aside
           role="dialog"
           aria-label="Jendela Chat Satpam Horizon"
-          className="fixed bottom-20 right-4 sm:bottom-20 sm:right-5 z-50 w-[calc(100vw-2rem)] sm:w-96 h-[520px] max-h-[82vh] rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] shadow-2xl flex flex-col overflow-hidden transition-all duration-200"
+          className="fixed bottom-20 right-4 sm:bottom-20 sm:right-5 z-50 w-[calc(100vw-2rem)] sm:w-96 h-[520px] max-h-[82vh] rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-2xl flex flex-col overflow-hidden transition-all duration-200"
         >
           {/* Header */}
-          <div className="px-4 py-3 bg-gray-50 dark:bg-[#1A1524] border-b border-gray-200 dark:border-[#211C2B] flex items-center justify-between gap-3">
+          <div className="px-4 py-3 bg-gray-50 dark:bg-[#1A1524] border-b border-gray-200 dark:border-[#2E1E45] flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="relative w-8 h-8 rounded-full bg-[#9D4EDD]/20 text-[#9D4EDD] dark:text-[#C77DFF] flex items-center justify-center border border-[#9D4EDD]/40 shrink-0">
                 <Bot size={17} />
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#120F17]" />
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#130921]" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -251,7 +251,7 @@ export function HorizonChatWidget() {
                   {/* Bubble */}
                   <div className={`max-w-[80%] space-y-1 ${isUser ? "items-end" : "items-start"}`}>
                     <div
-                      className={`px-3.5 py-2.5 rounded-xl leading-relaxed whitespace-pre-wrap break-words ${
+                      className={`px-3.5 py-2.5 rounded-none leading-relaxed whitespace-pre-wrap break-words ${
                         isUser
                           ? "bg-[#9D4EDD] text-white rounded-tr-none shadow-sm shadow-[#9D4EDD]/20"
                           : "bg-gray-100 dark:bg-[#1A1524] text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-[#262033] rounded-tl-none"
@@ -273,7 +273,7 @@ export function HorizonChatWidget() {
                 <div className="shrink-0 w-7 h-7 rounded-full bg-[#9D4EDD]/20 text-[#9D4EDD] dark:text-[#C77DFF] flex items-center justify-center border border-[#9D4EDD]/30">
                   <Shield size={14} className="animate-spin" />
                 </div>
-                <div className="px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-[#1A1524] border border-gray-200 dark:border-[#262033] rounded-tl-none flex items-center gap-1.5 text-gray-400 text-xs font-mono">
+                <div className="px-3.5 py-2.5 rounded-none bg-gray-100 dark:bg-[#1A1524] border border-gray-200 dark:border-[#262033] rounded-tl-none flex items-center gap-1.5 text-gray-400 text-xs font-mono">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#9D4EDD] animate-ping" />
                   <span>Satpam Horizon sedang mengetik...</span>
                 </div>
@@ -303,7 +303,7 @@ export function HorizonChatWidget() {
           {/* Input Footer */}
           <form
             onSubmit={handleSubmit}
-            className="p-3 bg-gray-50 dark:bg-[#181320] border-t border-gray-200 dark:border-[#211C2B] flex items-center gap-2"
+            className="p-3 bg-gray-50 dark:bg-[#181320] border-t border-gray-200 dark:border-[#2E1E45] flex items-center gap-2"
           >
             <input
               ref={inputRef}

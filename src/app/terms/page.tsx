@@ -16,8 +16,8 @@ export default function TermsPage() {
         <ArrowLeft size={15} /> Kembali ke Beranda
       </Link>
 
-      <article className="p-6 sm:p-10 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] shadow-xl space-y-6 text-gray-700 dark:text-gray-300">
-        <header className="border-b border-gray-100 dark:border-[#211C2B] pb-6">
+      <article className="p-6 sm:p-10 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl space-y-6 text-gray-700 dark:text-gray-300">
+        <header className="border-b border-gray-100 dark:border-[#2E1E45] pb-6">
           <p className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-1 flex items-center gap-1.5">
             <FileText size={14} /> SYARAT &amp; KETENTUAN KOMUNITAS
           </p>
@@ -68,7 +68,7 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section className="space-y-2 pt-4 border-t border-gray-100 dark:border-[#211C2B]">
+        <section className="space-y-2 pt-4 border-t border-gray-100 dark:border-[#2E1E45]">
           <h2 className="text-base font-bold text-gray-900 dark:text-white">Penegakan &amp; Yurisdiksi Pengurus</h2>
           <p className="text-xs leading-relaxed text-gray-500">
             Emperor dan Moderator berhak membatasi, menangguhkan, atau menghapus akun/postingan yang terbukti melanggar

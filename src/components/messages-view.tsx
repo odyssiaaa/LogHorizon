@@ -486,22 +486,22 @@ export function MessagesView() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-xl border border-red-500/30 bg-red-950/20 text-red-300 text-xs flex items-center justify-between">
+        <div className="mb-4 p-3 rounded-none border border-red-500/30 bg-red-950/20 text-red-300 text-xs flex items-center justify-between">
           <span>{error}</span>
           <button onClick={() => setError("")}><X size={14} /></button>
         </div>
       )}
 
       {/* Main Dual-Column Panel */}
-      <div className="h-[76vh] min-h-[520px] rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] shadow-xl overflow-hidden flex">
+      <div className="h-[76vh] min-h-[520px] rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl overflow-hidden flex">
         {/* LEFT COLUMN: CONVERSATION LIST */}
         <aside
-          className={`w-full md:w-80 lg:w-96 border-r border-gray-200 dark:border-[#211C2B] flex flex-col bg-gray-50/50 dark:bg-[#100D16] ${
+          className={`w-full md:w-80 lg:w-96 border-r border-gray-200 dark:border-[#2E1E45] flex flex-col bg-gray-50/50 dark:bg-[#100D16] ${
             activeConvId ? "hidden md:flex" : "flex"
           }`}
         >
           {/* Search Box */}
-          <div className="p-3.5 border-b border-gray-200 dark:border-[#211C2B]">
+          <div className="p-3.5 border-b border-gray-200 dark:border-[#2E1E45]">
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -599,14 +599,14 @@ export function MessagesView() {
 
         {/* RIGHT COLUMN: ACTIVE CHAT PANE */}
         <section
-          className={`flex-1 flex flex-col bg-white dark:bg-[#120F17] ${
+          className={`flex-1 flex flex-col bg-white dark:bg-[#130921] ${
             !activeConvId ? "hidden md:flex" : "flex"
           }`}
         >
           {activeConvId && activeDetail ? (
             <>
               {/* Chat Header */}
-              <div className="px-4 py-3 border-b border-gray-200 dark:border-[#211C2B] flex items-center justify-between gap-3 bg-white dark:bg-[#120F17]">
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-[#2E1E45] flex items-center justify-between gap-3 bg-white dark:bg-[#130921]">
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Mobile Back Button */}
                   <button
@@ -717,7 +717,7 @@ export function MessagesView() {
                         )}
 
                         <div
-                          className={`max-w-[85%] sm:max-w-[70%] px-4 py-2.5 rounded-2xl text-xs sm:text-sm break-words leading-relaxed shadow-sm ${
+                          className={`max-w-[85%] sm:max-w-[70%] px-4 py-2.5 rounded-none text-xs sm:text-sm break-words leading-relaxed shadow-sm ${
                             isMe
                               ? "bg-gradient-to-r from-[#8338ec] to-[#9D4EDD] text-white rounded-br-xs"
                               : "bg-gray-100 dark:bg-[#1C1726] text-gray-900 dark:text-gray-100 rounded-bl-xs border border-gray-200/50 dark:border-white/5"
@@ -745,10 +745,10 @@ export function MessagesView() {
               {/* Chat Send Form */}
               <form
                 onSubmit={handleSendMessage}
-                className="p-3 border-t border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col gap-2"
+                className="p-3 border-t border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col gap-2"
               >
                 {chatAttachment && (
-                  <div className="flex items-center gap-2 p-1.5 px-3 bg-[#9D4EDD]/15 border border-[#9D4EDD]/30 rounded-xl w-fit max-w-full">
+                  <div className="flex items-center gap-2 p-1.5 px-3 bg-[#9D4EDD]/15 border border-[#9D4EDD]/30 rounded-none w-fit max-w-full">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={chatAttachment} alt="Lampiran" className="w-10 h-10 object-cover rounded border border-purple-500/40" />
                     <span className="text-[11px] text-purple-300 font-medium truncate max-w-[180px]">Foto siap dikirim</span>
@@ -769,12 +769,12 @@ export function MessagesView() {
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     placeholder="Ketik pesan..."
-                    className="flex-1 h-10 px-3.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#16121E] text-xs sm:text-sm focus:border-[#9D4EDD] focus:outline-none"
+                    className="flex-1 h-10 px-3.5 rounded-none border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#16121E] text-xs sm:text-sm focus:border-[#9D4EDD] focus:outline-none"
                   />
                   <button
                     type="submit"
                     disabled={(!messageInput.trim() && !chatAttachment) || sending}
-                    className="button button-primary h-10 px-4 rounded-xl font-bold inline-flex items-center gap-1.5"
+                    className="button button-primary h-10 px-4 rounded-none font-bold inline-flex items-center gap-1.5"
                   >
                     <Send size={15} />
                     <span className="hidden sm:inline">Kirim</span>
@@ -784,7 +784,7 @@ export function MessagesView() {
             </>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-8 text-gray-400 space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-[#9D4EDD] flex items-center justify-center">
+              <div className="w-14 h-14 rounded-none bg-purple-500/10 border border-purple-500/20 text-[#9D4EDD] flex items-center justify-center">
                 <MessageSquare size={28} />
               </div>
               <h3 className="font-bold text-base text-gray-900 dark:text-white">
@@ -801,8 +801,8 @@ export function MessagesView() {
       {/* MODAL: BUAT GRUP CHAT */}
       {showCreateGroup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-[#211C2B] pb-3">
+          <div className="w-full max-w-md rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-[#2E1E45] pb-3">
               <h3 className="font-extrabold text-base text-gray-900 dark:text-white flex items-center gap-2">
                 <Users size={18} className="text-[#9D4EDD]" />
                 <span>Buat Grup Obrolan Komunitas</span>
@@ -892,7 +892,7 @@ export function MessagesView() {
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-[#211C2B]">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-[#2E1E45]">
                 <button type="button" onClick={() => setShowCreateGroup(false)} className="button button-quiet">
                   Batal
                 </button>
@@ -908,8 +908,8 @@ export function MessagesView() {
       {/* MODAL: TAMBAH ANGGOTA GRUP */}
       {showAddMembersModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-[#211C2B] pb-3">
+          <div className="w-full max-w-md rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-[#2E1E45] pb-3">
               <h3 className="font-extrabold text-base text-gray-900 dark:text-white flex items-center gap-2">
                 <UserPlus size={18} className="text-[#9D4EDD]" />
                 <span>Tambah Anggota ke Grup</span>
@@ -987,7 +987,7 @@ export function MessagesView() {
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-[#211C2B]">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-[#2E1E45]">
                 <button type="button" onClick={() => setShowAddMembersModal(false)} className="button button-quiet">
                   Batal
                 </button>

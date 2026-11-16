@@ -283,21 +283,61 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   return (
     <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
       <div>
-        <div className="market-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="market-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 border-b border-[#2E1E45] pb-6">
           <div className="text-left">
-            <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">MARKETPLACE KOMUNITAS</p>
-            <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Lapak <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Gamer</span></h1>
-            <p className="muted-copy text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-2xl mt-1 leading-relaxed">Jual beli akun, item, top-up, dan jasa gaming dengan komunitas LogHorizon. Transaksi dipantau oleh sistem keamanan guild.</p>
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap mt-2 live-status live-${liveState}`}>{liveState === "live" ? "Live" : liveState === "connecting" ? "Menghubungkan live…" : liveState === "stale" ? "Memperbarui…" : liveState === "error" ? "Live terputus" : "Live tidak aktif"}</span>
+            <p className="section-kicker text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-widest mb-1.5 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[#7C3AED]" />
+              MARKETPLACE KOMUNITAS // ESCROW REKBER
+            </p>
+            <h1 className="page-title font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-[#F8FAFC] break-words">
+              LAPAK <span className="text-[#A78BFA]">GAMER</span>
+            </h1>
+            <p className="muted-copy text-xs sm:text-sm md:text-base text-[#A78BFA] max-w-2xl mt-1.5 leading-relaxed font-sans">
+              Jual beli akun, item, top-up, dan jasa gaming dengan komunitas LogHorizon. Transaksi dipantau oleh sistem keamanan guild.
+            </p>
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none text-xs font-mono font-semibold uppercase tracking-wider whitespace-nowrap mt-2.5 border ${
+              liveState === "live"
+                ? "bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30"
+                : "bg-[#1A0E2E] text-[#A78BFA] border-[#2E1E45]"
+            }`}>
+              {liveState === "live" ? "● LIVE SYNC" : liveState === "connecting" ? "MENYAMBUNG LIVE…" : liveState === "stale" ? "MEMPERBARUI…" : liveState === "error" ? "TERPUTUS" : "OFFLINE"}
+            </span>
           </div>
-          <div>{status === "loading" ? <span className="nav-loading" /> : <button className="button button-primary w-full sm:w-auto inline-flex items-center justify-center gap-2" onClick={createListing}><Plus size={17} /> <span>Buat Lapak</span></button>}</div>
+          <div>
+            {status === "loading" ? (
+              <span className="nav-loading" />
+            ) : (
+              <button
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] transition-colors"
+                onClick={createListing}
+              >
+                <Plus size={16} /> <span>BUAT LAPAK BARU</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        <section className="market-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] mb-6" aria-label="Filter dan pencarian marketplace">
-          <div className="flex items-center gap-3 px-3.5 h-11 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors sm:col-span-2 lg:col-span-1">
-            <div className="shrink-0 text-gray-400 flex items-center">
+        {/* ESCROW SECURITY PROTOCOL BANNER */}
+        <div className="mb-6 p-4 rounded-none border border-[#2E1E45] border-l-4 border-l-[#10B981] bg-[#130921] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left font-mono">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-none bg-[#1A0E2E] border border-[#2E1E45] flex items-center justify-center text-[#10B981] shrink-0">
+              <ShieldCheck size={18} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-[#F8FAFC] uppercase tracking-wider">PROTOKOL REKBER RESMI GUILD LOGHORIZON (3-PARTY ESCROW)</p>
+              <p className="text-[11px] text-[#A78BFA] font-sans">Dana pembeli ditahan aman di kas guild hingga verifikasi kepemilikan akun/item selesai 100%.</p>
+            </div>
+          </div>
+          <span className="text-[10px] uppercase font-bold px-2.5 py-1 bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 rounded-none shrink-0 self-start sm:self-auto">
+            ● ESCROW READY
+          </span>
+        </div>
+
+        <section className="market-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 rounded-none border border-[#2E1E45] bg-[#130921] mb-6 text-left" aria-label="Filter dan pencarian marketplace">
+          <div className="flex items-center gap-3 px-3.5 h-11 rounded-none border border-[#2E1E45] bg-[#1A0E2E] focus-within:border-[#7C3AED] transition-colors sm:col-span-2 lg:col-span-1">
+            <div className="shrink-0 text-[#A78BFA] flex items-center">
               {isSearching ? (
-                <Loader2 size={16} className="animate-spin text-[#9D4EDD]" />
+                <Loader2 size={16} className="animate-spin text-[#7C3AED]" />
               ) : (
                 <Search size={16} />
               )}
@@ -305,9 +345,9 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
             <input
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
-              placeholder="Cari judul, game, atau penjual…"
+              placeholder="Cari judul, game, penjual…"
               aria-label="Cari lapak"
-              className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
+              className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-[#F8FAFC] placeholder:text-[#A78BFA]/50 p-0 font-sans"
             />
             {searchValue && (
               <button
@@ -317,15 +357,32 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                   setSearch("");
                 }}
                 aria-label="Hapus pencarian"
-                className="shrink-0 text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                className="shrink-0 text-[#A78BFA] hover:text-[#F8FAFC] font-mono text-xs uppercase"
               >
                 <X size={14} />
               </button>
             )}
           </div>
-          <label>Tipe transaksi<select value={type} onChange={(event) => setType(event.target.value)}><option value="ALL">Semua</option><option value="WTS">WTS · Dijual</option><option value="WTB">WTB · Dicari</option></select></label>
-          <label>Nama game<input value={game} onChange={(event) => setGame(event.target.value)} placeholder="Semua game" /></label>
-          <label><ArrowDownUp size={14} /> Urutkan harga<select value={sort} onChange={(event) => setSort(event.target.value)}><option value="newest">Terbaru</option><option value="cheapest">Termurah</option><option value="expensive">Termahal</option></select></label>
+          <label className="text-xs font-mono text-[#A78BFA] uppercase">
+            Tipe transaksi
+            <select className="mt-1 w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] text-xs font-mono focus:border-[#7C3AED]" value={type} onChange={(event) => setType(event.target.value)}>
+              <option value="ALL">Semua Tipe</option>
+              <option value="WTS">WTS · Dijual</option>
+              <option value="WTB">WTB · Dicari</option>
+            </select>
+          </label>
+          <label className="text-xs font-mono text-[#A78BFA] uppercase">
+            Nama game
+            <input className="mt-1 w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] text-xs font-sans focus:border-[#7C3AED]" value={game} onChange={(event) => setGame(event.target.value)} placeholder="Semua game" />
+          </label>
+          <label className="text-xs font-mono text-[#A78BFA] uppercase">
+            <span className="flex items-center gap-1"><ArrowDownUp size={12} /> Urutkan harga</span>
+            <select className="mt-1 w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] text-xs font-mono focus:border-[#7C3AED]" value={sort} onChange={(event) => setSort(event.target.value)}>
+              <option value="newest">Terbaru</option>
+              <option value="cheapest">Termurah</option>
+              <option value="expensive">Termahal</option>
+            </select>
+          </label>
         </section>
 
         {notice && <div className="inline-notice mb-4" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Tutup notifikasi"><X size={15} /></button></div>}
@@ -340,48 +397,51 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
         ) : posts.length ? (
           <section className="market-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {posts.map((post, index) => {
-            if (!isPublicMarketData(post.marketData)) return <article className="market-card" key={post.id}><p className="inline-error">Data lapak tidak valid.</p></article>;
+            if (!isPublicMarketData(post.marketData)) return <article className="market-card p-4 rounded-none border border-[#2E1E45] bg-[#130921]" key={post.id}><p className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none">Data lapak tidak valid.</p></article>;
             const market = post.marketData;
-            return <motion.article className={`market-card rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] hover:border-[#9D4EDD]/40 transition-all ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
-              <div className="market-listing-labels flex flex-wrap gap-1.5 mb-3">
-                {post.isPinned && <span className="pinned-label">PINNED</span>}
+            return <motion.article className={`market-card rounded-none border border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED] transition-all p-4 ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold opacity-60" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
+              <div className="market-listing-labels flex flex-wrap gap-1.5 mb-3 font-mono">
+                {post.isPinned && <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-[#7C3AED]/20 text-[#A78BFA] border border-[#7C3AED]/40">PINNED</span>}
                 {(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                    ✦ PREMIUM SELLER / VERIFIED
+                  <span className="px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30">
+                    ✦ VERIFIED SELLER
                   </span>
                 )}
-                <span className={market.type === "WTS" ? "trade-badge wts" : "trade-badge wtb"}>{market.type}</span>
-                <span className="market-label-game">{market.game}</span>
-                <span className="market-label-price">{money.format(market.price)}</span>
-                <span className={`status-badge ${market.status === "AVAILABLE" ? "available" : market.status === "IN_ESCROW" ? "in-escrow" : "sold"}`}>
+                <span className={`px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase ${market.type === "WTS" ? "bg-[#7C3AED] text-[#F8FAFC]" : "bg-[#1A0E2E] text-[#A78BFA] border border-[#2E1E45]"}`}>{market.type}</span>
+                <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-[#1A0E2E] text-[#A78BFA] border border-[#2E1E45]">{market.game}</span>
+                <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
                   {market.status === "IN_ESCROW" ? "IN ESCROW" : market.status}
                 </span>
               </div>
-              <div className="market-image"><MarketImage src={market.imageUrl} alt={`Bukti lapak ${post.title}`} /></div>
+              <div className="market-image mb-3 rounded-none overflow-hidden border border-[#2E1E45] bg-[#1A0E2E]"><MarketImage src={market.imageUrl} alt={`Bukti lapak ${post.title}`} /></div>
               <div className="market-card-body text-left">
-                <h2 className="text-base sm:text-lg font-bold break-words text-gray-900 dark:text-white">{post.title}</h2>
-                <p className="market-description break-words text-xs sm:text-sm line-clamp-2 mt-1 text-gray-600 dark:text-gray-300">{post.content}</p>
-                <div className="market-card-meta flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="font-mono text-xs text-[#A78BFA] uppercase">HARGA:</span>
+                  <span className="font-mono text-base font-extrabold text-[#10B981]">{money.format(market.price)}</span>
+                </div>
+                <h2 className="font-display text-base font-bold uppercase tracking-tight break-words text-[#F8FAFC]">{post.title}</h2>
+                <p className="market-description break-words text-xs text-[#A78BFA] font-sans line-clamp-2 mt-1 leading-relaxed">{post.content}</p>
+                <div className="market-card-meta flex flex-wrap items-center justify-between gap-2 mt-3 pt-2.5 border-t border-[#2E1E45] font-mono text-xs">
                   <span className="post-author flex items-center gap-2">
-                    <DiscordAvatar src={post.author.avatar} username={post.author.username} size={24} />
+                    <DiscordAvatar src={post.author.avatar} username={post.author.username} size={22} />
                     <span className="flex items-center gap-1.5 flex-wrap">
-                      <span>oleh{" "}</span>
+                      <span className="text-[#A78BFA]">oleh{" "}</span>
                       <Link
                         href={`/u/${post.author.username ?? "user"}`}
-                        className={`font-semibold hover:underline ${(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") ? "premium-username" : ""}`}
+                        className={`font-semibold hover:underline ${(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") ? "premium-username" : "text-[#F8FAFC]"}`}
                       >
                         {post.author.username ?? "Gamer"}
                       </Link>
                       {(post.author.username?.toLowerCase() === ".odyssia" || post.author.username?.toLowerCase() === "odyssia") ? (
-                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30">
                           👑 Emperor
                         </span>
                       ) : post.author.role === "ADMIN" ? (
-                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30">
                           ✨ Prince
                         </span>
                       ) : post.author.role === "MODERATOR" ? (
-                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-none bg-blue-500/15 text-blue-400 border border-blue-500/30">
                           ⚔️ Mod
                         </span>
                       ) : null}
@@ -389,28 +449,28 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               </span>
               {(post.author.successfulSales ?? 0) > 0 ? (
                 <span
-                  className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 px-2.5 py-0.5 rounded-full text-[11px]"
+                  className="inline-flex items-center gap-1 font-bold text-[#10B981] bg-[#10B981]/10 border border-[#10B981]/30 px-2 py-0.5 rounded-none text-[10px]"
                   title="Reputasi Transaksi Rekber Terverifikasi"
                 >
-                  <ShieldCheck size={12} className="text-emerald-500 shrink-0" />
-                  <span>🛡️ {post.author.successfulSales} Transaksi Rekber Sukses</span>
+                  <ShieldCheck size={12} className="text-[#10B981] shrink-0" />
+                  <span>🛡️ {post.author.successfulSales} REKBER SUKSES</span>
                 </span>
               ) : (
                 <span
-                  className="inline-flex items-center gap-1 font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-2.5 py-0.5 rounded-full text-[11px]"
+                  className="inline-flex items-center gap-1 font-semibold text-[#A78BFA] bg-[#1A0E2E] border border-[#2E1E45] px-2 py-0.5 rounded-none text-[10px]"
                   title="Penjual baru di LogHorizon"
                 >
-                  <Shield size={12} className="text-gray-400 shrink-0" />
-                  <span>🛡️ Penjual Baru</span>
+                  <Shield size={12} className="text-[#A78BFA] shrink-0" />
+                  <span>🛡️ PENJUAL BARU</span>
                 </span>
               )}
             </div>
             <PostReactions postId={post.id} likes={post.likes} dislikes={post.dislikes} reaction={post.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} onChange={(result) => setPosts((current) => current.map((entry) => entry.id === post.id ? { ...entry, ...result, votes: result.reaction ? [{ value: result.reaction }] : [] } : entry))} />
             {user && contacts[post.id]?.userId === user.id ? (
-              <div className="market-contact-revealed">
-                <span>Kontak: <strong>{contacts[post.id].contact}</strong></span>
+              <div className="market-contact-revealed font-mono text-xs my-2 p-2 bg-[#1A0E2E] border border-[#2E1E45]">
+                <span className="text-[#A78BFA]">Kontak: <strong className="text-[#F8FAFC]">{contacts[post.id].contact}</strong></span>
                 <button
-                  className="contact-button flex items-center justify-center gap-1.5"
+                  className="mt-1.5 w-full py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] flex items-center justify-center gap-1.5"
                   onClick={() => void performContactAction(post.id, contacts[post.id])}
                 >
                   {contacts[post.id].discordId ? "💬 Private Chat (PC) Discord" : "Hubungi / Salin Kontak"}
@@ -418,20 +478,20 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               </div>
             ) : (
               <button
-                className="contact-button flex items-center justify-center gap-1.5"
+                className="mt-2 w-full py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#1A0E2E] text-[#A78BFA] border border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC] transition flex items-center justify-center gap-1.5"
                 disabled={contactLoading === post.id || status === "loading"}
                 onClick={() => void revealContact(post.id)}
               >
                 {contactLoading === post.id
-                  ? "Memuat kontak…"
+                  ? "MEMUAT KONTAK…"
                   : status === "loading"
-                    ? "Memeriksa akun…"
+                    ? "MEMERIKSA AKUN…"
                     : user
                       ? "💬 Hubungi Penjual (PC Discord/WA)"
                       : "Login untuk Lihat Kontak"}
               </button>
             )}
-            <div className="market-card-actions flex flex-wrap gap-2 mt-4">
+            <div className="market-card-actions flex flex-wrap gap-2 mt-4 font-mono">
               <ShareButton
                 url={`/marketplace?id=${post.id}`}
                 title={`[${market.type}] ${post.title} - Marketplace LogHorizon`}
@@ -442,7 +502,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               {user?.id !== post.authorId && (
                 <Link
                   href={`/messages?user=${post.authorId}`}
-                  className="button button-quiet text-xs flex items-center gap-1 border-[#9D4EDD]/40 text-[#9D4EDD]"
+                  className="px-3 py-1.5 rounded-none font-mono text-xs font-semibold uppercase tracking-wider bg-[#1A0E2E] text-[#A78BFA] border border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC] flex items-center gap-1"
                   title="Kirim Pesan Langsung (PM) ke Penjual"
                 >
                   <MessageSquare size={13} /> PM Penjual
@@ -450,7 +510,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               )}
               {market.status === "AVAILABLE" && market.type === "WTS" && user?.id !== post.authorId && (
                 <button
-                  className="button button-primary"
+                  className="px-3.5 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED]"
                   disabled={escrowLoading === post.id}
                   onClick={() => void startEscrow(post.id)}
                 >
@@ -460,23 +520,23 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               {post.escrowTransactions?.map((transaction) => (
                 <button
                   key={transaction.id}
-                  className="button button-quiet text-xs flex items-center gap-1 border-purple-500/40 text-purple-400"
+                  className="px-3 py-1.5 rounded-none font-mono text-xs font-semibold uppercase tracking-wider bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 flex items-center gap-1"
                   onClick={() => setActiveEscrowModalId(transaction.id)}
                 >
                   <ShieldCheck size={13} /> Ruang Rekber 3-Pihak
                 </button>
               ))}
-              {(user?.id === post.authorId || user?.role === "ADMIN" || user?.role === "MODERATOR") && market.status !== "IN_ESCROW" && <button className="button button-quiet" disabled={escrowLoading === post.id} onClick={() => void updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD")}>{market.status === "SOLD" ? "Tandai tersedia" : "Tandai terjual"}</button>}
-              {post.escrowTransactions?.filter((transaction) => transaction.sellerId === user?.id || user?.role === "ADMIN" || user?.role === "MODERATOR").map((transaction) => <button key={transaction.id} className="button button-sold" disabled={escrowLoading === post.id} onClick={() => void completeEscrow(transaction.id, post.id)}>{escrowLoading === post.id ? "Memproses…" : "Konfirmasi transaksi selesai"}</button>)}
-              <button className="report-button" onClick={() => void report(post.id)}><Flag size={14} /> Laporkan Penjual</button>
+              {(user?.id === post.authorId || user?.role === "ADMIN" || user?.role === "MODERATOR") && market.status !== "IN_ESCROW" && <button className="px-3 py-1.5 rounded-none font-mono text-xs uppercase tracking-wider bg-[#1A0E2E] text-[#A78BFA] border border-[#2E1E45] hover:border-[#7C3AED]" disabled={escrowLoading === post.id} onClick={() => void updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD")}>{market.status === "SOLD" ? "Tandai tersedia" : "Tandai terjual"}</button>}
+              {post.escrowTransactions?.filter((transaction) => transaction.sellerId === user?.id || user?.role === "ADMIN" || user?.role === "MODERATOR").map((transaction) => <button key={transaction.id} className="px-3 py-1.5 rounded-none font-mono text-xs uppercase tracking-wider bg-[#10B981] text-[#09040F] font-bold" disabled={escrowLoading === post.id} onClick={() => void completeEscrow(transaction.id, post.id)}>{escrowLoading === post.id ? "Memproses…" : "Konfirmasi selesai"}</button>)}
+              <button className="text-xs font-mono text-[#A78BFA] hover:text-rose-400 inline-flex items-center gap-1" onClick={() => void report(post.id)}><Flag size={14} /> Report</button>
               {(user?.id === post.authorId || user?.role === "ADMIN" || user?.role === "MODERATOR") && (
                 <button
-                  className="report-button text-red-500 hover:text-red-400"
+                  className="text-xs font-mono text-red-400 hover:text-red-300 inline-flex items-center gap-1 ml-auto"
                   disabled={escrowLoading === post.id}
                   onClick={() => void deleteListing(post.id)}
                   title="Hapus lapak"
                 >
-                  <Trash2 size={14} /> Hapus Lapak
+                  <Trash2 size={14} /> Hapus
                 </button>
               )}
             </div>

@@ -64,61 +64,68 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
 
   return (
     <main className="leaderboard-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
-      <header className="leaderboard-heading mb-6 text-left">
-        <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">KOMPETISI GUILD</p>
-        <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Leaderboard</span></h1>
-        <p className="muted-copy text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">Peringkat petualang aktif dan benefactor berdasarkan dukungan terverifikasi.</p>
+      <header className="leaderboard-heading mb-6 text-left border-b border-[#2E1E45] pb-6">
+        <p className="section-kicker text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-widest mb-1.5 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 bg-[#7C3AED]" />
+          KOMPETISI GUILD // LEADERBOARD
+        </p>
+        <h1 className="page-title font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-[#F8FAFC] break-words">
+          GUILD <span className="text-[#A78BFA]">LEADERBOARD</span>
+        </h1>
+        <p className="muted-copy text-xs sm:text-sm md:text-base text-[#A78BFA] mt-1.5 leading-relaxed font-sans">
+          Peringkat petualang aktif dan benefactor berdasarkan level, XP, dan kontribusi kas guild.
+        </p>
       </header>
 
       {/* DAILY CHECK-IN WIDGET */}
       <DailyCheckInWidget />
 
-      <div className="flex items-center gap-3 px-3.5 h-11 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors mb-4">
-        <Search size={16} className="shrink-0 text-gray-400 pointer-events-none" />
+      <div className="flex items-center gap-3 px-3.5 h-11 rounded-none border border-[#2E1E45] bg-[#130921] focus-within:border-[#7C3AED] transition-colors mb-4">
+        <Search size={16} className="shrink-0 text-[#A78BFA] pointer-events-none" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari petualang atau donatur…"
           aria-label="Cari petualang atau donatur"
-          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
+          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-[#F8FAFC] placeholder:text-[#A78BFA]/50 p-0 font-sans"
         />
         {search && (
           <button
             type="button"
             onClick={() => setSearch("")}
-            className="shrink-0 text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            className="shrink-0 text-[#A78BFA] hover:text-[#F8FAFC] font-mono text-xs uppercase"
           >
             <X size={15} />
           </button>
         )}
       </div>
 
-      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-gray-100 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 overflow-x-auto scrollbar-none mb-4" role="tablist" aria-label="Papan peringkat">
+      <div className="flex items-center gap-1.5 p-1 rounded-none bg-[#130921] border border-[#2E1E45] overflow-x-auto scrollbar-none mb-6" role="tablist" aria-label="Papan peringkat">
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "adventurers"}
-          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 border ${
             activeTab === "adventurers"
-              ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
-              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
+              : "bg-[#1A0E2E] text-[#A78BFA] border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC]"
           }`}
           onClick={() => setActiveTab("adventurers")}
         >
-          <span>⚔️ Top 5 Petualang (XP)</span>
+          <span>⚔️ TOP PETUALANG (XP)</span>
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "benefactors"}
-          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 border ${
             activeTab === "benefactors"
-              ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
-              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
+              : "bg-[#1A0E2E] text-[#A78BFA] border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC]"
           }`}
           onClick={() => setActiveTab("benefactors")}
         >
-          <span>💎 Donatur Guild</span>
+          <span>💎 DONATUR GUILD (KAS)</span>
         </button>
       </div>
 
@@ -144,33 +151,33 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                 return (
                   <motion.div
                     key={member.id}
-                    className={`flex items-center justify-between gap-3 p-3.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] ${
-                      index < 3 ? "border-[#9D4EDD]/40 bg-[#9D4EDD]/5" : ""
+                    className={`flex items-center justify-between gap-3 p-3.5 rounded-none border border-[#2E1E45] bg-[#130921] ${
+                      index < 3 ? "border-l-4 border-l-[#7C3AED]" : ""
                     }`}
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(index, 9) * 0.035 }}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] font-black text-xs">
+                      <div className="w-8 h-8 rounded-none flex items-center justify-center shrink-0 bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA] font-mono font-bold text-xs">
                         {RankIcon ? <RankIcon size={iconSize} /> : `#${index + 1}`}
                       </div>
                       <div className="min-w-0">
                         <Link
                           href={`/u/${member.username ?? "user"}`}
-                          className={`block font-bold text-sm truncate hover:text-[#9D4EDD] text-gray-900 dark:text-white ${
-                            isUserPremium ? "premium-username text-[#9D4EDD]" : ""
+                          className={`block font-bold text-sm truncate hover:text-[#A78BFA] text-[#F8FAFC] ${
+                            isUserPremium ? "premium-username text-[#A78BFA]" : ""
                           }`}
                         >
                           {member.username ?? "Gamer"}
                         </Link>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
-                          Lv. <strong className="text-gray-900 dark:text-gray-200">{member.level}</strong> • {member.xp.toLocaleString("id-ID")} XP
+                        <p className="text-[11px] font-mono text-[#A78BFA] truncate">
+                          Lv. <strong className="text-[#F8FAFC]">{member.level}</strong> • {member.xp.toLocaleString("id-ID")} XP
                         </p>
                       </div>
                     </div>
                     <div className="shrink-0">
-                      <span className="whitespace-nowrap px-2.5 py-1 text-[11px] font-bold rounded bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
+                      <span className="whitespace-nowrap px-2.5 py-1 text-[10px] font-mono font-bold rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30">
                         {badge}
                       </span>
                     </div>
@@ -178,7 +185,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                 );
               })}
               {filteredMembers.length === 0 && (
-                <div className="p-8 text-center text-sm text-gray-400 bg-white dark:bg-[#120F17] rounded-lg border border-gray-200 dark:border-[#211C2B]">
+                <div className="p-8 text-center text-xs font-mono text-[#A78BFA] bg-[#130921] rounded-none border border-[#2E1E45]">
                   {search ? `Tidak ada petualang yang cocok dengan "${search}".` : "Belum ada data peringkat petualang."}
                 </div>
               )}
@@ -190,18 +197,18 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
               label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat detail kolom"
               className="hidden md:block desktop-table w-full"
             >
-              <div className="leaderboard-table-wrap w-full min-w-[620px]">
-                <table className="leaderboard-table">
-                <thead>
+              <div className="leaderboard-table-wrap w-full min-w-[620px] rounded-none border border-[#2E1E45] bg-[#130921]">
+                <table className="leaderboard-table w-full text-left">
+                <thead className="bg-[#1A0E2E] border-b border-[#2E1E45] font-mono text-xs text-[#A78BFA] uppercase">
                   <tr>
-                    <th scope="col">Rank</th>
-                    <th scope="col">Player</th>
-                    <th scope="col" className="numeric-cell">Level</th>
-                    <th scope="col" className="numeric-cell">XP total</th>
-                    <th scope="col" className="badge-cell">Kasta / Badge</th>
+                    <th scope="col" className="p-3">Rank</th>
+                    <th scope="col" className="p-3">Player</th>
+                    <th scope="col" className="p-3 text-right">Level</th>
+                    <th scope="col" className="p-3 text-right">XP Total</th>
+                    <th scope="col" className="p-3 text-right">Kasta / Badge</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-[#2E1E45] font-mono text-xs">
                   {filteredMembers.map((member, index) => {
                     const RankIcon = rankIcons[index];
                     const iconSize = topIconSizes[index] ?? 16;
@@ -210,37 +217,37 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                     return (
                       <motion.tr
                         key={member.id}
-                        className={index < 3 ? `adventurer-rank rank-${index + 1}` : ""}
+                        className={`hover:bg-[#1A0E2E]/50 transition-colors ${index < 3 ? "bg-[#7C3AED]/5" : ""}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: Math.min(index, 9) * 0.035 }}
                       >
-                        <td className="leaderboard-rank">
-                          {RankIcon ? <RankIcon aria-label={`Peringkat ${index + 1}`} size={iconSize} /> : `#${index + 1}`}
+                        <td className="p-3 font-bold text-[#A78BFA]">
+                          {RankIcon ? <RankIcon aria-label={`Peringkat ${index + 1}`} size={iconSize} className="inline text-[#F59E0B]" /> : `#${index + 1}`}
                         </td>
-                        <td className={`leaderboard-player${isUserPremium ? " premium-username" : ""}`}>
-                          <Link href={`/u/${member.username ?? "user"}`} className="hover:text-[#9D4EDD] hover:underline font-bold">
+                        <td className="p-3">
+                          <Link href={`/u/${member.username ?? "user"}`} className={`hover:text-[#A78BFA] font-bold ${isUserPremium ? "premium-username" : "text-[#F8FAFC]"}`}>
                             {member.username ?? "Gamer"}
                           </Link>
                         </td>
-                        <td className="numeric-cell">{member.level}</td>
-                        <td className="numeric-cell">{member.xp.toLocaleString("id-ID")}</td>
-                        <td className="badge-cell">
-                          <div className="leaderboard-badges">
+                        <td className="p-3 text-right font-bold text-[#F8FAFC]">{member.level}</td>
+                        <td className="p-3 text-right text-[#A78BFA]">{member.xp.toLocaleString("id-ID")}</td>
+                        <td className="p-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
                             {isOwner ? (
                               <>
-                                <span className="leaderboard-badge">👑 Emperor</span>
-                                <span className="leaderboard-badge">💎 Noble Patron</span>
+                                <span className="px-2 py-0.5 rounded-none font-mono text-[10px] font-bold bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30">👑 Emperor</span>
+                                <span className="px-2 py-0.5 rounded-none font-mono text-[10px] font-bold bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30">💎 Noble Patron</span>
                               </>
                             ) : member.role === "ADMIN" ? (
-                              <span className="leaderboard-badge">✨ Prince / Princess</span>
+                              <span className="px-2 py-0.5 rounded-none font-mono text-[10px] font-bold bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30">✨ Prince / Princess</span>
                             ) : member.role === "MODERATOR" ? (
-                              <span className="leaderboard-badge">⚔️ Lord Commander</span>
+                              <span className="px-2 py-0.5 rounded-none font-mono text-[10px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">⚔️ Lord Commander</span>
                             ) : (
                               (member.badges.length ? member.badges.slice(0, 2) : [roleLabels[member.role]])
                                 .map((b) => b.replace("👑 Emperor", "✨ Prince / Princess"))
                                 .map((badge) => (
-                                  <span className="leaderboard-badge" key={badge}>{badge}</span>
+                                  <span className="px-2 py-0.5 rounded-none font-mono text-[10px] font-bold bg-[#1A0E2E] text-[#A78BFA] border border-[#2E1E45]" key={badge}>{badge}</span>
                                 ))
                             )}
                           </div>
@@ -249,7 +256,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                     );
                   })}
                   {filteredMembers.length === 0 && (
-                    <tr><td className="leaderboard-empty" colSpan={5}>{search ? `Tidak ada petualang yang cocok dengan "${search}".` : "Belum ada data peringkat. XP akan tercatat setelah anggota mulai beraktivitas."}</td></tr>
+                    <tr><td className="p-8 text-center text-xs font-mono text-[#A78BFA]" colSpan={5}>{search ? `Tidak ada petualang yang cocok dengan "${search}".` : "Belum ada data peringkat. XP akan tercatat setelah anggota mulai beraktivitas."}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -267,31 +274,31 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                 return (
                   <motion.div
                     key={member.id}
-                    className={`flex items-center justify-between gap-3 p-3.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] ${
-                      index < 3 ? "border-[#9D4EDD]/40 bg-[#9D4EDD]/5" : ""
+                    className={`flex items-center justify-between gap-3 p-3.5 rounded-none border border-[#2E1E45] bg-[#130921] ${
+                      index < 3 ? "border-l-4 border-l-[#7C3AED]" : ""
                     }`}
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(index, 9) * 0.035 }}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] font-black text-xs">
+                      <div className="w-8 h-8 rounded-none flex items-center justify-center shrink-0 bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA] font-mono font-bold text-xs">
                         {RoyaltyIcon ? <RoyaltyIcon size={iconSize} /> : `#${index + 1}`}
                       </div>
                       <div className="min-w-0">
                         <Link
                           href={`/u/${member.username ?? "user"}`}
-                          className="block font-bold text-sm truncate hover:text-[#9D4EDD] text-gray-900 dark:text-white"
+                          className="block font-bold text-sm truncate hover:text-[#A78BFA] text-[#F8FAFC]"
                         >
                           {member.username ?? "Gamer"}
                         </Link>
-                        <p className="text-[11px] font-semibold text-purple-600 dark:text-purple-300 truncate">
+                        <p className="text-[11px] font-mono font-bold text-[#10B981] truncate">
                           {currency.format(member.total)}
                         </p>
                       </div>
                     </div>
                     <div className="shrink-0">
-                      <span className="whitespace-nowrap px-2.5 py-1 text-[11px] font-bold rounded bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
+                      <span className="whitespace-nowrap px-2.5 py-1 text-[10px] font-mono font-bold rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30">
                         {tier}
                       </span>
                     </div>
@@ -299,8 +306,8 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                 );
               })}
               {filteredBenefactors.length === 0 && (
-                <div className="p-8 text-center text-sm text-gray-400 bg-white dark:bg-[#120F17] rounded-lg border border-gray-200 dark:border-[#211C2B]">
-                  {search ? `Tidak ada donatur yang cocok dengan "${search}".` : "Belum ada kontribusi terverifikasi yang tercatat."}
+                <div className="p-8 text-center text-xs font-mono text-[#A78BFA] bg-[#130921] rounded-none border border-[#2E1E45]">
+                  {search ? `Tidak ada donatur yang cocok dengan "${search}".` : "Belum ada riwayat donasi terverifikasi."}
                 </div>
               )}
             </div>
@@ -308,51 +315,54 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
             {/* DESKTOP TABLE FOR BENEFACTORS (>= md) */}
             <DragScrollContainer
               buttonPosition="top"
-              label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat detail donatur"
+              label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat detail kolom"
               className="hidden md:block desktop-table w-full"
             >
-              <div className="leaderboard-table-wrap w-full min-w-[580px]">
-                <table className="leaderboard-table benefactor-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Rank</th>
-                    <th scope="col">Benefactor</th>
-                    <th scope="col" className="numeric-cell">Kontribusi</th>
-                    <th scope="col" className="badge-cell">Kasta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredBenefactors.map((member, index) => {
-                    const RoyaltyIcon = royaltyIcons[index];
-                    const iconSize = topIconSizes[index] ?? 16;
-                    return (
-                      <motion.tr
-                        key={member.id}
-                        className={`benefactor-rank rank-${index + 1}`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: Math.min(index, 9) * 0.035 }}
-                      >
-                        <td className="leaderboard-rank">
-                          {RoyaltyIcon ? <RoyaltyIcon aria-label={`Peringkat ${index + 1}`} size={iconSize} /> : `#${index + 1}`}
-                        </td>
-                        <td className="leaderboard-player font-bold">
-                          <Link href={`/u/${member.username ?? "user"}`} className="hover:text-[#9D4EDD] hover:underline">
-                            {member.username ?? "Gamer"}
-                          </Link>
-                        </td>
-                        <td className="numeric-cell">{currency.format(member.total)}</td>
-                        <td className="badge-cell">
-                          <span className="leaderboard-badge donor-tier">{benefactorTier(member.badges)}</span>
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                  {filteredBenefactors.length === 0 && (
-                    <tr><td className="leaderboard-empty" colSpan={4}>{search ? `Tidak ada donatur yang cocok dengan "${search}".` : "Belum ada kontribusi terverifikasi yang tercatat."}</td></tr>
-                  )}
-                </tbody>
-              </table>
+              <div className="leaderboard-table-wrap w-full min-w-[620px] rounded-none border border-[#2E1E45] bg-[#130921]">
+                <table className="leaderboard-table w-full text-left">
+                  <thead className="bg-[#1A0E2E] border-b border-[#2E1E45] font-mono text-xs text-[#A78BFA] uppercase">
+                    <tr>
+                      <th scope="col" className="p-3">Rank</th>
+                      <th scope="col" className="p-3">Player</th>
+                      <th scope="col" className="p-3 text-right">Total Donasi</th>
+                      <th scope="col" className="p-3 text-right">Gelar / Tier</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#2E1E45] font-mono text-xs">
+                    {filteredBenefactors.map((member, index) => {
+                      const RoyaltyIcon = royaltyIcons[index];
+                      const iconSize = topIconSizes[index] ?? 16;
+                      const tier = benefactorTier(member.badges);
+                      return (
+                        <motion.tr
+                          key={member.id}
+                          className={`hover:bg-[#1A0E2E]/50 transition-colors ${index < 3 ? "bg-[#7C3AED]/5" : ""}`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: Math.min(index, 9) * 0.035 }}
+                        >
+                          <td className="p-3 font-bold text-[#A78BFA]">
+                            {RoyaltyIcon ? <RoyaltyIcon aria-label={`Peringkat ${index + 1}`} size={iconSize} className="inline text-[#F59E0B]" /> : `#${index + 1}`}
+                          </td>
+                          <td className="p-3">
+                            <Link href={`/u/${member.username ?? "user"}`} className="hover:text-[#A78BFA] font-bold text-[#F8FAFC]">
+                              {member.username ?? "Gamer"}
+                            </Link>
+                          </td>
+                          <td className="p-3 text-right font-bold text-[#10B981]">{currency.format(member.total)}</td>
+                          <td className="p-3 text-right">
+                            <span className="px-2 py-0.5 rounded-none font-mono text-[10px] font-bold bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30">
+                              {tier}
+                            </span>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
+                    {filteredBenefactors.length === 0 && (
+                      <tr><td className="p-8 text-center text-xs font-mono text-[#A78BFA]" colSpan={4}>{search ? `Tidak ada donatur yang cocok dengan "${search}".` : "Belum ada donatur terverifikasi."}</td></tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </DragScrollContainer>
           </div>

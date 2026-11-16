@@ -274,17 +274,48 @@ export function Navbar() {
   return (
     <>
       {/* ========================================================================= */}
-      {/* 1. TOP NAVBAR (Sticky z-40, Glassmorphism) */}
+      {/* 0. TOP TELEMETRY BAR (Data-Dense Real-Time Indicator Strip)               */}
+      {/* ========================================================================= */}
+      <div className="w-full bg-[#06020A] border-b border-[#2E1E45] text-[11px] font-mono py-1 px-4 sm:px-6 lg:px-8 select-none z-50">
+        <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between gap-4 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-4 shrink-0 text-[#A78BFA]">
+            <span className="flex items-center gap-1.5 font-bold">
+              <span className="size-2 rounded-full bg-[#10B981] animate-pulse shrink-0" />
+              <strong className="text-[#F8FAFC]">2,480</strong> MEMBER ONLINE
+            </span>
+            <span className="text-[#2E1E45]">|</span>
+            <span className="flex items-center gap-1.5 font-medium">
+              <span className="size-2 rounded-full bg-[#F59E0B] shrink-0" />
+              <span>LEAGUE S1: INVITATIONAL #4</span>
+              <span className="text-[#10B981] font-bold">(LIVE)</span>
+            </span>
+            <span className="text-[#2E1E45] hidden md:inline">|</span>
+            <span className="hidden md:flex items-center gap-1.5 text-[#10B981] font-medium">
+              <ShieldCheck size={12} className="shrink-0" />
+              <span>REKBER ESCROW GUILD: AKTIF &amp; TERVERIFIKASI</span>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0 text-[10px] text-[#A78BFA] font-mono">
+            <span className="hidden sm:inline">VOICE NODE: SG-1 (4ms)</span>
+            <span className="text-[#2E1E45] hidden sm:inline">|</span>
+            <span className="text-[#F8FAFC] font-semibold">LOGHORIZON HQ // V2.5</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 1. MAIN TOP NAVBAR (Sticky z-40, Sharp Brutalism)                         */}
       {/* ========================================================================= */}
       <header
-        className={`sticky top-0 z-40 w-full transition-all duration-300 bg-white/80 dark:bg-[#08060B]/80 backdrop-blur-md border-b border-[#E5E7EB] dark:border-[#211C2B] ${
-          scrolled ? "py-2.5 shadow-sm shadow-purple-950/5" : "py-3 sm:py-3.5"
+        className={`sticky top-0 z-40 w-full transition-all duration-200 bg-[#09040F]/95 backdrop-blur-md border-b border-[#2E1E45] ${
+          scrolled ? "py-2.5 shadow-xl shadow-black/40" : "py-3 sm:py-3.5"
         }`}
       >
         <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           {/* SISI KIRI: Logo & Nama Guild */}
-          <Link href="/" className="flex items-center gap-2.5 group shrink-0" aria-label="LogHorizon Beranda">
-            <div className="relative size-9 rounded-full overflow-hidden border border-[#9D4EDD]/40 group-hover:border-[#9D4EDD] transition-colors bg-[#171322] flex items-center justify-center shadow-sm">
+          <Link href="/" className="flex items-center gap-3 group shrink-0" aria-label="LogHorizon Beranda">
+            <div className="relative size-9 rounded-none border border-[#2E1E45] group-hover:border-[#7C3AED] transition-colors bg-[#130921] flex items-center justify-center shadow-sm overflow-hidden">
               <Image
                 src="/loghorizon-logo.png"
                 alt="LogHorizon Emblem"
@@ -294,23 +325,25 @@ export function Navbar() {
                 priority
               />
             </div>
-            <span className="font-black tracking-wider text-base text-gray-900 dark:text-white uppercase font-sans">
-              LOG<span className="text-[#9D4EDD] dark:text-[#C77DFF]">HORIZON</span>
-            </span>
+            <div className="flex flex-col text-left">
+              <span className="font-display font-bold tracking-wider text-base text-[#F8FAFC] uppercase">
+                LOG<span className="text-[#A78BFA]">HORIZON</span>
+              </span>
+            </div>
           </Link>
 
-          {/* SISI TENGAH: Menu Navigasi Terstruktur Desktop (Dropdown Cyber Minimalist) */}
+          {/* SISI TENGAH: Menu Navigasi Terstruktur Desktop (Pill Capsule Exception) */}
           <nav
-            className="hidden md:flex desktop-navbar items-center gap-1 px-3 py-1.5 rounded-full border border-gray-200/60 dark:border-[#211C2B]/80 bg-white/40 dark:bg-[#120F17]/40 backdrop-blur-sm"
+            className="hidden md:flex desktop-navbar items-center gap-1 px-2.5 py-1 rounded-full border border-[#2E1E45] bg-[#130921]/90 backdrop-blur-sm shadow-inner shadow-black/40"
             aria-label="Navigasi Utama Desktop"
           >
             {/* 1. HOME */}
             <Link
               href="/"
-              className={`relative px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
+              className={`relative px-3.5 py-1.5 text-xs font-bold rounded-full transition-colors ${
                 isHomeActive
-                  ? "text-[#9D4EDD] dark:text-[#C77DFF]"
-                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                  ? "bg-[#1A0E2E] text-[#F8FAFC] border border-[#7C3AED]/60"
+                  : "text-[#A78BFA] hover:text-[#F8FAFC]"
               }`}
             >
               Home
@@ -325,14 +358,14 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setActiveMenu(activeMenu === "komunitas" ? null : "komunitas")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
-                  isKomunitasActive
-                    ? "text-[#9D4EDD] dark:text-[#C77DFF]"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full transition-colors ${
+                  isKomunitasActive || activeMenu === "komunitas"
+                    ? "bg-[#1A0E2E] text-[#F8FAFC] border border-[#7C3AED]/60"
+                    : "text-[#A78BFA] hover:text-[#F8FAFC]"
                 }`}
               >
                 <span>Komunitas</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "komunitas" ? "rotate-180 text-[#9D4EDD]" : "opacity-70"}`} />
+                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "komunitas" ? "rotate-180 text-[#7C3AED]" : "opacity-70"}`} />
               </button>
 
               <AnimatePresence>
@@ -342,23 +375,23 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 p-2 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white/95 dark:bg-[#120F17]/95 backdrop-blur-md shadow-2xl z-50 space-y-1"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-none border border-[#2E1E45] bg-[#130921] shadow-2xl z-50 divide-y divide-[#2E1E45]/60 p-1.5"
                   >
                     {navGroups[0].items.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
                         onClick={() => setActiveMenu(null)}
-                        className="flex items-start gap-3 p-2.5 rounded-lg text-left transition-all hover:bg-purple-50 dark:hover:bg-[#1E1A3A]/70 group/item"
+                        className="flex items-start gap-3 p-2.5 rounded-none text-left transition-colors hover:bg-[#1A0E2E] group/item"
                       >
-                        <div className="size-8 rounded-md bg-purple-500/10 text-purple-600 dark:text-[#C77DFF] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:bg-[#9D4EDD] group-hover/item:text-white transition-colors">
+                        <div className="size-8 rounded-none bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#F8FAFC] transition-colors">
                           <item.icon size={15} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-gray-900 dark:text-white group-hover/item:text-[#9D4EDD] dark:group-hover/item:text-[#C77DFF] transition-colors">
+                          <p className="text-xs font-bold text-[#F8FAFC] group-hover/item:text-[#A78BFA] transition-colors">
                             {item.label}
                           </p>
-                          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug line-clamp-1 mt-0.5">
+                          <p className="text-[11px] text-[#A78BFA] leading-snug line-clamp-1 mt-0.5">
                             {item.desc}
                           </p>
                         </div>
@@ -378,14 +411,14 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setActiveMenu(activeMenu === "arena" ? null : "arena")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
-                  isArenaActive
-                    ? "text-[#9D4EDD] dark:text-[#C77DFF]"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full transition-colors ${
+                  isArenaActive || activeMenu === "arena"
+                    ? "bg-[#1A0E2E] text-[#F8FAFC] border border-[#7C3AED]/60"
+                    : "text-[#A78BFA] hover:text-[#F8FAFC]"
                 }`}
               >
                 <span>Arena &amp; Mabar</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "arena" ? "rotate-180 text-[#9D4EDD]" : "opacity-70"}`} />
+                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "arena" ? "rotate-180 text-[#7C3AED]" : "opacity-70"}`} />
               </button>
 
               <AnimatePresence>
@@ -395,23 +428,23 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 p-2 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white/95 dark:bg-[#120F17]/95 backdrop-blur-md shadow-2xl z-50 space-y-1"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-none border border-[#2E1E45] bg-[#130921] shadow-2xl z-50 divide-y divide-[#2E1E45]/60 p-1.5"
                   >
                     {navGroups[1].items.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
                         onClick={() => setActiveMenu(null)}
-                        className="flex items-start gap-3 p-2.5 rounded-lg text-left transition-all hover:bg-purple-50 dark:hover:bg-[#1E1A3A]/70 group/item"
+                        className="flex items-start gap-3 p-2.5 rounded-none text-left transition-colors hover:bg-[#1A0E2E] group/item"
                       >
-                        <div className="size-8 rounded-md bg-purple-500/10 text-purple-600 dark:text-[#C77DFF] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:bg-[#9D4EDD] group-hover/item:text-white transition-colors">
+                        <div className="size-8 rounded-none bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#F8FAFC] transition-colors">
                           <item.icon size={15} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-gray-900 dark:text-white group-hover/item:text-[#9D4EDD] dark:group-hover/item:text-[#C77DFF] transition-colors">
+                          <p className="text-xs font-bold text-[#F8FAFC] group-hover/item:text-[#A78BFA] transition-colors">
                             {item.label}
                           </p>
-                          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug line-clamp-1 mt-0.5">
+                          <p className="text-[11px] text-[#A78BFA] leading-snug line-clamp-1 mt-0.5">
                             {item.desc}
                           </p>
                         </div>
@@ -425,10 +458,10 @@ export function Navbar() {
             {/* 4. MARKETPLACE */}
             <Link
               href="/marketplace"
-              className={`relative px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
+              className={`relative px-3.5 py-1.5 text-xs font-bold rounded-full transition-colors ${
                 isMarketplaceActive
-                  ? "text-[#9D4EDD] dark:text-[#C77DFF]"
-                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                  ? "bg-[#1A0E2E] text-[#F8FAFC] border border-[#7C3AED]/60"
+                  : "text-[#A78BFA] hover:text-[#F8FAFC]"
               }`}
             >
               Marketplace
@@ -443,14 +476,14 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setActiveMenu(activeMenu === "guild" ? null : "guild")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
-                  isGuildActive
-                    ? "text-[#9D4EDD] dark:text-[#C77DFF]"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-full transition-colors ${
+                  isGuildActive || activeMenu === "guild"
+                    ? "bg-[#1A0E2E] text-[#F8FAFC] border border-[#7C3AED]/60"
+                    : "text-[#A78BFA] hover:text-[#F8FAFC]"
                 }`}
               >
                 <span>Guild</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "guild" ? "rotate-180 text-[#9D4EDD]" : "opacity-70"}`} />
+                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "guild" ? "rotate-180 text-[#7C3AED]" : "opacity-70"}`} />
               </button>
 
               <AnimatePresence>
@@ -460,23 +493,23 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 p-2 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white/95 dark:bg-[#120F17]/95 backdrop-blur-md shadow-2xl z-50 space-y-1"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-none border border-[#2E1E45] bg-[#130921] shadow-2xl z-50 divide-y divide-[#2E1E45]/60 p-1.5"
                   >
                     {navGroups[2].items.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
                         onClick={() => setActiveMenu(null)}
-                        className="flex items-start gap-3 p-2.5 rounded-lg text-left transition-all hover:bg-purple-50 dark:hover:bg-[#1E1A3A]/70 group/item"
+                        className="flex items-start gap-3 p-2.5 rounded-none text-left transition-colors hover:bg-[#1A0E2E] group/item"
                       >
-                        <div className="size-8 rounded-md bg-purple-500/10 text-purple-600 dark:text-[#C77DFF] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:bg-[#9D4EDD] group-hover/item:text-white transition-colors">
+                        <div className="size-8 rounded-none bg-[#1A0E2E] border border-[#2E1E45] text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#F8FAFC] transition-colors">
                           <item.icon size={15} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-gray-900 dark:text-white group-hover/item:text-[#9D4EDD] dark:group-hover/item:text-[#C77DFF] transition-colors">
+                          <p className="text-xs font-bold text-[#F8FAFC] group-hover/item:text-[#A78BFA] transition-colors">
                             {item.label}
                           </p>
-                          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug line-clamp-1 mt-0.5">
+                          <p className="text-[11px] text-[#A78BFA] leading-snug line-clamp-1 mt-0.5">
                             {item.desc}
                           </p>
                         </div>
@@ -489,36 +522,36 @@ export function Navbar() {
           </nav>
 
           {/* SISI KANAN: Aksi Desktop & Hamburger Mobile */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Theme Toggle (Tampil di Desktop & Mobile) */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Theme Toggle (Kotak Tajam Brutalis) */}
             <button
               type="button"
               onClick={toggleTheme}
-              className="size-9 rounded-full border border-gray-200 dark:border-[#211C2B] bg-white/50 dark:bg-[#120F17]/60 text-gray-600 dark:text-gray-300 flex items-center justify-center hover:border-[#9D4EDD] transition-colors"
+              className="size-9 rounded-none border border-[#2E1E45] bg-[#130921] text-[#A78BFA] hover:text-[#F8FAFC] hover:border-[#7C3AED] flex items-center justify-center transition-colors"
               title={isDark ? "Ganti ke mode terang" : "Ganti ke mode gelap"}
               aria-label="Ganti mode tema"
             >
               {isDark ? (
-                <Sun size={15} className="text-amber-400 transition-transform hover:rotate-45" />
+                <Sun size={15} className="text-[#F59E0B] transition-transform hover:rotate-45" />
               ) : (
-                <Moon size={15} className="text-purple-600 transition-transform hover:-rotate-12" />
+                <Moon size={15} className="text-[#7C3AED] transition-transform hover:-rotate-12" />
               )}
             </button>
 
             {/* Aksi Khusus Desktop (Lonceng Notifikasi & Profil) */}
-            <div className="hidden md:flex desktop-navbar items-center gap-2.5">
+            <div className="hidden md:flex desktop-navbar items-center gap-2">
               {status === "loading" ? (
-                <div className="h-8 w-24 rounded bg-gray-200 dark:bg-[#1E1A3A] animate-pulse" />
+                <div className="h-9 w-24 rounded-none bg-[#130921] border border-[#2E1E45] animate-pulse" />
               ) : user ? (
                 <div className="flex items-center gap-2">
                   <Link
                     href="/messages"
-                    className="relative p-2 rounded-full border border-gray-200 dark:border-[#211C2B] bg-white/60 dark:bg-[#120F17]/60 hover:border-[#9D4EDD]/60 transition-colors text-gray-600 dark:text-gray-300 hover:text-[#9D4EDD] dark:hover:text-[#C77DFF]"
+                    className="relative size-9 rounded-none border border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED] transition-colors text-[#A78BFA] hover:text-[#F8FAFC] flex items-center justify-center"
                     title="Pesan &amp; Obrolan Komunitas"
                   >
-                    <MessageSquare size={17} />
+                    <MessageSquare size={16} />
                     {unreadMessages > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-[#9D4EDD] text-white rounded-full text-[9px] font-extrabold flex items-center justify-center animate-pulse">
+                      <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-[#7C3AED] text-white rounded-none text-[9px] font-mono font-bold flex items-center justify-center">
                         {unreadMessages > 9 ? "9+" : unreadMessages}
                       </span>
                     )}
@@ -528,23 +561,24 @@ export function Navbar() {
                     <button
                       type="button"
                       onClick={() => setDropdownOpen((prev) => !prev)}
-                      className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full border border-gray-200 dark:border-[#211C2B] bg-white/60 dark:bg-[#120F17]/60 hover:border-[#9D4EDD]/60 transition-colors"
+                      className="h-9 px-3 rounded-none border border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED] transition-colors flex items-center gap-2 font-mono text-xs text-[#F8FAFC]"
                       aria-expanded={dropdownOpen}
                       aria-label="Menu profil pengguna"
                     >
-                      <div className="relative size-7 rounded-full overflow-hidden border border-[#9D4EDD]/40 bg-[#171322] flex items-center justify-center">
+                      <div className="relative size-5 rounded-none border border-[#7C3AED]/40 bg-[#1A0E2E] flex items-center justify-center overflow-hidden">
                         {user.avatar ? (
                           <Image src={user.avatar} alt={user.username ?? "User"} fill className="object-cover" unoptimized />
                         ) : (
-                          <span className="text-xs font-bold text-purple-300">
+                          <span className="text-[10px] font-bold text-[#A78BFA]">
                             {(user.username ?? user.name ?? "G").slice(0, 1).toUpperCase()}
                           </span>
                         )}
                       </div>
-                      <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 max-w-[90px] truncate">
+                      <span className="text-xs font-semibold max-w-[90px] truncate">
                         {user.username ?? user.name ?? "Gamer"}
                       </span>
-                      <ChevronDown size={13} className="text-gray-400" />
+                      <span className="size-2 rounded-full bg-[#10B981] shrink-0" title="Online" />
+                      <ChevronDown size={13} className="text-[#A78BFA]" />
                     </button>
 
                     <AnimatePresence>
@@ -554,18 +588,18 @@ export function Navbar() {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 6, scale: 0.98 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute right-0 mt-2 w-56 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] p-2 shadow-xl z-50 space-y-1"
+                          className="absolute right-0 mt-2 w-56 rounded-none border border-[#2E1E45] bg-[#130921] p-2 shadow-2xl z-50 space-y-1 divide-y divide-[#2E1E45]/60"
                           role="menu"
                         >
-                          <div className="px-3 py-2 border-b border-gray-100 dark:border-[#211C2B]">
+                          <div className="px-3 py-2 pb-2.5">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                              <span className="text-xs font-bold text-[#F8FAFC] truncate">
                                 {user.username ?? user.name ?? "Gamer"}
                               </span>
                               {isOwner && <Crown size={12} className="text-amber-400 shrink-0" />}
                             </div>
                             <div className="flex items-center justify-between mt-1">
-                              <p className="text-[11px] font-mono text-[#9D4EDD] dark:text-[#C77DFF]">
+                              <p className="text-[11px] font-mono text-[#A78BFA]">
                                 {isOwner
                                   ? "👑 Emperor"
                                   : user.role === "ADMIN"
@@ -574,43 +608,43 @@ export function Navbar() {
                                       ? "⚔️ Lord Commander"
                                       : "🎮 Adventurer"}
                               </p>
-                              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400">
+                              <span className="text-[10px] font-mono px-1.5 py-0.2 bg-[#1A0E2E] border border-[#2E1E45] text-[#10B981] font-bold">
                                 Lv. {user.level ?? 1}
                               </span>
                             </div>
                           </div>
 
-                          <div className="py-1">
+                          <div className="py-1 pt-1.5">
                             {isStaff && (
                               <Link
                                 href="/admin"
                                 onClick={() => setDropdownOpen(false)}
-                                className="flex items-center gap-2.5 px-3 py-2 rounded text-xs font-semibold text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-[#1E1A3A] transition-colors"
+                                className="flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-mono font-semibold text-[#A78BFA] hover:text-[#F8FAFC] hover:bg-[#1A0E2E] transition-colors"
                                 role="menuitem"
                               >
-                                <ShieldCheck size={14} className="shrink-0" />
+                                <ShieldCheck size={14} className="shrink-0 text-[#10B981]" />
                                 <span>Dashboard Admin</span>
                               </Link>
                             )}
                             <Link
                               href="/profile"
                               onClick={() => setDropdownOpen(false)}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1E1A3A] transition-colors"
+                              className="flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-mono text-[#F8FAFC] hover:bg-[#1A0E2E] transition-colors"
                               role="menuitem"
                             >
-                              <Settings size={14} className="shrink-0" />
+                              <Settings size={14} className="shrink-0 text-[#A78BFA]" />
                               <span>Profil &amp; Pengaturan</span>
                             </Link>
                           </div>
 
-                          <div className="pt-1 border-t border-gray-100 dark:border-[#211C2B]">
+                          <div className="pt-1">
                             <button
                               type="button"
                               onClick={() => {
                                 setDropdownOpen(false);
                                 void signOut();
                               }}
-                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-mono text-red-400 hover:bg-red-950/20 transition-colors"
                               role="menuitem"
                             >
                               <LogOut size={14} className="shrink-0" />
@@ -625,10 +659,10 @@ export function Navbar() {
               ) : (
                 <motion.button
                   whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.96 }}
+                  whileTap={{ scale: 0.98 }}
                   type="button"
                   onClick={() => void signIn("discord")}
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-sm bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold transition-all shadow-sm shadow-[#5865F2]/25 shrink-0"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-none bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition-all border border-[#5865F2] shrink-0"
                 >
                   <span className="text-sm leading-none">◉</span>
                   <span>Connect Discord</span>
@@ -641,12 +675,12 @@ export function Navbar() {
               {user && (
                 <Link
                   href="/messages"
-                  className="relative size-9 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white/50 dark:bg-[#120F17]/60 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:border-[#9D4EDD] transition-colors"
+                  className="relative size-9 rounded-none border border-[#2E1E45] bg-[#130921] text-[#A78BFA] flex items-center justify-center hover:border-[#7C3AED] transition-colors"
                   aria-label="Pesan &amp; Obrolan Komunitas"
                 >
-                  <MessageSquare size={17} />
+                  <MessageSquare size={16} />
                   {unreadMessages > 0 && (
-                    <span className="absolute -top-1 -right-1 size-3.5 bg-[#9D4EDD] rounded-full text-[8px] font-bold text-white flex items-center justify-center animate-pulse">
+                    <span className="absolute -top-1 -right-1 size-3.5 bg-[#7C3AED] rounded-none text-[8px] font-mono font-bold text-white flex items-center justify-center">
                       {unreadMessages > 9 ? "9+" : unreadMessages}
                     </span>
                   )}
@@ -656,7 +690,7 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="mobile-only size-9 rounded-md border border-gray-200 dark:border-[#211C2B] bg-white/50 dark:bg-[#120F17]/60 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:border-[#9D4EDD] transition-colors"
+                className="mobile-only size-9 rounded-none border border-[#2E1E45] bg-[#130921] text-[#F8FAFC] flex items-center justify-center hover:border-[#7C3AED] transition-colors"
                 aria-label="Buka menu navigasi"
                 aria-expanded={mobileOpen}
               >
@@ -668,47 +702,44 @@ export function Navbar() {
       </header>
 
       {/* ========================================================================= */}
-      {/* 2. TAMPILAN MOBILE: OFFCANVAS SLIDEBAR MENU (Accordion Style) */}
+      {/* 2. TAMPILAN MOBILE: OFFCANVAS SLIDEBAR MENU (Brutalism Accordion)          */}
       {/* ========================================================================= */}
       <AnimatePresence>
         {mobileOpen && (
           <>
-            {/* Latar Belakang Gelap Transparan (Backdrop Overlay) */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden mobile-only"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 md:hidden mobile-only"
               aria-hidden="true"
             />
 
-            {/* Slidebar Menu Drawer (Off-Canvas dari Sisi Kanan) */}
             <motion.aside
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] bg-white dark:bg-[#0D0A14] border-l border-gray-200 dark:border-[#211C2B] p-5 flex flex-col justify-between shadow-2xl md:hidden mobile-slidebar overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] bg-[#09040F] border-l border-[#2E1E45] p-5 flex flex-col justify-between shadow-2xl md:hidden mobile-slidebar overflow-y-auto rounded-none"
               aria-label="Menu navigasi mobile"
             >
               <div>
-                {/* Header Slidebar: Logo LogHorizon + Tombol Tutup (X) */}
-                <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-[#211C2B]">
+                <div className="flex items-center justify-between pb-4 border-b border-[#2E1E45]">
                   <div className="flex items-center gap-2.5">
-                    <div className="relative size-8 rounded-full overflow-hidden border border-[#9D4EDD]/40 bg-[#171322] flex items-center justify-center">
+                    <div className="relative size-8 rounded-none border border-[#2E1E45] bg-[#130921] flex items-center justify-center overflow-hidden">
                       <Image src="/loghorizon-logo.png" alt="LogHorizon" fill className="object-cover" />
                     </div>
-                    <span className="font-black text-sm text-gray-900 dark:text-white tracking-wider">
-                      LOG<span className="text-[#9D4EDD] dark:text-[#C77DFF]">HORIZON</span>
+                    <span className="font-display font-bold text-sm text-[#F8FAFC] tracking-wider uppercase">
+                      LOG<span className="text-[#A78BFA]">HORIZON</span>
                     </span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setMobileOpen(false)}
-                    className="size-8 rounded-md border border-gray-200 dark:border-[#211C2B] text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center justify-center transition"
+                    className="size-8 rounded-none border border-[#2E1E45] text-[#A78BFA] hover:text-[#F8FAFC] flex items-center justify-center transition"
                     aria-label="Tutup menu navigasi"
                   >
                     <X size={16} />
@@ -717,30 +748,31 @@ export function Navbar() {
 
                 {/* Kartu Info User Mobile */}
                 {user ? (
-                  <div className="mt-4 p-3.5 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-gray-50 dark:bg-[#14101C]">
+                  <div className="mt-4 p-3.5 rounded-none border border-[#2E1E45] bg-[#130921]">
                     <div className="flex items-center gap-3">
-                      <div className="relative size-10 rounded-full overflow-hidden border border-[#9D4EDD]/60 bg-[#1E1A3A] shrink-0">
+                      <div className="relative size-10 rounded-none border border-[#7C3AED]/60 bg-[#1A0E2E] shrink-0 overflow-hidden">
                         {user.avatar ? (
                           <Image src={user.avatar} alt={user.username ?? "User"} fill className="object-cover" unoptimized />
                         ) : (
-                          <span className="grid place-items-center h-full text-xs font-bold text-purple-300">
+                          <span className="grid place-items-center h-full text-xs font-bold text-[#A78BFA]">
                             {(user.username ?? user.name ?? "G").slice(0, 1).toUpperCase()}
                           </span>
                         )}
                         {isOwner && (
-                          <span className="absolute bottom-0 right-0 size-3 bg-amber-400 rounded-full border border-black flex items-center justify-center">
+                          <span className="absolute bottom-0 right-0 size-3 bg-amber-400 border border-black flex items-center justify-center">
                             <Crown size={8} className="text-black" />
                           </span>
                         )}
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 font-mono">
                         <div className="flex items-center gap-1.5">
-                          <p className="font-extrabold text-sm text-gray-900 dark:text-white truncate">
+                          <p className="font-bold text-sm text-[#F8FAFC] truncate">
                             {user.username ?? user.name ?? "Gamer"}
                           </p>
+                          <span className="size-2 rounded-full bg-[#10B981] shrink-0" />
                           {isOwner && <Crown size={12} className="text-amber-400 shrink-0" />}
                         </div>
-                        <p className="text-[11px] font-mono text-[#9D4EDD] dark:text-[#C77DFF]">
+                        <p className="text-[11px] text-[#A78BFA]">
                           {isOwner
                             ? "👑 Emperor"
                             : user.role === "ADMIN"
@@ -749,8 +781,8 @@ export function Navbar() {
                                 ? "⚔️ Lord Commander"
                                 : "🎮 Adventurer"}
                         </p>
-                        <div className="mt-1 flex items-center gap-1.5 text-[10px] font-mono text-gray-500 dark:text-gray-400">
-                          <span className="px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400 font-bold">
+                        <div className="mt-1 flex items-center gap-1.5 text-[10px] text-[#A78BFA]">
+                          <span className="px-1.5 py-0.2 bg-[#1A0E2E] border border-[#2E1E45] text-[#10B981] font-bold">
                             Lv. {user.level ?? 1}
                           </span>
                           <span>•</span>
@@ -759,22 +791,21 @@ export function Navbar() {
                       </div>
                     </div>
 
-                    {/* Pesan & Obrolan Komunitas Shortcut */}
                     <Link
                       href="/messages"
                       onClick={() => setMobileOpen(false)}
-                      className="mt-2.5 flex items-center justify-between p-2.5 rounded-lg border border-[#9D4EDD]/30 bg-[#9D4EDD]/10 text-xs font-bold text-gray-800 dark:text-gray-200 hover:border-[#9D4EDD] transition"
+                      className="mt-2.5 flex items-center justify-between p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-xs font-mono font-bold text-[#F8FAFC] hover:border-[#7C3AED] transition"
                     >
                       <div className="flex items-center gap-2">
-                        <MessageSquare size={15} className="text-[#9D4EDD]" />
+                        <MessageSquare size={14} className="text-[#A78BFA]" />
                         <span>Pesan &amp; Obrolan Komunitas</span>
                       </div>
                       {unreadMessages > 0 ? (
-                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#9D4EDD] text-white">
+                        <span className="px-1.5 py-0.5 rounded-none text-[10px] font-bold bg-[#7C3AED] text-white">
                           {unreadMessages} baru
                         </span>
                       ) : (
-                        <span className="text-[10px] text-gray-400">Buka ➔</span>
+                        <span className="text-[10px] text-[#A78BFA]">Buka ➔</span>
                       )}
                     </Link>
                   </div>
@@ -786,7 +817,7 @@ export function Navbar() {
                         setMobileOpen(false);
                         void signIn("discord");
                       }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold shadow-md shadow-[#5865F2]/20 transition"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-none bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition border border-[#5865F2]"
                     >
                       <span className="text-sm leading-none">◉</span>
                       <span>Connect Discord</span>
@@ -800,17 +831,17 @@ export function Navbar() {
                   <Link
                     href="/"
                     onClick={() => setMobileOpen(false)}
-                    className={`py-2.5 px-3.5 rounded-lg text-sm font-bold transition-colors flex items-center justify-between ${
+                    className={`py-2.5 px-3.5 rounded-none border border-[#2E1E45] text-sm font-bold transition-colors flex items-center justify-between ${
                       isHomeActive
-                        ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF]"
-                        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5"
+                        ? "bg-[#1A0E2E] text-[#F8FAFC] border-[#7C3AED]"
+                        : "text-[#A78BFA] hover:bg-[#130921] hover:text-[#F8FAFC]"
                     }`}
                   >
                     <span className="flex items-center gap-2.5">
-                      <Home size={16} className={isHomeActive ? "text-[#9D4EDD] dark:text-[#C77DFF]" : "text-gray-400"} />
+                      <Home size={16} className={isHomeActive ? "text-[#7C3AED]" : "text-[#A78BFA]"} />
                       <span>Home</span>
                     </span>
-                    {isHomeActive && <span className="size-1.5 rounded-full bg-[#9D4EDD]" />}
+                    {isHomeActive && <span className="size-1.5 bg-[#7C3AED]" />}
                   </Link>
 
                   {/* ACCORDION GROUPS */}
@@ -818,17 +849,17 @@ export function Navbar() {
                     const isOpen = mobileAccordion[group.key] ?? false;
                     const GroupIcon = group.icon;
                     return (
-                      <div key={group.key} className="rounded-lg border border-gray-200/70 dark:border-[#211C2B] overflow-hidden">
+                      <div key={group.key} className="rounded-none border border-[#2E1E45] overflow-hidden">
                         <button
                           type="button"
                           onClick={() => toggleMobileGroup(group.key)}
-                          className="w-full py-2.5 px-3.5 flex items-center justify-between bg-gray-50/70 dark:bg-[#120F17]/60 text-sm font-bold text-gray-800 dark:text-gray-200 hover:text-[#9D4EDD]"
+                          className="w-full py-2.5 px-3.5 flex items-center justify-between bg-[#130921] text-sm font-bold text-[#F8FAFC] hover:text-[#A78BFA]"
                         >
                           <span className="flex items-center gap-2.5">
-                            <GroupIcon size={16} className="text-[#9D4EDD]" />
+                            <GroupIcon size={16} className="text-[#7C3AED]" />
                             <span>{group.title}</span>
                           </span>
-                          <ChevronDown size={14} className={`transition-transform duration-200 text-gray-400 ${isOpen ? "rotate-180 text-[#9D4EDD]" : ""}`} />
+                          <ChevronDown size={14} className={`transition-transform duration-200 text-[#A78BFA] ${isOpen ? "rotate-180 text-[#7C3AED]" : ""}`} />
                         </button>
 
                         <AnimatePresence>
@@ -838,7 +869,7 @@ export function Navbar() {
                               animate={{ height: "auto", opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.15 }}
-                              className="p-1 space-y-0.5 bg-white dark:bg-[#0D0A14]"
+                              className="p-1 space-y-0.5 bg-[#09040F] divide-y divide-[#2E1E45]/40"
                             >
                               {group.items.map((subItem) => {
                                 const SubIcon = subItem.icon;
@@ -848,16 +879,16 @@ export function Navbar() {
                                     key={subItem.href}
                                     href={subItem.href}
                                     onClick={() => setMobileOpen(false)}
-                                    className={`py-2 px-3 rounded-md text-xs font-medium transition-colors flex items-start gap-2.5 ${
+                                    className={`py-2 px-3 rounded-none text-xs font-medium transition-colors flex items-start gap-2.5 ${
                                       isSubActive
-                                        ? "bg-purple-500/15 text-[#9D4EDD] dark:text-[#C77DFF] font-bold"
-                                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+                                        ? "bg-[#1A0E2E] text-[#F8FAFC] font-bold"
+                                        : "text-[#A78BFA] hover:bg-[#130921] hover:text-[#F8FAFC]"
                                     }`}
                                   >
-                                    <SubIcon size={14} className="shrink-0 mt-0.5 text-purple-500/80" />
+                                    <SubIcon size={14} className="shrink-0 mt-0.5 text-[#7C3AED]" />
                                     <div>
                                       <p>{subItem.label}</p>
-                                      <p className="text-[10px] text-gray-400 line-clamp-1">{subItem.desc}</p>
+                                      <p className="text-[10px] text-[#A78BFA]/80 line-clamp-1">{subItem.desc}</p>
                                     </div>
                                   </Link>
                                 );
@@ -873,17 +904,17 @@ export function Navbar() {
                   <Link
                     href="/marketplace"
                     onClick={() => setMobileOpen(false)}
-                    className={`py-2.5 px-3.5 rounded-lg text-sm font-bold transition-colors flex items-center justify-between ${
+                    className={`py-2.5 px-3.5 rounded-none border border-[#2E1E45] text-sm font-bold transition-colors flex items-center justify-between ${
                       isMarketplaceActive
-                        ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF]"
-                        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5"
+                        ? "bg-[#1A0E2E] text-[#F8FAFC] border-[#7C3AED]"
+                        : "text-[#A78BFA] hover:bg-[#130921] hover:text-[#F8FAFC]"
                     }`}
                   >
                     <span className="flex items-center gap-2.5">
-                      <Store size={16} className={isMarketplaceActive ? "text-[#9D4EDD] dark:text-[#C77DFF]" : "text-gray-400"} />
+                      <Store size={16} className={isMarketplaceActive ? "text-[#7C3AED]" : "text-[#A78BFA]"} />
                       <span>Marketplace</span>
                     </span>
-                    {isMarketplaceActive && <span className="size-1.5 rounded-full bg-[#9D4EDD]" />}
+                    {isMarketplaceActive && <span className="size-1.5 bg-[#7C3AED]" />}
                   </Link>
 
                   {/* Profile & Settings (jika login) */}
@@ -891,13 +922,13 @@ export function Navbar() {
                     <Link
                       href="/profile"
                       onClick={() => setMobileOpen(false)}
-                      className={`py-2.5 px-3.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-2.5 ${
+                      className={`py-2.5 px-3.5 rounded-none border border-[#2E1E45] text-sm font-bold transition-colors flex items-center gap-2.5 ${
                         pathname === "/profile"
-                          ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF]"
-                          : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5"
+                          ? "bg-[#1A0E2E] text-[#F8FAFC] border-[#7C3AED]"
+                          : "text-[#A78BFA] hover:bg-[#130921] hover:text-[#F8FAFC]"
                       }`}
                     >
-                      <Settings size={16} className={pathname === "/profile" ? "text-[#9D4EDD]" : "text-gray-400"} />
+                      <Settings size={16} className={pathname === "/profile" ? "text-[#7C3AED]" : "text-[#A78BFA]"} />
                       <span>Profil &amp; Pengaturan</span>
                     </Link>
                   )}
@@ -907,13 +938,13 @@ export function Navbar() {
                     <Link
                       href="/admin"
                       onClick={() => setMobileOpen(false)}
-                      className={`py-2.5 px-3.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-2.5 ${
+                      className={`py-2.5 px-3.5 rounded-none border border-[#2E1E45] text-sm font-bold transition-colors flex items-center gap-2.5 ${
                         pathname.startsWith("/admin")
-                          ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF]"
-                          : "text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/20"
+                          ? "bg-[#1A0E2E] text-[#F8FAFC] border-[#7C3AED]"
+                          : "text-[#A78BFA] hover:bg-[#130921] hover:text-[#F8FAFC]"
                       }`}
                     >
-                      <ShieldCheck size={16} />
+                      <ShieldCheck size={16} className="text-[#10B981]" />
                       <span>Dashboard Admin</span>
                     </Link>
                   )}

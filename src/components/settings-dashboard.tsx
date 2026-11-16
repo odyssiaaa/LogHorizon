@@ -306,7 +306,7 @@ export function SettingsDashboard() {
                   value={inGameName}
                   onChange={(e) => setInGameName(e.target.value)}
                   placeholder="Contoh: Shadow#NA1 / ID MLBB"
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                  className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                 />
               </div>
 
@@ -320,7 +320,7 @@ export function SettingsDashboard() {
                   value={highestRank}
                   onChange={(e) => setHighestRank(e.target.value)}
                   placeholder="Contoh: Radiant, Mythical Immortal, Global Elite"
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                  className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
                 />
               </div>
             </div>
@@ -332,7 +332,7 @@ export function SettingsDashboard() {
               <select
                 value={primaryRole}
                 onChange={(e) => setPrimaryRole(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
               >
                 <option value="">Pilih role favorit…</option>
                 {COMMON_ROLES.map((roleOpt) => (
@@ -358,7 +358,7 @@ export function SettingsDashboard() {
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
                         isSelected
                           ? "bg-[#9D4EDD] text-white border-[#9D4EDD]"
-                          : "border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#08060B] text-gray-700 dark:text-gray-300 hover:border-[#9D4EDD]"
+                          : "border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-700 dark:text-gray-300 hover:border-[#9D4EDD]"
                       }`}
                     >
                       {isSelected ? `✓ ${g}` : `+ ${g}`}
@@ -372,7 +372,7 @@ export function SettingsDashboard() {
               <button
                 type="submit"
                 disabled={savingGamer}
-                className="button button-primary px-5 py-2.5 rounded-lg text-xs font-bold inline-flex items-center gap-2"
+                className="button button-primary px-5 py-2.5 rounded-none text-xs font-bold inline-flex items-center gap-2"
               >
                 {savingGamer ? "Menyimpan…" : "Simpan Profil Gamer"}
               </button>
@@ -396,14 +396,14 @@ export function SettingsDashboard() {
             {profile?.achievements?.map((ach) => (
               <div
                 key={ach.id}
-                className={`p-3.5 rounded-xl border flex items-start gap-3 transition-colors ${
+                className={`p-3.5 rounded-none border flex items-start gap-3 transition-colors ${
                   ach.unlocked
                     ? "bg-purple-500/10 border-purple-500/30 text-gray-900 dark:text-white"
-                    : "bg-gray-50 dark:bg-[#08060B]/50 border-gray-200 dark:border-[#211C2B] opacity-60 text-gray-400"
+                    : "bg-gray-50 dark:bg-[#08060B]/50 border-gray-200 dark:border-[#2E1E45] opacity-60 text-gray-400"
                 }`}
               >
                 <div
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-base ${
+                  className={`w-9 h-9 rounded-none flex items-center justify-center shrink-0 text-base ${
                     ach.unlocked ? "bg-[#9D4EDD]/20 text-[#9D4EDD]" : "bg-gray-200 dark:bg-gray-800 text-gray-400"
                   }`}
                 >

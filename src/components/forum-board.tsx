@@ -191,23 +191,33 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   return (
     <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
       <div>
-        <div className="forum-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <div className="forum-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 border-b border-[#2E1E45] pb-6">
           <div className="text-left">
-            <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">RUANG DISKUSI GUILD</p>
-            <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Forum <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Komunitas</span></h1>
-            <p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Temukan party, berbagi cerita, dan tumbuh bersama para petualang.</p>
+            <p className="section-kicker text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-widest mb-1.5 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[#7C3AED]" />
+              RUANG DISKUSI GUILD // FORUM
+            </p>
+            <h1 className="page-title font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold uppercase tracking-tight text-[#F8FAFC] break-words">
+              FORUM <span className="text-[#A78BFA]">KOMUNITAS</span>
+            </h1>
+            <p className="muted-copy text-xs sm:text-sm text-[#A78BFA] mt-1.5 font-sans">
+              Temukan party, berbagi cerita, strategi raid, dan tumbuh bersama para petualang LogHorizon.
+            </p>
           </div>
           {status === "loading" ? (
             <span className="nav-loading" />
           ) : (
-            <button className="button button-primary w-full sm:w-auto inline-flex items-center justify-center gap-2" onClick={handleCreateThread}>
-              <Plus size={17} /> <span>Buat Thread Baru</span>
+            <button
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] transition-colors"
+              onClick={handleCreateThread}
+            >
+              <Plus size={16} /> <span>BUAT THREAD BARU</span>
             </button>
           )}
         </div>
 
         {/* MODERN SEGMENTED CONTROL PILL TABS (Mobile & Tablet only, Desktop uses right sidebar directory) */}
-        <div className="lg:hidden flex items-center gap-1.5 p-1 rounded-xl bg-gray-100 dark:bg-[#120F17] border border-gray-200 dark:border-white/5 overflow-x-auto scrollbar-none my-4" role="tablist" aria-label="Kategori sub-forum">
+        <div className="lg:hidden flex items-center gap-1.5 p-1 rounded-none bg-[#130921] border border-[#2E1E45] overflow-x-auto scrollbar-none my-4" role="tablist" aria-label="Kategori sub-forum">
           {categories.map((item) => {
             const isActive = category === item.id;
             return (
@@ -215,10 +225,10 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                 key={item.id}
                 role="tab"
                 aria-selected={isActive}
-                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 shrink-0 ${
+                className={`px-3.5 py-2 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border ${
                   isActive
-                    ? "bg-[#9D4EDD] text-white shadow-sm shadow-[#9D4EDD]/25"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    ? "bg-[#7C3AED] text-[#F8FAFC] border-[#7C3AED]"
+                    : "bg-[#1A0E2E] text-[#A78BFA] border-[#2E1E45] hover:text-[#F8FAFC] hover:border-[#7C3AED]"
                 }`}
                 onClick={() => {
                   if (category !== item.id) {
@@ -227,7 +237,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                   }
                 }}
               >
-                <span className="font-mono text-[10px] opacity-75">{item.slug}</span>
+                <span className="text-[10px] opacity-75">{item.slug}</span>
                 <span>{item.label}</span>
               </button>
             );
@@ -244,22 +254,22 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
               role="search"
               onSubmit={(event) => event.preventDefault()}
             >
-              <div className="flex items-center gap-3 px-3.5 h-11 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors">
-                <div className="shrink-0 text-gray-400 flex items-center">
-                  {isSearching ? <Loader2 size={16} className="animate-spin text-purple-500" /> : <Search size={16} />}
+              <div className="flex items-center gap-3 px-3.5 h-11 rounded-none border border-[#2E1E45] bg-[#130921] focus-within:border-[#7C3AED] transition-colors">
+                <div className="shrink-0 text-[#A78BFA] flex items-center">
+                  {isSearching ? <Loader2 size={16} className="animate-spin text-[#7C3AED]" /> : <Search size={16} />}
                 </div>
                 <input
                   maxLength={120}
                   value={searchValue}
                   onChange={(event) => setSearchValue(event.target.value)}
-                  placeholder="Cari thread atau kata kunci…"
+                  placeholder="Cari thread atau kata kunci diskusi…"
                   aria-label="Cari diskusi"
-                  className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 p-0"
+                  className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-sm text-[#F8FAFC] placeholder:text-[#A78BFA]/50 p-0 font-sans"
                 />
                 {searchValue && (
                   <button
                     type="button"
-                    className="shrink-0 text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium px-1"
+                    className="shrink-0 text-xs text-[#A78BFA] hover:text-[#F8FAFC] font-mono px-1 uppercase"
                     onClick={() => {
                       setSearchValue("");
                       setSearch("");
@@ -272,46 +282,50 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
             </form>
 
             {/* SUB-FORUM CATEGORY HEADER & THREAD COUNT BADGE */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-none border border-[#2E1E45] bg-[#130921]">
               <div className="min-w-0 flex-1 text-left">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="w-2 h-2 rounded-full bg-[#9D4EDD] shadow-[0_0_8px_#9D4EDD] shrink-0" />
-                  <strong className="text-sm sm:text-base font-mono font-bold text-gray-900 dark:text-white break-words">
+                  <span className="w-2 h-2 bg-[#7C3AED] shrink-0" />
+                  <strong className="text-sm sm:text-base font-mono font-bold text-[#F8FAFC] break-words uppercase">
                     {activeCategory.slug}
                   </strong>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 text-[11px] font-mono shrink-0 text-gray-700 dark:text-gray-300">
-                    {posts.length} thread
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[11px] font-mono shrink-0 text-[#A78BFA]">
+                    {posts.length} THREAD
                   </span>
                 </div>
-                <p className="break-words text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="break-words text-xs sm:text-sm text-[#A78BFA] mt-1 font-sans">
                   {activeCategory.description}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0 whitespace-nowrap self-start sm:self-auto">
-                <span className={`live-status live-${liveState} whitespace-nowrap shrink-0`}>
+                <span className={`px-2.5 py-1 text-[11px] font-mono font-bold uppercase tracking-wider rounded-none border ${
+                  liveState === "live"
+                    ? "bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30"
+                    : "bg-[#1A0E2E] text-[#A78BFA] border-[#2E1E45]"
+                }`}>
                   {liveState === "live"
-                    ? "Live"
+                    ? "● LIVE SYNC"
                     : liveState === "connecting"
-                      ? "Menghubungkan…"
+                      ? "MENYAMBUNG…"
                       : liveState === "stale"
-                        ? "Memperbarui…"
+                        ? "MEMPERBARUI…"
                         : liveState === "error"
-                          ? "Live terputus"
-                          : "Live tidak aktif"}
+                          ? "TERPUTUS"
+                          : "OFFLINE"}
                 </span>
               </div>
             </div>
 
-            {liveError && <div className="inline-error" role="status">{liveError}</div>}
+            {liveError && <div className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none" role="status">{liveError}</div>}
             {message && (
-              <div className="inline-notice" role="status">
-                {message}
+              <div className="p-3 text-xs font-mono text-emerald-400 bg-emerald-950/20 border border-emerald-500/30 rounded-none flex items-center justify-between gap-2" role="status">
+                <span>{message}</span>
                 <button aria-label="Tutup notifikasi" onClick={() => setMessage("")}>
                   <X size={15} />
                 </button>
               </div>
             )}
-            {error && <div className="inline-error" role="alert">{error}</div>}
+            {error && <div className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none" role="alert">{error}</div>}
 
             {/* FORUM POSTS FEED & SKELETON LOADERS */}
             <section className="post-list space-y-3" aria-live="polite">
@@ -324,8 +338,8 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
               ) : posts.length ? (
                 posts.map((post, index) => (
                   <motion.article
-                    className={`p-4 sm:p-5 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] hover:border-[#9D4EDD]/40 transition-all flex flex-col sm:flex-row gap-3 sm:gap-4 ${
-                      post.isPinned ? "border-purple-500/30 bg-purple-950/5" : ""
+                    className={`p-4 sm:p-5 rounded-none border border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED] transition-all flex flex-col sm:flex-row gap-3 sm:gap-4 ${
+                      post.isPinned ? "border-l-4 border-l-[#7C3AED]" : ""
                     }`}
                     key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`}
                     initial={{ opacity: 0, y: 8 }}
@@ -353,33 +367,33 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                     </div>
                     <div className="min-w-0 flex-1 text-left">
                       {post.isPinned && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-[#9D4EDD] uppercase mb-1">
-                          <Pin size={11} /> PINNED THREAD
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#A78BFA] uppercase tracking-wider mb-1.5">
+                          <Pin size={11} className="text-[#7C3AED]" /> PINNED THREAD
                         </span>
                       )}
-                      <Link className="block text-base sm:text-lg font-bold break-words hover:text-[#9D4EDD] dark:hover:text-[#C77DFF] transition-colors leading-snug" href={`/forum/${post.id}`}>
+                      <Link className="block text-base sm:text-lg font-display font-bold uppercase tracking-tight break-words text-[#F8FAFC] hover:text-[#A78BFA] transition-colors leading-snug" href={`/forum/${post.id}`}>
                         {post.title}
                       </Link>
-                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 break-words leading-relaxed mt-1 line-clamp-2">{post.content}</p>
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-gray-400 dark:text-gray-500 mt-2.5 pt-2 border-t border-gray-100 dark:border-white/5">
+                      <p className="text-xs sm:text-sm text-[#A78BFA] font-sans break-words leading-relaxed mt-1.5 line-clamp-2">{post.content}</p>
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-[#A78BFA] font-mono mt-3 pt-2.5 border-t border-[#2E1E45]">
                         <span className="flex items-center gap-1.5">
                           <DiscordAvatar src={post.author.avatar} username={post.author.username} size={20} />
                           <Link
                             href={`/u/${post.author.username ?? "user"}`}
-                            className={`hover:underline ${(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") ? "premium-username" : "font-medium text-gray-700 dark:text-gray-300"}`}
+                            className={`hover:underline ${(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") ? "premium-username" : "font-medium text-[#F8FAFC]"}`}
                           >
                             {post.author.username ?? "Gamer"}
                           </Link>
                           {post.author.username?.toLowerCase() === ".odyssia" || post.author.username?.toLowerCase() === "odyssia" ? (
-                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0">
+                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 shrink-0">
                               👑 Emperor
                             </span>
                           ) : post.author.role === "ADMIN" ? (
-                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-400 border border-purple-500/30 shrink-0">
+                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30 shrink-0">
                               ✨ Prince
                             </span>
                           ) : post.author.role === "MODERATOR" ? (
-                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 shrink-0">
+                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-blue-500/15 text-blue-400 border border-blue-500/30 shrink-0">
                               ⚔️ Mod
                             </span>
                           ) : null}
@@ -387,9 +401,9 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                         <span>•</span>
                         <span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span>
                         <span>•</span>
-                        <Link href={`/forum/${post.id}`} className="hover:text-white inline-flex items-center gap-1">
+                        <Link href={`/forum/${post.id}`} className="hover:text-[#F8FAFC] inline-flex items-center gap-1">
                           <MessageCircle size={13} />
-                          <span>Diskusi</span>
+                          <span>DISKUSI</span>
                         </Link>
                         <span>•</span>
                         <ShareButton
@@ -402,19 +416,19 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                         {(user?.role === "ADMIN" || user?.role === "MODERATOR") && (
                           <button
                             type="button"
-                            className={`inline-flex items-center gap-1 ml-auto ${post.isPinned ? "text-[#9D4EDD] font-bold" : "text-gray-400 hover:text-[#9D4EDD]"}`}
+                            className={`inline-flex items-center gap-1 ml-auto ${post.isPinned ? "text-[#A78BFA] font-bold" : "text-[#A78BFA]/70 hover:text-[#F8FAFC]"}`}
                             onClick={() => void handleTogglePin(post.id, post.isPinned)}
                             title={post.isPinned ? "Lepas sematan (Unpin)" : "Sematkan thread (Pin)"}
                           >
                             <Pin size={12} /> {post.isPinned ? "Unpin" : "Pin"}
                           </button>
                         )}
-                        <button className="text-gray-400 hover:text-rose-400 inline-flex items-center gap-1" onClick={() => handleReportPost(post.id)}>
+                        <button className="text-[#A78BFA]/70 hover:text-rose-400 inline-flex items-center gap-1" onClick={() => handleReportPost(post.id)}>
                           <Flag size={12} /> Laporkan
                         </button>
                         {user && (user.id === post.author.id || user.role === "ADMIN" || user.role === "MODERATOR") && (
                           <button
-                            className="text-red-500 hover:text-red-400 inline-flex items-center gap-1"
+                            className="text-red-400 hover:text-red-300 inline-flex items-center gap-1"
                             onClick={() => void handleDeletePost(post.id)}
                             title="Hapus postingan"
                           >
@@ -442,11 +456,11 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
           {/* DESKTOP RIGHT SIDEBAR (CHANNELS & COMMUNITY GUIDE) */}
           <aside className="hidden lg:flex lg:col-span-4 xl:col-span-3 flex-col gap-4 sticky top-20">
             {/* SUB-FORUM DIRECTORY CARD */}
-            <div className="p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] space-y-3">
-              <span className="text-[11px] font-bold text-[#9D4EDD] uppercase tracking-wider block">
+            <div className="p-4 rounded-none border border-[#2E1E45] bg-[#130921] space-y-3 text-left">
+              <span className="text-[11px] font-mono font-bold text-[#A78BFA] uppercase tracking-wider block">
                 DIREKTORI SUB-FORUM
               </span>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {categories.map((cat) => {
                   const isActive = category === cat.id;
                   return (
@@ -457,17 +471,17 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                         setLoading(true);
                         setCategory(cat.id);
                       }}
-                      className={`w-full text-left p-2.5 rounded-lg text-xs font-bold transition flex items-center justify-between ${
+                      className={`w-full text-left p-3 rounded-none text-xs font-mono font-bold transition flex items-center justify-between border ${
                         isActive
-                          ? "bg-[#9D4EDD]/15 text-[#9D4EDD] dark:text-[#C77DFF] border border-[#9D4EDD]/30"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#181324]"
+                          ? "bg-[#7C3AED]/20 text-[#F8FAFC] border-[#7C3AED]"
+                          : "bg-[#1A0E2E] text-[#A78BFA] border-[#2E1E45] hover:border-[#7C3AED] hover:text-[#F8FAFC]"
                       }`}
                     >
                       <div className="min-w-0">
-                        <p className="truncate">{cat.label}</p>
-                        <p className="text-[10px] font-mono text-gray-400 truncate">{cat.slug}</p>
+                        <p className="truncate uppercase">{cat.label}</p>
+                        <p className="text-[10px] text-[#A78BFA]/70 truncate">{cat.slug}</p>
                       </div>
-                      <span className="text-[10px] font-mono text-gray-400 ml-2">➔</span>
+                      <span className="text-[10px] text-[#A78BFA] ml-2">➔</span>
                     </button>
                   );
                 })}
@@ -475,22 +489,22 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
             </div>
 
             {/* PANDUAN FORUM GUILD */}
-            <div className="p-4 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] space-y-2.5 text-xs text-left">
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">
+            <div className="p-4 rounded-none border border-[#2E1E45] bg-[#130921] space-y-2.5 text-xs text-left">
+              <span className="text-[11px] font-mono font-bold text-[#A78BFA] uppercase tracking-wider block">
                 ETIKA FORUM LOGHORIZON
               </span>
-              <ul className="space-y-2 text-gray-600 dark:text-gray-400 text-[11px] leading-relaxed">
+              <ul className="space-y-2 text-[#A78BFA] text-[11px] leading-relaxed font-sans">
                 <li className="flex items-start gap-2">
-                  <span className="text-[#9D4EDD] shrink-0 font-bold">•</span>
+                  <span className="text-[#7C3AED] shrink-0 font-bold font-mono">•</span>
                   <span>Saling menghargai dan jaga sportivitas komunitas gamer.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-[#9D4EDD] shrink-0 font-bold">•</span>
-                  <span>Promosi channel atau mabar diperbolehkan di <code>f/promotion</code>.</span>
+                  <span className="text-[#7C3AED] shrink-0 font-bold font-mono">•</span>
+                  <span>Promosi channel atau mabar diperbolehkan di <code className="font-mono text-[#F8FAFC]">f/promotion</code>.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-[#9D4EDD] shrink-0 font-bold">•</span>
-                  <span>Gunakan tombol <strong>Report</strong> jika melihat spam atau penipuan.</span>
+                  <span className="text-[#7C3AED] shrink-0 font-bold font-mono">•</span>
+                  <span>Gunakan tombol <strong className="text-[#F8FAFC]">Report</strong> jika melihat spam atau penipuan.</span>
                 </li>
               </ul>
             </div>
@@ -559,23 +573,23 @@ function ThreadModal({
 
   return (
     <div
-      className="modal-backdrop fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+      className="modal-backdrop fixed inset-0 z-50 bg-[#09040F]/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className="modal-card w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto my-auto" role="dialog" aria-modal="true" aria-labelledby="thread-modal-title">
-        <button className="modal-close" onClick={onClose} aria-label="Tutup">
+      <section className="modal-card w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto my-auto rounded-none border border-[#2E1E45] bg-[#130921] p-6 text-left relative" role="dialog" aria-modal="true" aria-labelledby="thread-modal-title">
+        <button className="modal-close absolute top-5 right-5 text-[#A78BFA] hover:text-[#F8FAFC]" onClick={onClose} aria-label="Tutup">
           <X size={19} />
         </button>
-        <p className="section-kicker">MULAI DISKUSI</p>
-        <h2 id="thread-modal-title">Buat Thread Baru</h2>
-        <form className="stack-form" onSubmit={submit}>
-          <label>
+        <p className="section-kicker font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider mb-1">MULAI DISKUSI // FORUM</p>
+        <h2 id="thread-modal-title" className="font-display text-2xl font-extrabold uppercase tracking-tight text-[#F8FAFC] mb-5">Buat Thread Baru</h2>
+        <form className="space-y-4" onSubmit={submit}>
+          <label className="block text-xs font-mono text-[#A78BFA] uppercase">
             Kategori
-            <input value={categories.find((item) => item.id === category)?.slug} readOnly />
+            <input className="mt-1 w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] font-mono text-xs cursor-not-allowed" value={categories.find((item) => item.id === category)?.slug} readOnly />
           </label>
-          <label>
+          <label className="block text-xs font-mono text-[#A78BFA] uppercase">
             Judul thread
             <input
               required
@@ -583,9 +597,10 @@ function ThreadModal({
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Apa yang ingin kamu diskusikan?"
+              className="mt-1 w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] font-sans text-sm focus:outline-none focus:border-[#7C3AED]"
             />
           </label>
-          <label>
+          <label className="block text-xs font-mono text-[#A78BFA] uppercase">
             Isi thread
             <textarea
               required
@@ -594,6 +609,7 @@ function ThreadModal({
               value={content}
               onChange={(event) => setContent(event.target.value)}
               placeholder="Ceritakan lebih lanjut…"
+              className="mt-1 w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] font-sans text-sm focus:outline-none focus:border-[#7C3AED]"
             />
           </label>
           <div>
@@ -605,17 +621,18 @@ function ThreadModal({
             />
           </div>
           {canPin && (
-            <label className="form-checkbox">
+            <label className="flex items-center gap-2 text-xs font-mono text-[#A78BFA] cursor-pointer">
               <input
                 type="checkbox"
                 checked={isPinned}
                 onChange={(event) => setIsPinned(event.target.checked)}
+                className="rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#7C3AED] focus:ring-0"
               />{" "}
               Sematkan postingan (Premium, maks. 3)
             </label>
           )}
-          {error && <p className="form-error" role="alert">{error}</p>}
-          <button className="button button-primary" disabled={saving}>
+          {error && <p className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none" role="alert">{error}</p>}
+          <button className="w-full py-2.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] transition-colors" disabled={saving}>
             {saving ? "Mengirim…" : "Publikasikan thread"}
           </button>
         </form>

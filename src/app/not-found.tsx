@@ -10,7 +10,7 @@ export default function NotFound() {
         aria-hidden="true"
       />
 
-      <div className="relative z-10 max-w-lg w-full text-center p-6 sm:p-10 rounded-2xl border border-gray-200 dark:border-[#211C2B] bg-white/70 dark:bg-[#100D18]/80 backdrop-blur-xl shadow-2xl">
+      <div className="relative z-10 max-w-lg w-full text-center p-6 sm:p-10 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white/70 dark:bg-[#100D18]/80 backdrop-blur-xl shadow-2xl">
         {/* Cyber Tactical Badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-[#9D4EDD]/10 border border-[#9D4EDD]/30 text-[#9D4EDD] dark:text-[#C77DFF] text-xs font-bold tracking-widest uppercase mb-4">
           <ShieldAlert size={14} className="animate-pulse" />
