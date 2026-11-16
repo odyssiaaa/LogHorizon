@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -17,6 +18,116 @@ import {
   X,
 } from "lucide-react";
 import { DiscordAvatar } from "@/components/discord-avatar";
+
+function getRouteLabel(route: string): string {
+  const clean = route.trim();
+  if (clean.startsWith("/events?view=turnamen")) return "Buka Halaman Turnamen ↗";
+  if (clean.startsWith("/events?view=mabar")) return "Cari Party Mabar ↗";
+  if (clean === "/events" || clean.startsWith("/events/")) return "Buka Jadwal Events ↗";
+  if (clean === "/forum" || clean.startsWith("/forum/")) return "Buka Forum ↗";
+  if (clean === "/marketplace" || clean.startsWith("/marketplace/")) return "Cek Marketplace ↗";
+  if (clean === "/donate") return "Kunjungi Kas Donasi ↗";
+  if (clean === "/leaderboard") return "Lihat Papan Peringkat ↗";
+  if (clean === "/hall-of-winners") return "Buka Hall of Winners ↗";
+  if (clean === "/news" || clean.startsWith("/news/")) return "Baca Warta Berita ↗";
+  if (clean === "/profile") return "Buka Profil ↗";
+  if (clean === "/rules") return "Lihat Aturan Guild ↗";
+  return `Kunjungi ${clean} ↗`;
+}
+
+function renderFormattedAssistantMessage(content: string) {
+  // Regex pattern matching in order of specificity:
+  // 1: Markdown link: [Label](/url...)
+  // 2: Backticked route: `(/url...)`
+  // 3: Standalone route: /(events|forum|marketplace|donate|leaderboard|hall-of-winners|news|profile|rules|settings|messages|u)...
+  // 4: Bold: **text**
+  // 5: Backtick code (not route): `text`
+  // 6: Italic: *text*
+  const pattern = /(\[([^\]]+)\]\((\/[^\s)]+)\))|(`(\/[a-zA-Z0-9_\-\/?=&%#.]+)`)|((?:^|(?<=\s))(\/(?:events|forum|marketplace|donate|leaderboard|hall-of-winners|news|profile|rules|settings|messages|u)(?:[a-zA-Z0-9_\-\/?=&%#]*)))|(\*\*([^*]+)\*\*)|(`([^`]+)`)|(\*([^*]+)\*)/g;
+
+  const elements: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      elements.push(content.substring(lastIndex, match.index));
+    }
+
+    const key = `frag-${match.index}`;
+
+    if (match[1]) {
+      // 1. Markdown link [Label](/route)
+      const rawLabel = match[2];
+      const url = match[3];
+      const label = rawLabel.includes("↗") || rawLabel.includes("➔") ? rawLabel : `${rawLabel} ↗`;
+      elements.push(
+        <Link
+          key={key}
+          href={url}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 my-0.5 rounded bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer whitespace-nowrap"
+        >
+          <span>{label}</span>
+        </Link>
+      );
+    } else if (match[4]) {
+      // 2. Backticked route `(/route)`
+      const url = match[5];
+      const label = getRouteLabel(url);
+      elements.push(
+        <Link
+          key={key}
+          href={url}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 my-0.5 rounded bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer whitespace-nowrap"
+        >
+          <span>{label}</span>
+        </Link>
+      );
+    } else if (match[6]) {
+      // 3. Standalone route /route
+      const url = match[7];
+      const label = getRouteLabel(url);
+      elements.push(
+        <Link
+          key={key}
+          href={url}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 my-0.5 rounded bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-semibold text-xs shadow-sm transition-all cursor-pointer whitespace-nowrap"
+        >
+          <span>{label}</span>
+        </Link>
+      );
+    } else if (match[8]) {
+      // 4. Bold **text**
+      elements.push(
+        <strong key={key} className="font-bold text-white">
+          {match[9]}
+        </strong>
+      );
+    } else if (match[10]) {
+      // 5. Backtick code `code` (not route)
+      elements.push(
+        <span key={key} className="font-mono text-[#A78BFA] font-semibold">
+          {match[11]}
+        </span>
+      );
+    } else if (match[12]) {
+      // 6. Italic *text*
+      elements.push(
+        <em key={key} className="italic text-[#C4B5FD]">
+          {match[13]}
+        </em>
+      );
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < content.length) {
+    elements.push(content.substring(lastIndex));
+  }
+
+  return elements;
+}
 
 type Message = {
   id: string;
@@ -257,7 +368,7 @@ export function HorizonChatWidget() {
                           : "bg-gray-100 dark:bg-[#1A1524] text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-[#262033] rounded-tl-none"
                       }`}
                     >
-                      {m.content}
+                      {isUser ? m.content : renderFormattedAssistantMessage(m.content)}
                     </div>
                     <span className="text-[10px] text-gray-400 font-mono px-1 block">
                       {m.timestamp}
