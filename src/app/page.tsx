@@ -16,9 +16,26 @@ import {
   Zap,
 } from "lucide-react";
 
+import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export const instant = false;
+
+function parsePrizePool(prizeStr: string | null | undefined): number {
+  if (!prizeStr) return 0;
+  const digits = prizeStr.replace(/\D/g, "");
+  if (!digits) return 0;
+  const num = parseInt(digits, 10);
+  return isNaN(num) ? 0 : num;
+}
+
+function formatRupiah(amount: number): string {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
 
 const divisions = [
   { title: "FPS / Shooter", games: "Valorant · Apex Legends · CS2", icon: Swords, code: "DIV-01" },
@@ -72,25 +89,48 @@ const roleGroups = [
 ];
 
 export default async function Home() {
-  const [config, sponsors, latestTournaments, latestLfg, escrowCount] = await Promise.all([
+  await connection();
+  const now = new Date();
+  const [
+    config,
+    sponsors,
+    totalMembers,
+    activeTournaments,
+    latestTournament,
+    activeLfgCount,
+    latestLfg,
+    approvedDonationsSum,
+    escrowCount,
+  ] = await Promise.all([
     prisma.siteConfig.findUnique({ where: { id: "default" } }).catch(() => null),
     prisma.sponsor.findMany({ orderBy: { createdAt: "desc" } }).catch(() => []),
+    prisma.user.count().catch(() => 0),
     prisma.tournament.findMany({
-      take: 2,
-      orderBy: { createdAt: "desc" },
-      select: { id: true, title: true, game: true, status: true, prizePool: true, maxSlots: true },
+      where: { status: { in: ["REGISTRATION", "ONGOING", "OPEN"] } },
+      select: { prizePool: true },
     }).catch(() => []),
-    prisma.lfgPost.findMany({
-      take: 2,
+    prisma.tournament.findFirst({
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+      select: { id: true, title: true, game: true, status: true, format: true },
+    }).catch(() => null),
+    prisma.lfgPost.count({
+      where: { status: "OPEN", expiresAt: { gt: now } },
+    }).catch(() => 0),
+    prisma.lfgPost.findFirst({
+      where: { status: "OPEN", expiresAt: { gt: now } },
       orderBy: { createdAt: "desc" },
       select: { id: true, game: true, targetRank: true, maxSlots: true, description: true },
-    }).catch(() => []),
+    }).catch(() => null),
+    prisma.donation.aggregate({
+      where: { status: { in: ["APPROVED", "SUCCEEDED"] } },
+      _sum: { amount: true },
+    }).catch(() => ({ _sum: { amount: 0 } })),
     prisma.escrowTransaction.count().catch(() => 0),
   ]);
 
-  const statMembers = config?.statMembers || "2,480+";
-  const statParties = config?.statParties || "450+";
-  const statPrize = "Rp 39.000.000";
+  const totalPrizePool = activeTournaments.reduce((acc, t) => acc + parsePrizePool(t.prizePool), 0);
+  const activeTournamentCount = activeTournaments.length;
+  const verifiedKas = approvedDonationsSum._sum.amount ?? 0;
   const discordInviteUrl = config?.discordInviteUrl || "https://discord.gg/aJvbVyTxNb";
 
   return (
@@ -149,32 +189,44 @@ export default async function Home() {
                 </a>
               </div>
 
-              {/* Baris 4 Metrik Statistik (Data-Dense JetBrains Mono) */}
+              {/* Baris 4 Metrik Statistik (Data-Dense JetBrains Mono - 100% Real DB Data) */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-[#2E1E45]">
                 <div className="p-3 bg-[#130921] border border-[#2E1E45]">
                   <span className="font-mono text-[10px] text-[#A78BFA] uppercase block">TOTAL PETUALANG</span>
-                  <strong className="font-mono text-xl sm:text-2xl font-bold text-[#F8FAFC] block mt-0.5">{statMembers}</strong>
-                  <span className="font-mono text-[10px] text-[#10B981] mt-0.5 block">● 100% Terverifikasi</span>
+                  <strong className="font-mono text-xl sm:text-2xl font-bold text-[#F8FAFC] block mt-0.5">
+                    {totalMembers} Petualang
+                  </strong>
+                  <span className="font-mono text-[10px] text-[#10B981] mt-0.5 block">● 100% Akun Terdaftar</span>
                 </div>
 
                 <div className="p-3 bg-[#130921] border border-[#2E1E45]">
-                  <span className="font-mono text-[10px] text-[#A78BFA] uppercase block">SEASON 1 PRIZE</span>
-                  <strong className="font-mono text-xl sm:text-2xl font-bold text-[#F59E0B] block mt-0.5">{statPrize}</strong>
-                  <span className="font-mono text-[10px] text-[#A78BFA] mt-0.5 block">4 Turnamen Aktif</span>
+                  <span className="font-mono text-[10px] text-[#A78BFA] uppercase block">PRIZE POOL AKTIF</span>
+                  <strong className="font-mono text-xl sm:text-2xl font-bold text-[#F59E0B] block mt-0.5">
+                    {formatRupiah(totalPrizePool)}
+                  </strong>
+                  <span className="font-mono text-[10px] text-[#A78BFA] mt-0.5 block">
+                    {activeTournamentCount} Turnamen Aktif
+                  </span>
                 </div>
 
                 <div className="p-3 bg-[#130921] border border-[#2E1E45]">
                   <span className="font-mono text-[10px] text-[#A78BFA] uppercase block">ACTIVE PARTY LFG</span>
-                  <strong className="font-mono text-xl sm:text-2xl font-bold text-[#F8FAFC] block mt-0.5">{statParties}</strong>
-                  <span className="font-mono text-[10px] text-[#10B981] mt-0.5 block">PC / Konsol / HP</span>
+                  <strong className="font-mono text-xl sm:text-2xl font-bold text-[#F8FAFC] block mt-0.5">
+                    {activeLfgCount} Party
+                  </strong>
+                  <span className="font-mono text-[10px] text-[#10B981] mt-0.5 block">
+                    {activeLfgCount > 0 ? "Mabar Siap Tempur" : "Belum Ada Mabar"}
+                  </span>
                 </div>
 
                 <div className="p-3 bg-[#130921] border border-[#2E1E45]">
-                  <span className="font-mono text-[10px] text-[#A78BFA] uppercase block">REKBER ESCROW</span>
+                  <span className="font-mono text-[10px] text-[#A78BFA] uppercase block">KAS TERVERIFIKASI</span>
                   <strong className="font-mono text-xl sm:text-2xl font-bold text-[#10B981] block mt-0.5">
-                    {escrowCount > 0 ? `${escrowCount} TRX` : "100% AMAN"}
+                    {formatRupiah(verifiedKas)}
                   </strong>
-                  <span className="font-mono text-[10px] text-[#A78BFA] mt-0.5 block">Dijamin Kas Guild</span>
+                  <span className="font-mono text-[10px] text-[#A78BFA] mt-0.5 block">
+                    {escrowCount > 0 ? `${escrowCount} TRX Rekber Terlindungi` : "100% Kas Terbuka"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -198,7 +250,7 @@ export default async function Home() {
                 </div>
               </div>
 
-              {/* LIVE GUILD FLIGHT BOARD (Data-Dense Airport Schedule Style) */}
+              {/* LIVE GUILD FLIGHT BOARD (Data-Dense Airport Schedule Style - Real Time) */}
               <div className="bg-[#130921] border border-[#2E1E45] divide-y divide-[#2E1E45] rounded-none">
                 <div className="p-3.5 bg-[#09040F] flex items-center justify-between font-mono text-xs text-[#F8FAFC]">
                   <span className="font-bold flex items-center gap-2">
@@ -208,40 +260,72 @@ export default async function Home() {
                   <span className="text-[10px] text-[#10B981] font-bold">● DISPATCH AKTIF</span>
                 </div>
 
-                {/* Match Turnamen LIVE */}
+                {/* Match Turnamen LIVE / Real Time */}
                 <div className="p-3.5 hover:bg-[#1A0E2E] transition-colors">
                   <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-[#A78BFA] font-bold">TURNAMEN LEAGUE S1</span>
-                    <span className="text-[#10B981] font-bold px-1.5 py-0.2 bg-[#10B981]/10 border border-[#10B981]/30">
-                      LIVE MATCH
-                    </span>
+                    <span className="text-[#A78BFA] font-bold">TURNAMEN LOGHORIZON</span>
+                    {latestTournament ? (
+                      <span className={`font-bold px-1.5 py-0.2 border ${
+                        latestTournament.status === "ONGOING"
+                          ? "text-[#10B981] bg-[#10B981]/10 border-[#10B981]/30 animate-pulse"
+                          : latestTournament.status === "REGISTRATION" || latestTournament.status === "OPEN"
+                            ? "text-[#F59E0B] bg-[#F59E0B]/10 border-[#F59E0B]/30"
+                            : "text-[#A78BFA] bg-[#A78BFA]/10 border-[#A78BFA]/30"
+                      }`}>
+                        {latestTournament.status === "ONGOING"
+                          ? "LIVE MATCH"
+                          : latestTournament.status === "REGISTRATION" || latestTournament.status === "OPEN"
+                            ? "REGISTRASI BUKA"
+                            : latestTournament.status}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 font-bold px-1.5 py-0.2 bg-gray-500/10 border border-gray-500/30">
+                        OFFLINE
+                      </span>
+                    )}
                   </div>
                   <div className="font-display font-bold text-sm text-[#F8FAFC] mt-1">
-                    {latestTournaments[0]?.title || "LOGHORIZON INVITATIONAL: VORTEX vs KRONOS"}
+                    {latestTournament ? latestTournament.title : "Belum ada turnamen aktif"}
                   </div>
                   <div className="flex items-center justify-between font-mono text-[11px] text-[#A78BFA] mt-1">
-                    <span>Divisi: {latestTournaments[0]?.game || "Valorant"}</span>
+                    <span>
+                      {latestTournament
+                        ? `Divisi: ${latestTournament.game} (${latestTournament.format})`
+                        : "Tunggu pengumuman turnamen season berikutnya"}
+                    </span>
                     <Link href="/events?view=turnamen" className="text-[#7C3AED] hover:underline font-bold">
-                      Bagan Turnamen ➔
+                      {latestTournament ? "Bagan Turnamen ➔" : "Lihat Jadwal ➔"}
                     </Link>
                   </div>
                 </div>
 
-                {/* Party LFG yang Kurang Slot */}
+                {/* Party LFG Real Time */}
                 <div className="p-3.5 hover:bg-[#1A0E2E] transition-colors">
                   <div className="flex items-center justify-between text-[11px] font-mono">
                     <span className="text-[#A78BFA] font-bold">CARI TEMAN MABAR (LFG)</span>
-                    <span className="text-[#F59E0B] font-bold px-1.5 py-0.2 bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                      SLOT TERBUKA
-                    </span>
+                    {latestLfg ? (
+                      <span className="text-[#F59E0B] font-bold px-1.5 py-0.2 bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+                        SLOT TERBUKA
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 font-bold px-1.5 py-0.2 bg-gray-500/10 border border-gray-500/30">
+                        STANDBY
+                      </span>
+                    )}
                   </div>
                   <div className="font-display font-bold text-sm text-[#F8FAFC] mt-1">
-                    {latestLfg[0]?.game || "Valorant"} // {latestLfg[0]?.description || "5-Stack Push Radiant (Mic On)"}
+                    {latestLfg
+                      ? `${latestLfg.game} // ${latestLfg.description}`
+                      : "Belum ada party mabar aktif • Buat Party Sekarang"}
                   </div>
                   <div className="flex items-center justify-between font-mono text-[11px] text-[#A78BFA] mt-1">
-                    <span>Rank: {latestLfg[0]?.targetRank || "Ascendant 2+"}</span>
+                    <span>
+                      {latestLfg
+                        ? `Target: ${latestLfg.targetRank || "Bebas"} (${latestLfg.maxSlots} Slot)`
+                        : "Jadilah pelopor party pertamamu di komunitas"}
+                    </span>
                     <Link href="/events?view=mabar" className="text-[#7C3AED] hover:underline font-bold">
-                      Gabung Party ➔
+                      {latestLfg ? "Gabung Party ➔" : "Buat Party ➔"}
                     </Link>
                   </div>
                 </div>
@@ -255,10 +339,10 @@ export default async function Home() {
                     </span>
                   </div>
                   <div className="font-display font-bold text-sm text-[#F8FAFC] mt-1">
-                    Transaksi Jual-Beli Akun &amp; Item Dijamin 100% Kas Guild
+                    Transaksi Jual-Beli Akun &amp; Item Dijamin Kas Guild
                   </div>
                   <div className="flex items-center justify-between font-mono text-[11px] text-[#A78BFA] mt-1">
-                    <span>Bebas Biaya Admin untuk Kasta Tinggi</span>
+                    <span>{escrowCount > 0 ? `${escrowCount} Transaksi Terlindungi` : "Kas Guild Siap Mengawal Transaksi Pertama"}</span>
                     <Link href="/marketplace" className="text-[#7C3AED] hover:underline font-bold">
                       Buka Lapak Rekber ➔
                     </Link>
@@ -536,7 +620,7 @@ export default async function Home() {
                 Sudah siap melampaui horizon?
               </h2>
               <p className="font-sans text-xs sm:text-sm text-[#A78BFA]">
-                Gabung sekarang bersama {statMembers} petualang lintas platform PC, konsol, dan mobile.
+                Gabung sekarang bersama {totalMembers} petualang lintas platform PC, konsol, dan mobile.
               </p>
             </div>
             <a

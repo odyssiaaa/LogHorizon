@@ -157,6 +157,7 @@ type DashboardData = {
     activeMarketplaceListings: number;
     activeEscrows?: number;
     pendingDonations?: number;
+    pendingTournamentRegistrations?: number;
     pendingReports: number;
     totalDonations: number;
   };
@@ -212,6 +213,75 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     tournamentTitle: "",
     teamsList: [],
   });
+
+  // Tournament Creation State
+  const [createTournamentOpen, setCreateTournamentOpen] = useState(false);
+  const [creatingTournament, setCreatingTournament] = useState(false);
+  const [newTourneyForm, setNewTourneyForm] = useState({
+    title: "",
+    game: "Mobile Legends: Bang Bang",
+    prizePool: "Rp 500.000",
+    teamCount: 8,
+    mainPlayersCount: 5,
+    subPlayersCount: 2,
+    isFreeEntry: true,
+    entryFee: 0,
+    eventDate: new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 16),
+    status: "REGISTRATION",
+    rules: "",
+  });
+
+  async function handleCreateTournament(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newTourneyForm.title.trim() || !newTourneyForm.game.trim()) {
+      setError("Nama turnamen dan game wajib diisi.");
+      return;
+    }
+    setCreatingTournament(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/tournaments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTourneyForm.title.trim(),
+          game: newTourneyForm.game.trim(),
+          prizePool: newTourneyForm.prizePool.trim() || "Prizepool Komunitas",
+          teamCount: Number(newTourneyForm.teamCount) || 8,
+          mainPlayersCount: Number(newTourneyForm.mainPlayersCount) || 5,
+          subPlayersCount: Number(newTourneyForm.subPlayersCount) || 2,
+          isFreeEntry: newTourneyForm.isFreeEntry,
+          entryFee: newTourneyForm.isFreeEntry ? 0 : Number(newTourneyForm.entryFee) || 0,
+          rules: newTourneyForm.rules.trim() || undefined,
+          eventDate: newTourneyForm.eventDate ? new Date(newTourneyForm.eventDate).toISOString() : new Date().toISOString(),
+          status: newTourneyForm.status,
+        }),
+      });
+      const created = await readApiResponse<any>(response, "Gagal membuat turnamen.");
+      setNotice(`Turnamen "${created.title}" berhasil dibuat lengkap dengan bagan!`);
+      setCreateTournamentOpen(false);
+      setNewTourneyForm({
+        title: "",
+        game: "Mobile Legends: Bang Bang",
+        prizePool: "Rp 500.000",
+        teamCount: 8,
+        mainPlayersCount: 5,
+        subPlayersCount: 2,
+        isFreeEntry: true,
+        entryFee: 0,
+        eventDate: new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 16),
+        status: "REGISTRATION",
+        rules: "",
+      });
+      await fetchTournaments();
+      setSelectedTournamentId(created.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal membuat turnamen.");
+    } finally {
+      setCreatingTournament(false);
+    }
+  }
 
   // Hall of Winners Management State
   const [hallOfWinnersList, setHallOfWinnersList] = useState<any[]>([]);
@@ -699,6 +769,32 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     }
   }
 
+  async function handleEditXpLevel(member: Member) {
+    const nextLevelStr = window.prompt(
+      `Masukkan Level baru untuk @${member.username ?? "Member"} (1–100):`,
+      String(member.level ?? 1)
+    );
+    if (nextLevelStr === null) return;
+    const nextLevel = parseInt(nextLevelStr, 10);
+    if (isNaN(nextLevel) || nextLevel < 1 || nextLevel > 100) {
+      setError("Level harus berupa angka antara 1 dan 100.");
+      return;
+    }
+
+    const nextXpStr = window.prompt(
+      `Masukkan total XP baru untuk @${member.username ?? "Member"}:`,
+      String(member.xp ?? 0)
+    );
+    if (nextXpStr === null) return;
+    const nextXp = parseInt(nextXpStr, 10);
+    if (isNaN(nextXp) || nextXp < 0) {
+      setError("XP harus berupa angka positif.");
+      return;
+    }
+
+    await updateMember(member, { level: nextLevel, xp: nextXp });
+  }
+
   // Update Marketplace Listing Status
   async function updateListingStatus(postId: string, newStatus: "AVAILABLE" | "IN_ESCROW" | "SOLD") {
     setBusyId(postId);
@@ -789,6 +885,14 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
   const pendingDonationsList = data?.donations?.filter((d) => d.status === "PENDING") ?? [];
   const processedDonationsList = data?.donations?.filter((d) => d.status !== "PENDING") ?? [];
+  const totalPendingTournament =
+    data?.stats.pendingTournamentRegistrations ??
+    tournamentsList.reduce(
+      (acc, t) =>
+        acc +
+        (t.participants?.filter((p: any) => p.paymentStatus === "PENDING_PAYMENT").length || 0),
+      0
+    );
 
   return (
     <main className="community-page py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto w-full overflow-x-hidden">
@@ -1162,12 +1266,17 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   </article>
 
                   <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] col-span-2 lg:col-span-1">
-                    <div className="flex items-center justify-between text-rose-500">
-                      <Flag size={20} />
+                    <div className="flex items-center justify-between text-amber-400">
+                      <Trophy size={20} />
+                      {Boolean(totalPendingTournament) && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/20 text-amber-400">
+                          AKSI
+                        </span>
+                      )}
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Laporan Masuk</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Antrean Pendaftar Turnamen</span>
                     <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-                      {data?.stats.pendingReports ?? 0}
+                      {totalPendingTournament}
                     </strong>
                   </article>
                 </div>
@@ -1462,6 +1571,14 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setCreateTournamentOpen(true)}
+                      className="button button-primary text-xs font-bold inline-flex items-center gap-1.5"
+                    >
+                      <Plus size={14} />
+                      <span>+ Buat Turnamen Baru</span>
+                    </button>
                     {(() => {
                       const cur = tournamentsList.find((t) => t.id === selectedTournamentId) || tournamentsList[0];
                       return cur && cur.status !== "COMPLETED" ? (
@@ -1486,10 +1603,10 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     </button>
                     <Link
                       href="/events?view=turnamen"
-                      className="button button-primary text-xs font-bold inline-flex items-center gap-1.5"
+                      className="button button-quiet text-xs font-bold inline-flex items-center gap-1.5 border border-purple-500/30 text-purple-300 hover:bg-purple-500/15"
                     >
                       <ExternalLink size={13} />
-                      <span>Bagan Pertandingan &amp; Template</span>
+                      <span>Bagan Pertandingan</span>
                     </Link>
                   </div>
                 </div>
@@ -1597,6 +1714,30 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                 <ExternalLink size={13} className="text-[#9D4EDD]" />
                                 <span>Bagan &amp; Jadwal Tanding</span>
                               </Link>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setHowForm({
+                                    tournamentTitle: curTournament.title,
+                                    game: curTournament.game,
+                                    season: "Season 1",
+                                    prizePool: curTournament.prizePool || "Rp 500.000",
+                                    eventDate: new Date(curTournament.eventDate).toISOString().slice(0, 10),
+                                    championTeam: "",
+                                    championRosterStr: "",
+                                    runnerUpTeam: "",
+                                    thirdPlaceTeam: "",
+                                    notes: "",
+                                  });
+                                  setHowModalOpen(true);
+                                  setTab("hall_of_winners");
+                                }}
+                                className="px-3 py-2 rounded-none text-xs font-bold border border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 flex items-center gap-1.5 transition"
+                                title="Catat atau arsipkan turnamen ini ke Hall of Winners"
+                              >
+                                <Crown size={14} className="text-amber-400" />
+                                <span>Arsip Hall of Winners</span>
+                              </button>
                               {curTournament.status !== "COMPLETED" && (
                                 <button
                                   type="button"
@@ -2601,6 +2742,17 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                                 <div className="flex items-center gap-2">
                                   <span className="font-bold text-[#9D4EDD]">Lv. {member.level ?? 1}</span>
                                   <span className="text-gray-400">({(member.xp ?? 0).toLocaleString("id-ID")} XP)</span>
+                                  {isAdmin && !isOwnerMember && (
+                                    <button
+                                      type="button"
+                                      disabled={busyId === member.id}
+                                      onClick={() => void handleEditXpLevel(member)}
+                                      className="px-1.5 py-0.5 text-[10px] font-bold border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 rounded-none ml-1 transition"
+                                      title="Edit Level & XP Manual"
+                                    >
+                                      ✏️ Edit
+                                    </button>
+                                  )}
                                 </div>
                               </td>
 
@@ -2969,6 +3121,168 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
           onClose={() => setAdminRulesViewModal(null)}
           onAgree={() => setAdminRulesViewModal(null)}
         />
+      )}
+
+      {/* MODAL BUAT TURNAMEN BARU DARI ADMIN */}
+      {createTournamentOpen && (
+        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] p-6 shadow-2xl my-auto">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200 dark:border-[#2E1E45]">
+              <div className="flex items-center gap-2">
+                <Trophy size={18} className="text-[#9D4EDD]" />
+                <h3 className="font-bold text-base text-gray-900 dark:text-white">Buat Turnamen Baru (Bagan Otomatis)</h3>
+              </div>
+              <button type="button" onClick={() => setCreateTournamentOpen(false)} className="text-gray-400 hover:text-white">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => void handleCreateTournament(e)} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Judul Turnamen *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newTourneyForm.title}
+                    onChange={(e) => setNewTourneyForm({ ...newTourneyForm, title: e.target.value })}
+                    placeholder="Contoh: LogHorizon Mobile Legends S1"
+                    className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Game Divisi *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newTourneyForm.game}
+                    onChange={(e) => setNewTourneyForm({ ...newTourneyForm, game: e.target.value })}
+                    placeholder="Valorant, Mobile Legends, CS2, dll"
+                    className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Kapasitas Slot Tim *</label>
+                  <select
+                    value={newTourneyForm.teamCount}
+                    onChange={(e) => setNewTourneyForm({ ...newTourneyForm, teamCount: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                  >
+                    <option value={4}>4 Tim (Semifinal)</option>
+                    <option value={8}>8 Tim (Quarterfinal)</option>
+                    <option value={16}>16 Tim (Round of 16)</option>
+                    <option value={32}>32 Tim (Round of 32)</option>
+                    <option value={64}>64 Tim (Round of 64)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Pemain Inti (Main)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={newTourneyForm.mainPlayersCount}
+                    onChange={(e) => setNewTourneyForm({ ...newTourneyForm, mainPlayersCount: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Pemain Cadangan (Sub)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={5}
+                    value={newTourneyForm.subPlayersCount}
+                    onChange={(e) => setNewTourneyForm({ ...newTourneyForm, subPlayersCount: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Total Prize Pool</label>
+                  <input
+                    type="text"
+                    value={newTourneyForm.prizePool}
+                    onChange={(e) => setNewTourneyForm({ ...newTourneyForm, prizePool: e.target.value })}
+                    placeholder="Contoh: Rp 1.500.000 / Medali Emas"
+                    className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Tanggal Mulai Tanding</label>
+                  <input
+                    type="datetime-local"
+                    value={newTourneyForm.eventDate}
+                    onChange={(e) => setNewTourneyForm({ ...newTourneyForm, eventDate: e.target.value })}
+                    className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                  />
+                </div>
+              </div>
+
+              {/* Biaya Registrasi */}
+              <div className="p-3 bg-gray-50 dark:bg-[#09040F] border border-gray-200 dark:border-[#2E1E45] space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newTourneyForm.isFreeEntry}
+                    onChange={(e) => setNewTourneyForm({ ...newTourneyForm, isFreeEntry: e.target.checked })}
+                    className="rounded-none border-gray-300 dark:border-[#2E1E45] text-[#7C3AED] focus:ring-0"
+                  />
+                  <span className="font-bold text-gray-800 dark:text-gray-200">Turnamen Gratis (Free Entry)</span>
+                </label>
+                {!newTourneyForm.isFreeEntry && (
+                  <div>
+                    <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Biaya Pendaftaran per Tim (IDR)</label>
+                    <input
+                      type="number"
+                      min={1000}
+                      step={5000}
+                      value={newTourneyForm.entryFee}
+                      onChange={(e) => setNewTourneyForm({ ...newTourneyForm, entryFee: Number(e.target.value) })}
+                      placeholder="50000"
+                      className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                    />
+                    <p className="text-[10px] text-gray-400 mt-1">Pendaftar wajib mengunggah bukti transfer QRIS dan nama rekening pengirim.</p>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Peraturan Khusus Turnamen (Opsional)</label>
+                <textarea
+                  rows={2}
+                  value={newTourneyForm.rules}
+                  onChange={(e) => setNewTourneyForm({ ...newTourneyForm, rules: e.target.value })}
+                  placeholder="Ketik peraturan khusus atau biarkan kosong untuk menggunakan aturan default guild..."
+                  className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-200 dark:border-[#2E1E45]">
+                <button
+                  type="button"
+                  onClick={() => setCreateTournamentOpen(false)}
+                  className="px-4 py-2 rounded-none border border-gray-300 dark:border-[#2E1E45] text-gray-600 dark:text-gray-300 font-bold"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingTournament}
+                  className="px-5 py-2 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold inline-flex items-center gap-2"
+                >
+                  <Plus size={14} />
+                  <span>{creatingTournament ? "Membuat Bagan..." : "Terbitkan Turnamen"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </main>
   );

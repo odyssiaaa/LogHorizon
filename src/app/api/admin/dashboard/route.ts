@@ -27,6 +27,7 @@ export async function GET(request: Request) {
     activeListings,
     activeEscrows,
     pendingDonationsCount,
+    pendingTournamentRegistrations,
     totalForumThreads,
     pendingReports,
     totalDonationsSum,
@@ -48,14 +49,14 @@ export async function GET(request: Request) {
         marketData: { path: ["status"], equals: "AVAILABLE" },
       },
     }),
-    prisma.post.count({
-      where: {
-        category: PostCategory.MARKETPLACE,
-        marketData: { path: ["status"], equals: "IN_ESCROW" },
-      },
+    prisma.escrowTransaction.count({
+      where: { status: "IN_ESCROW" },
     }),
     prisma.donation.count({
       where: { status: "PENDING" },
+    }),
+    prisma.participant.count({
+      where: { paymentStatus: "PENDING_PAYMENT" },
     }),
     prisma.post.count({ where: { category: { not: PostCategory.MARKETPLACE } } }),
     prisma.report.count({ where: { status: ReportStatus.PENDING } }),
@@ -176,6 +177,7 @@ export async function GET(request: Request) {
       activeMarketplaceListings: activeListings,
       activeEscrows,
       pendingDonations: pendingDonationsCount,
+      pendingTournamentRegistrations,
       pendingReports,
       totalDonations: totalDonationsSum._sum.amount ?? 0,
     },
