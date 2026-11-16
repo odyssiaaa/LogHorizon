@@ -49,6 +49,7 @@ import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 import { RosterPlayerRow } from "@/components/roster-player-row";
 import { QuickMatchScoreModal } from "@/components/quick-match-score-modal";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { MatchLobbyModal } from "@/components/match-lobby-modal";
 
 type Participant = {
   id: string;
@@ -201,6 +202,7 @@ export function EventsBoard() {
   const [bracketSearchQueries, setBracketSearchQueries] = useState<Record<string, string>>({});
   const [massScheduleRound, setMassScheduleRound] = useState<number>(1);
   const [massScheduleInput, setMassScheduleInput] = useState<string>("");
+  const [activeLobbyMatch, setActiveLobbyMatch] = useState<{ tournamentId: string; match: TournamentMatch } | null>(null);
 
   // Gacha Bracket Modal State
   const [gachaModalState, setGachaModalState] = useState<{
@@ -1436,6 +1438,9 @@ export function EventsBoard() {
                           isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
                           onAdminQuickUpdate={(matchId, action) => handleAdminQuickUpdate(tournament.id, matchId, action)}
                           searchQuery={bracketSearchQueries[tournament.id] || ""}
+                          onOpenLobby={(m) => setActiveLobbyMatch({ tournamentId: tournament.id, match: m })}
+                          currentUserId={session?.user?.id}
+                          currentUsername={session?.user?.username || session?.user?.name || undefined}
                         />
                       </DragScrollContainer>
                     ) : (
@@ -3619,6 +3624,13 @@ export function EventsBoard() {
           }
         }}
       />
+      {/* MATCH LOBBY & CUSTOM ROOM COORDINATION MODAL */}
+      <MatchLobbyModal
+        isOpen={Boolean(activeLobbyMatch)}
+        tournamentId={activeLobbyMatch?.tournamentId || ""}
+        match={activeLobbyMatch?.match || null}
+        onClose={() => setActiveLobbyMatch(null)}
+      />
     </main>
   );
 }
@@ -3634,6 +3646,9 @@ export function MatchCard({
   isAdminOrMod = false,
   onAdminQuickUpdate,
   searchQuery = "",
+  onOpenLobby,
+  currentUserId,
+  currentUsername,
 }: {
   match: TournamentMatch;
   teams: TournamentTeam[];
@@ -3642,6 +3657,9 @@ export function MatchCard({
   isAdminOrMod?: boolean;
   onAdminQuickUpdate?: (matchId: string, action: "SET_LIVE" | "CANCEL_LIVE" | "RESET_MATCH" | "FINISH_MATCH") => void;
   searchQuery?: string;
+  onOpenLobby?: (match: TournamentMatch) => void;
+  currentUserId?: string;
+  currentUsername?: string;
 }) {
   const teamAData = teams.find((t) => t.teamName.toLowerCase() === match.teamA.name.toLowerCase() || t.id === match.teamA.id);
   const teamBData = teams.find((t) => t.teamName.toLowerCase() === match.teamB.name.toLowerCase() || t.id === match.teamB.id);
@@ -3651,6 +3669,25 @@ export function MatchCard({
   const isWinnerB = Boolean(hasWinner && match.winner?.toLowerCase() === match.teamB.name.toLowerCase());
   const isLoserA = Boolean(hasWinner && !isWinnerA && match.teamA.name && match.teamA.name !== "TBD");
   const isLoserB = Boolean(hasWinner && !isWinnerB && match.teamB.name && match.teamB.name !== "TBD" && match.teamB.name !== "BYE");
+
+  const hasBothTeams = Boolean(
+    match.teamA?.name && match.teamA.name !== "TBD" && match.teamA.name !== "BYE" &&
+    match.teamB?.name && match.teamB.name !== "TBD" && match.teamB.name !== "BYE"
+  );
+
+  const isCapA = Boolean(
+    (currentUserId && (teamAData?.id === currentUserId || teamAData?.representativeDiscordId === currentUserId)) ||
+    (currentUsername && teamAData?.captainName?.toLowerCase() === currentUsername.toLowerCase()) ||
+    (currentUsername && teamAData?.representativeDiscord?.toLowerCase() === currentUsername.toLowerCase())
+  );
+
+  const isCapB = Boolean(
+    (currentUserId && (teamBData?.id === currentUserId || teamBData?.representativeDiscordId === currentUserId)) ||
+    (currentUsername && teamBData?.captainName?.toLowerCase() === currentUsername.toLowerCase()) ||
+    (currentUsername && teamBData?.representativeDiscord?.toLowerCase() === currentUsername.toLowerCase())
+  );
+
+  const canAccessLobby = hasBothTeams && (isAdminOrMod || isCapA || isCapB);
 
   const isScheduledDue = Boolean(
     !hasWinner &&
@@ -3705,29 +3742,43 @@ export function MatchCard({
           </span>
         </span>
 
-        {/* Status Badge */}
-        {isLive ? (
-          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 font-bold text-[9px] animate-pulse">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-            <span>SEDANG BERMAIN</span>
-          </span>
-        ) : isFinished ? (
-          <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-bold text-[9px]">
-            ✓ ROUND SELESAI
-          </span>
-        ) : (
-          <span
-            className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] ${
-              scheduleInfo.isStartingSoon
-                ? "bg-amber-500/15 border border-amber-500/40 text-amber-300 animate-pulse"
-                : match.scheduledAt
-                ? "bg-[#9D4EDD]/10 border border-[#9D4EDD]/30 text-purple-300"
-                : "bg-gray-500/10 border border-gray-500/20 text-gray-400"
-            }`}
-          >
-            {scheduleInfo.badgeText}
-          </span>
-        )}
+        {/* Status Badge & Lobby Room Button */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {canAccessLobby && onOpenLobby && (
+            <button
+              type="button"
+              onClick={() => onOpenLobby(match)}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#9D4EDD]/20 text-[#D8B4FE] hover:bg-[#9D4EDD]/40 border border-[#9D4EDD]/50 transition shadow-xs active:scale-95"
+              title="Buka Ruang Koordinasi Lobby / Custom Room (Khusus Kapten & Panitia)"
+            >
+              <MessageSquare size={10} />
+              <span>💬 Lobby Room</span>
+            </button>
+          )}
+
+          {isLive ? (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 font-bold text-[9px] animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              <span>SEDANG BERMAIN</span>
+            </span>
+          ) : isFinished ? (
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-bold text-[9px]">
+              ✓ ROUND SELESAI
+            </span>
+          ) : (
+            <span
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] ${
+                scheduleInfo.isStartingSoon
+                  ? "bg-amber-500/15 border border-amber-500/40 text-amber-300 animate-pulse"
+                  : match.scheduledAt
+                  ? "bg-[#9D4EDD]/10 border border-[#9D4EDD]/30 text-purple-300"
+                  : "bg-gray-500/10 border border-gray-500/20 text-gray-400"
+              }`}
+            >
+              {scheduleInfo.badgeText}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="space-y-1.5">
@@ -4231,6 +4282,9 @@ export function DualWingBracketView({
   isAdminOrMod = false,
   onAdminQuickUpdate,
   searchQuery = "",
+  onOpenLobby,
+  currentUserId,
+  currentUsername,
 }: {
   sortedRoundNumbers: number[];
   roundsMap: Map<number, TournamentMatch[]>;
@@ -4239,6 +4293,9 @@ export function DualWingBracketView({
   isAdminOrMod?: boolean;
   onAdminQuickUpdate?: (matchId: string, action: "SET_LIVE" | "CANCEL_LIVE" | "RESET_MATCH" | "FINISH_MATCH") => void;
   searchQuery?: string;
+  onOpenLobby?: (match: TournamentMatch) => void;
+  currentUserId?: string;
+  currentUsername?: string;
 }) {
   const totalRounds = sortedRoundNumbers.length;
 
@@ -4290,6 +4347,9 @@ export function DualWingBracketView({
               isAdminOrMod={isAdminOrMod}
               onAdminQuickUpdate={onAdminQuickUpdate}
               searchQuery={searchQuery}
+              onOpenLobby={onOpenLobby}
+              currentUserId={currentUserId}
+              currentUsername={currentUsername}
             />
           )}
           {gfMatch?.winner && (
@@ -4354,6 +4414,9 @@ export function DualWingBracketView({
                     isAdminOrMod={isAdminOrMod}
                     onAdminQuickUpdate={onAdminQuickUpdate}
                     searchQuery={searchQuery}
+                    onOpenLobby={onOpenLobby}
+                    currentUserId={currentUserId}
+                    currentUsername={currentUsername}
                   />
                 ))}
               </div>
@@ -4391,6 +4454,9 @@ export function DualWingBracketView({
               isAdminOrMod={isAdminOrMod}
               onAdminQuickUpdate={onAdminQuickUpdate}
               searchQuery={searchQuery}
+              onOpenLobby={onOpenLobby}
+              currentUserId={currentUserId}
+              currentUsername={currentUsername}
             />
           ) : (
             <p className="text-xs text-gray-500 text-center py-4">Menunggu babak final</p>
@@ -4439,6 +4505,9 @@ export function DualWingBracketView({
                     isAdminOrMod={isAdminOrMod}
                     onAdminQuickUpdate={onAdminQuickUpdate}
                     searchQuery={searchQuery}
+                    onOpenLobby={onOpenLobby}
+                    currentUserId={currentUserId}
+                    currentUsername={currentUsername}
                   />
                 ))}
               </div>

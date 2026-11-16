@@ -36,6 +36,7 @@ import { RosterPlayerRow } from "@/components/roster-player-row";
 import { QuickMatchScoreModal } from "@/components/quick-match-score-modal";
 import { ChampionCertificateModal } from "@/components/champion-certificate-modal";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { MatchLobbyModal } from "@/components/match-lobby-modal";
 
 type TournamentData = {
   id: string;
@@ -133,6 +134,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   });
 
   const [showCertificate, setShowCertificate] = useState(false);
+  const [activeLobbyMatch, setActiveLobbyMatch] = useState<TournamentMatch | null>(null);
 
   async function handleDetailGachaBracket() {
     if (!tournament) return;
@@ -850,6 +852,9 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
               onAdminQuickUpdate={handleAdminQuickUpdate}
               searchQuery={bracketSearchQuery}
+              onOpenLobby={(m) => setActiveLobbyMatch(m)}
+              currentUserId={session?.user?.id}
+              currentUsername={session?.user?.username || session?.user?.name || undefined}
             />
           </DragScrollContainer>
         ) : (
@@ -1402,6 +1407,15 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             (winningTeam?.mainPlayers as unknown as any[]) ||
             (winningTeam?.players?.map((p: string) => ({ name: p, inGameId: "VERIFIED" })) ?? [])
           }
+        />
+      )}
+      {/* MATCH LOBBY & CUSTOM ROOM COORDINATION MODAL */}
+      {tournament && (
+        <MatchLobbyModal
+          isOpen={Boolean(activeLobbyMatch)}
+          tournamentId={tournament.id}
+          match={activeLobbyMatch}
+          onClose={() => setActiveLobbyMatch(null)}
         />
       )}
     </main>

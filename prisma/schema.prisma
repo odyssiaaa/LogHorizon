@@ -105,6 +105,7 @@ model User {
   createdConversations   Conversation[]            @relation("CreatedConversations")
   conversationMemberships ConversationParticipant[]
   directMessages         DirectMessage[]
+  matchMessages          MatchMessage[]
 }
 
 model Tournament {
@@ -126,6 +127,7 @@ model Tournament {
   matches          Json?            @default("[]")
   createdAt        DateTime         @default(now())
   participants     Participant[]
+  matchMessages    MatchMessage[]
 
   @@index([status, eventDate])
 }
@@ -447,6 +449,21 @@ model HallOfWinner {
   updatedAt        DateTime     @updatedAt
 
   @@index([eventDate])
+}
+
+model MatchMessage {
+  id           String     @id @default(cuid())
+  tournamentId String
+  matchId      String
+  senderId     String
+  content      String     @db.Text
+  roleLabel    String?
+  createdAt    DateTime   @default(now())
+
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  sender       User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId, matchId, createdAt])
 }
 
 

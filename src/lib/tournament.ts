@@ -44,6 +44,8 @@ export type TournamentMatch = {
   schedule?: string;
   scheduledAt?: string | null;
   manualOverride?: boolean;
+  customRoomId?: string | null;
+  customRoomPassword?: string | null;
   nextMatchId?: string;
   nextSlot?: "teamA" | "teamB";
 };
