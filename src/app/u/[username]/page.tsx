@@ -192,9 +192,15 @@ export default async function PublicProfilePage({ params }: PageProps) {
           </div>
 
           <div className="sm:self-center shrink-0 flex flex-col sm:items-end gap-2.5">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">
-              <CheckCircle2 size={15} /> {successfulSales} Transaksi Sukses
-            </span>
+            {successfulSales > 0 ? (
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-sm">
+                <ShieldCheck size={15} /> 🛡️ {successfulSales} Transaksi Rekber Sukses
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold bg-gray-500/10 text-gray-500 dark:text-gray-400 border border-gray-500/20 shadow-sm">
+                <Shield size={15} /> 🛡️ Penjual Baru
+              </span>
+            )}
 
             <div className="flex items-center gap-2 flex-wrap">
               <Link

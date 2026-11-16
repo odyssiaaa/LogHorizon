@@ -4030,6 +4030,15 @@ export function ChampionCelebrationCard({
           </div>
         </div>
       )}
+
+      <div className="pt-2 border-t border-amber-500/20">
+        <Link
+          href="/hall-of-winners"
+          className="inline-flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-lg text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition shadow-xs"
+        >
+          <span>Lihat &amp; Unduh Kartu Juara 🖼️</span>
+        </Link>
+      </div>
     </div>
   );
 }

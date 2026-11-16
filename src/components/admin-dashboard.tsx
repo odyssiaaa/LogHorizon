@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Coins,
+  Crown,
   Dices,
   DollarSign,
   ExternalLink,
@@ -173,7 +174,7 @@ type DashboardData = {
   currentUserId: string;
 };
 
-type Tab = "overview" | "settings" | "tournaments" | "treasury" | "members" | "moderation";
+type Tab = "overview" | "settings" | "tournaments" | "hall_of_winners" | "treasury" | "members" | "moderation";
 
 const formatMoney = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
@@ -209,6 +210,106 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     tournamentTitle: "",
     teamsList: [],
   });
+
+  // Hall of Winners Management State
+  const [hallOfWinnersList, setHallOfWinnersList] = useState<any[]>([]);
+  const [loadingHow, setLoadingHow] = useState(false);
+  const [howModalOpen, setHowModalOpen] = useState(false);
+  const [howForm, setHowForm] = useState({
+    tournamentTitle: "",
+    game: "Mobile Legends: Bang Bang",
+    season: "Season 1",
+    prizePool: "Rp 500.000",
+    eventDate: new Date().toISOString().slice(0, 10),
+    championTeam: "",
+    championRosterStr: "",
+    runnerUpTeam: "",
+    thirdPlaceTeam: "",
+    notes: "",
+  });
+
+  async function fetchHallOfWinners() {
+    setLoadingHow(true);
+    try {
+      const res = await fetch("/api/hall-of-winners");
+      const list = await res.json();
+      if (Array.isArray(list)) setHallOfWinnersList(list);
+    } catch (err) {
+      console.error("Gagal mengambil data Hall of Winners:", err);
+    } finally {
+      setLoadingHow(false);
+    }
+  }
+
+  async function handleCreateHow(e: React.FormEvent) {
+    e.preventDefault();
+    if (!howForm.tournamentTitle || !howForm.championTeam) {
+      setError("Judul Turnamen dan Nama Tim Juara 1 wajib diisi!");
+      return;
+    }
+
+    try {
+      const rosterArr = howForm.championRosterStr
+        ? howForm.championRosterStr
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .map((name) => ({ name, inGameId: "VERIFIED" }))
+        : [];
+
+      const res = await fetch("/api/hall-of-winners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tournamentTitle: howForm.tournamentTitle,
+          game: howForm.game,
+          season: howForm.season,
+          prizePool: howForm.prizePool,
+          eventDate: howForm.eventDate,
+          championTeam: howForm.championTeam,
+          championRoster: rosterArr,
+          runnerUpTeam: howForm.runnerUpTeam || undefined,
+          thirdPlaceTeam: howForm.thirdPlaceTeam || undefined,
+          notes: howForm.notes || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Gagal menyimpan arsip.");
+      }
+
+      setNotice("Arsip Hall of Winners berhasil ditambahkan!");
+      setHowModalOpen(false);
+      setHowForm({
+        tournamentTitle: "",
+        game: "Mobile Legends: Bang Bang",
+        season: "Season 1",
+        prizePool: "Rp 500.000",
+        eventDate: new Date().toISOString().slice(0, 10),
+        championTeam: "",
+        championRosterStr: "",
+        runnerUpTeam: "",
+        thirdPlaceTeam: "",
+        notes: "",
+      });
+      fetchHallOfWinners();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menambahkan arsip.");
+    }
+  }
+
+  async function handleDeleteHow(id: string) {
+    if (!window.confirm("Apakah kamu yakin ingin menghapus arsip manual ini?")) return;
+    try {
+      const res = await fetch(`/api/hall-of-winners/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Gagal menghapus arsip.");
+      setNotice("Arsip berhasil dihapus.");
+      fetchHallOfWinners();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menghapus arsip.");
+    }
+  }
 
   async function handleAdminGachaBracket(tournament: any) {
     if (!tournament) return;
@@ -810,6 +911,24 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             <button
               type="button"
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                tab === "hall_of_winners"
+                  ? "bg-[#9D4EDD] text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+              }`}
+              onClick={() => {
+                setTab("hall_of_winners");
+                fetchHallOfWinners();
+              }}
+            >
+              <div className="flex items-center gap-2.5">
+                <Crown size={16} />
+                <span>Hall of Winners 🏆</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
                 tab === "treasury"
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -915,6 +1034,18 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   </span>
                 ) : null;
               })()}
+            </button>
+            <button
+              type="button"
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shrink-0 ${
+                tab === "hall_of_winners" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#120F17] text-gray-700 dark:text-gray-300"
+              }`}
+              onClick={() => {
+                setTab("hall_of_winners");
+                fetchHallOfWinners();
+              }}
+            >
+              <Crown size={14} /> Hall of Winners
             </button>
             <button
               type="button"
@@ -1709,6 +1840,302 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     })()}
                   </div>
                 )}
+              </section>
+            )}
+
+            {/* ========================================================================= */}
+            {/* TAB: KELOLA HALL OF WINNERS (AULA PARA JUARA) */}
+            {/* ========================================================================= */}
+            {tab === "hall_of_winners" && (
+              <section className="space-y-6" role="tabpanel">
+                <div className="p-5 sm:p-6 rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
+                      <Crown size={20} className="text-amber-400" />
+                      <span>Kelola Hall of Winners (Aula Para Juara)</span>
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Catatan sejarah juara season turnamen. Turnamen dengan Grand Final selesai otomatis masuk ke sini, atau Admin bisa mencatat arsip season lama secara manual.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setHowModalOpen(true)}
+                      className="button button-primary text-xs font-bold inline-flex items-center gap-1.5"
+                    >
+                      <Plus size={14} />
+                      <span>+ Tambah Arsip Season Manual</span>
+                    </button>
+                    <Link
+                      href="/hall-of-winners"
+                      target="_blank"
+                      className="button button-quiet text-xs font-bold inline-flex items-center gap-1"
+                    >
+                      <span>Lihat Halaman Publik</span>
+                      <ExternalLink size={13} />
+                    </Link>
+                  </div>
+                </div>
+
+                {/* MODAL TAMBAH ARSIP MANUAL */}
+                {howModalOpen && (
+                  <div
+                    className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+                    onClick={() => setHowModalOpen(false)}
+                  >
+                    <div
+                      className="bg-white dark:bg-[#120F17] border border-gray-200 dark:border-[#211C2B] rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl relative space-y-4 my-auto max-h-[90vh] overflow-y-auto"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setHowModalOpen(false)}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-white"
+                      >
+                        <X size={18} />
+                      </button>
+
+                      <div className="pb-2 border-b border-gray-200 dark:border-[#211C2B]">
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                          <Crown size={18} className="text-amber-400" />
+                          <span>Catat Arsip Juara Season Manual</span>
+                        </h3>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Masukkan data pemenang season lama untuk diabadikan di Hall of Winners.
+                        </p>
+                      </div>
+
+                      <form onSubmit={handleCreateHow} className="space-y-3.5 text-xs">
+                        <div>
+                          <label className="block text-gray-700 dark:text-gray-300 font-bold mb-1">
+                            Judul Turnamen *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={howForm.tournamentTitle}
+                            onChange={(e) => setHowForm((prev) => ({ ...prev, tournamentTitle: e.target.value }))}
+                            placeholder="Contoh: LogHorizon Community Invitational S1"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-gray-700 dark:text-gray-300 font-bold mb-1">
+                              Nama Game *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={howForm.game}
+                              onChange={(e) => setHowForm((prev) => ({ ...prev, game: e.target.value }))}
+                              placeholder="Mobile Legends / Valorant / dll"
+                              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-700 dark:text-gray-300 font-bold mb-1">
+                              Season / Kategori
+                            </label>
+                            <input
+                              type="text"
+                              value={howForm.season}
+                              onChange={(e) => setHowForm((prev) => ({ ...prev, season: e.target.value }))}
+                              placeholder="Season 1 / New Year Cup"
+                              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-gray-700 dark:text-gray-300 font-bold mb-1">
+                              Total Hadiah
+                            </label>
+                            <input
+                              type="text"
+                              value={howForm.prizePool}
+                              onChange={(e) => setHowForm((prev) => ({ ...prev, prizePool: e.target.value }))}
+                              placeholder="Contoh: Rp 1.500.000"
+                              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-700 dark:text-gray-300 font-bold mb-1">
+                              Tanggal Turnamen
+                            </label>
+                            <input
+                              type="date"
+                              value={howForm.eventDate}
+                              onChange={(e) => setHowForm((prev) => ({ ...prev, eventDate: e.target.value }))}
+                              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                          <label className="block text-amber-300 font-bold flex items-center gap-1">
+                            <Crown size={14} />
+                            <span>Tim Juara 1 (Grand Champion) *</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={howForm.championTeam}
+                            onChange={(e) => setHowForm((prev) => ({ ...prev, championTeam: e.target.value }))}
+                            placeholder="Nama Tim Pemenang Juara 1"
+                            className="w-full px-3 py-2 rounded-lg border border-amber-500/30 bg-black/40 text-white font-bold"
+                          />
+                          <div>
+                            <label className="block text-gray-300 text-[11px] mb-1">
+                              Daftar Nama Pemain Juara 1 (pisahkan dengan koma):
+                            </label>
+                            <input
+                              type="text"
+                              value={howForm.championRosterStr}
+                              onChange={(e) => setHowForm((prev) => ({ ...prev, championRosterStr: e.target.value }))}
+                              placeholder="Contoh: Vyn, R7, Lemon, Alberttt, Skylar"
+                              className="w-full px-3 py-1.5 rounded-lg border border-white/10 bg-black/30 text-white text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-gray-700 dark:text-gray-300 font-bold mb-1">
+                              Tim Juara 2 (Runner-Up)
+                            </label>
+                            <input
+                              type="text"
+                              value={howForm.runnerUpTeam}
+                              onChange={(e) => setHowForm((prev) => ({ ...prev, runnerUpTeam: e.target.value }))}
+                              placeholder="Nama Tim Runner-Up"
+                              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-700 dark:text-gray-300 font-bold mb-1">
+                              Tim Juara 3 (Bronze)
+                            </label>
+                            <input
+                              type="text"
+                              value={howForm.thirdPlaceTeam}
+                              onChange={(e) => setHowForm((prev) => ({ ...prev, thirdPlaceTeam: e.target.value }))}
+                              placeholder="Nama Tim Juara 3"
+                              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-2 flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setHowModalOpen(false)}
+                            className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-white/10 font-bold"
+                          >
+                            Batal
+                          </button>
+                          <button
+                            type="submit"
+                            className="button button-primary px-5 py-2 text-xs font-bold"
+                          >
+                            Simpan Arsip Juara
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
+
+                {/* TABLE ARSIP HALL OF WINNERS */}
+                <div className="rounded-xl border border-gray-200 dark:border-[#211C2B] bg-white dark:bg-[#120F17] overflow-hidden">
+                  <DragScrollContainer>
+                    <table className="w-full text-left text-xs min-w-[750px]">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-[#211C2B] text-gray-400 bg-gray-50/50 dark:bg-black/20">
+                          <th className="p-3.5 font-bold">Turnamen &amp; Season</th>
+                          <th className="p-3.5 font-bold">Game</th>
+                          <th className="p-3.5 font-bold">Tanggal</th>
+                          <th className="p-3.5 font-bold text-amber-400">👑 Juara 1</th>
+                          <th className="p-3.5 font-bold text-slate-300">🥈 Juara 2</th>
+                          <th className="p-3.5 font-bold text-amber-600">🥉 Juara 3</th>
+                          <th className="p-3.5 font-bold">Tipe</th>
+                          <th className="p-3.5 font-bold text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-[#211C2B]/80 font-mono">
+                        {hallOfWinnersList.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} className="p-8 text-center text-gray-400 font-sans">
+                              {loadingHow ? "Memuat arsip Hall of Winners…" : "Belum ada arsip turnamen yang tercatat."}
+                            </td>
+                          </tr>
+                        ) : (
+                          hallOfWinnersList.map((how) => (
+                            <tr key={how.id} className="hover:bg-gray-50 dark:hover:bg-[#171322] transition">
+                              <td className="p-3.5 font-sans font-bold text-gray-900 dark:text-white">
+                                {how.tournamentTitle}
+                                <span className="block text-[10px] text-gray-500 font-mono">{how.season}</span>
+                              </td>
+                              <td className="p-3.5 font-sans">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#9D4EDD]/15 text-[#C77DFF] border border-[#9D4EDD]/30">
+                                  {how.game}
+                                </span>
+                              </td>
+                              <td className="p-3.5 text-gray-400 text-[11px]">
+                                {new Date(how.eventDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                              </td>
+                              <td className="p-3.5 font-bold text-amber-300 font-sans">
+                                {how.championTeam}
+                              </td>
+                              <td className="p-3.5 text-slate-300 font-sans">
+                                {how.runnerUpTeam || "-"}
+                              </td>
+                              <td className="p-3.5 text-amber-600/90 font-sans">
+                                {how.thirdPlaceTeam || "-"}
+                              </td>
+                              <td className="p-3.5">
+                                {how.isAutomated ? (
+                                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                                    Sistem Otomatis
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/30">
+                                    Arsip Manual
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-3.5 text-right font-sans">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <Link
+                                    href="/hall-of-winners"
+                                    target="_blank"
+                                    className="p-1.5 rounded hover:bg-white/10 text-gray-400 hover:text-white transition"
+                                    title="Lihat di Hall of Winners"
+                                  >
+                                    <ExternalLink size={14} />
+                                  </Link>
+                                  {!how.isAutomated && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteHow(how.id)}
+                                      className="p-1.5 rounded hover:bg-red-500/20 text-red-400 transition"
+                                      title="Hapus arsip manual ini"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </DragScrollContainer>
+                </div>
               </section>
             )}
 

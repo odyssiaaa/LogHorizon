@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { DiscordAvatar } from "@/components/discord-avatar";
+import { DailyCheckInWidget } from "@/components/daily-check-in-widget";
 
 type Achievement = {
   id: string;
@@ -250,6 +251,7 @@ export function SettingsDashboard() {
 
   return <main className="community-page settings-page page-shell py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full max-w-full overflow-x-hidden">
     <header className="settings-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"><div><p className="section-kicker text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-1">ACCOUNT / CONTROL CENTER</p><h1 className="page-title text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white break-words">Pengaturan <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Akun</span></h1><p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Profil, preferensi antarmuka, dan aktivitas komunitas.</p></div><div className="settings-account-chip self-start sm:self-auto"><DiscordAvatar className="settings-avatar" src={profile?.avatar ?? session.user.avatar} username={profile?.username ?? session.user.username} size={40} />{profile?.username ?? session.user.name ?? "Adventurer"}<span>{profile?.role ?? session.user.role}</span></div></header>
+    <DailyCheckInWidget />
     {error && <div className="inline-error" role="alert">{error}</div>}
     {message && <div className="inline-notice" role="status">{message}</div>}
     <div className="settings-layout">

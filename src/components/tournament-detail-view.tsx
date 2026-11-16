@@ -34,6 +34,7 @@ import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 import { RosterPlayerRow } from "@/components/roster-player-row";
 import { QuickMatchScoreModal } from "@/components/quick-match-score-modal";
+import { ChampionCertificateModal } from "@/components/champion-certificate-modal";
 
 type TournamentData = {
   id: string;
@@ -48,9 +49,11 @@ type TournamentData = {
   isFreeEntry?: boolean;
   rules?: string | null;
   status: string;
+  eventDate?: string | Date;
   createdAt: string;
   updatedAt: string;
   teams?: TournamentTeam[];
+  participants?: any[];
   matches?: TournamentMatch[];
   creator?: {
     id: string;
@@ -127,6 +130,8 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
     tournamentTitle: "",
     teamsList: [],
   });
+
+  const [showCertificate, setShowCertificate] = useState(false);
 
   async function handleDetailGachaBracket() {
     if (!tournament) return;
@@ -594,6 +599,23 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   }
   const sortedRoundNumbers = Array.from(roundsMap.keys()).sort((a, b) => a - b);
 
+  const maxRound = Math.max(...matches.map((m) => m.round || 1), 1);
+  const gfMatch = matches.find(
+    (m) =>
+      m.round === maxRound ||
+      m.roundName?.toLowerCase().includes("grand final") ||
+      m.roundName?.toLowerCase() === "final"
+  );
+  const gfWinner = gfMatch?.winner || null;
+  const winningTeam = gfWinner
+    ? (tournament.teams || []).find(
+        (t) => t.teamName?.toLowerCase() === gfWinner.toLowerCase() || t.id === gfWinner
+      ) ||
+      (tournament.participants || []).find(
+        (p: any) => p.teamName?.toLowerCase() === gfWinner.toLowerCase() || p.id === gfWinner
+      )
+    : null;
+
   const isRegistrationOpen = tournament.status === "OPEN" || tournament.status === "REGISTRATION";
   const shareUrl = `/events/turnamen/${tournament.id}`;
   const shareTitle = `🏆 ${tournament.title} - Turnamen LogHorizon`;
@@ -691,6 +713,16 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           </div>
 
           <div className="shrink-0 flex flex-col sm:flex-row lg:flex-col gap-3 w-full sm:w-auto">
+            {gfWinner && (
+              <button
+                type="button"
+                onClick={() => setShowCertificate(true)}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs sm:text-sm font-extrabold bg-gradient-to-r from-amber-500 to-amber-600 text-black hover:from-amber-400 hover:to-amber-500 active:scale-95 transition shadow-[0_0_20px_rgba(245,158,11,0.4)]"
+              >
+                <span>Lihat &amp; Unduh Kartu Juara 🖼️</span>
+              </button>
+            )}
+
             {isRegistrationOpen && (
               <button
                 id="daftar"
@@ -1352,6 +1384,24 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           handleAdminQuickUpdate(matchId, st === "LIVE" ? "SET_LIVE" : "CANCEL_LIVE")
         }
       />
+      {/* CHAMPION DIGITAL CERTIFICATE MODAL */}
+      {showCertificate && gfWinner && (
+        <ChampionCertificateModal
+          isOpen={showCertificate}
+          onClose={() => setShowCertificate(false)}
+          tournamentTitle={tournament.title}
+          game={tournament.game}
+          season={tournament.format || "Season 1"}
+          eventDate={tournament.eventDate}
+          prizePool={tournament.prizePool || undefined}
+          teamName={gfWinner}
+          roster={
+            (winningTeam?.roster as unknown as any[]) ||
+            (winningTeam?.mainPlayers as unknown as any[]) ||
+            (winningTeam?.players?.map((p: string) => ({ name: p, inGameId: "VERIFIED" })) ?? [])
+          }
+        />
+      )}
     </main>
   );
 }

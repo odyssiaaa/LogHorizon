@@ -73,6 +73,8 @@ model User {
   badges         String[]            @default([])
   isPremium      Boolean             @default(false)
   joinedAt       DateTime            @default(now())
+  lastCheckInAt  DateTime?
+  checkInStreak  Int                 @default(0)
   name           String?
   email          String?             @unique
   emailVerified  DateTime?
@@ -425,4 +427,26 @@ model DirectMessage {
   @@index([conversationId, createdAt])
   @@index([senderId, createdAt])
 }
+
+model HallOfWinner {
+  id               String       @id @default(cuid())
+  tournamentId     String?      @unique
+  tournamentTitle  String
+  game             String
+  season           String?      @default("Season 1")
+  eventDate        DateTime     @default(now())
+  prizePool        String?
+  championTeam     String
+  championRoster   Json?        @default("[]")
+  runnerUpTeam     String?
+  runnerUpRoster   Json?        @default("[]")
+  thirdPlaceTeam   String?
+  thirdPlaceRoster Json?        @default("[]")
+  notes            String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([eventDate])
+}
+
 

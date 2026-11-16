@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import type { LeaderboardAdventurer, LeaderboardBenefactor } from "@/types/community";
 import { TacticalEmptyState } from "@/components/ui-feedback";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
+import { DailyCheckInWidget } from "@/components/daily-check-in-widget";
 
 type LeaderboardMember = LeaderboardAdventurer;
 type Benefactor = LeaderboardBenefactor;
@@ -51,6 +52,9 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
         <h1 className="page-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white break-words">Guild <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Leaderboard</span></h1>
         <p className="muted-copy text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">Peringkat petualang aktif dan benefactor berdasarkan dukungan terverifikasi.</p>
       </header>
+
+      {/* DAILY CHECK-IN WIDGET */}
+      <DailyCheckInWidget />
 
       <div className="flex items-center gap-3 px-3.5 h-11 rounded-xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#120F17] focus-within:border-[#9D4EDD] transition-colors mb-4">
         <Search size={16} className="shrink-0 text-gray-400 pointer-events-none" />

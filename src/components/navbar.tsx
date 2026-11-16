@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import {
+  Award,
   BookOpen,
   ChevronDown,
   Crown,
@@ -84,6 +85,12 @@ const navGroups: NavGroup[] = [
         href: "/events?view=turnamen",
         desc: "Kompetisi resmi & bracket pertandingan",
         icon: Trophy,
+      },
+      {
+        label: "Hall of Winners 🏆",
+        href: "/hall-of-winners",
+        desc: "Aula para juara & arsip piala season",
+        icon: Award,
       },
     ],
   },

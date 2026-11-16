@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ArrowDownUp, Flag, Loader2, MessageSquare, Plus, Search, ShieldCheck, ShoppingBag, Trash2, X } from "lucide-react";
+import { ArrowDownUp, Flag, Loader2, MessageSquare, Plus, Search, Shield, ShieldCheck, ShoppingBag, Trash2, X } from "lucide-react";
 import { isPublicMarketData } from "@/lib/market-data";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
@@ -379,9 +379,23 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                       ) : null}
                     </span>
               </span>
-              <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded text-[11px]">
-                ✔ {post.author.successfulSales ?? 0} Transaksi Sukses
-              </span>
+              {(post.author.successfulSales ?? 0) > 0 ? (
+                <span
+                  className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 px-2.5 py-0.5 rounded-full text-[11px]"
+                  title="Reputasi Transaksi Rekber Terverifikasi"
+                >
+                  <ShieldCheck size={12} className="text-emerald-500 shrink-0" />
+                  <span>🛡️ {post.author.successfulSales} Transaksi Rekber Sukses</span>
+                </span>
+              ) : (
+                <span
+                  className="inline-flex items-center gap-1 font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-2.5 py-0.5 rounded-full text-[11px]"
+                  title="Penjual baru di LogHorizon"
+                >
+                  <Shield size={12} className="text-gray-400 shrink-0" />
+                  <span>🛡️ Penjual Baru</span>
+                </span>
+              )}
             </div>
             <PostReactions postId={post.id} likes={post.likes} dislikes={post.dislikes} reaction={post.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} onChange={(result) => setPosts((current) => current.map((entry) => entry.id === post.id ? { ...entry, ...result, votes: result.reaction ? [{ value: result.reaction }] : [] } : entry))} />
             {user && contacts[post.id]?.userId === user.id ? (
