@@ -40,6 +40,9 @@ type Profile = {
   role: string;
   isPremium: boolean;
   favoriteGames?: string[];
+  gender?: string | null;
+  birthDate?: string | null;
+  showBirthDate?: boolean;
   inGameName?: string;
   highestRank?: string;
   primaryRole?: string;
@@ -69,16 +72,6 @@ const COMMON_GAMES = [
   "Minecraft",
 ];
 
-const COMMON_ROLES = [
-  "Duelist / Entry Fragger",
-  "Tank / Roamer",
-  "Support / Healer",
-  "DPS / Carry",
-  "Controller / Smoker",
-  "Initiator / Scout",
-  "Flex / Serbabisa",
-];
-
 function listingStatus(value: unknown) {
   if (!value || typeof value !== "object" || !("status" in value)) return null;
   const status = value.status;
@@ -97,11 +90,12 @@ export function SettingsDashboard() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  // Gamer Profile Form
-  const [inGameName, setInGameName] = useState("");
-  const [highestRank, setHighestRank] = useState("");
-  const [primaryRole, setPrimaryRole] = useState("");
+  // Gamer Profile & Identity Form
   const [favoriteGames, setFavoriteGames] = useState<string[]>([]);
+  const [customGameInput, setCustomGameInput] = useState("");
+  const [gender, setGender] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [showBirthDate, setShowBirthDate] = useState(false);
   const [savingGamer, setSavingGamer] = useState(false);
 
   useEffect(() => {
@@ -157,10 +151,10 @@ export function SettingsDashboard() {
     ]).then(([nextProfile, nextListings]) => {
       if (!active) return;
       setProfile(nextProfile);
-      setInGameName(nextProfile.inGameName ?? "");
-      setHighestRank(nextProfile.highestRank ?? "");
-      setPrimaryRole(nextProfile.primaryRole ?? "");
       setFavoriteGames(nextProfile.favoriteGames ?? []);
+      setGender(nextProfile.gender ?? "");
+      setBirthDate(nextProfile.birthDate ?? "");
+      setShowBirthDate(Boolean(nextProfile.showBirthDate));
       setListings(nextListings);
       setError("");
     }).catch((reason: unknown) => {
@@ -202,10 +196,10 @@ export function SettingsDashboard() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          inGameName: inGameName.trim(),
-          highestRank: highestRank.trim(),
-          primaryRole: primaryRole.trim(),
           favoriteGames,
+          gender: gender ? gender : null,
+          birthDate: birthDate ? birthDate : null,
+          showBirthDate,
         }),
       });
       const result = await readApiResponse<{ profile: Profile; message: string }>(response, "Gagal menyimpan profil gamer.");
@@ -222,6 +216,22 @@ export function SettingsDashboard() {
     setFavoriteGames((current) =>
       current.includes(gameName) ? current.filter((g) => g !== gameName) : [...current, gameName]
     );
+  }
+
+  function addCustomGame() {
+    const trimmed = customGameInput.trim();
+    if (!trimmed) return;
+    if (favoriteGames.some((g) => g.toLowerCase() === trimmed.toLowerCase())) {
+      setCustomGameInput("");
+      return;
+    }
+    if (favoriteGames.length >= 20) return;
+    setFavoriteGames((current) => [...current, trimmed]);
+    setCustomGameInput("");
+  }
+
+  function removeGame(gameName: string) {
+    setFavoriteGames((current) => current.filter((g) => g !== gameName));
   }
 
   async function changeListingStatus(listing: Listing, nextStatus: "AVAILABLE" | "SOLD") {
@@ -283,71 +293,24 @@ export function SettingsDashboard() {
           </dl>
         </section>
 
-        {/* 02 / IDENTITAS GAMER */}
+        {/* 02 / IDENTITAS & GAME YANG DIMAINKAN */}
         <section className="settings-panel" id="gamer-settings">
           <div className="settings-panel-heading">
             <div>
-              <p className="section-kicker">02 / GAMER PROFILE</p>
-              <h2>Identitas &amp; Preferensi Main (Find Teammate)</h2>
+              <p className="section-kicker">02 / PROFIL GAMER</p>
+              <h2>Identitas &amp; Game yang Dimainkan</h2>
             </div>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-            Informasi ini otomatis tampil saat kamu membuat party di <strong>Find Teammate (/events)</strong> dan di profil publik kamu.
+            Pilih game yang aktif kamu mainkan dan sesuaikan identitas profilmu untuk komunitas LogHorizon.
           </p>
-          <form onSubmit={(e) => void saveGamerProfile(e)} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  Nickname / In-Game Name (IGN) &amp; Tag
-                </label>
-                <input
-                  type="text"
-                  maxLength={60}
-                  value={inGameName}
-                  onChange={(e) => setInGameName(e.target.value)}
-                  placeholder="Contoh: Shadow#NA1 / ID MLBB"
-                  className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  Rank Tertinggi / Tier Saat Ini
-                </label>
-                <input
-                  type="text"
-                  maxLength={50}
-                  value={highestRank}
-                  onChange={(e) => setHighestRank(e.target.value)}
-                  placeholder="Contoh: Radiant, Mythical Immortal, Global Elite"
-                  className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                Role Utama / Posisi Favorit
-              </label>
-              <select
-                value={primaryRole}
-                onChange={(e) => setPrimaryRole(e.target.value)}
-                className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-              >
-                <option value="">Pilih role favorit…</option>
-                {COMMON_ROLES.map((roleOpt) => (
-                  <option key={roleOpt} value={roleOpt}>
-                    {roleOpt}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+          <form onSubmit={(e) => void saveGamerProfile(e)} className="space-y-5">
+            {/* 1. Game yang Dimainkan */}
             <div>
               <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
-                Game Favorit yang Sedang Aktif Dimainkan
+                Game yang Dimainkan (Pilih Cepat atau Tambah Kustom)
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mb-3">
                 {COMMON_GAMES.map((g) => {
                   const isSelected = favoriteGames.includes(g);
                   return (
@@ -355,16 +318,111 @@ export function SettingsDashboard() {
                       key={g}
                       type="button"
                       onClick={() => toggleGame(g)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                      className={`px-3 py-1.5 rounded-none text-xs font-bold border transition-colors ${
                         isSelected
-                          ? "bg-[#9D4EDD] text-white border-[#9D4EDD]"
-                          : "border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-700 dark:text-gray-300 hover:border-[#9D4EDD]"
+                          ? "bg-[#7C3AED] text-white border-[#7C3AED]"
+                          : "border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-700 dark:text-gray-300 hover:border-[#7C3AED]"
                       }`}
                     >
                       {isSelected ? `✓ ${g}` : `+ ${g}`}
                     </button>
                   );
                 })}
+              </div>
+
+              {/* Tambah game kustom */}
+              <div className="flex items-center gap-2 max-w-md">
+                <input
+                  type="text"
+                  maxLength={40}
+                  value={customGameInput}
+                  onChange={(e) => setCustomGameInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addCustomGame();
+                    }
+                  }}
+                  placeholder="Tambah Game Lainnya..."
+                  className="flex-1 px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED]"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomGame}
+                  className="px-3 py-2 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold transition-colors shrink-0"
+                >
+                  + Tambah
+                </button>
+              </div>
+
+              {/* Daftar game terpilih */}
+              {favoriteGames.length > 0 && (
+                <div className="mt-3">
+                  <span className="text-[11px] font-bold text-gray-400 block mb-1.5 uppercase">
+                    Game Terpilih ({favoriteGames.length}/20):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {favoriteGames.map((g) => (
+                      <span
+                        key={g}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none border border-[#7C3AED]/40 bg-[#7C3AED]/10 text-purple-300 text-xs font-medium"
+                      >
+                        {g}
+                        <button
+                          type="button"
+                          onClick={() => removeGame(g)}
+                          className="hover:text-red-400 font-bold ml-0.5 text-sm leading-none"
+                          title="Hapus"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Gender & 3. Tanggal Lahir (Opsional) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-[#2E1E45]">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Gender (Opsional)
+                </label>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                >
+                  <option value="">Pilih gender (Opsional)</option>
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
+                  <option value="Privasi / Tidak disebutkan">Privasi / Tidak disebutkan</option>
+                </select>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                  Pilihan identitas gender untuk komunitas.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Tanggal Lahir (Opsional)
+                </label>
+                <input
+                  type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                />
+                <label className="flex items-center gap-2 mt-2 cursor-pointer text-xs text-gray-600 dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={showBirthDate}
+                    onChange={(e) => setShowBirthDate(e.target.checked)}
+                    className="rounded-none border-gray-300 dark:border-[#2E1E45] text-[#7C3AED] focus:ring-0"
+                  />
+                  <span>Tampilkan tanggal lahir / usia di profil publik</span>
+                </label>
               </div>
             </div>
 

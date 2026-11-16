@@ -62,8 +62,8 @@ export async function GET() {
     {
       id: "verified-gamer",
       title: "🎮 Gamer Terverifikasi",
-      desc: "Melengkapi ID game dan role favorit di profil.",
-      unlocked: Boolean(user.inGameName && user.primaryRole),
+      desc: "Melengkapi daftar game yang dimainkan dan identitas profil.",
+      unlocked: Boolean((user.favoriteGames && user.favoriteGames.length > 0) || (user.inGameName && user.primaryRole) || user.gender),
     },
   ];
 
@@ -80,6 +80,9 @@ export async function GET() {
     inGameName: user.inGameName ?? "",
     highestRank: user.highestRank ?? "",
     primaryRole: user.primaryRole ?? "",
+    gender: user.gender ?? null,
+    birthDate: user.birthDate ?? null,
+    showBirthDate: user.showBirthDate ?? false,
     achievements,
   });
 }
@@ -96,11 +99,14 @@ export async function PATCH(request: Request) {
         .filter((g): g is string => typeof g === "string")
         .map((g) => sanitizePlainText(g.trim()))
         .filter(Boolean)
-        .slice(0, 10)
+        .slice(0, 20)
     : undefined;
   const inGameName = typeof body.inGameName === "string" ? sanitizePlainText(body.inGameName.trim().slice(0, 80)) : undefined;
   const highestRank = typeof body.highestRank === "string" ? sanitizePlainText(body.highestRank.trim().slice(0, 50)) : undefined;
   const primaryRole = typeof body.primaryRole === "string" ? sanitizePlainText(body.primaryRole.trim().slice(0, 50)) : undefined;
+  const gender = typeof body.gender === "string" ? sanitizePlainText(body.gender.trim().slice(0, 40)) : body.gender === null ? null : undefined;
+  const birthDate = typeof body.birthDate === "string" ? sanitizePlainText(body.birthDate.trim().slice(0, 25)) : body.birthDate === null ? null : undefined;
+  const showBirthDate = typeof body.showBirthDate === "boolean" ? body.showBirthDate : undefined;
 
   const updated = await prisma.user.update({
     where: { id: user.id },
@@ -109,6 +115,9 @@ export async function PATCH(request: Request) {
       ...(inGameName !== undefined ? { inGameName } : {}),
       ...(highestRank !== undefined ? { highestRank } : {}),
       ...(primaryRole !== undefined ? { primaryRole } : {}),
+      ...(gender !== undefined ? { gender } : {}),
+      ...(birthDate !== undefined ? { birthDate } : {}),
+      ...(showBirthDate !== undefined ? { showBirthDate } : {}),
     },
     select: {
       id: true,
@@ -123,6 +132,9 @@ export async function PATCH(request: Request) {
       inGameName: true,
       highestRank: true,
       primaryRole: true,
+      gender: true,
+      birthDate: true,
+      showBirthDate: true,
     },
   });
 

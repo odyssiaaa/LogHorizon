@@ -36,6 +36,27 @@ export async function generateMetadata({ params }: PageProps) {
   };
 }
 
+function formatBirthDateAndAge(birthDateStr: string) {
+  try {
+    const bDate = new Date(birthDateStr);
+    if (isNaN(bDate.getTime())) return birthDateStr;
+    const now = new Date();
+    let age = now.getFullYear() - bDate.getFullYear();
+    const m = now.getMonth() - bDate.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < bDate.getDate())) {
+      age--;
+    }
+    const formatted = bDate.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    return `${formatted} (${age} thn)`;
+  } catch {
+    return birthDateStr;
+  }
+}
+
 export default async function PublicProfilePage({ params }: PageProps) {
   const { username } = await params;
   const decoded = decodeURIComponent(username);
@@ -120,8 +141,8 @@ export default async function PublicProfilePage({ params }: PageProps) {
     {
       id: "verified-gamer",
       title: "🎮 Gamer Terverifikasi",
-      desc: "ID Game & role favorit lengkap",
-      unlocked: Boolean(user.inGameName && user.primaryRole),
+      desc: "Game yang dimainkan telah diatur",
+      unlocked: Boolean((user.favoriteGames && user.favoriteGames.length > 0) || (user.inGameName && user.primaryRole)),
     },
   ];
 
@@ -240,32 +261,72 @@ export default async function PublicProfilePage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Gamer Profile Card */}
-      {(user.inGameName || user.primaryRole || user.highestRank || (user.favoriteGames && user.favoriteGames.length > 0)) && (
+      {/* Gamer Profile & Played Games Card */}
+      {Boolean(
+        (user.favoriteGames && user.favoriteGames.length > 0) ||
+        (user.gender && user.gender !== "Privasi / Tidak disebutkan") ||
+        (user.showBirthDate && user.birthDate) ||
+        user.inGameName ||
+        user.primaryRole
+      ) && (
         <div className="p-5 sm:p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm mb-8">
-          <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
-            <Gamepad2 size={18} className="text-[#9D4EDD]" /> Profil Gamer &amp; Posisi Main (Find Teammate)
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-            <div className="p-3 rounded-none bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45]">
-              <span className="text-[10px] text-gray-400 block font-semibold uppercase">IGN / ID Game</span>
-              <strong className="text-gray-900 dark:text-white block mt-0.5 truncate">{user.inGameName || "-"}</strong>
-            </div>
-            <div className="p-3 rounded-none bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45]">
-              <span className="text-[10px] text-gray-400 block font-semibold uppercase">Role Utama</span>
-              <strong className="text-[#9D4EDD] dark:text-[#C77DFF] block mt-0.5 truncate">{user.primaryRole || "-"}</strong>
-            </div>
-            <div className="p-3 rounded-none bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45]">
-              <span className="text-[10px] text-gray-400 block font-semibold uppercase">Rank Tertinggi</span>
-              <strong className="text-amber-500 block mt-0.5 truncate">{user.highestRank || "-"}</strong>
-            </div>
-            <div className="p-3 rounded-none bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45]">
-              <span className="text-[10px] text-gray-400 block font-semibold uppercase">Game Favorit</span>
-              <strong className="text-gray-800 dark:text-gray-200 block mt-0.5 truncate">
-                {user.favoriteGames?.length ? user.favoriteGames.join(", ") : "-"}
-              </strong>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Gamepad2 size={18} className="text-[#9D4EDD]" /> Identitas &amp; Game yang Dimainkan
+            </h2>
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              {user.gender && user.gender !== "Privasi / Tidak disebutkan" && (
+                <span className="font-mono text-gray-500 dark:text-gray-400">
+                  Gender: <strong className="text-gray-800 dark:text-gray-200">{user.gender}</strong>
+                </span>
+              )}
+              {user.showBirthDate && user.birthDate && (
+                <span className="font-mono text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                  <Calendar size={13} className="text-[#9D4EDD]" />
+                  <span>{formatBirthDateAndAge(user.birthDate)}</span>
+                </span>
+              )}
             </div>
           </div>
+
+          {/* Game List Badges */}
+          {user.favoriteGames && user.favoriteGames.length > 0 ? (
+            <div>
+              <span className="text-[10px] uppercase font-bold text-gray-400 block mb-2 tracking-wider">
+                Game Aktif ({user.favoriteGames.length})
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {user.favoriteGames.map((game) => (
+                  <span
+                    key={game}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-none border border-[#7C3AED]/40 bg-[#7C3AED]/10 text-purple-300 font-mono text-xs font-bold"
+                  >
+                    🎮 {game}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-500 italic">Belum ada game yang ditambahkan ke profil.</p>
+          )}
+
+          {/* Legacy IGN / Role info if available */}
+          {(user.inGameName || user.primaryRole) && (
+            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-[#2E1E45]/60 flex flex-wrap gap-4 text-xs">
+              {user.inGameName && (
+                <div>
+                  <span className="text-[10px] text-gray-400 uppercase font-semibold">IGN / ID: </span>
+                  <strong className="text-gray-800 dark:text-gray-200">{user.inGameName}</strong>
+                </div>
+              )}
+              {user.primaryRole && (
+                <div>
+                  <span className="text-[10px] text-gray-400 uppercase font-semibold">Role: </span>
+                  <strong className="text-[#9D4EDD]">{user.primaryRole}</strong>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
