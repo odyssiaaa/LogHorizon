@@ -533,28 +533,6 @@ export function Navbar() {
                 <div className="h-10 w-24 rounded-lg bg-slate-100 dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] animate-pulse" />
               ) : user ? (
                 <div className="flex items-center gap-2">
-                  {(isStaff || isOwner) && (
-                    <Link
-                      href="/admin"
-                      className="relative h-10 px-3 rounded-lg border border-[#7C3AED]/70 bg-[#7C3AED]/10 hover:bg-[#7C3AED] text-[#7C3AED] dark:text-[#C4B5FD] hover:text-white transition-all flex items-center gap-1.5 font-mono text-xs font-bold shadow-sm group shrink-0"
-                      title="Admin Command Center"
-                    >
-                      <ShieldAlert size={15} className="group-hover:scale-110 transition-transform" />
-                      <span className="hidden lg:inline">ADMIN PANEL</span>
-                      <span className="lg:hidden">ADMIN</span>
-                      {adminPendingCount > 0 && (
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-                        </span>
-                      )}
-                      {adminPendingCount > 0 && (
-                        <span className="px-1.5 py-0.2 bg-rose-500 text-white rounded-full text-[9px] font-mono font-bold leading-none">
-                          {adminPendingCount}
-                        </span>
-                      )}
-                    </Link>
-                  )}
                   <Link
                     href="/messages"
                     className="relative w-10 h-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white flex items-center justify-center shrink-0 shadow-sm dark:shadow-none"
@@ -572,7 +550,7 @@ export function Navbar() {
                     <button
                       type="button"
                       onClick={() => setDropdownOpen((prev) => !prev)}
-                      className="h-10 px-3 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors flex items-center gap-2 font-mono text-xs text-slate-900 dark:text-[#F8FAFC] shadow-sm dark:shadow-none"
+                      className="relative h-10 px-3 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors flex items-center gap-2 font-mono text-xs text-slate-900 dark:text-[#F8FAFC] shadow-sm dark:shadow-none"
                       aria-expanded={dropdownOpen}
                       aria-label="Menu profil pengguna"
                     >
@@ -590,6 +568,12 @@ export function Navbar() {
                       </span>
                       <span className="size-2 rounded-full bg-[#10B981] shrink-0" title="Online" />
                       <ChevronDown size={13} className="text-slate-400 dark:text-[#A78BFA]" />
+                      {(isStaff || isOwner) && adminPendingCount > 0 && (
+                        <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                        </span>
+                      )}
                     </button>
 
                     <AnimatePresence>
@@ -625,16 +609,31 @@ export function Navbar() {
                             </div>
                           </div>
 
-                          <div className="py-1 pt-1.5">
-                            {isStaff && (
+                          <div className="py-1 pt-1.5 space-y-0.5">
+                            {(isStaff || isOwner) && (
                               <Link
                                 href="/admin"
                                 onClick={() => setDropdownOpen(false)}
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono font-semibold text-slate-700 dark:text-[#A78BFA] hover:text-[#7C3AED] dark:hover:text-[#F8FAFC] hover:bg-slate-50 dark:hover:bg-[#1A0E2E] transition-colors"
+                                className="flex items-center justify-between px-3 py-2 rounded-md text-xs font-mono font-semibold text-slate-700 dark:text-[#A78BFA] hover:text-[#7C3AED] dark:hover:text-[#F8FAFC] hover:bg-slate-50 dark:hover:bg-[#1A0E2E] transition-colors group"
                                 role="menuitem"
                               >
-                                <ShieldCheck size={14} className="shrink-0 text-emerald-600 dark:text-[#10B981]" />
-                                <span>Dashboard Admin</span>
+                                <div className="flex items-center gap-2">
+                                  <ShieldAlert size={14} className="shrink-0 text-[#7C3AED] dark:text-[#C4B5FD] group-hover:scale-110 transition-transform" />
+                                  <span>🛡️ Dashboard Admin</span>
+                                </div>
+                                {adminPendingCount > 0 ? (
+                                  <span className="flex items-center gap-1">
+                                    <span className="relative flex h-2 w-2">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                                    </span>
+                                    <span className="px-1.5 py-0.5 bg-rose-500 text-white rounded text-[10px] font-mono font-bold leading-none">
+                                      {adminPendingCount}
+                                    </span>
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 font-mono">Akses ➔</span>
+                                )}
                               </Link>
                             )}
                             <Link
@@ -961,22 +960,6 @@ export function Navbar() {
                     >
                       <Settings size={16} className={pathname === "/profile" ? "text-[#7C3AED]" : "text-slate-400 dark:text-[#A78BFA]"} />
                       <span>Profil &amp; Pengaturan</span>
-                    </Link>
-                  )}
-
-                  {/* Admin Panel (jika staff) */}
-                  {isStaff && (
-                    <Link
-                      href="/admin"
-                      onClick={() => setMobileOpen(false)}
-                      className={`py-2.5 px-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] text-sm font-bold transition-colors flex items-center gap-2.5 ${
-                        pathname.startsWith("/admin")
-                          ? "bg-purple-50 dark:bg-[#1A0E2E] text-[#7C3AED] dark:text-[#F8FAFC] border-[#7C3AED]"
-                          : "text-slate-700 dark:text-[#A78BFA] hover:bg-slate-100 dark:hover:bg-[#130921] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-                      }`}
-                    >
-                      <ShieldCheck size={16} className="text-emerald-600 dark:text-[#10B981]" />
-                      <span>Dashboard Admin</span>
                     </Link>
                   )}
                 </nav>

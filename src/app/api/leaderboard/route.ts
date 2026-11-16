@@ -3,7 +3,14 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   const [members, donorTotals] = await Promise.all([
     prisma.user.findMany({
-      where: { isBanned: false },
+      where: {
+        isBanned: false,
+        username: { notIn: ["satpam-horizon", "Satpam Horizon"] },
+        NOT: [
+          { email: { endsWith: "@system.local" } },
+          { badges: { has: "SATPAM_AI" } },
+        ],
+      },
       select: {
         id: true,
         username: true,
@@ -21,6 +28,8 @@ export async function GET() {
       FROM "User" u
       INNER JOIN "Donation" d ON d."userId" = u."id"
       WHERE u."isBanned" = false
+        AND u."username" NOT IN ('satpam-horizon', 'Satpam Horizon')
+        AND (u."email" IS NULL OR u."email" NOT LIKE '%@system.local')
         AND d."status" = 'SUCCEEDED'::"DonationStatus"
         AND (d."gatewayRef" IS NULL OR d."gatewayRef" NOT LIKE 'mock-%')
       GROUP BY u."id"

@@ -54,13 +54,18 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
     }
   }, { intervalMs: 15000, revalidateOnFocus: true });
 
+  const isHuman = (name?: string | null) => {
+    const n = (name ?? "").toLowerCase();
+    return n !== "satpam-horizon" && n !== "satpam horizon" && !n.includes("satpam");
+  };
+
   const normalizedSearch = search.trim().toLowerCase();
-  const filteredMembers = currentMembers.filter((m) =>
-    (m.username ?? "Gamer").toLowerCase().includes(normalizedSearch)
-  );
-  const filteredBenefactors = currentBenefactors.filter((b) =>
-    (b.username ?? "Gamer").toLowerCase().includes(normalizedSearch)
-  );
+  const filteredMembers = currentMembers
+    .filter((m) => isHuman(m.username))
+    .filter((m) => (m.username ?? "Gamer").toLowerCase().includes(normalizedSearch));
+  const filteredBenefactors = currentBenefactors
+    .filter((b) => isHuman(b.username))
+    .filter((b) => (b.username ?? "Gamer").toLowerCase().includes(normalizedSearch));
 
   return (
     <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 overflow-x-hidden">
