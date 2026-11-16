@@ -543,10 +543,12 @@ export default async function Home() {
       {/* ===================================================================== */}
       {/* 06 / SPONSOR RESMI                                                    */}
       {/* ===================================================================== */}
-      <section className="py-12 md:py-16 border-b border-[#2E1E45]">
+      <section className="py-12 border-y border-[#2A1B42] bg-[#0B0613]">
         <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-left">
-            <p className="font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider mb-2">06 / SPONSOR RESMI</p>
+            <p className="font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider mb-2">
+              06 / PARTNER &amp; SPONSOR RESMI GUILD
+            </p>
             <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[#F8FAFC] uppercase">
               Dukungan yang menjaga guild terus bergerak.
             </h2>
@@ -555,8 +557,8 @@ export default async function Home() {
             </p>
           </div>
 
-          {sponsors.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 mt-8">
+          {sponsors.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
               {sponsors.map((sp) => {
                 const linkHref = sp.websiteUrl || "#";
                 return (
@@ -565,42 +567,63 @@ export default async function Home() {
                     href={linkHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-4 sm:p-5 rounded-none border border-[#2E1E45] bg-[#130921] hover:border-[#7C3AED] flex items-center justify-center opacity-80 hover:opacity-100 hover:scale-105 transition duration-200 aspect-[16/9] group"
+                    className="group relative flex items-center justify-center min-h-[140px] sm:min-h-[170px] p-6 sm:p-8 rounded-none bg-[#11091D] border-2 border-[#2A1B42] hover:border-[#9D4EDD] hover:shadow-[0_0_30px_rgba(157,78,221,0.25)] transition-all duration-300"
                     title={sp.websiteUrl ? `Kunjungi ${sp.name}` : sp.name}
                   >
+                    {/* Ikon panah pojok kecil (↗) sebagai penanda visual link klik */}
+                    <span className="absolute top-3.5 right-3.5 p-1 text-[#A78BFA]/50 group-hover:text-[#C77DFF] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200">
+                      <ArrowUpRight size={18} />
+                    </span>
+
                     {sp.logoUrl ? (
-                      <div className="relative w-full h-full max-h-12 sm:max-h-14">
+                      <div className="relative w-full h-20 sm:h-28 max-w-[260px] flex items-center justify-center">
                         <Image
                           src={sp.logoUrl}
                           alt={sp.name || "Sponsor"}
                           fill
-                          className="object-contain filter grayscale group-hover:grayscale-0 transition duration-200"
+                          className="object-contain filter grayscale-[25%] group-hover:grayscale-0 transition-all duration-300 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]"
                           unoptimized
                         />
                       </div>
                     ) : (
-                      <span className="font-display font-bold text-xs uppercase tracking-wider text-[#A78BFA] group-hover:text-white transition">
-                        {sp.name}
-                      </span>
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <span className="font-display font-bold text-base sm:text-lg uppercase tracking-wider text-[#F8FAFC] group-hover:text-[#C77DFF] transition-colors">
+                          {sp.name}
+                        </span>
+                        {sp.tier && (
+                          <span className="mt-1.5 font-mono text-[10px] text-[#A78BFA] uppercase tracking-widest px-2 py-0.5 bg-[#1A0E2E] border border-[#2A1B42]">
+                            {sp.tier}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </a>
                 );
               })}
             </div>
+          ) : (
+            <div className="p-8 sm:p-12 text-center border-2 border-dashed border-[#2A1B42] bg-[#11091D] mt-8">
+              <p className="font-mono text-xs uppercase tracking-wider text-[#A78BFA]">
+                Slot Sponsor Terbuka untuk Mitra Komunitas
+              </p>
+              <p className="font-display text-sm font-bold text-[#F8FAFC] mt-1">
+                Daftarkan Brand Anda Menjadi Sponsor Turnamen &amp; Komunitas LogHorizon
+              </p>
+            </div>
           )}
 
-          <div className="mt-6 p-6 rounded-none border border-[#2E1E45] bg-[#130921] flex flex-col sm:flex-row items-center justify-between gap-5 text-left">
+          <div className="mt-8 p-6 sm:p-8 rounded-none border border-[#2A1B42] bg-[#11091D] flex flex-col sm:flex-row items-center justify-between gap-5 text-left">
             <div className="space-y-1">
-              <p className="font-display text-sm font-bold text-[#F8FAFC] uppercase">
+              <p className="font-display text-sm sm:text-base font-bold text-[#F8FAFC] uppercase">
                 Ingin Menjadi Mitra Resmi atau Sponsor Turnamen Guild?
               </p>
-              <p className="text-xs text-[#A78BFA] max-w-lg leading-relaxed">
-                Dukung prizepool kompetisi esports dan operasional server. Dapatkan badge kehormatan, eksposur brand, serta peran eksklusif di ekosistem LogHorizon.
+              <p className="text-xs text-[#A78BFA] max-w-xl leading-relaxed">
+                Dukung prizepool kompetisi esports dan operasional server. Dapatkan badge kehormatan, eksposur brand di kartu showcase, serta peran eksklusif di ekosistem LogHorizon.
               </p>
             </div>
             <Link
               href="/donate"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-none text-xs font-mono font-bold text-[#F8FAFC] bg-[#7C3AED] hover:bg-[#6D28D9] border border-[#7C3AED] transition-colors shrink-0"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-none text-xs font-mono font-bold text-[#F8FAFC] bg-[#7C3AED] hover:bg-[#6D28D9] border border-[#7C3AED] transition-colors shrink-0 shadow-sm"
             >
               <span>Ajukan Kemitraan / Jadi Benefactor ➔</span>
             </Link>
