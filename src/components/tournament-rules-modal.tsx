@@ -35,7 +35,7 @@ export function TournamentRulesModal({
       className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn text-left"
     >
       <div
-        className="w-[calc(100vw-2rem)] max-w-2xl max-h-[85vh] flex flex-col bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-none shadow-2xl relative my-auto overflow-hidden text-left text-slate-900 dark:text-[#F8FAFC]"
+        className="w-[calc(100vw-1.5rem)] max-w-2xl max-h-[85vh] flex flex-col bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-none shadow-2xl relative my-auto overflow-hidden text-left text-slate-900 dark:text-[#F8FAFC]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Modal */}

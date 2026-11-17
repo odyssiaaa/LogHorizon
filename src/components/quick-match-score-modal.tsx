@@ -57,7 +57,7 @@ export function QuickMatchScoreModal({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-none w-full max-w-lg p-6 shadow-2xl relative space-y-4 my-auto animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto text-slate-900 dark:text-[#F8FAFC]"
+        className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-none w-[calc(100vw-1.5rem)] sm:max-w-lg p-4 sm:p-6 shadow-2xl relative space-y-4 my-auto animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto text-slate-900 dark:text-[#F8FAFC]"
         onClick={(e) => e.stopPropagation()}
       >
         <button

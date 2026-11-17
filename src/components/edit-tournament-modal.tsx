@@ -146,7 +146,7 @@ export function EditTournamentModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="w-full max-w-2xl max-h-[92vh] flex flex-col rounded-none border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] text-slate-900 dark:text-[#F8FAFC] shadow-2xl overflow-hidden"
+        className="w-[calc(100vw-1.5rem)] max-w-2xl max-h-[85vh] flex flex-col rounded-none border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] text-slate-900 dark:text-[#F8FAFC] shadow-2xl overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-tournament-title"

@@ -220,10 +220,11 @@ export function HorizonChatWidget() {
     }
     const targetX = dragInfo.current.initialX + dx;
     const targetY = dragInfo.current.initialY + dy;
-    const maxX = Math.max(0, (typeof window !== "undefined" ? window.innerWidth : 800) - 96);
-    const maxY = Math.max(0, (typeof window !== "undefined" ? window.innerHeight : 600) - 96);
-    const clampedX = Math.max(10, Math.min(maxX, targetX));
-    const clampedY = Math.max(10, Math.min(maxY, targetY));
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+    const maxX = Math.max(12, (typeof window !== "undefined" ? window.innerWidth : 800) - 76);
+    const maxY = Math.max(64, (typeof window !== "undefined" ? window.innerHeight : 600) - (isMobile ? 120 : 80));
+    const clampedX = Math.max(12, Math.min(maxX, targetX));
+    const clampedY = Math.max(isMobile ? 64 : 12, Math.min(maxY, targetY));
     setPosition({ x: clampedX, y: clampedY });
   };
 
@@ -241,16 +242,10 @@ export function HorizonChatWidget() {
   };
 
   const getPopupStyle = (): React.CSSProperties => {
-    if (!position || typeof window === "undefined") return {};
-    const isMobile = window.innerWidth < 640;
-    if (isMobile) {
-      return {
-        left: "1rem",
-        right: "1rem",
-        bottom: "5.5rem",
-        width: "calc(100vw - 2rem)",
-      };
+    if (typeof window !== "undefined" && window.innerWidth < 640) {
+      return {}; // Handled by responsive Tailwind classes: inset-x-3 top-20 bottom-20 w-auto h-auto max-h-[75vh]
     }
+    if (!position || typeof window === "undefined") return {};
     const popupWidth = 384;
     const popupHeight = 520;
     let left = position.x - popupWidth + 70;
@@ -424,13 +419,13 @@ export function HorizonChatWidget() {
         style={
           position
             ? {
-                left: `${typeof window !== "undefined" ? Math.min(position.x, window.innerWidth - 96) : position.x}px`,
+                left: `${typeof window !== "undefined" ? Math.min(position.x, window.innerWidth - 76) : position.x}px`,
                 top: `${position.y}px`,
               }
             : undefined
         }
-        className={`fixed z-[45] touch-none select-none ${
-          !position ? "bottom-6 right-6" : ""
+        className={`fixed z-[45] touch-none select-none scale-90 sm:scale-100 ${
+          !position ? "bottom-20 right-4 sm:bottom-6 sm:right-6" : ""
         }`}
       >
         <div
@@ -512,8 +507,8 @@ export function HorizonChatWidget() {
           role="dialog"
           aria-label="Jendela Chat Satpam Horizon"
           style={getPopupStyle()}
-          className={`fixed z-[45] w-[calc(100vw-2rem)] sm:w-96 h-[520px] max-h-[82vh] rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 ${
-            !position ? "bottom-20 right-4 sm:bottom-20 sm:right-5" : ""
+          className={`fixed z-[50] rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 inset-x-3 top-20 bottom-20 w-auto h-auto max-h-[75vh] sm:inset-auto sm:w-96 sm:h-[520px] sm:max-h-[82vh] ${
+            !position ? "sm:bottom-6 sm:right-6" : ""
           }`}
         >
           {/* Header */}

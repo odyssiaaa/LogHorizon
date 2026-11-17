@@ -1511,7 +1511,7 @@ export function EventsBoard() {
       {/* ========================================================================= */}
       {(activeTab === "all" || activeTab === "mabar") && (
         <section className="events-section mb-12">
-          <div className="events-section-heading flex items-center justify-between flex-wrap gap-3 mb-6">
+          <div className="events-section-heading flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
               <p className="section-kicker text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider mb-1">
                 PARTY FINDER &amp; LFG
@@ -1524,7 +1524,7 @@ export function EventsBoard() {
             <button
               type="button"
               onClick={() => setShowLfgForm((prev) => !prev)}
-              className="button button-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+              className="button button-primary text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
             >
               {showLfgForm ? <X size={15} /> : <Plus size={15} />}
               <span>{showLfgForm ? "Tutup Form" : "Buat Ajakan Mabar"}</span>
@@ -1534,7 +1534,7 @@ export function EventsBoard() {
           {/* GAME FILTER CHIPS */}
           <div className="mb-4 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
             <div className="flex items-center gap-2 pb-1 text-xs whitespace-nowrap min-w-max">
-              <span className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">Filter Game:</span>
+              <span className="font-bold text-gray-500 uppercase tracking-wider text-[10px] shrink-0">Filter Game:</span>
               {[
                 { id: "ALL", label: "Semua Game" },
                 { id: "Mobile Legends", label: "Mobile Legends" },
@@ -1548,7 +1548,7 @@ export function EventsBoard() {
                   key={g.id}
                   type="button"
                   onClick={() => setFilterGame(g.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs transition-all ${
+                  className={`px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                     filterGame === g.id
                       ? "bg-[#9D4EDD] text-white font-bold shadow-sm"
                       : "bg-gray-100 dark:bg-[#1E1926] text-gray-700 dark:text-gray-300 hover:text-white"
@@ -1740,8 +1740,8 @@ export function EventsBoard() {
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-200 dark:border-[#2E1E45] flex items-center justify-between gap-2 flex-wrap font-mono">
-                    <div className="flex items-center gap-2">
+                  <div className="pt-3 border-t border-slate-200 dark:border-[#2E1E45] flex flex-wrap items-center justify-between gap-2 font-mono">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <a
                         href="https://discord.gg/aJvbVyTxNb"
                         target="_blank"
@@ -1760,19 +1760,19 @@ export function EventsBoard() {
                       <button
                         type="button"
                         onClick={() => setActivePartyChat(activePartyChat === post.id ? null : post.id)}
-                        className="text-xs text-slate-600 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] inline-flex items-center gap-1 ml-1"
+                        className="text-xs text-slate-600 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] inline-flex items-center gap-1 ml-1 cursor-pointer"
                       >
                         <MessageSquare size={13} />
                         <span>Chat ({partyChatMessages[post.id]?.length ?? 0})</span>
                       </button>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end mt-1 sm:mt-0">
                       {(post.isOwner || isAdminOrMod) && (
                         <button
                           type="button"
                           onClick={() => deleteParty(post.id, post.game)}
-                          className="px-2 py-1 rounded-none border border-red-500/30 text-xs font-mono text-rose-400 hover:text-rose-300 hover:bg-red-950/20 inline-flex items-center gap-1 transition-colors"
+                          className="px-2 py-1.5 rounded-none border border-red-500/30 text-xs font-mono text-rose-400 hover:text-rose-300 hover:bg-red-950/20 inline-flex items-center gap-1 transition-colors cursor-pointer shrink-0"
                           title="Hapus / Tutup Party Mabar"
                         >
                           <Trash2 size={13} />
@@ -1784,7 +1784,7 @@ export function EventsBoard() {
                           type="button"
                           disabled={!post.joinedByViewer && isFull}
                           onClick={() => toggleJoin(post.id, post.joinedByViewer)}
-                          className={`px-3 py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition ${
+                          className={`w-full sm:w-auto px-4 py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition text-center justify-center flex items-center cursor-pointer ${
                             post.joinedByViewer
                               ? "bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30"
                               : isFull
@@ -1792,7 +1792,7 @@ export function EventsBoard() {
                                 : "bg-[#7C3AED] text-[#F8FAFC] hover:bg-[#6D28D9] border border-[#7C3AED]"
                           }`}
                         >
-                          {post.joinedByViewer ? "Keluar Party" : isFull ? "Penuh" : "Gabung Party"}
+                          {post.joinedByViewer ? "Keluar Party" : isFull ? "Penuh" : "GABUNG PARTY"}
                         </button>
                       )}
                     </div>
@@ -1842,7 +1842,7 @@ export function EventsBoard() {
       {/* ========================================================================= */}
       {showTemplateModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
+          <div className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-1.5rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto p-4 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setShowTemplateModal(false)}
@@ -2108,7 +2108,7 @@ export function EventsBoard() {
       {/* ========================================================================= */}
       {managingTournament && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-2rem)] sm:max-w-4xl max-h-[88vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
+          <div className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-1.5rem)] sm:max-w-4xl max-h-[85vh] overflow-y-auto p-4 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setManagingTournament(null)}
@@ -3163,7 +3163,7 @@ export function EventsBoard() {
       {/* ========================================================================= */}
       {registeringTournament && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[88vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
+          <div className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-1.5rem)] sm:max-w-2xl max-h-[85vh] overflow-y-auto p-4 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setRegisteringTournament(null)}
@@ -3495,7 +3495,7 @@ export function EventsBoard() {
 
         return (
           <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150 my-auto">
+            <div className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-1.5rem)] sm:max-w-md max-h-[85vh] overflow-y-auto p-4 sm:p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150 my-auto">
               <button
                 type="button"
                 onClick={() => setViewingRoster(null)}

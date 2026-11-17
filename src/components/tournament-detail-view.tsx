@@ -985,7 +985,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       {/* MODAL: VIEW ROSTER */}
       {viewingRoster && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] p-6 shadow-2xl space-y-5 text-left">
+          <div className="w-[calc(100vw-1.5rem)] max-w-md max-h-[85vh] overflow-y-auto rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] p-4 sm:p-6 shadow-2xl space-y-5 text-left">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#2A1B42] pb-3">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-widest text-[#A78BFA] font-bold block">
@@ -1087,7 +1087,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       {/* MODAL: FORM PENDAFTARAN TIM */}
       {showRegisterModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-lg rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-left">
+          <div className="w-[calc(100vw-1.5rem)] max-w-lg rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] p-4 sm:p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto text-left">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#2A1B42] pb-3">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-widest text-[#9D4EDD] font-bold block">

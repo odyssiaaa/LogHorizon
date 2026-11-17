@@ -244,7 +244,7 @@ export function ChampionCertificateModal({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-none w-full max-w-4xl p-4 sm:p-6 shadow-2xl relative space-y-4 my-auto animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white max-h-[95vh] overflow-y-auto"
+        className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-none w-[calc(100vw-1.5rem)] sm:max-w-4xl p-4 sm:p-6 shadow-2xl relative space-y-4 my-auto animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button

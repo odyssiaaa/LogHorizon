@@ -110,7 +110,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
           type="button"
           role="tab"
           aria-selected={activeTab === "adventurers"}
-          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 border ${
+          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0 flex items-center gap-2 border ${
             activeTab === "adventurers"
               ? "bg-[#7C3AED] text-white border-[#7C3AED]"
               : "bg-white dark:bg-[#1A0E2E] text-slate-600 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
@@ -123,7 +123,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
           type="button"
           role="tab"
           aria-selected={activeTab === "benefactors"}
-          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 border ${
+          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0 flex items-center gap-2 border ${
             activeTab === "benefactors"
               ? "bg-[#7C3AED] text-white border-[#7C3AED]"
               : "bg-white dark:bg-[#1A0E2E] text-slate-600 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"

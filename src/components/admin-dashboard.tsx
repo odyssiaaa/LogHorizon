@@ -1033,9 +1033,9 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
         {/* ========================================================================= */}
         {/* RESPONSIVE LAYOUT: DESKTOP SIDEBAR + MOBILE HORIZONTAL TABS */}
         {/* ========================================================================= */}
-        <div className="md:grid md:grid-cols-[240px_1fr] md:gap-8 items-start">
-          {/* DESKTOP SIDEBAR (< md hidden) */}
-          <aside className="hidden md:flex flex-col gap-1.5 sticky top-24 p-3 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm">
+        <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-8 items-start">
+          {/* DESKTOP SIDEBAR (< lg hidden) */}
+          <aside className="hidden lg:flex flex-col gap-1.5 sticky top-24 p-3 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm">
             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-1.5">
               {isAdmin ? "MODUL COMMAND CENTER" : "MODUL MODERASI & WASIT"}
             </p>
@@ -1194,8 +1194,8 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             </Link>
           </aside>
 
-          {/* MOBILE HORIZONTAL SCROLLABLE TABS (>= md hidden) */}
-          <div className="md:hidden flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-2 mb-6 border-b border-gray-200 dark:border-[#2E1E45] -mx-4 px-4">
+          {/* MOBILE HORIZONTAL SCROLLABLE TABS (>= lg hidden) */}
+          <div className="lg:hidden flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-2 mb-6 border-b border-gray-200 dark:border-[#2E1E45] -mx-4 px-4">
             {isAdmin && (
               <button
                 type="button"
@@ -2410,7 +2410,7 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                     onClick={() => setHowModalOpen(false)}
                   >
                     <div
-                      className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-full max-w-lg p-5 sm:p-6 shadow-2xl relative space-y-4 my-auto max-h-[90vh] overflow-y-auto"
+                      className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-1.5rem)] sm:max-w-lg p-4 sm:p-6 shadow-2xl relative space-y-4 my-auto max-h-[85vh] overflow-y-auto"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
@@ -3645,7 +3645,7 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
       {/* MODAL BUAT TURNAMEN BARU DARI ADMIN */}
       {createTournamentOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="relative w-full max-w-2xl bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl p-6 shadow-2xl my-auto">
+          <div className="relative w-[calc(100vw-1.5rem)] max-w-2xl bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl p-4 sm:p-6 shadow-2xl my-auto max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200 dark:border-[#2E1E45]">
               <div className="flex items-center gap-2">
                 <Trophy size={18} className="text-[#9D4EDD]" />

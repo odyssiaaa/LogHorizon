@@ -98,7 +98,7 @@ export function HallOfWinnersBoard({ initialItems }: HallOfWinnersBoardProps) {
           <button
             type="button"
             onClick={() => setSelectedGame("ALL")}
-            className={`px-3 py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition whitespace-nowrap border ${
+            className={`px-3 py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition whitespace-nowrap shrink-0 border ${
               selectedGame === "ALL"
                 ? "bg-[#7C3AED] text-white border-[#7C3AED]"
                 : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
@@ -111,7 +111,7 @@ export function HallOfWinnersBoard({ initialItems }: HallOfWinnersBoardProps) {
               key={g}
               type="button"
               onClick={() => setSelectedGame(g)}
-              className={`px-3 py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition whitespace-nowrap border ${
+              className={`px-3 py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition whitespace-nowrap shrink-0 border ${
                 selectedGame === g
                   ? "bg-[#7C3AED] text-white border-[#7C3AED]"
                   : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"

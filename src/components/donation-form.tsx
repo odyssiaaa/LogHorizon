@@ -235,7 +235,7 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
       {/* QRIS PAYMENT & CONFIRMATION MODAL */}
       {tier && selectedTier && (
         <div className="modal-backdrop fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto" onMouseDown={(event) => { if (event.target === event.currentTarget && !loading) setTier(null); }}>
-          <section className="modal-card treasury-modal bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl p-5 sm:p-8 w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl relative my-auto text-left" role="dialog" aria-modal="true" aria-labelledby="treasury-modal-title">
+          <section className="modal-card treasury-modal bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl p-4 sm:p-8 w-[calc(100vw-1.5rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl relative my-auto text-left" role="dialog" aria-modal="true" aria-labelledby="treasury-modal-title">
             <button type="button" className="modal-close absolute top-4 right-4 text-slate-500 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC]" onClick={() => setTier(null)} disabled={loading} aria-label="Tutup">
               <X size={20} />
             </button>

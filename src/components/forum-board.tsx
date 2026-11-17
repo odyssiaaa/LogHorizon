@@ -634,7 +634,7 @@ function ThreadModal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className="modal-card w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto my-auto rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] p-6 text-left relative shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="thread-modal-title">
+      <section className="modal-card w-[calc(100vw-1.5rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto my-auto rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] p-4 sm:p-6 text-left relative shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="thread-modal-title">
         <button className="modal-close absolute top-5 right-5 text-slate-400 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC]" onClick={onClose} aria-label="Tutup">
           <X size={19} />
         </button>
