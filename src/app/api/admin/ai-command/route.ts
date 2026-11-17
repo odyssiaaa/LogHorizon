@@ -246,12 +246,17 @@ const GEMINI_TOOLS = [
       },
       {
         name: "broadcastAnnouncement",
-        description: "Membuat pengumuman broadcast resmi baru yang akan tampil di Beranda dan dikirim ke Discord guild",
+        description: "Membuat draf broadcast/pengumuman resmi baru dengan pilihan target publikasi Website LogHorizon, Discord Webhook, atau keduanya",
         parameters: {
           type: "OBJECT",
           properties: {
             title: { type: "STRING", description: "Judul pengumuman resmi" },
-            content: { type: "STRING", description: "Isi lengkap pengumuman resmi" }
+            content: { type: "STRING", description: "Isi lengkap pengumuman resmi" },
+            targetPlatform: {
+              type: "STRING",
+              enum: ["WEB_ONLY", "DISCORD_ONLY", "BOTH"],
+              description: "Target pengiriman: 'WEB_ONLY' (hanya website LogHorizon), 'DISCORD_ONLY' (hanya webhook Discord), atau 'BOTH' (website dan Discord). Default: 'WEB_ONLY'"
+            }
           },
           required: ["title", "content"]
         }
@@ -385,7 +390,7 @@ Panduan Pemilihan Tool:
 13. Ban/Unban Member ➡️ "toggleUserBan" (Perlindungan: Akun .odyssia TIDAK BISA diban)
 14. Ubah pengaturan SiteConfig / Knowledge Base AI ➡️ "updateSiteConfig"
 15. Tambah/Hapus Sponsor resmi ➡️ "manageSponsor"
-16. Kirim Broadcast Pengumuman ➡️ "broadcastAnnouncement"
+16. Kirim Broadcast Pengumuman ➡️ "broadcastAnnouncement" (Tentukan targetPlatform: 'WEB_ONLY' jika Admin minta hanya website/beranda, 'DISCORD_ONLY' jika minta hanya ke Discord, atau 'BOTH' jika keduanya/gabungan. Jika tidak disebut secara spesifik, default ke 'WEB_ONLY'. Catatan: Broadcast akan selalu menghasilkan draf preview terlebih dahulu untuk dikonfirmasi Admin).
 17. Jika pertanyaan informasi biasa (analisis stats, tanya jadwal), jawablah secara ringkas dan taktis tanpa memanggil tool.
 
 ${contextPrompt}`;
@@ -1457,35 +1462,72 @@ async function executeToolAction(
   if (normalizedTool === "broadcastAnnouncement") {
     const title = String(args.title || "").trim();
     const content = String(args.content || "").trim();
+    const rawTarget = String(args.targetPlatform || "WEB_ONLY").toUpperCase().trim();
+    const targetPlatform: "WEB_ONLY" | "DISCORD_ONLY" | "BOTH" =
+      rawTarget === "DISCORD_ONLY" || rawTarget === "BOTH" ? rawTarget : "WEB_ONLY";
 
     if (!title || !content) {
       return { success: false, reply: "Judul dan isi broadcast wajib diisi.", toolResult: null };
     }
 
+    const targetLabel =
+      targetPlatform === "WEB_ONLY"
+        ? "🌐 Website LogHorizon Saja"
+        : targetPlatform === "DISCORD_ONLY"
+          ? "💬 Webhook Discord Saja"
+          : "🌐 + 💬 Website & Discord";
+
+    // Draft Preview Gate: Require Admin Approval Before Sending
+    if (!isConfirmed) {
+      return {
+        success: true,
+        reply: `📝 DRAF BROADCAST DISIAPKAN: Pratinjau draf untuk "${title}" siap diperiksa. Silakan tinjau judul, isi, dan target publikasi (${targetLabel}) pada kartu pratinjau sebelum dikirim.`,
+        requiresConfirmation: true,
+        actionType: "BROADCAST_PREVIEW",
+        summary: `Pratinjau Draf Broadcast: "${title}" (${targetLabel})`,
+        payload: {
+          tool: "broadcastAnnouncement",
+          args: { title, content, targetPlatform },
+          confirmed: true,
+        },
+      };
+    }
+
+    // Execution after Admin confirmation
+    let announcementId = "DISCORD_NOTICE_ONLY";
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
-    const announcement = await prisma.announcement.create({
-      data: {
-        authorId: adminUser.id,
-        title,
-        content,
-        createdAt: now,
-        expiresAt,
-      },
-    });
+    if (targetPlatform === "WEB_ONLY" || targetPlatform === "BOTH") {
+      const announcement = await prisma.announcement.create({
+        data: {
+          authorId: adminUser.id,
+          title,
+          content,
+          createdAt: now,
+          expiresAt,
+        },
+      });
+      announcementId = announcement.id;
+    }
 
-    void sendDiscordNotice("announcements", title, content);
+    if (targetPlatform === "DISCORD_ONLY" || targetPlatform === "BOTH") {
+      void sendDiscordNotice("announcements", title, content);
+    }
 
     return {
       success: true,
-      reply: `Broadcast "${title}" telah dipublikasikan ke Beranda dan ditembakkan langsung ke channel Discord guild!`,
+      reply: `Broadcast "${title}" telah berhasil dipublikasikan ke target: ${targetLabel}!`,
       toolResult: {
         action: "broadcastAnnouncement",
         summary: `Broadcast Resmi: ${title}`,
-        before: { status: "Draf" },
-        after: { id: announcement.id, status: "Tayang di Beranda & Discord" },
-        details: `Konten: "${content.slice(0, 150)}..."`,
+        before: { status: "Draf Menunggu Persetujuan" },
+        after: {
+          id: announcementId,
+          target: targetLabel,
+          status: "Telah Dipublikasikan",
+        },
+        details: `Target: ${targetLabel} • Konten: "${content.slice(0, 150)}..."`,
       },
       requiresConfirmation: false,
     };

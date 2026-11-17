@@ -21,6 +21,9 @@ import {
   Coins,
   Bot,
   User,
+  Globe,
+  FileText,
+  Edit3,
 } from "lucide-react";
 
 type ToolResult = {
@@ -105,6 +108,22 @@ export function AiAdminTerminal({
   const [error, setError] = useState("");
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
+  // Draft state for interactive Broadcast Previews
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftContent, setDraftContent] = useState("");
+  const [draftTarget, setDraftTarget] = useState<"WEB_ONLY" | "DISCORD_ONLY" | "BOTH">("WEB_ONLY");
+
+  // Sync draft state whenever a new pending confirmation arrives
+  useEffect(() => {
+    if (pendingConfirmation && pendingConfirmation.actionType === "BROADCAST_PREVIEW") {
+      const args = pendingConfirmation.payload?.args || {};
+      setDraftTitle(String(args.title || ""));
+      setDraftContent(String(args.content || ""));
+      const rawTarget = String(args.targetPlatform || "WEB_ONLY").toUpperCase();
+      setDraftTarget(rawTarget === "DISCORD_ONLY" || rawTarget === "BOTH" ? rawTarget : "WEB_ONLY");
+    }
+  }, [pendingConfirmation]);
+
   // Auto-scroll to bottom of chat history when items are added
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -173,19 +192,21 @@ export function AiAdminTerminal({
     }
   }
 
-  async function handleConfirmExecution() {
+  async function handleConfirmExecution(customArgs?: Record<string, unknown>) {
     if (!pendingConfirmation?.payload || confirming) return;
 
     setConfirming(true);
     setError("");
 
     try {
+      const finalArgs = customArgs || pendingConfirmation.payload.args;
       const res = await fetch("/api/admin/ai-command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           confirmedPayload: {
             ...pendingConfirmation.payload,
+            args: finalArgs,
             confirmed: true,
           },
         }),
@@ -412,8 +433,168 @@ export function AiAdminTerminal({
               </div>
             ))}
 
-            {/* Pending Confirmation Card */}
-            {pendingConfirmation && (
+            {/* Pending Confirmation Card: Broadcast Draft Preview vs Standard */}
+            {pendingConfirmation && pendingConfirmation.actionType === "BROADCAST_PREVIEW" ? (
+              <div className="p-4 sm:p-5 rounded-xl bg-purple-500/10 border-2 border-[#7C3AED]/40 text-slate-900 dark:text-purple-100 space-y-4 animate-in fade-in duration-200 shadow-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-purple-500/20">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-2 rounded-lg bg-[#7C3AED]/20 text-[#7C3AED] dark:text-[#A78BFA] shrink-0">
+                      <Megaphone size={18} />
+                    </span>
+                    <div>
+                      <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#7C3AED] dark:text-[#A78BFA] flex items-center gap-1.5">
+                        <span>PRATINJAU DRAF BROADCAST</span>
+                        <span className="px-1.5 py-0.2 rounded text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                          PERLU PERSETUJUAN ADMIN
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Pesan belum dikirim. Periksa &amp; edit teks di bawah sebelum dipublikasikan.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Target Platform Selector Badges */}
+                  <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                    <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 font-bold uppercase mr-1">
+                      Target:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setDraftTarget("WEB_ONLY")}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                        draftTarget === "WEB_ONLY"
+                          ? "bg-blue-600 text-white shadow-xs ring-2 ring-blue-400/50"
+                          : "bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-white/20"
+                      }`}
+                      title="Hanya tayang di Beranda / Web LogHorizon"
+                    >
+                      <Globe size={12} />
+                      <span>🌐 WEBSITE ONLY</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDraftTarget("DISCORD_ONLY")}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                        draftTarget === "DISCORD_ONLY"
+                          ? "bg-[#5865F2] text-white shadow-xs ring-2 ring-[#5865F2]/50"
+                          : "bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-white/20"
+                      }`}
+                      title="Hanya dikirim ke Webhook Channel Discord"
+                    >
+                      <MessageSquare size={12} />
+                      <span>💬 DISCORD ONLY</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDraftTarget("BOTH")}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                        draftTarget === "BOTH"
+                          ? "bg-purple-600 text-white shadow-xs ring-2 ring-purple-400/50"
+                          : "bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-white/20"
+                      }`}
+                      title="Tayang di Website dan dikirim ke Discord sekaligus"
+                    >
+                      <Sparkles size={12} />
+                      <span>🌐 + 💬 WEB &amp; DISCORD</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Editable Draft Fields */}
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1.5">
+                      <FileText size={13} className="text-[#7C3AED] dark:text-[#A78BFA]" />
+                      <span>Judul Pengumuman:</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={draftTitle}
+                      onChange={(e) => setDraftTitle(e.target.value)}
+                      placeholder="Masukkan judul pengumuman..."
+                      className="w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-[#0A0512] border border-slate-300 dark:border-[#2A1B42] text-slate-900 dark:text-white font-semibold focus:outline-hidden focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1.5">
+                      <Edit3 size={13} className="text-[#7C3AED] dark:text-[#A78BFA]" />
+                      <span>Isi Lengkap Pengumuman:</span>
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={draftContent}
+                      onChange={(e) => setDraftContent(e.target.value)}
+                      placeholder="Tuliskan isi pengumuman lengkap..."
+                      className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg bg-white dark:bg-[#0A0512] border border-slate-300 dark:border-[#2A1B42] text-slate-900 dark:text-white focus:outline-hidden focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] transition leading-relaxed resize-y"
+                    />
+                  </div>
+                </div>
+
+                {/* Actions & Target Summary */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                    Target Publikasi:{" "}
+                    <strong className="text-[#7C3AED] dark:text-[#A78BFA]">
+                      {draftTarget === "WEB_ONLY"
+                        ? "🌐 Website LogHorizon Saja"
+                        : draftTarget === "DISCORD_ONLY"
+                          ? "💬 Channel Discord Guild Saja"
+                          : "🌐 + 💬 Website LogHorizon & Channel Discord"}
+                    </strong>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={confirming || !draftTitle.trim() || !draftContent.trim()}
+                      onClick={() =>
+                        handleConfirmExecution({
+                          title: draftTitle.trim(),
+                          content: draftContent.trim(),
+                          targetPlatform: draftTarget,
+                        })
+                      }
+                      className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 transition shadow-sm disabled:opacity-50 cursor-pointer"
+                    >
+                      {confirming ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Mempublikasikan…</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check size={14} />
+                          <span>✅ ACC &amp; Kirim Sekarang</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={confirming}
+                      onClick={() => {
+                        setPendingConfirmation(null);
+                        const cancelItem: HistoryItem = {
+                          id: `cancel-${Date.now()}`,
+                          sender: "ai",
+                          response: {
+                            success: false,
+                            reply: `✏️ Draf pengumuman "${draftTitle || "Broadcast"}" dibatalkan oleh Admin. Tidak ada pesan yang dipublikasikan ke Website maupun Discord.`,
+                          },
+                          timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+                        };
+                        setHistory((prev) => [...prev, cancelItem]);
+                      }}
+                      className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold text-slate-700 dark:text-slate-300 transition flex items-center gap-1 cursor-pointer"
+                    >
+                      <X size={14} />
+                      <span>✏️ Minta Revisi / Batal</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : pendingConfirmation ? (
               <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 space-y-3 animate-in fade-in duration-200">
                 <div className="flex items-start gap-2.5">
                   <ShieldAlert size={20} className="text-amber-500 shrink-0 mt-0.5" />
@@ -434,8 +615,8 @@ export function AiAdminTerminal({
                   <button
                     type="button"
                     disabled={confirming}
-                    onClick={handleConfirmExecution}
-                    className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs flex items-center gap-1.5 transition shadow-sm disabled:opacity-50"
+                    onClick={() => handleConfirmExecution()}
+                    className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-black font-extrabold text-xs flex items-center gap-1.5 transition shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     {confirming ? (
                       <>
@@ -455,14 +636,14 @@ export function AiAdminTerminal({
                     onClick={() => {
                       setPendingConfirmation(null);
                     }}
-                    className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition flex items-center gap-1"
+                    className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition flex items-center gap-1 cursor-pointer"
                   >
                     <X size={14} />
                     <span>Batal</span>
                   </button>
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Loading Indicator */}
             {loading && (
