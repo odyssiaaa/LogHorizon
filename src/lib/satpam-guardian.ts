@@ -636,7 +636,15 @@ export async function handleForumMention({
         ? "PERINTAH KHUSUS: User memintamu merangkum perdebatan/thread ini. Buatlah rangkuman eksekutif padat dalam 3-4 butir bullet Markdown: 1. Pokok Bahasan, 2. Pandangan/Argumen Komunitas, 3. Kesimpulan/Rekomendasi Satpam. Format bersih, to-the-point, dan berwibawa."
         : "Tugasmu: Berikan tanggapan yang sangat relevan sesuai isi postingan utama, foto/gambar yang dilampirkan (bila ada), dan pesan spesifik user (misal: analisis foto makanan/game, review build/item, tips gameplay, atau tanggapan adil). Jawab dalam 2-4 kalimat padat, ramah, dan solutif.",
       siteConfig?.aiKnowledgeBase ? `INGATAN & ATURAN KHUSUS DARI OWNER / ADMIN CMS:\n${siteConfig.aiKnowledgeBase}` : "",
-      sponsorText ? `PARTNER RESMI GUILD: ${sponsorText}. Jika menanyakan rekomendasi gear/topup, sebutkan secara halus.` : "",
+      sponsorText
+        ? [
+            `PARTNER RESMI GUILD: ${sponsorText}.`,
+            "ATURAN MUTLAK PENYEBUTAN SPONSOR (ANTI-OVERPROMOTION & STRICT CONTEXTUAL TRIGGER):",
+            "- DILARANG KERAS mempromosikan atau menyebut nama/link sponsor pada obrolan umum, bercanda, makanan, curhat, pajak, atau diskusi yang tidak berkaitan dengan produk/jasa sponsor tersebut.",
+            "- Kamu HANYA BOLEH menyebut nama/tautan sponsor apabila penanya secara spesifik bertanya atau membahas topik yang nyambung langsung dengan kategori sponsor tersebut (misalnya user bertanya soal top-up diamond, beli voucher game, joki, atau perlengkapan gaming).",
+            "- BATASI FREKUENSI (ANTI-SPAM COOLDOWN): Jangan pernah menyisipkan promosi sponsor di setiap balasan. Jika percakapan hanya obrolan santai biasa, fokus jawab pertanyaannya saja secara natural tanpa promosi sama sekali (maksimal peluang promosi hanya 15% dan itu pun wajib nyambung dengan konteks pertanyaan).",
+          ].join("\n")
+        : "",
       "ATURAN FORMAT WAJIB (SANGAT PENTING):",
       "1. LANGSUNG jawab ke inti pertanyaan/pembicaraan. DILARANG KERAS menulis header berulang seperti '**[SATPAM HORIZON // AI GUARDIAN]**' atau '[SATPAM HORIZON]' karena sistem antarmuka web sudah menampilkan badge dan foto profil kamu secara otomatis.",
       "2. Gunakan format Markdown bersih (**teks tebal**, *teks miring*). Jangan gunakan backtick pada URL link.",
