@@ -32,14 +32,14 @@ export function TournamentRulesModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="tournament-rules-title"
-      className="fixed inset-0 z-[110] bg-[#09040F]/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn text-left"
+      className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fadeIn text-left"
     >
       <div
-        className="w-[calc(100vw-2rem)] max-w-2xl max-h-[85vh] flex flex-col bg-[#130921] border border-[#2E1E45] rounded-none shadow-2xl relative my-auto overflow-hidden text-left"
+        className="w-[calc(100vw-2rem)] max-w-2xl max-h-[85vh] flex flex-col bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-none shadow-2xl relative my-auto overflow-hidden text-left text-slate-900 dark:text-[#F8FAFC]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Modal */}
-        <div className="p-4 sm:p-5 border-b border-[#2E1E45] flex items-center justify-between gap-3 bg-[#1A0E2E]">
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-[#2A1B42] flex items-center justify-between gap-3 bg-slate-50 dark:bg-[#0E061A]">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-none bg-[#130921] border border-[#2E1E45] flex items-center justify-center text-[#A78BFA] shrink-0">
               <BookOpen size={18} />

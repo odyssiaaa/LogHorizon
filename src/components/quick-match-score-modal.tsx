@@ -53,11 +53,11 @@ export function QuickMatchScoreModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="bg-[#130921] border border-[#2E1E45] rounded-none w-full max-w-lg p-6 shadow-2xl relative space-y-4 my-auto animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-none w-full max-w-lg p-6 shadow-2xl relative space-y-4 my-auto animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto text-slate-900 dark:text-[#F8FAFC]"
         onClick={(e) => e.stopPropagation()}
       >
         <button

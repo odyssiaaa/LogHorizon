@@ -63,9 +63,9 @@ export function GachaBracketModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="gacha-title"
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-fadeIn"
     >
-      <div className="relative w-full max-w-md p-6 sm:p-8 rounded-none border border-[#7C3AED] bg-[#130921] shadow-2xl text-center overflow-hidden">
+      <div className="relative w-full max-w-md p-6 sm:p-8 rounded-none border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-2xl text-center overflow-hidden">
         {/* Dice Animation */}
         <div className="relative flex items-center justify-center my-4">
           <div className="relative flex items-center justify-center w-20 h-20 rounded-none bg-[#09040F] border border-[#2E1E45]">

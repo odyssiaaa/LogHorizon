@@ -18,6 +18,7 @@ export async function PATCH(request: Request) {
     monthlyGoal,
     minDonation,
     discordInviteUrl,
+    discordWebhookUrl,
     aiKnowledgeBase,
   } = body;
 
@@ -33,6 +34,7 @@ export async function PATCH(request: Request) {
       ...(Number.isSafeInteger(Number(monthlyGoal)) ? { monthlyGoal: Math.max(0, Number(monthlyGoal)) } : {}),
       ...(Number.isSafeInteger(Number(minDonation)) ? { minDonation: Math.max(1000, Number(minDonation)) } : {}),
       ...(typeof discordInviteUrl === "string" ? { discordInviteUrl: discordInviteUrl.trim() } : {}),
+      ...(typeof discordWebhookUrl === "string" ? { discordWebhookUrl: discordWebhookUrl.trim() } : {}),
       ...(typeof aiKnowledgeBase === "string" ? { aiKnowledgeBase: aiKnowledgeBase.trim() } : {}),
     },
     create: {
@@ -46,6 +48,7 @@ export async function PATCH(request: Request) {
       monthlyGoal: Number(monthlyGoal) || 5000000,
       minDonation: Number(minDonation) || 10000,
       discordInviteUrl: typeof discordInviteUrl === "string" && discordInviteUrl.trim() ? discordInviteUrl.trim() : "https://discord.gg/aJvbVyTxNb",
+      discordWebhookUrl: typeof discordWebhookUrl === "string" ? discordWebhookUrl.trim() : null,
       aiKnowledgeBase: typeof aiKnowledgeBase === "string" ? aiKnowledgeBase.trim() : null,
     },
   });

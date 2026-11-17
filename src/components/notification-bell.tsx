@@ -103,7 +103,7 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="relative w-10 h-10 rounded-lg border border-[#2A1B42] bg-[#11091D] hover:border-[#7C3AED] transition-colors text-[#94A3B8] hover:text-white flex items-center justify-center shrink-0"
+        className="relative w-10 h-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white flex items-center justify-center shrink-0 shadow-sm dark:shadow-none"
         aria-label="Notifikasi Guild"
         aria-expanded={open}
       >
@@ -123,7 +123,7 @@ export function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.96 }}
             transition={{ duration: 0.16, ease: "easeOut" }}
-            className="absolute right-0 mt-2 w-80 sm:w-96 rounded-lg border border-[#7C3AED]/60 bg-[#11091D] p-3 shadow-2xl z-50 backdrop-blur-xl text-left"
+            className="absolute right-0 mt-2 w-80 sm:w-96 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] p-3 shadow-2xl z-50 text-left"
             role="menu"
           >
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#2A1B42]">

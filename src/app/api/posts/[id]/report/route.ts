@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { authenticatedUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sanitizePlainText } from "@/lib/sanitize";
+import { notifyStaffAlert } from "@/lib/discord-webhook";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -15,6 +16,15 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (!reason || reason.length > 2000) return jsonError("Alasan laporan wajib diisi (maksimal 2.000 karakter).", 400);
   try {
     const report = await prisma.report.create({ data: { postId: id, reporterId: user.id, reason: reason.trim() } });
+
+    void notifyStaffAlert({
+      type: "REPORT",
+      title: `Laporan Konten Post #${id.slice(0, 8)}`,
+      actorName: user.username,
+      amountOrTarget: `Post ID: ${id}`,
+      details: `Alasan pelaporan: "${reason.trim()}"`,
+    });
+
     return Response.json(report, { status: 201 });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return jsonError("Kamu sudah pernah melaporkan postingan ini.", 409);

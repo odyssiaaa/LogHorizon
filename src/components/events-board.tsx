@@ -1832,8 +1832,8 @@ export function EventsBoard() {
       {/* MODAL 1: SETUP TEMPLATE TURNAMEN (Khusus Admin / Moderator) */}
       {/* ========================================================================= */}
       {showTemplateModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] rounded-none w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setShowTemplateModal(false)}
@@ -2098,8 +2098,8 @@ export function EventsBoard() {
       {/* MODAL 2: KELOLA TIM, PEMAIN & UPDATE SKOR (Admin / Moderator) */}
       {/* ========================================================================= */}
       {managingTournament && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] rounded-none w-[calc(100vw-2rem)] sm:max-w-4xl max-h-[88vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-2rem)] sm:max-w-4xl max-h-[88vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setManagingTournament(null)}
@@ -3153,8 +3153,8 @@ export function EventsBoard() {
       {/* MODAL 3: PENDAFTARAN TIM MEMBER KE TURNAMEN (FORM TERSTRUKTUR) */}
       {/* ========================================================================= */}
       {registeringTournament && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] rounded-none w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[88vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[88vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative my-auto">
             <button
               type="button"
               onClick={() => setRegisteringTournament(null)}
@@ -3485,8 +3485,8 @@ export function EventsBoard() {
             : [];
 
         return (
-          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] rounded-none w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150 my-auto">
+          <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150 my-auto">
               <button
                 type="button"
                 onClick={() => setViewingRoster(null)}

@@ -3,6 +3,7 @@ import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { advanceMatchWinner, resetMatchResult, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES, updateMatchStatus, TournamentLossReason, evaluateAutoLiveMatches } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
+import { notifyTournamentChampion } from "@/lib/discord-webhook";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -332,6 +333,37 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       matches: updatedMatches as unknown as Prisma.InputJsonValue,
     },
   });
+
+  if (nextStatus === TournamentStatus.COMPLETED && tournament.status !== TournamentStatus.COMPLETED) {
+    const gfMatch = updatedMatches.find(
+      (m) =>
+        m.matchId !== "BRONZE-01" &&
+        !m.roundName?.toLowerCase().includes("bronze") &&
+        !m.roundName?.toLowerCase().includes("juara 3") &&
+        (m.roundName?.toLowerCase().includes("grand final") ||
+          m.roundName?.toLowerCase() === "final" ||
+          m.round === Math.max(...updatedMatches.map((mx) => mx.round || 1)))
+    );
+    if (gfMatch && gfMatch.winner) {
+      const champ = gfMatch.winner;
+      const runnerUp = gfMatch.teamA.name === champ ? gfMatch.teamB.name : gfMatch.teamA.name;
+      const bronzeMatch = updatedMatches.find(
+        (m) =>
+          m.matchId === "BRONZE-01" ||
+          m.roundName?.toLowerCase().includes("juara 3") ||
+          m.roundName?.toLowerCase().includes("bronze")
+      );
+      const thirdPlace = bronzeMatch?.winner || null;
+      notifyTournamentChampion({
+        tournamentTitle: updated.title,
+        game: updated.game,
+        championName: champ,
+        runnerUpName: runnerUp,
+        thirdPlaceName: thirdPlace,
+        prizePool: updated.prizePool,
+      }).catch((e) => console.warn("[Discord Webhook] Error:", e));
+    }
+  }
 
   return Response.json({
     success: true,

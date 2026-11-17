@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { jsonError } from "@/lib/http";
 import { TournamentMatch, TournamentTeam, TournamentRosterPlayer } from "@/lib/tournament";
+import { notifyTournamentChampion } from "@/lib/discord-webhook";
 
 export type HallOfWinnerItem = {
   id: string;
@@ -198,6 +199,15 @@ export async function POST(req: Request) {
         notes: notes || null,
       },
     });
+
+    notifyTournamentChampion({
+      tournamentTitle,
+      game,
+      championName: championTeam,
+      runnerUpName: runnerUpTeam,
+      thirdPlaceName: thirdPlaceTeam,
+      prizePool,
+    }).catch((e) => console.warn("[Discord Webhook] Error:", e));
 
     return NextResponse.json(created, { status: 201 });
   } catch (err) {

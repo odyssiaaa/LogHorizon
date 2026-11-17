@@ -359,7 +359,7 @@ export function HorizonChatWidget() {
               }
             : undefined
         }
-        className={`fixed z-50 touch-none select-none ${
+        className={`fixed z-[45] touch-none select-none ${
           !position ? "bottom-6 right-6" : ""
         }`}
       >
@@ -442,12 +442,12 @@ export function HorizonChatWidget() {
           role="dialog"
           aria-label="Jendela Chat Satpam Horizon"
           style={getPopupStyle()}
-          className={`fixed z-50 w-[calc(100vw-2rem)] sm:w-96 h-[520px] max-h-[82vh] rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 ${
+          className={`fixed z-[45] w-[calc(100vw-2rem)] sm:w-96 h-[520px] max-h-[82vh] rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 ${
             !position ? "bottom-20 right-4 sm:bottom-20 sm:right-5" : ""
           }`}
         >
           {/* Header */}
-          <div className="px-4 py-3 bg-gray-50 dark:bg-[#1A1524] border-b border-gray-200 dark:border-[#2E1E45] flex items-center justify-between gap-3">
+          <div className="px-4 py-3 bg-slate-50 dark:bg-[#1A0F2E] border-b border-slate-200 dark:border-[#2A1B42] flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="relative w-8 h-8 rounded-full bg-[#9D4EDD]/20 text-[#9D4EDD] dark:text-[#C77DFF] flex items-center justify-center border border-[#9D4EDD]/40 shrink-0">
                 <Bot size={17} />
@@ -551,14 +551,14 @@ export function HorizonChatWidget() {
 
           {/* Quick Suggestion Chips */}
           {messages.length <= 2 && (
-            <div className="px-3.5 py-2.5 border-t border-gray-100 dark:border-[#1E1A29] bg-gray-50/70 dark:bg-[#15111D] flex flex-wrap items-center gap-1.5">
+            <div className="px-3.5 py-2.5 border-t border-slate-200 dark:border-[#2A1B42] bg-slate-100 dark:bg-[#150D24] flex flex-wrap items-center gap-1.5">
               {SUGGESTIONS.map((chip) => (
                 <button
                   key={chip}
                   type="button"
                   disabled={loading}
                   onClick={() => void sendMessage(chip)}
-                  className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-white dark:bg-[#1F192B] border border-gray-200 dark:border-[#2B233C] text-gray-700 dark:text-gray-300 hover:border-[#9D4EDD] hover:text-[#9D4EDD] dark:hover:text-[#C77DFF] transition shadow-xs"
+                  className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-white dark:bg-[#1F1433] border border-slate-200 dark:border-[#2A1B42] text-slate-700 dark:text-slate-300 hover:border-[#7C3AED] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] transition shadow-xs"
                 >
                   {chip}
                 </button>
@@ -569,7 +569,7 @@ export function HorizonChatWidget() {
           {/* Input Footer */}
           <form
             onSubmit={handleSubmit}
-            className="p-3 bg-gray-50 dark:bg-[#181320] border-t border-gray-200 dark:border-[#2E1E45] flex items-center gap-2"
+            className="p-3 bg-slate-50 dark:bg-[#1A0F2E] border-t border-slate-200 dark:border-[#2A1B42] flex items-center gap-2"
           >
             <input
               ref={inputRef}

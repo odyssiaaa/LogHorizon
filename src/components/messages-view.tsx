@@ -800,9 +800,9 @@ export function MessagesView() {
 
       {/* MODAL: BUAT GRUP CHAT */}
       {showCreateGroup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-[#2E1E45] pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#2A1B42] pb-3">
               <h3 className="font-extrabold text-base text-gray-900 dark:text-white flex items-center gap-2">
                 <Users size={18} className="text-[#9D4EDD]" />
                 <span>Buat Grup Obrolan Komunitas</span>
@@ -907,9 +907,9 @@ export function MessagesView() {
 
       {/* MODAL: TAMBAH ANGGOTA GRUP */}
       {showAddMembersModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-[#2E1E45] pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#2A1B42] pb-3">
               <h3 className="font-extrabold text-base text-gray-900 dark:text-white flex items-center gap-2">
                 <UserPlus size={18} className="text-[#9D4EDD]" />
                 <span>Tambah Anggota ke Grup</span>

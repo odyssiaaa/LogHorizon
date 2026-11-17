@@ -3,6 +3,7 @@ import { activeUser, jsonError } from "@/lib/http";
 import { isMarketData, marketJson } from "@/lib/market-data";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { notifyStaffAlert } from "@/lib/discord-webhook";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -41,6 +42,14 @@ export async function POST(_request: Request, { params }: RouteContext) {
         type: "ESCROW",
         message: `${buyer.username ?? "Seorang pembeli"} mengajukan transaksi escrow untuk lapak "${result.postTitle.slice(0, 40)}"`,
         link: `/marketplace`,
+      });
+
+      void notifyStaffAlert({
+        type: "ESCROW",
+        title: result.postTitle,
+        actorName: buyer.username ?? "Pembeli",
+        amountOrTarget: `Rp ${result.marketData.price.toLocaleString("id-ID")}`,
+        details: `Pembeli @${buyer.username} mengajukan rekber untuk lapak "${result.postTitle}". Transaksi dipantau oleh pengurus guild.`,
       });
     }
 

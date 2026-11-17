@@ -129,6 +129,7 @@ type SiteConfig = {
   monthlyGoal: number;
   minDonation: number;
   discordInviteUrl: string;
+  discordWebhookUrl?: string | null;
   aiKnowledgeBase?: string | null;
   updatedAt?: string;
 };
@@ -500,6 +501,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     monthlyGoal: 5000000,
     minDonation: 10000,
     discordInviteUrl: "https://discord.gg/aJvbVyTxNb",
+    discordWebhookUrl: "",
     aiKnowledgeBase: "",
   });
   const [savingConfig, setSavingConfig] = useState(false);
@@ -1575,12 +1577,12 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                       </div>
                     </div>
 
-                    {/* 4. LINK KOMUNITAS */}
-                    <div className="border-t border-gray-200 dark:border-[#2E1E45] pt-4">
-                      <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-3">
-                        04 / LINK TAUTAN DISCORD RESMI
-                      </h3>
+                    {/* 4. LINK KOMUNITAS & DISCORD WEBHOOK */}
+                    <div className="border-t border-gray-200 dark:border-[#2E1E45] pt-4 space-y-4">
                       <div>
+                        <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-2">
+                          04 / LINK TAUTAN DISCORD RESMI
+                        </h3>
                         <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                           Link Invite Discord Resmi Guild
                         </label>
@@ -1592,6 +1594,27 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           placeholder="https://discord.gg/aJvbVyTxNb"
                           required
                         />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                            Discord Webhook URL (Bot Bridge Notifikasi Otomatis)
+                          </label>
+                          <span className="text-[10px] font-mono text-purple-600 dark:text-[#A78BFA]">
+                            Opsional (Juara, LFG &amp; Rekber Alert)
+                          </span>
+                        </div>
+                        <input
+                          type="url"
+                          value={configForm.discordWebhookUrl ?? ""}
+                          onChange={(e) => setConfigForm({ ...configForm, discordWebhookUrl: e.target.value })}
+                          className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                          placeholder="https://discord.com/api/webhooks/..."
+                        />
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                          Jika diisi, bot akan otomatis mengirim pengumuman berformat embed kaya ke server Discord Anda setiap kali ada juara turnamen baru, member membuat party mabar (LFG), atau laporan tiket rekber baru.
+                        </p>
                       </div>
                     </div>
 
@@ -2268,11 +2291,11 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                 {/* MODAL TAMBAH ARSIP MANUAL */}
                 {howModalOpen && (
                   <div
-                    className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+                    className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
                     onClick={() => setHowModalOpen(false)}
                   >
                     <div
-                      className="bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] rounded-none w-full max-w-lg p-5 sm:p-6 shadow-2xl relative space-y-4 my-auto max-h-[90vh] overflow-y-auto"
+                      className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl w-full max-w-lg p-5 sm:p-6 shadow-2xl relative space-y-4 my-auto max-h-[90vh] overflow-y-auto"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
@@ -3506,8 +3529,8 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
 
       {/* MODAL BUAT TURNAMEN BARU DARI ADMIN */}
       {createTournamentOpen && (
-        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="relative w-full max-w-2xl bg-white dark:bg-[#130921] border border-gray-200 dark:border-[#2E1E45] p-6 shadow-2xl my-auto">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl p-6 shadow-2xl my-auto">
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200 dark:border-[#2E1E45]">
               <div className="flex items-center gap-2">
                 <Trophy size={18} className="text-[#9D4EDD]" />

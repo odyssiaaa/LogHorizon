@@ -144,15 +144,15 @@ export function EditTournamentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="w-full max-w-2xl max-h-[92vh] flex flex-col rounded-none border border-[#2A1B42] bg-[#11091D] text-[#F8FAFC] shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl max-h-[92vh] flex flex-col rounded-none border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] text-slate-900 dark:text-[#F8FAFC] shadow-2xl overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-tournament-title"
       >
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-[#2A1B42] bg-[#0E061A] flex items-center justify-between shrink-0">
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-[#2A1B42] bg-slate-50 dark:bg-[#0E061A] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-[#7C3AED]/20 border border-[#7C3AED]/40 text-[#C77DFF] rounded-none">
               <Trophy size={18} />

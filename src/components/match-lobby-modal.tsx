@@ -212,17 +212,17 @@ export function MatchLobbyModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-[#09040F]/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto text-left"
+      className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto text-left"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] rounded-none w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto animate-in zoom-in-95 duration-150 text-left"
+        className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-none w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto animate-in zoom-in-95 duration-150 text-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* HEADER MODAL */}
-        <div className="p-4 border-b border-slate-200 dark:border-[#2E1E45] flex items-center justify-between bg-slate-50 dark:bg-[#1A0E2E]">
+        <div className="p-4 border-b border-slate-200 dark:border-[#2A1B42] flex items-center justify-between bg-slate-50 dark:bg-[#0E061A]">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-2 rounded-none bg-white dark:bg-[#130921] text-purple-600 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] shrink-0">
+            <div className="p-2 rounded-none bg-white dark:bg-[#11091D] text-purple-600 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2A1B42] shrink-0">
               <Swords size={20} />
             </div>
             <div className="min-w-0">

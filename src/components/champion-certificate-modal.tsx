@@ -240,11 +240,11 @@ export function ChampionCertificateModal({
 
   return (
     <div
-      className="fixed inset-0 z-60 bg-black/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="bg-[#130921] border border-[#7C3AED] rounded-none w-full max-w-4xl p-4 sm:p-6 shadow-2xl relative space-y-4 my-auto animate-in zoom-in-95 duration-200 text-white max-h-[95vh] overflow-y-auto"
+        className="bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-none w-full max-w-4xl p-4 sm:p-6 shadow-2xl relative space-y-4 my-auto animate-in zoom-in-95 duration-200 text-slate-900 dark:text-white max-h-[95vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button

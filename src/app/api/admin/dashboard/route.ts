@@ -173,6 +173,7 @@ export async function GET(request: Request) {
     monthlyGoal: 5000000,
     minDonation: 10000,
     discordInviteUrl: "https://discord.gg/aJvbVyTxNb",
+    discordWebhookUrl: null,
   };
 
   return Response.json({

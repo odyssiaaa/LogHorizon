@@ -65,7 +65,7 @@ export function WelcomeOnboardingModal() {
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="welcome-modal-title"
@@ -83,7 +83,7 @@ export function WelcomeOnboardingModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 16 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-[calc(100vw-2rem)] max-w-md rounded-none border border-purple-500/30 bg-[#0F0C15] text-white p-5 sm:p-7 shadow-2xl shadow-purple-950/60 overflow-hidden z-10"
+            className="relative w-[calc(100vw-2rem)] max-w-md rounded-none border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] text-slate-900 dark:text-white p-5 sm:p-7 shadow-2xl overflow-hidden z-10"
           >
             {/* Ambient Cyber Glow */}
             <div className="absolute -top-24 -left-24 w-52 h-52 bg-[#9D4EDD]/25 rounded-full blur-3xl pointer-events-none" />

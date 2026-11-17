@@ -1,7 +1,7 @@
 import { LfgStatus } from "@prisma/client";
 import { activeUser, authenticatedUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { sendDiscordNotice } from "@/lib/discord-webhook";
+import { notifyNewLfgParty } from "@/lib/discord-webhook";
 import { sanitizePlainText } from "@/lib/sanitize";
 import { checkContentSafety } from "@/lib/satpam-guardian";
 
@@ -151,10 +151,13 @@ export async function POST(request: Request) {
     },
   });
 
-  void sendDiscordNotice(
-    "events",
-    `[Find Teammate] ${game} (${playGoal}) - Butuh ${roleNeeded}`,
-    `Rank Target: ${targetRank} | Jam Main: ${playTime}\n${description}\n(Masa aktif ${durationHours} jam)`
-  );
+  void notifyNewLfgParty({
+    partyTitle: `${game} (${playGoal}) - Butuh ${roleNeeded}`,
+    game,
+    hostName: user.username,
+    requiredSlots: Math.max(1, maxSlots - 1),
+    modeOrRank: `${targetRank} • ${playTime}`,
+  });
+
   return Response.json(post, { status: 201 });
 }
