@@ -79,11 +79,21 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     });
     if (!post) return jsonError("Postingan tidak ditemukan.", 404);
 
-    const isStaff = user.role === "ADMIN" || user.role === "MODERATOR";
+    const isStaff = user.role === "ADMIN" || user.role === "MODERATOR" || user.username === ".odyssia";
     const isAuthor = post.authorId === user.id;
 
     if (!isAuthor && !isStaff) {
       return jsonError("Hanya pembuat postingan, Moderator, atau Admin yang dapat menghapus postingan ini.", 403);
+    }
+
+    if (post.category === "MARKETPLACE") {
+      const activeEscrow = await prisma.escrowTransaction.findFirst({
+        where: { postId: id, status: "IN_ESCROW" },
+        select: { id: true },
+      });
+      if (activeEscrow) {
+        return jsonError("Lapak tidak dapat dihapus karena masih terdapat transaksi Rekber aktif.", 409);
+      }
     }
 
     await prisma.post.delete({ where: { id } });

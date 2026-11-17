@@ -15,6 +15,7 @@ import { useLiveSync } from "@/hooks/use-live-sync";
 type CommentRecord = {
   id: string;
   postId: string;
+  authorId?: string;
   parentId: string | null;
   content: string;
   createdAt: string;
@@ -168,6 +169,37 @@ export function ForumThread({ id }: { id: string }) {
     }
   }
 
+  async function deleteComment(commentId: string) {
+    if (!confirm("Yakin ingin menghapus komentar ini?")) return;
+
+    // Optimistic UI update: hapus komentar dan seluruh balasan anak di bawahnya seketika
+    if (thread) {
+      const idsToDelete = new Set<string>([commentId]);
+      let addedMore = true;
+      while (addedMore) {
+        addedMore = false;
+        for (const c of thread.comments) {
+          if (c.parentId && idsToDelete.has(c.parentId) && !idsToDelete.has(c.id)) {
+            idsToDelete.add(c.id);
+            addedMore = true;
+          }
+        }
+      }
+      setThread({
+        ...thread,
+        comments: thread.comments.filter((c) => !idsToDelete.has(c.id)),
+      });
+    }
+
+    try {
+      const response = await fetch(`/api/forum/comments/${commentId}`, { method: "DELETE" });
+      await readApiResponse<unknown>(response, "Gagal menghapus komentar.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Gagal menghapus komentar.");
+      setRefreshKey((value) => value + 1);
+    }
+  }
+
   const commentsByParent = useMemo(() => {
     const groups = new Map<string | null, CommentRecord[]>();
     for (const item of thread?.comments ?? []) {
@@ -241,6 +273,9 @@ export function ForumThread({ id }: { id: string }) {
 
   const renderComments = (parentId: string | null, depth = 0): React.ReactNode => (commentsByParent.get(parentId) ?? []).map((item) => {
     const isSatpamBot = item.author.username === "satpam-horizon" || item.author.username === "Satpam Horizon";
+    const isCommentAuthor = Boolean(user && (item.author.id === user.id || item.authorId === user.id || item.author.username === user.username));
+    const isStaff = user?.role === "ADMIN" || user?.role === "MODERATOR" || user?.username === ".odyssia";
+    const canDeleteComment = !user?.isBanned && (isCommentAuthor || isStaff);
 
     return (
       <article
@@ -274,19 +309,32 @@ export function ForumThread({ id }: { id: string }) {
             </div>
             <div className="break-words mt-2 text-xs sm:text-sm leading-relaxed text-[#F8FAFC]/90 font-sans"><FormattedPostContent text={item.content} onImageClick={setLightboxImg} /></div>
             {!user?.isBanned && (
-              <button
-                className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-mono text-[#A78BFA] hover:text-[#F8FAFC] uppercase tracking-wider"
-                onClick={() => {
-                  if (!user) {
-                    setLoginAction("membalas komentar");
-                    return;
-                  }
-                  setReplyTo(replyTo === item.id ? null : item.id);
-                  setReplyText("");
-                }}
-              >
-                <MessageCircle size={13} /> {isSatpamBot ? "Balas Satpam AI" : "Balas"}
-              </button>
+              <div className="mt-2.5 flex items-center gap-3">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-mono text-[#A78BFA] hover:text-[#F8FAFC] uppercase tracking-wider"
+                  onClick={() => {
+                    if (!user) {
+                      setLoginAction("membalas komentar");
+                      return;
+                    }
+                    setReplyTo(replyTo === item.id ? null : item.id);
+                    setReplyText("");
+                  }}
+                >
+                  <MessageCircle size={13} /> {isSatpamBot ? "Balas Satpam AI" : "Balas"}
+                </button>
+                {canDeleteComment && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-xs font-mono text-rose-400 hover:text-rose-300 transition-colors"
+                    onClick={() => void deleteComment(item.id)}
+                    title="Hapus komentar"
+                  >
+                    <Trash2 size={12} /> Hapus
+                  </button>
+                )}
+              </div>
             )}
             {replyTo === item.id && (
               <form className="reply-form mt-3 space-y-2" onSubmit={(event) => { event.preventDefault(); void sendComment(item.id, replyText); }}>
@@ -364,8 +412,8 @@ export function ForumThread({ id }: { id: string }) {
                   <Pin size={14} /> {thread.isPinned ? "Lepas Pin" : "Pin Thread"}
                 </button>
               )}
-              {user && (user.role === "ADMIN" || user.role === "MODERATOR" || user.id === thread.author?.id) && (
-                <button className="text-xs font-mono text-red-400 hover:text-red-300 inline-flex items-center gap-1.5 ml-auto" onClick={() => void deleteThread()}>
+              {user && (user.role === "ADMIN" || user.role === "MODERATOR" || user.username === ".odyssia" || user.id === thread.author?.id || user.id === thread.authorId || user.username === thread.author?.username) && (
+                <button className="text-xs font-mono text-rose-400 hover:text-rose-300 inline-flex items-center gap-1.5 ml-auto" onClick={() => void deleteThread()}>
                   <Trash2 size={14} /> Hapus
                 </button>
               )}

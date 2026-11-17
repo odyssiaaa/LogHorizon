@@ -1763,10 +1763,11 @@ export function EventsBoard() {
                         <button
                           type="button"
                           onClick={() => deleteParty(post.id, post.game)}
-                          className="p-1.5 rounded-none border border-red-500/30 text-red-400 hover:bg-red-950/20"
-                          title="Tutup Party"
+                          className="px-2 py-1 rounded-none border border-red-500/30 text-xs font-mono text-rose-400 hover:text-rose-300 hover:bg-red-950/20 inline-flex items-center gap-1 transition-colors"
+                          title="Hapus / Tutup Party Mabar"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={13} />
+                          <span>Hapus</span>
                         </button>
                       )}
                       {!post.isOwner && (

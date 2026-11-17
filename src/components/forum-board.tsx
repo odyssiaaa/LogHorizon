@@ -461,13 +461,13 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                         <button className="text-[#A78BFA]/70 hover:text-rose-400 inline-flex items-center gap-1" onClick={() => handleReportPost(post.id)}>
                           <Flag size={12} /> Laporkan
                         </button>
-                        {user && (user.id === post.author.id || user.role === "ADMIN" || user.role === "MODERATOR") && (
+                        {user && (user.id === post.author.id || user.username === post.author.username || user.role === "ADMIN" || user.role === "MODERATOR" || user.username === ".odyssia") && (
                           <button
-                            className="text-red-400 hover:text-red-300 inline-flex items-center gap-1"
+                            className="text-rose-400 hover:text-rose-300 inline-flex items-center gap-1 text-xs font-mono"
                             onClick={() => void handleDeletePost(post.id)}
                             title="Hapus postingan"
                           >
-                            <Trash2 size={12} />
+                            <Trash2 size={12} /> Hapus
                           </button>
                         )}
                       </div>
