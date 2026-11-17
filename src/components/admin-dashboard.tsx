@@ -1322,16 +1322,6 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {/* ========================================================================= */}
             {tab === "overview" && (
               <section className="space-y-6" role="tabpanel">
-                {/* AI COMMAND ASSISTANT LAUNCHPAD (ADMIN ONLY) */}
-                {isAdmin && (
-                  <AiAdminTerminal
-                    onActionExecuted={() => {
-                      loadDashboard();
-                      fetchTournaments();
-                    }}
-                  />
-                )}
-
                 {/* EXECUTIVE HEADER WITH CSV EXPORT */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <div>
