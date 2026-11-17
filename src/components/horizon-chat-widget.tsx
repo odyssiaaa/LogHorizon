@@ -293,10 +293,10 @@ export function HorizonChatWidget() {
     setErrorMsg("");
 
     try {
-      // Siapkan history untuk OpenAI/Gemini router di API
+      // Siapkan history untuk Gemini multi-turn di API (10 riwayat terakhir)
       const historyPayload = messages
         .filter((m) => m.id !== "init-1")
-        .slice(-6)
+        .slice(-10)
         .map((m) => ({
           role: m.role,
           content: m.content,

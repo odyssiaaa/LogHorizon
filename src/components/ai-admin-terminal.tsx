@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { DISCORD_CHANNELS, DiscordChannelKey } from "@/lib/discord-bot";
 import {
+  Crown,
   Terminal,
   Send,
   Sparkles,
@@ -96,6 +98,164 @@ const QUICK_PROMPTS = [
   },
 ];
 
+// Inline & Block Markdown Formatter for Admin Command Bot
+function renderInlineMarkdown(text: string): React.ReactNode[] {
+  // Regex pattern matching:
+  // 1: Markdown Link: [label](url)
+  // 2: Bold: **text**
+  // 3: Inline Code: `code`
+  // 4: Italic: *text*
+  const pattern = /(\[([^\]]+)\]\(([^)]+)\))|(\*\*([^*]+)\*\*)|(`([^`]+)`)|(\*([^*]+)\*)/g;
+  const elements: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      elements.push(text.substring(lastIndex, match.index));
+    }
+    const key = `inline-${match.index}`;
+
+    if (match[1]) {
+      // 1. Markdown link [label](url)
+      const label = match[2];
+      const url = match[3];
+      elements.push(
+        <a
+          key={key}
+          href={url}
+          target={url.startsWith("http") ? "_blank" : undefined}
+          rel={url.startsWith("http") ? "noopener noreferrer" : undefined}
+          className="text-[#7C3AED] dark:text-[#A78BFA] hover:text-[#6D28D9] dark:hover:text-[#C4B5FD] underline font-semibold transition"
+        >
+          {label}
+        </a>
+      );
+    } else if (match[4]) {
+      // 2. Bold **text**
+      elements.push(
+        <strong key={key} className="font-bold text-slate-900 dark:text-white">
+          {match[5]}
+        </strong>
+      );
+    } else if (match[6]) {
+      // 3. Inline Code `code`
+      elements.push(
+        <code
+          key={key}
+          className="px-1.5 py-0.5 rounded bg-[#7C3AED]/15 dark:bg-[#7C3AED]/20 text-[#7C3AED] dark:text-[#C4B5FD] font-mono text-[11px] border border-[#7C3AED]/30 font-semibold"
+        >
+          {match[7]}
+        </code>
+      );
+    } else if (match[8]) {
+      // 4. Italic *text*
+      elements.push(
+        <em key={key} className="italic text-[#C4B5FD]">
+          {match[9]}
+        </em>
+      );
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    elements.push(text.substring(lastIndex));
+  }
+
+  return elements;
+}
+
+function AdminMessageRenderer({ content }: { content: string }) {
+  if (!content) return null;
+
+  const lines = content.split("\n");
+  const blocks: React.ReactNode[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const trimmed = rawLine.trim();
+
+    if (!trimmed) {
+      blocks.push(<div key={`sp-${i}`} className="h-2" />);
+      continue;
+    }
+
+    // ### Heading 3 -> Subheading rapi
+    if (trimmed.startsWith("### ")) {
+      const headingText = trimmed.replace(/^###\s+/, "");
+      blocks.push(
+        <h4
+          key={`h3-${i}`}
+          className="text-xs sm:text-sm font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider mt-3 mb-1"
+        >
+          {renderInlineMarkdown(headingText)}
+        </h4>
+      );
+      continue;
+    }
+
+    // ## or # Heading
+    if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
+      const headingText = trimmed.replace(/^#{1,2}\s+/, "");
+      blocks.push(
+        <h3
+          key={`h2-${i}`}
+          className="text-sm sm:text-base font-extrabold text-[#7C3AED] dark:text-[#C4B5FD] uppercase tracking-wider mt-3.5 mb-1.5"
+        >
+          {renderInlineMarkdown(headingText)}
+        </h3>
+      );
+      continue;
+    }
+
+    // Bullet List Item: * item, - item, • item
+    if (/^(\*|-|•)\s+/.test(trimmed)) {
+      const itemText = trimmed.replace(/^(\*|-|•)\s+/, "");
+      blocks.push(
+        <div key={`bullet-${i}`} className="flex items-start gap-2.5 my-1 pl-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] dark:bg-[#A78BFA] mt-1.5 shrink-0" />
+          <div className="text-xs leading-relaxed text-slate-800 dark:text-slate-200">
+            {renderInlineMarkdown(itemText)}
+          </div>
+        </div>
+      );
+      continue;
+    }
+
+    // Numbered List Item: 1. item, 2. item
+    const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+    if (numMatch) {
+      const num = numMatch[1];
+      const itemText = numMatch[2];
+      blocks.push(
+        <div key={`num-${i}`} className="flex items-start gap-2 my-1 pl-1">
+          <span className="text-[11px] font-mono font-bold text-[#7C3AED] dark:text-[#A78BFA] shrink-0 mt-0.5">
+            {num}.
+          </span>
+          <div className="text-xs leading-relaxed text-slate-800 dark:text-slate-200">
+            {renderInlineMarkdown(itemText)}
+          </div>
+        </div>
+      );
+      continue;
+    }
+
+    // Normal paragraph
+    blocks.push(
+      <p
+        key={`p-${i}`}
+        className="text-xs font-medium leading-relaxed text-slate-800 dark:text-slate-200"
+      >
+        {renderInlineMarkdown(rawLine)}
+      </p>
+    );
+  }
+
+  return <div className="space-y-1">{blocks}</div>;
+}
+
 export function AiAdminTerminal({
   onActionExecuted,
 }: {
@@ -151,10 +311,19 @@ export function AiAdminTerminal({
     setError("");
 
     try {
+      // Kirim riwayat percakapan sesi (multi-turn memory) untuk LogHorizon Command Bot
+      const historyPayload = history.slice(-10).map((h) => ({
+        role: h.sender === "user" ? "user" : "assistant",
+        content: h.text || h.response?.reply || "",
+      }));
+
       const res = await fetch("/api/admin/ai-command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: textToSend.trim() }),
+        body: JSON.stringify({
+          prompt: textToSend.trim(),
+          history: historyPayload,
+        }),
       });
 
       const data: CommandResponse = await res.json();
@@ -314,15 +483,15 @@ export function AiAdminTerminal({
       <div className="min-h-[360px] max-h-[55vh] overflow-y-auto space-y-3 p-4 bg-slate-50 dark:bg-[#08040E] border border-slate-200 dark:border-[#2A1B42] rounded-lg">
         {history.length === 0 && !loading && !pendingConfirmation ? (
           <div className="h-full min-h-[320px] flex flex-col items-center justify-center text-center p-6 space-y-3">
-            <div className="w-12 h-12 rounded-full bg-[#7C3AED]/10 border border-[#7C3AED]/20 flex items-center justify-center text-[#7C3AED] dark:text-[#A78BFA]">
-              <Bot size={24} />
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+              <Crown size={24} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                Pusat Kendali Satpam Horizon AI Siap
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-1.5">
+                <span>👑 LogHorizon Command Bot Siap Melayani Titah Admin</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mt-1 leading-relaxed">
-                Ketik instruksi atau klik pintasan perintah di atas untuk mengelola turnamen, bagan knockout, forum, lobi mabar LFG, antrean donasi kas QRIS, tiket rekber, maupun kasta staf guild.
+                Asisten kendali eksekutif kerajaan LogHorizon. Perintahkan operasi turnamen, bracket knockout, warta forum, party LFG, kas donasi QRIS, tiket rekber, status akun, maupun konfigurasi website.
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-2 text-[11px] text-slate-400 font-mono">
@@ -359,16 +528,21 @@ export function AiAdminTerminal({
                 ) : (
                   /* AI Response / Execution Report */
                   <div className="flex items-start gap-2.5 pr-8">
-                    <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">
-                      <Bot size={14} />
+                    <div className="w-7 h-7 rounded-full bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-[#7C3AED] dark:text-[#A78BFA] shrink-0 mt-0.5">
+                      <Crown size={14} className="text-amber-500" />
                     </div>
                     <div className="space-y-2 max-w-[90%] text-left">
                       <div className="p-4 rounded-2xl rounded-tl-none border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-sm space-y-3">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5">
-                            <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                              {item.response?.toolResult ? "LAPORAN EKSEKUSI DATABASE" : "RESPON SATPAM AI"}
+                            <Crown size={13} className="text-amber-500 shrink-0" />
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#7C3AED] dark:text-[#A78BFA] flex items-center gap-1.5">
+                              <span>👑 ADMIN COMMAND BOT</span>
+                              {item.response?.toolResult && (
+                                <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[10px]">
+                                  • EKSEKUSI DATABASE
+                                </span>
+                              )}
                             </span>
                           </div>
                           {item.response?.toolResult && (
@@ -378,9 +552,8 @@ export function AiAdminTerminal({
                           )}
                         </div>
 
-                        <p className="text-xs font-medium leading-relaxed whitespace-pre-wrap text-slate-800 dark:text-slate-200">
-                          {item.response?.reply}
-                        </p>
+                        {/* Clean Markdown Formatted Response */}
+                        <AdminMessageRenderer content={item.response?.reply || ""} />
 
                         {/* Visual Table: Sebelum ➡️ Sesudah */}
                         {item.response?.toolResult?.before && item.response?.toolResult?.after && (
@@ -429,7 +602,7 @@ export function AiAdminTerminal({
                         )}
                       </div>
                       <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono block pl-2">
-                        Satpam Horizon AI • {item.timestamp}
+                        👑 LogHorizon Command Bot • {item.timestamp}
                       </span>
                     </div>
                   </div>
