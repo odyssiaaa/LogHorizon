@@ -2,6 +2,7 @@ import { Prisma, Role } from "@prisma/client";
 import { requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { isGuildOwner } from "@/lib/caste";
+import { logSecurityIncident } from "@/lib/satpam-guardian";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -25,6 +26,14 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   // Absolute Owner Protection: .odyssia can never be modified, demoted, or banned
   if (isGuildOwner(existing)) {
+    void logSecurityIncident({
+      userId: access.user.id,
+      username: access.user.username ?? "Staff",
+      action: "ATTEMPT_MODIFY_GUILD_OWNER",
+      reason: "Percobaan memodifikasi, menurunkan jabatan, atau memblokir akun Owner .odyssia",
+      content: `User @${access.user.username} (ID: ${access.user.id}, Role: ${access.user.role}) mencoba memodifikasi akun Owner .odyssia.`,
+      severity: "CRITICAL",
+    });
     return Response.json(
       { error: "Akun Guild Owner (.odyssia / 👑 Emperor) memiliki hak istimewa mutlak dan tidak dapat diubah atau diban oleh siapapun." },
       { status: 403 }

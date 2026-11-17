@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { jsonError } from "@/lib/http";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 function getWibDateKey(date: Date): { key: string; midnightUtc: number } {
   // WIB is UTC+7
@@ -62,6 +63,11 @@ export async function POST() {
   }
 
   const userId = session.user.id;
+  const rateLimit = checkRateLimit(`checkin:${userId}`, 1, 3000);
+  if (!rateLimit.allowed) {
+    return jsonError("Harap tunggu sebentar sebelum mencoba absen kembali.", 429);
+  }
+
   const now = new Date();
   const nowWib = getWibDateKey(now);
 

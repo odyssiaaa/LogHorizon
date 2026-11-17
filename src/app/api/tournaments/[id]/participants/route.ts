@@ -2,7 +2,7 @@ import { Prisma, TournamentStatus } from "@prisma/client";
 import { activeUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { createSingleEliminationBracket, TournamentTeam, TournamentMatch, TournamentRosterPlayer } from "@/lib/tournament";
-import { sanitizePlainText } from "@/lib/sanitize";
+import { sanitizePlainText, isValidSafeImage } from "@/lib/sanitize";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -27,6 +27,9 @@ export async function POST(request: Request, { params }: RouteContext) {
   const rawSender = typeof data.senderName === "string" ? data.senderName.trim() : "";
   const senderName = sanitizePlainText(rawSender);
   const rawProof = typeof data.paymentProof === "string" ? data.paymentProof.trim() : "";
+  if (rawProof && !isValidSafeImage(rawProof)) {
+    return jsonError("Bukti pembayaran tidak valid atau melebihi batas ukuran 2 MB.", 400);
+  }
   const paymentProof = rawProof.length > 0 ? rawProof : null;
 
   // Parse Pemain Inti

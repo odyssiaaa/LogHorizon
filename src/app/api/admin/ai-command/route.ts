@@ -4,6 +4,7 @@ import { jsonError } from "@/lib/http";
 import { isGuildOwner } from "@/lib/caste";
 import { notifyNewLfgParty, sendDiscordNotice } from "@/lib/discord-webhook";
 import { createNotification } from "@/lib/notifications";
+import { logSecurityIncident } from "@/lib/satpam-guardian";
 import { generateTemplateBracket, shuffleArray, advanceMatchWinner, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentLossReason } from "@/lib/tournament";
 import { DonationStatus, EscrowStatus, LfgStatus, PostCategory, Prisma, Role, TournamentStatus } from "@prisma/client";
 
@@ -277,6 +278,18 @@ export async function POST(request: Request) {
   const isAdmin = currentUser?.role === "ADMIN" || isOwner;
 
   if (!currentUser || currentUser.isBanned || !isAdmin) {
+    if (currentUser) {
+      void logSecurityIncident({
+        userId: currentUser.id,
+        username: currentUser.username ?? currentUser.name ?? "Unauthorized",
+        action: "UNAUTHORIZED_ADMIN_COMMAND_ATTEMPT",
+        reason: currentUser.isBanned
+          ? "Akun diblokir mencoba menembak API AI Command"
+          : `Percobaan akses ilegal ke AI Command Center oleh ${currentUser.role}`,
+        content: `User @${currentUser.username} (Role: ${currentUser.role}, Banned: ${currentUser.isBanned}) mencoba mengakses endpoint AI Command.`,
+        severity: "CRITICAL",
+      });
+    }
     return jsonError(
       "Akses Ditolak: Fitur AI Command & Pengaturan Inti hanya untuk Emperor, Prince/Princess, dan Grand Chancellor.",
       403

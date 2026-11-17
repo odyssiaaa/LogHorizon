@@ -1,5 +1,6 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { activeUser, jsonError } from "@/lib/http";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 const bucket = "marketplace-images";
 const maxFileSize = 4 * 1024 * 1024;
@@ -26,6 +27,16 @@ function hasValidSignature(contentType: keyof typeof extensions, bytes: Buffer) 
 export async function POST(request: Request) {
   const user = await activeUser();
   if (!user) return jsonError("Login diperlukan untuk mengunggah gambar.", 401);
+
+  const ip = getClientIp(request);
+  const userLimit = checkRateLimit(`upload:user:${user.id}`, 10, 60_000);
+  if (!userLimit.allowed) {
+    return jsonError(`Batas unggah gambar tercapai. Harap tunggu ${userLimit.remainingSec} detik.`, 429);
+  }
+  const ipLimit = checkRateLimit(`upload:ip:${ip}`, 20, 60_000);
+  if (!ipLimit.allowed) {
+    return jsonError(`Terlalu banyak permintaan unggah dari perangkat Anda. Harap tunggu ${ipLimit.remainingSec} detik.`, 429);
+  }
 
   const formData = await request.formData();
   const file = formData.get("image");

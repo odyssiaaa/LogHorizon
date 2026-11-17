@@ -6,6 +6,7 @@ import { addXpInTransaction } from "@/lib/xp";
 import { sendDiscordNotice } from "@/lib/discord-webhook";
 import { sanitizePlainText, sanitizeText } from "@/lib/sanitize";
 import { checkContentSafety } from "@/lib/satpam-guardian";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 function isPostCategory(value: string | null): value is PostCategory {
   return value !== null && Object.values(PostCategory).includes(value as PostCategory);
@@ -107,6 +108,19 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const user = await activeUser();
   if (!user) return jsonError("Login Discord diperlukan untuk membuat postingan.", 401);
+
+  const ip = getClientIp(request);
+  const isStaff = user.role === "ADMIN" || user.role === "MODERATOR";
+  if (!isStaff) {
+    const userLimit = checkRateLimit(`post:user:${user.id}`, 6, 60_000);
+    if (!userLimit.allowed) {
+      return jsonError(`Terlalu cepat membuat postingan. Harap tunggu ${userLimit.remainingSec} detik sebelum memposting kembali.`, 429);
+    }
+    const ipLimit = checkRateLimit(`post:ip:${ip}`, 12, 60_000);
+    if (!ipLimit.allowed) {
+      return jsonError(`Batas postingan per IP tercapai. Harap tunggu ${ipLimit.remainingSec} detik.`, 429);
+    }
+  }
 
   const payload: unknown = await request.json();
   if (!payload || typeof payload !== "object") return jsonError("Isi postingan tidak valid.", 400);

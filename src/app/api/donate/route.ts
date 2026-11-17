@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sendDiscordNotice } from "@/lib/discord-webhook";
-import { sanitizePlainText } from "@/lib/sanitize";
+import { sanitizePlainText, isValidSafeImage } from "@/lib/sanitize";
 
 export async function GET() {
   const [total, config, envGoal] = await Promise.all([
@@ -41,6 +41,9 @@ export async function POST(request: Request) {
   const senderName = sanitizePlainText(typeof data.senderName === "string" ? data.senderName.trim() : "");
   const notes = sanitizePlainText(typeof data.notes === "string" ? data.notes.trim() : "");
   const proofUrl = typeof data.proofUrl === "string" ? data.proofUrl.trim() : "";
+  if (proofUrl && !isValidSafeImage(proofUrl)) {
+    return jsonError("Format bukti transfer tidak valid atau melebihi batas ukuran 2 MB.", 400);
+  }
 
   const config = await prisma.siteConfig.findUnique({ where: { id: "default" } });
   const minDonation = config?.minDonation || 10_000;

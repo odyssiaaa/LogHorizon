@@ -5,6 +5,7 @@ import { addXpInTransaction } from "@/lib/xp";
 import { createNotification } from "@/lib/notifications";
 import { sanitizeText } from "@/lib/sanitize";
 import { checkContentSafety, checkSatpamCooldown, handleForumMention } from "@/lib/satpam-guardian";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -18,6 +19,19 @@ export async function POST(request: Request, { params }: RouteContext) {
   const content = sanitizeText(rawContent);
   const parentId = typeof data.parentId === "string" ? data.parentId : null;
   if (!content || content.length > 250000) return jsonError("Komentar wajib diisi (maksimal 250.000 karakter).", 400);
+
+  const ip = getClientIp(request);
+  const isStaff = user.role === "ADMIN" || user.role === "MODERATOR";
+  if (!isStaff) {
+    const userLimit = checkRateLimit(`comment:user:${user.id}`, 10, 30_000);
+    if (!userLimit.allowed) {
+      return jsonError(`Terlalu cepat berkomentar. Harap tunggu ${userLimit.remainingSec} detik.`, 429);
+    }
+    const ipLimit = checkRateLimit(`comment:ip:${ip}`, 20, 30_000);
+    if (!ipLimit.allowed) {
+      return jsonError(`Batas komentar per IP tercapai. Harap tunggu ${ipLimit.remainingSec} detik.`, 429);
+    }
+  }
 
   // Auto-Moderation Shield: Cek keamanan konten terhadap judi online, phishing, dan toxic berat
   const safety = await checkContentSafety(content, "COMMENT", user);

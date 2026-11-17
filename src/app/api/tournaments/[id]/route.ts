@@ -109,8 +109,13 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const tournament = await prisma.tournament.findUnique({ where: { id } });
   if (!tournament) return jsonError("Turnamen tidak ditemukan.", 404);
 
-  let updatedMatches = (tournament.matches as unknown as TournamentMatch[]) || [];
-  let updatedTeams = (tournament.teams as unknown as TournamentTeam[]) || [];
+  // Wrap the entire bracket and tournament update in an atomic transaction to prevent race conditions
+  return await prisma.$transaction(async (tx) => {
+    const liveTournament = await tx.tournament.findUnique({ where: { id } });
+    if (!liveTournament) return jsonError("Turnamen tidak ditemukan.", 404);
+
+    let updatedMatches = (liveTournament.matches as unknown as TournamentMatch[]) || [];
+    let updatedTeams = (liveTournament.teams as unknown as TournamentTeam[]) || [];
 
   // Update teams list if provided
   if (Array.isArray(data.teams)) {
@@ -306,73 +311,74 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     }
   }
 
-  const updated = await prisma.tournament.update({
-    where: { id },
-    data: {
-      ...(typeof data.title === "string" ? { title: data.title.trim() } : {}),
-      ...(typeof data.game === "string" ? { game: data.game.trim() } : {}),
-      ...(typeof data.prizePool === "string" ? { prizePool: data.prizePool.trim() } : {}),
-      ...(typeof data.rules === "string" ? { rules: data.rules.trim() } : {}),
-      ...(typeof data.eventDate === "string" && !isNaN(new Date(data.eventDate).getTime())
-        ? { eventDate: new Date(data.eventDate) }
-        : {}),
-      ...(typeof data.mainPlayersCount === "number" ? { mainPlayersCount: Math.max(1, Math.min(10, data.mainPlayersCount)) } : {}),
-      ...(typeof data.subPlayersCount === "number" ? { subPlayersCount: Math.max(0, Math.min(5, data.subPlayersCount)) } : {}),
-      ...(typeof data.isFreeEntry === "boolean"
-        ? {
-            isFreeEntry: data.isFreeEntry,
-            ...(data.isFreeEntry ? { entryFee: 0 } : typeof data.entryFee === "number" ? { entryFee: Math.max(0, Math.min(100_000_000, data.entryFee)) } : {}),
-          }
-        : typeof data.entryFee === "number"
-        ? { entryFee: Math.max(0, Math.min(100_000_000, data.entryFee)) }
-        : {}),
-      ...(nextMaxSlots !== tournament.maxSlots ? { maxSlots: nextMaxSlots } : {}),
-      ...(nextFormat !== tournament.format ? { format: nextFormat } : {}),
-      ...(nextStatus ? { status: nextStatus } : {}),
-      teams: updatedTeams as unknown as Prisma.InputJsonValue,
-      matches: updatedMatches as unknown as Prisma.InputJsonValue,
-    },
-  });
+    const updated = await tx.tournament.update({
+      where: { id },
+      data: {
+        ...(typeof data.title === "string" ? { title: data.title.trim() } : {}),
+        ...(typeof data.game === "string" ? { game: data.game.trim() } : {}),
+        ...(typeof data.prizePool === "string" ? { prizePool: data.prizePool.trim() } : {}),
+        ...(typeof data.rules === "string" ? { rules: data.rules.trim() } : {}),
+        ...(typeof data.eventDate === "string" && !isNaN(new Date(data.eventDate).getTime())
+          ? { eventDate: new Date(data.eventDate) }
+          : {}),
+        ...(typeof data.mainPlayersCount === "number" ? { mainPlayersCount: Math.max(1, Math.min(10, data.mainPlayersCount)) } : {}),
+        ...(typeof data.subPlayersCount === "number" ? { subPlayersCount: Math.max(0, Math.min(5, data.subPlayersCount)) } : {}),
+        ...(typeof data.isFreeEntry === "boolean"
+          ? {
+              isFreeEntry: data.isFreeEntry,
+              ...(data.isFreeEntry ? { entryFee: 0 } : typeof data.entryFee === "number" ? { entryFee: Math.max(0, Math.min(100_000_000, data.entryFee)) } : {}),
+            }
+          : typeof data.entryFee === "number"
+          ? { entryFee: Math.max(0, Math.min(100_000_000, data.entryFee)) }
+          : {}),
+        ...(nextMaxSlots !== liveTournament.maxSlots ? { maxSlots: nextMaxSlots } : {}),
+        ...(nextFormat !== liveTournament.format ? { format: nextFormat } : {}),
+        ...(nextStatus ? { status: nextStatus } : {}),
+        teams: updatedTeams as unknown as Prisma.InputJsonValue,
+        matches: updatedMatches as unknown as Prisma.InputJsonValue,
+      },
+    });
 
-  if (nextStatus === TournamentStatus.COMPLETED && tournament.status !== TournamentStatus.COMPLETED) {
-    const gfMatch = updatedMatches.find(
-      (m) =>
-        m.matchId !== "BRONZE-01" &&
-        !m.roundName?.toLowerCase().includes("bronze") &&
-        !m.roundName?.toLowerCase().includes("juara 3") &&
-        (m.roundName?.toLowerCase().includes("grand final") ||
-          m.roundName?.toLowerCase() === "final" ||
-          m.round === Math.max(...updatedMatches.map((mx) => mx.round || 1)))
-    );
-    if (gfMatch && gfMatch.winner) {
-      const champ = gfMatch.winner;
-      const runnerUp = gfMatch.teamA.name === champ ? gfMatch.teamB.name : gfMatch.teamA.name;
-      const bronzeMatch = updatedMatches.find(
+    if (nextStatus === TournamentStatus.COMPLETED && liveTournament.status !== TournamentStatus.COMPLETED) {
+      const gfMatch = updatedMatches.find(
         (m) =>
-          m.matchId === "BRONZE-01" ||
-          m.roundName?.toLowerCase().includes("juara 3") ||
-          m.roundName?.toLowerCase().includes("bronze")
+          m.matchId !== "BRONZE-01" &&
+          !m.roundName?.toLowerCase().includes("bronze") &&
+          !m.roundName?.toLowerCase().includes("juara 3") &&
+          (m.roundName?.toLowerCase().includes("grand final") ||
+            m.roundName?.toLowerCase() === "final" ||
+            m.round === Math.max(...updatedMatches.map((mx) => mx.round || 1)))
       );
-      const thirdPlace = bronzeMatch?.winner || null;
-      notifyTournamentChampion({
-        tournamentTitle: updated.title,
-        game: updated.game,
-        championName: champ,
-        runnerUpName: runnerUp,
-        thirdPlaceName: thirdPlace,
-        prizePool: updated.prizePool,
-      }).catch((e) => console.warn("[Discord Webhook] Error:", e));
+      if (gfMatch && gfMatch.winner) {
+        const champ = gfMatch.winner;
+        const runnerUp = gfMatch.teamA.name === champ ? gfMatch.teamB.name : gfMatch.teamA.name;
+        const bronzeMatch = updatedMatches.find(
+          (m) =>
+            m.matchId === "BRONZE-01" ||
+            m.roundName?.toLowerCase().includes("juara 3") ||
+            m.roundName?.toLowerCase().includes("bronze")
+        );
+        const thirdPlace = bronzeMatch?.winner || null;
+        notifyTournamentChampion({
+          tournamentTitle: updated.title,
+          game: updated.game,
+          championName: champ,
+          runnerUpName: runnerUp,
+          thirdPlaceName: thirdPlace,
+          prizePool: updated.prizePool,
+        }).catch((e) => console.warn("[Discord Webhook] Error:", e));
+      }
     }
-  }
 
-  return Response.json({
-    success: true,
-    tournament: {
-      ...updated,
-      teams: updatedTeams,
-      matches: updatedMatches,
-    },
-    message: "Bagan dan tim turnamen berhasil diperbarui.",
+    return Response.json({
+      success: true,
+      tournament: {
+        ...updated,
+        teams: updatedTeams,
+        matches: updatedMatches,
+      },
+      message: "Bagan dan tim turnamen berhasil diperbarui.",
+    });
   });
 }
 
