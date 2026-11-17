@@ -19,6 +19,12 @@ export async function PATCH(request: Request) {
     minDonation,
     discordInviteUrl,
     discordWebhookUrl,
+    discordAnnouncementChannelId,
+    discordGiveawayChannelId,
+    discordInfoLiveChannelId,
+    discordPartnershipChannelId,
+    discordLfgChannelId,
+    discordModLogChannelId,
     aiKnowledgeBase,
   } = body;
 
@@ -35,6 +41,12 @@ export async function PATCH(request: Request) {
       ...(Number.isSafeInteger(Number(minDonation)) ? { minDonation: Math.max(1000, Number(minDonation)) } : {}),
       ...(typeof discordInviteUrl === "string" ? { discordInviteUrl: discordInviteUrl.trim() } : {}),
       ...(typeof discordWebhookUrl === "string" ? { discordWebhookUrl: discordWebhookUrl.trim() } : {}),
+      ...(typeof discordAnnouncementChannelId === "string" ? { discordAnnouncementChannelId: discordAnnouncementChannelId.trim() } : {}),
+      ...(typeof discordGiveawayChannelId === "string" ? { discordGiveawayChannelId: discordGiveawayChannelId.trim() || null } : {}),
+      ...(typeof discordInfoLiveChannelId === "string" ? { discordInfoLiveChannelId: discordInfoLiveChannelId.trim() || null } : {}),
+      ...(typeof discordPartnershipChannelId === "string" ? { discordPartnershipChannelId: discordPartnershipChannelId.trim() || null } : {}),
+      ...(typeof discordLfgChannelId === "string" ? { discordLfgChannelId: discordLfgChannelId.trim() || null } : {}),
+      ...(typeof discordModLogChannelId === "string" ? { discordModLogChannelId: discordModLogChannelId.trim() || null } : {}),
       ...(typeof aiKnowledgeBase === "string" ? { aiKnowledgeBase: aiKnowledgeBase.trim() } : {}),
     },
     create: {
@@ -49,6 +61,12 @@ export async function PATCH(request: Request) {
       minDonation: Number(minDonation) || 10000,
       discordInviteUrl: typeof discordInviteUrl === "string" && discordInviteUrl.trim() ? discordInviteUrl.trim() : "https://discord.gg/aJvbVyTxNb",
       discordWebhookUrl: typeof discordWebhookUrl === "string" ? discordWebhookUrl.trim() : null,
+      discordAnnouncementChannelId: typeof discordAnnouncementChannelId === "string" && discordAnnouncementChannelId.trim() ? discordAnnouncementChannelId.trim() : "1547552373629780038",
+      discordGiveawayChannelId: typeof discordGiveawayChannelId === "string" ? discordGiveawayChannelId.trim() || null : null,
+      discordInfoLiveChannelId: typeof discordInfoLiveChannelId === "string" ? discordInfoLiveChannelId.trim() || null : null,
+      discordPartnershipChannelId: typeof discordPartnershipChannelId === "string" ? discordPartnershipChannelId.trim() || null : null,
+      discordLfgChannelId: typeof discordLfgChannelId === "string" ? discordLfgChannelId.trim() || null : null,
+      discordModLogChannelId: typeof discordModLogChannelId === "string" ? discordModLogChannelId.trim() || null : null,
       aiKnowledgeBase: typeof aiKnowledgeBase === "string" ? aiKnowledgeBase.trim() : null,
     },
   });

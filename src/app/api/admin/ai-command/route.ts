@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { jsonError } from "@/lib/http";
 import { isGuildOwner } from "@/lib/caste";
-import { notifyNewLfgParty, sendDiscordNotice } from "@/lib/discord-webhook";
+import { notifyNewLfgParty, sendDiscordNotice, DISCORD_CHANNELS, DiscordChannelKey, sendDiscordChannelMessage, resolveDiscordChannelKey, notifyPartnership } from "@/lib/discord-webhook";
 import { createNotification } from "@/lib/notifications";
 import { logSecurityIncident } from "@/lib/satpam-guardian";
 import { generateTemplateBracket, shuffleArray, advanceMatchWinner, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentLossReason } from "@/lib/tournament";
@@ -246,7 +246,7 @@ const GEMINI_TOOLS = [
       },
       {
         name: "broadcastAnnouncement",
-        description: "Membuat draf broadcast/pengumuman resmi baru dengan pilihan target publikasi Website LogHorizon, Discord Webhook, atau keduanya",
+        description: "Membuat draf broadcast/pengumuman resmi baru dengan pilihan target publikasi Website LogHorizon, Discord Bot Router (Multi-Channel), atau keduanya",
         parameters: {
           type: "OBJECT",
           properties: {
@@ -255,7 +255,12 @@ const GEMINI_TOOLS = [
             targetPlatform: {
               type: "STRING",
               enum: ["WEB_ONLY", "DISCORD_ONLY", "BOTH"],
-              description: "Target pengiriman: 'WEB_ONLY' (hanya website LogHorizon), 'DISCORD_ONLY' (hanya webhook Discord), atau 'BOTH' (website dan Discord). Default: 'WEB_ONLY'"
+              description: "Target pengiriman: 'WEB_ONLY' (hanya website LogHorizon), 'DISCORD_ONLY' (hanya Discord Bot Router), atau 'BOTH' (website dan Discord). Default: 'WEB_ONLY'"
+            },
+            targetChannel: {
+              type: "STRING",
+              enum: ["announcements", "giveaway", "info_live", "partnership", "lfg", "mod_logs", "auto"],
+              description: "Channel Discord tujuan: 'announcements' (#📢・announcements), 'giveaway' (#🎁・events-giveaway), 'info_live' (#📡・info-live), 'partnership' (#🤝・partnership), 'lfg' (#🎮・gaming-lounge), 'mod_logs' (#🛡️・mod-logs), atau 'auto' (otomatis sesuai topik). Default: 'auto'"
             }
           },
           required: ["title", "content"]
@@ -390,7 +395,7 @@ Panduan Pemilihan Tool:
 13. Ban/Unban Member ➡️ "toggleUserBan" (Perlindungan: Akun .odyssia TIDAK BISA diban)
 14. Ubah pengaturan SiteConfig / Knowledge Base AI ➡️ "updateSiteConfig"
 15. Tambah/Hapus Sponsor resmi ➡️ "manageSponsor"
-16. Kirim Broadcast Pengumuman ➡️ "broadcastAnnouncement" (Tentukan targetPlatform: 'WEB_ONLY' jika Admin minta hanya website/beranda, 'DISCORD_ONLY' jika minta hanya ke Discord, atau 'BOTH' jika keduanya/gabungan. Jika tidak disebut secara spesifik, default ke 'WEB_ONLY'. Catatan: Broadcast akan selalu menghasilkan draf preview terlebih dahulu untuk dikonfirmasi Admin).
+16. Kirim Broadcast Pengumuman ➡️ "broadcastAnnouncement" (Tentukan targetPlatform: 'WEB_ONLY' jika Admin minta hanya website/beranda, 'DISCORD_ONLY' jika minta hanya ke Discord, atau 'BOTH' jika keduanya. Tentukan targetChannel: 'announcements' [#📢・announcements], 'giveaway' [#🎁・events-giveaway], 'info_live' [#📡・info-live], 'partnership' [#🤝・partnership], 'lfg' [#🎮・gaming-lounge], 'mod_logs' [#🛡️・mod-logs], atau 'auto' sesuai konteks isi pengumuman. Catatan: Broadcast akan selalu menghasilkan draf preview terlebih dahulu untuk dikonfirmasi Admin).
 17. Jika pertanyaan informasi biasa (analisis stats, tanya jadwal), jawablah secara ringkas dan taktis tanpa memanggil tool.
 
 ${contextPrompt}`;
@@ -1414,6 +1419,15 @@ async function executeToolAction(
         },
       });
 
+      void notifyPartnership({
+        title: `Mitra / Sponsor Baru: ${sponsor.name}`,
+        sponsorOrMemberName: sponsor.name,
+        tierOrBadge: sponsor.tier,
+        linkUrl: sponsor.websiteUrl || undefined,
+        description: `Komunitas LogHorizon menyambut kehadiran mitra sponsor baru **${sponsor.name}** (${sponsor.tier})! Kunjungi tautan resmi mereka untuk mendukung kemajuan guild.`,
+        logoUrl: sponsor.logoUrl || undefined,
+      }).catch(() => {});
+
       return {
         success: true,
         reply: `Sponsor resmi "${sponsor.name}" (${sponsor.tier}) berhasil ditambahkan ke daftar partner guild!`,
@@ -1466,6 +1480,13 @@ async function executeToolAction(
     const targetPlatform: "WEB_ONLY" | "DISCORD_ONLY" | "BOTH" =
       rawTarget === "DISCORD_ONLY" || rawTarget === "BOTH" ? rawTarget : "WEB_ONLY";
 
+    let rawChannel = String(args.targetChannel || "auto").toLowerCase().trim();
+    if (rawChannel === "auto") {
+      rawChannel = resolveDiscordChannelKey(`${title} ${content}`);
+    }
+    const targetChannel = (rawChannel in DISCORD_CHANNELS ? rawChannel : "announcements") as DiscordChannelKey;
+    const channelMeta = DISCORD_CHANNELS[targetChannel];
+
     if (!title || !content) {
       return { success: false, reply: "Judul dan isi broadcast wajib diisi.", toolResult: null };
     }
@@ -1474,20 +1495,20 @@ async function executeToolAction(
       targetPlatform === "WEB_ONLY"
         ? "🌐 Website LogHorizon Saja"
         : targetPlatform === "DISCORD_ONLY"
-          ? "💬 Webhook Discord Saja"
-          : "🌐 + 💬 Website & Discord";
+          ? `💬 Discord (${channelMeta.name})`
+          : `🌐 Website & 💬 Discord (${channelMeta.name})`;
 
     // Draft Preview Gate: Require Admin Approval Before Sending
     if (!isConfirmed) {
       return {
         success: true,
-        reply: `📝 DRAF BROADCAST DISIAPKAN: Pratinjau draf untuk "${title}" siap diperiksa. Silakan tinjau judul, isi, dan target publikasi (${targetLabel}) pada kartu pratinjau sebelum dikirim.`,
+        reply: `📝 DRAF BROADCAST DISIAPKAN: Pratinjau draf untuk "${title}" siap diperiksa. Silakan tinjau judul, isi, target publikasi (${targetLabel}), dan Channel Discord tujuan (${channelMeta.name}) pada kartu pratinjau sebelum dikirim.`,
         requiresConfirmation: true,
         actionType: "BROADCAST_PREVIEW",
         summary: `Pratinjau Draf Broadcast: "${title}" (${targetLabel})`,
         payload: {
           tool: "broadcastAnnouncement",
-          args: { title, content, targetPlatform },
+          args: { title, content, targetPlatform, targetChannel },
           confirmed: true,
         },
       };
@@ -1512,7 +1533,26 @@ async function executeToolAction(
     }
 
     if (targetPlatform === "DISCORD_ONLY" || targetPlatform === "BOTH") {
-      void sendDiscordNotice("announcements", title, content);
+      await sendDiscordChannelMessage(targetChannel, {
+        content: targetChannel === "announcements"
+          ? `@everyone 📢 **WARTA RESMI GUILD LOGHORIZON**\n\n**${title}**\n\n${content}\n\n*• Council LogHorizon*`
+          : targetChannel === "giveaway"
+          ? `@everyone 🎁 **COMMUNITY GIVEAWAY**\n\n**${title}**\n\n${content}`
+          : targetChannel === "info_live"
+          ? `@here 📡 **INFO LIVE MATCH**\n\n**${title}**\n\n${content}`
+          : targetChannel === "partnership"
+          ? `🤝 **PARTNERSHIP & VIP SPOTLIGHT**\n\n**${title}**\n\n${content}`
+          : `**[${channelMeta.name}] ${title}**\n\n${content}`,
+        embeds: [
+          {
+            title: title.slice(0, 256),
+            description: content.slice(0, 4000),
+            color: targetChannel === "giveaway" ? 0xEC4899 : targetChannel === "info_live" ? 0xEF4444 : targetChannel === "partnership" ? 0x8B5CF6 : 0x7C3AED,
+            footer: { text: `LogHorizon • ${channelMeta.name}` },
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      });
     }
 
     return {
@@ -1525,9 +1565,10 @@ async function executeToolAction(
         after: {
           id: announcementId,
           target: targetLabel,
+          channel: channelMeta.name,
           status: "Telah Dipublikasikan",
         },
-        details: `Target: ${targetLabel} • Konten: "${content.slice(0, 150)}..."`,
+        details: `Target: ${targetLabel} • Channel: ${channelMeta.name} • Konten: "${content.slice(0, 150)}..."`,
       },
       requiresConfirmation: false,
     };

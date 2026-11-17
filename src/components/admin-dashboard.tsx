@@ -42,6 +42,8 @@ import {
   CheckCircle,
   Eye,
   Terminal,
+  Zap,
+  MessageSquare,
   X,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
@@ -132,6 +134,12 @@ type SiteConfig = {
   minDonation: number;
   discordInviteUrl: string;
   discordWebhookUrl?: string | null;
+  discordAnnouncementChannelId?: string | null;
+  discordGiveawayChannelId?: string | null;
+  discordInfoLiveChannelId?: string | null;
+  discordPartnershipChannelId?: string | null;
+  discordLfgChannelId?: string | null;
+  discordModLogChannelId?: string | null;
   aiKnowledgeBase?: string | null;
   updatedAt?: string;
 };
@@ -504,9 +512,37 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     minDonation: 10000,
     discordInviteUrl: "https://discord.gg/aJvbVyTxNb",
     discordWebhookUrl: "",
+    discordAnnouncementChannelId: "1547552373629780038",
+    discordGiveawayChannelId: "",
+    discordInfoLiveChannelId: "",
+    discordPartnershipChannelId: "",
+    discordLfgChannelId: "",
+    discordModLogChannelId: "",
     aiKnowledgeBase: "",
   });
   const [savingConfig, setSavingConfig] = useState(false);
+  const [testingBotChannel, setTestingBotChannel] = useState<string | null>(null);
+
+  async function handleTestDiscordBot(channelKey: string, channelId?: string | null) {
+    if (testingBotChannel) return;
+    setTestingBotChannel(channelKey);
+    try {
+      const res = await fetch("/api/admin/discord/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channelKey, channelId: channelId || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Gagal menguji bot Discord.");
+      }
+      setNotice(data.message || "Pesan tes berhasil dikirim ke channel Discord!");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menguji bot Discord.");
+    } finally {
+      setTestingBotChannel(null);
+    }
+  }
 
   // New Sponsor Form State
   const [sponsorName, setSponsorName] = useState("");
@@ -1692,44 +1728,249 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                       </div>
                     </div>
 
-                    {/* 4. LINK KOMUNITAS & DISCORD WEBHOOK */}
+                    {/* 4. INTEGRASI BOT DISCORD & 6 CHANNEL ROUTER */}
                     <div className="border-t border-gray-200 dark:border-[#2E1E45] pt-4 space-y-4">
-                      <div>
-                        <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-2">
-                          04 / LINK TAUTAN DISCORD RESMI
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <h3 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider flex items-center gap-1.5">
+                          <MessageSquare size={15} />
+                          <span>04 / INTEGRASI 1 BOT DISCORD MULTI-CHANNEL ROUTER</span>
                         </h3>
-                        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                          Link Invite Discord Resmi Guild
-                        </label>
-                        <input
-                          type="url"
-                          value={configForm.discordInviteUrl}
-                          onChange={(e) => setConfigForm({ ...configForm, discordInviteUrl: e.target.value })}
-                          className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                          placeholder="https://discord.gg/aJvbVyTxNb"
-                          required
-                        />
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          Discord REST API v10 Router
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        1 Bot Discord LogHorizon terhubung langsung ke 6 channel resmi server via Discord REST API v10 (`DISCORD_BOT_TOKEN`). Atur ID Channel di bawah ini dan gunakan tombol <strong>⚡ Tes Bot</strong> untuk memastikan bot memiliki akses baca &amp; kirim pesan ke masing-masing channel.
+                      </p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* 1. Announcements */}
+                        <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                              <span>📢</span>
+                              <span>1. #announcements</span>
+                            </label>
+                            <span className="text-[10px] font-mono text-purple-600 dark:text-[#A78BFA]">Default Guild</span>
+                          </div>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            Pengumuman resmi guild, info pembukaan pendaftaran turnamen baru, &amp; pengumuman juara Hall of Winners.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={configForm.discordAnnouncementChannelId ?? "1547552373629780038"}
+                              onChange={(e) => setConfigForm({ ...configForm, discordAnnouncementChannelId: e.target.value })}
+                              className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                              placeholder="1547552373629780038"
+                            />
+                            <button
+                              type="button"
+                              disabled={testingBotChannel === "announcements"}
+                              onClick={() => void handleTestDiscordBot("announcements", configForm.discordAnnouncementChannelId ?? "1547552373629780038")}
+                              className="px-3 py-1.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
+                              title="Kirim pesan tes diagnostik ke channel ini"
+                            >
+                              {testingBotChannel === "announcements" ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+                              <span>⚡ Tes Bot</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 2. Events Giveaway */}
+                        <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                              <span>🎁</span>
+                              <span>2. #events-giveaway</span>
+                            </label>
+                            <span className="text-[10px] font-mono text-pink-500">Undian &amp; Hadiah</span>
+                          </div>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            Khusus untuk pengumuman Event Giveaway / Undian Berhadiah komunitas.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={configForm.discordGiveawayChannelId ?? ""}
+                              onChange={(e) => setConfigForm({ ...configForm, discordGiveawayChannelId: e.target.value })}
+                              className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                              placeholder="Masukkan Channel ID Discord..."
+                            />
+                            <button
+                              type="button"
+                              disabled={testingBotChannel === "giveaway"}
+                              onClick={() => void handleTestDiscordBot("giveaway", configForm.discordGiveawayChannelId)}
+                              className="px-3 py-1.5 rounded-none bg-pink-600 hover:bg-pink-500 text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
+                              title="Kirim pesan tes diagnostik ke channel ini"
+                            >
+                              {testingBotChannel === "giveaway" ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+                              <span>⚡ Tes Bot</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 3. Info Live */}
+                        <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                              <span>📡</span>
+                              <span>3. #info-live</span>
+                            </label>
+                            <span className="text-[10px] font-mono text-red-500 font-bold">🔴 Match LIVE</span>
+                          </div>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            Notifikasi langsung saat pertandingan turnamen mulai berstatus 🔴 SEDANG BERMAIN atau pengumuman live streaming.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={configForm.discordInfoLiveChannelId ?? ""}
+                              onChange={(e) => setConfigForm({ ...configForm, discordInfoLiveChannelId: e.target.value })}
+                              className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                              placeholder="Masukkan Channel ID Discord..."
+                            />
+                            <button
+                              type="button"
+                              disabled={testingBotChannel === "info_live"}
+                              onClick={() => void handleTestDiscordBot("info_live", configForm.discordInfoLiveChannelId)}
+                              className="px-3 py-1.5 rounded-none bg-rose-600 hover:bg-rose-500 text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
+                              title="Kirim pesan tes diagnostik ke channel ini"
+                            >
+                              {testingBotChannel === "info_live" ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+                              <span>⚡ Tes Bot</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 4. Partnership */}
+                        <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                              <span>🤝</span>
+                              <span>4. #partnership</span>
+                            </label>
+                            <span className="text-[10px] font-mono text-amber-500 font-bold">Sponsor &amp; VIP</span>
+                          </div>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            Promosi otomatis saat member berstatus Donatur / VIP memposting konten promosi serta pengumuman sponsor resmi baru.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={configForm.discordPartnershipChannelId ?? ""}
+                              onChange={(e) => setConfigForm({ ...configForm, discordPartnershipChannelId: e.target.value })}
+                              className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                              placeholder="Masukkan Channel ID Discord..."
+                            />
+                            <button
+                              type="button"
+                              disabled={testingBotChannel === "partnership"}
+                              onClick={() => void handleTestDiscordBot("partnership", configForm.discordPartnershipChannelId)}
+                              className="px-3 py-1.5 rounded-none bg-amber-600 hover:bg-amber-500 text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
+                              title="Kirim pesan tes diagnostik ke channel ini"
+                            >
+                              {testingBotChannel === "partnership" ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+                              <span>⚡ Tes Bot</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 5. Gaming Lounge (LFG) */}
+                        <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                              <span>🎮</span>
+                              <span>5. #gaming-lounge</span>
+                            </label>
+                            <span className="text-[10px] font-mono text-indigo-500 font-bold">Mabar LFG</span>
+                          </div>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            Siaran otomatis setiap kali member membuat ajakan mabar (LFG) baru di website agar member Discord bisa langsung bergabung.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={configForm.discordLfgChannelId ?? ""}
+                              onChange={(e) => setConfigForm({ ...configForm, discordLfgChannelId: e.target.value })}
+                              className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                              placeholder="Masukkan Channel ID Discord..."
+                            />
+                            <button
+                              type="button"
+                              disabled={testingBotChannel === "lfg"}
+                              onClick={() => void handleTestDiscordBot("lfg", configForm.discordLfgChannelId)}
+                              className="px-3 py-1.5 rounded-none bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
+                              title="Kirim pesan tes diagnostik ke channel ini"
+                            >
+                              {testingBotChannel === "lfg" ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+                              <span>⚡ Tes Bot</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 6. Mod Logs */}
+                        <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                              <span>🛡️</span>
+                              <span>6. #mod-logs</span>
+                            </label>
+                            <span className="text-[10px] font-mono text-red-500 font-bold">Rahasia Staf</span>
+                          </div>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            Saluran rahasia staf untuk notifikasi tiket Rekber baru, antrean donasi QRIS, dan log keamanan Satpam AI.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={configForm.discordModLogChannelId ?? ""}
+                              onChange={(e) => setConfigForm({ ...configForm, discordModLogChannelId: e.target.value })}
+                              className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                              placeholder="Masukkan Channel ID Discord..."
+                            />
+                            <button
+                              type="button"
+                              disabled={testingBotChannel === "mod_logs"}
+                              onClick={() => void handleTestDiscordBot("mod_logs", configForm.discordModLogChannelId)}
+                              className="px-3 py-1.5 rounded-none bg-slate-800 hover:bg-slate-700 text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
+                              title="Kirim pesan tes diagnostik ke channel ini"
+                            >
+                              {testingBotChannel === "mod_logs" ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+                              <span>⚡ Tes Bot</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
-                            Discord Webhook URL (Bot Bridge Notifikasi Otomatis)
+                      {/* Invite Link & Webhook Fallback */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            Link Invite Discord Resmi Guild
                           </label>
-                          <span className="text-[10px] font-mono text-purple-600 dark:text-[#A78BFA]">
-                            Opsional (Juara, LFG &amp; Rekber Alert)
-                          </span>
+                          <input
+                            type="url"
+                            value={configForm.discordInviteUrl}
+                            onChange={(e) => setConfigForm({ ...configForm, discordInviteUrl: e.target.value })}
+                            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            placeholder="https://discord.gg/aJvbVyTxNb"
+                            required
+                          />
                         </div>
-                        <input
-                          type="url"
-                          value={configForm.discordWebhookUrl ?? ""}
-                          onChange={(e) => setConfigForm({ ...configForm, discordWebhookUrl: e.target.value })}
-                          className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-                          placeholder="https://discord.com/api/webhooks/..."
-                        />
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                          Jika diisi, bot akan otomatis mengirim pengumuman berformat embed kaya ke server Discord Anda setiap kali ada juara turnamen baru, member membuat party mabar (LFG), atau laporan tiket rekber baru.
-                        </p>
+
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            Discord Webhook URL (Opsional / Fallback Cadangan)
+                          </label>
+                          <input
+                            type="url"
+                            value={configForm.discordWebhookUrl ?? ""}
+                            onChange={(e) => setConfigForm({ ...configForm, discordWebhookUrl: e.target.value })}
+                            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                            placeholder="https://discord.com/api/webhooks/..."
+                          />
+                        </div>
                       </div>
                     </div>
 

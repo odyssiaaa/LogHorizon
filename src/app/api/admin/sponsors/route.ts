@@ -1,5 +1,6 @@
 import { requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { notifyPartnership } from "@/lib/discord-webhook";
 
 export async function GET() {
   const sponsors = await prisma.sponsor.findMany({
@@ -49,6 +50,15 @@ export async function POST(request: Request) {
       tier: tier || "Official Sponsor",
     },
   });
+
+  void notifyPartnership({
+    title: `Sponsor / Mitra Resmi Baru: ${name}`,
+    sponsorOrMemberName: name,
+    tierOrBadge: tier || "Official Partner",
+    linkUrl: websiteUrl || undefined,
+    description: `Komunitas LogHorizon menyambut kehadiran mitra sponsor baru **${name}** (${tier})! Kunjungi situs mereka untuk mendukung komunitas.`,
+    logoUrl: logoUrl || undefined,
+  }).catch(() => {});
 
   return Response.json({ success: true, sponsor, message: "Sponsor baru berhasil ditambahkan!" }, { status: 201 });
 }

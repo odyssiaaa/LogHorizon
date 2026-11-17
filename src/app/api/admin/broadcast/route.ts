@@ -1,19 +1,6 @@
 import { requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-
-const DISCORD_WEBHOOK_HOSTS = new Set(["discord.com", "discordapp.com", "canary.discord.com", "ptb.discord.com"]);
-
-function getWebhookUrl(value: string) {
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" || !DISCORD_WEBHOOK_HOSTS.has(url.hostname) || !/^\/api\/webhooks\/\d+\/[^/]+\/?$/.test(url.pathname)) {
-      return null;
-    }
-    return url;
-  } catch {
-    return null;
-  }
-}
+import { sendDiscordChannelMessage, getBaseAppUrl } from "@/lib/discord-bot";
 
 export async function POST(request: Request) {
   const access = await requireStaff(["ADMIN"]);
@@ -66,68 +53,32 @@ export async function POST(request: Request) {
     console.error("[broadcast] Failed to broadcast notification:", err);
   }
 
-  // Kirim ke Discord Webhook (News & Announcement)
-  const webhookTargets = [
-    process.env.DISCORD_NEWS_WEBHOOK_URL,
-    process.env.DISCORD_ANNOUNCEMENT_WEBHOOK_URL,
-  ].filter(Boolean) as string[];
-
-  const validWebhooks = Array.from(new Set(webhookTargets))
-    .map(getWebhookUrl)
-    .filter((u): u is URL => u !== null);
-
-  if (validWebhooks.length === 0) {
-    return Response.json(
-      {
-        announcement,
-        notificationSent: false,
-        warning:
-          "Warta berhasil dipublikasikan di Beranda & News Hub! Webhook Discord belum dikonfigurasi.",
-      },
-      { status: 201 }
-    );
-  }
-
-  let anySent = false;
-  const embed: Record<string, unknown> = {
+  // Kirim ke Discord Bot Router (Channel #announcements)
+  const baseUrl = getBaseAppUrl();
+  const embed = {
     title: title.slice(0, 256),
     description: content.slice(0, 4000),
     color: 0x9d4edd,
-    url: "https://loghorizon.vercel.app/news",
+    url: `${baseUrl}/news`,
     ...(imageUrl ? { image: { url: imageUrl } } : {}),
     footer: { text: "LogHorizon Guild Dispatch" },
     timestamp: new Date().toISOString(),
   };
 
-  const body = {
+  const botResult = await sendDiscordChannelMessage("announcements", {
     content: `@everyone 📢 **WARTA RESMI GUILD LOGHORIZON**\n\n**${title}**\n\n${content}\n\n*• Emperor & Council LogHorizon*`,
     embeds: [embed],
     allowed_mentions: { parse: ["everyone"] },
-  };
-
-  await Promise.all(
-    validWebhooks.map(async (webhookUrl) => {
-      try {
-        const res = await fetch(webhookUrl.toString(), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-          signal: AbortSignal.timeout(6000),
-        });
-        if (res.ok) anySent = true;
-      } catch {
-        // continue
-      }
-    })
-  );
+  });
 
   return Response.json(
     {
       announcement,
-      notificationSent: anySent,
-      warning: anySent
+      notificationSent: botResult.success,
+      channel: botResult.channelName,
+      warning: botResult.success
         ? undefined
-        : "Warta aktif di Beranda & News Hub, namun pengiriman webhook Discord mengalami kendala.",
+        : `Warta aktif di Beranda & News Hub, namun bot Discord melaporkan: ${botResult.error || "Gagal kirim"}`,
     },
     { status: 201 }
   );

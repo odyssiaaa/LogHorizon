@@ -380,6 +380,15 @@ model SiteConfig {
   minDonation      Int      @default(10000)
   discordInviteUrl String   @default("https://discord.gg/aJvbVyTxNb")
   discordWebhookUrl String? @db.Text
+
+  // 6 Channel ID Discord Multi-Channel Bot Router
+  discordAnnouncementChannelId String  @default("1547552373629780038")
+  discordGiveawayChannelId     String?
+  discordInfoLiveChannelId     String?
+  discordPartnershipChannelId  String?
+  discordLfgChannelId          String?
+  discordModLogChannelId       String?
+
   aiKnowledgeBase  String?  @db.Text
   updatedAt        DateTime @updatedAt
 }

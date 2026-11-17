@@ -3,7 +3,7 @@ import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { advanceMatchWinner, resetMatchResult, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES, updateMatchStatus, TournamentLossReason, evaluateAutoLiveMatches } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
-import { notifyTournamentChampion } from "@/lib/discord-webhook";
+import { notifyTournamentChampion, notifyTournamentMatchLive } from "@/lib/discord-webhook";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -176,6 +176,20 @@ export async function PATCH(request: Request, { params }: RouteContext) {
           data.matchStatus as "UPCOMING" | "LIVE" | "FINISHED",
           manualOverride
         );
+
+        if (data.matchStatus === "LIVE") {
+          const liveMatch = updatedMatches.find((m) => m.matchId?.toLowerCase() === matchId.toLowerCase());
+          if (liveMatch) {
+            notifyTournamentMatchLive({
+              tournamentTitle: liveTournament.title,
+              tournamentId: id,
+              matchId: liveMatch.matchId,
+              roundName: liveMatch.roundName || `Ronde ${liveMatch.round}`,
+              teamAName: liveMatch.teamA?.name || "Tim A",
+              teamBName: liveMatch.teamB?.name || "Tim B",
+            }).catch((err) => console.warn("[Discord Bot] Gagal kirim info live match:", err));
+          }
+        }
       }
       if (data.scheduledAt !== undefined) {
         let newSched: string | null = null;

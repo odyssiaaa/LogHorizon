@@ -1,28 +1,26 @@
-import { prisma } from "@/lib/prisma";
+import {
+  DiscordEmbed,
+  DiscordEmbedField,
+  DiscordChannelKey,
+  sendDiscordChannelMessage,
+  resolveDiscordChannelKey,
+  getBaseAppUrl,
+  getDiscordWebhookUrl,
+  DISCORD_CHANNELS,
+} from "@/lib/discord-bot";
 
-export type DiscordEmbedField = {
-  name: string;
-  value: string;
-  inline?: boolean;
+export type {
+  DiscordEmbed,
+  DiscordEmbedField,
+  DiscordChannelKey,
 };
 
-export type DiscordEmbed = {
-  title?: string;
-  description?: string;
-  url?: string;
-  color?: number;
-  fields?: DiscordEmbedField[];
-  footer?: {
-    text: string;
-    icon_url?: string;
-  };
-  thumbnail?: {
-    url: string;
-  };
-  image?: {
-    url: string;
-  };
-  timestamp?: string;
+export {
+  sendDiscordChannelMessage,
+  resolveDiscordChannelKey,
+  getBaseAppUrl,
+  getDiscordWebhookUrl,
+  DISCORD_CHANNELS,
 };
 
 export type DiscordWebhookPayload = {
@@ -32,67 +30,21 @@ export type DiscordWebhookPayload = {
   embeds?: DiscordEmbed[];
 };
 
-function getBaseAppUrl(): string {
-  const envUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
-  if (envUrl && typeof envUrl === "string" && envUrl.startsWith("http")) {
-    return envUrl.replace(/\/+$/, "");
-  }
-  return "https://loghorizon.id";
-}
-
 /**
- * Retrieve the active Discord webhook URL either from SiteConfig database or environment variable.
- */
-export async function getDiscordWebhookUrl(): Promise<string | null> {
-  try {
-    const config = await prisma.siteConfig.findUnique({
-      where: { id: "default" },
-      select: { discordWebhookUrl: true },
-    });
-    if (config?.discordWebhookUrl && config.discordWebhookUrl.trim().startsWith("http")) {
-      return config.discordWebhookUrl.trim();
-    }
-  } catch {
-    // database fallback
-  }
-
-  const envWebhook = process.env.DISCORD_WEBHOOK_URL;
-  if (envWebhook && envWebhook.trim().startsWith("http")) {
-    return envWebhook.trim();
-  }
-
-  return null;
-}
-
-/**
- * Send an arbitrary webhook payload to Discord without blocking or throwing errors.
+ * Send an arbitrary webhook payload to Discord (backward compatible wrapper).
+ * Routes to announcements by default via Bot REST API or webhook fallback.
  */
 export async function sendDiscordWebhook(payload: DiscordWebhookPayload): Promise<boolean> {
-  try {
-    const webhookUrl = await getDiscordWebhookUrl();
-    if (!webhookUrl) {
-      return false;
-    }
-
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: payload.username ?? "Satpam Horizon Guardian",
-        avatar_url: payload.avatar_url ?? "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png",
-        ...payload,
-      }),
-    });
-
-    return res.ok;
-  } catch (err) {
-    console.warn("[Discord Webhook] Failed to dispatch webhook:", err);
-    return false;
-  }
+  const result = await sendDiscordChannelMessage("announcements", {
+    content: payload.content,
+    embeds: payload.embeds,
+  });
+  return result.success;
 }
 
 /**
- * 1. Event: Turnamen Selesai / Juara Baru (Hall of Winners)
+ * 1. Channel #📢・announcements
+ * Event: Turnamen Selesai / Juara Baru (Hall of Winners)
  */
 export async function notifyTournamentChampion(data: {
   tournamentTitle: string;
@@ -145,14 +97,15 @@ export async function notifyTournamentChampion(data: {
     embed.image = { url: data.certificateUrl };
   }
 
-  await sendDiscordWebhook({
+  await sendDiscordChannelMessage("announcements", {
     content: "📢 **PENGUMUMAN KEJUARAAN TURNAMEN GUILD LOGHORIZON!** @everyone",
     embeds: [embed],
   });
 }
 
 /**
- * 2. Event: Party Mabar (LFG) Baru Dibuat
+ * 2. Channel #🎮・gaming-lounge
+ * Event: Party Mabar (LFG) Baru Dibuat
  */
 export async function notifyNewLfgParty(data: {
   partyTitle: string;
@@ -182,27 +135,28 @@ export async function notifyNewLfgParty(data: {
   });
 
   const embed: DiscordEmbed = {
-    title: `⚔️ PARTY MABAR BARU: ${data.partyTitle}`,
-    description: `Petualang **${host}** sedang mencari kawan mabar untuk **${data.game}**! Slot terbatas, segera gabung ke lobby.`,
+    title: `⚔️ AJAKAN MABAR BARU: ${data.partyTitle}`,
+    description: `Petualang **${host}** sedang mencari kawan mabar untuk **${data.game}**! Slot terbatas, segera bergabung.`,
     url: mabarUrl,
     color: 0x7C3AED, // Cyber Purple
     fields,
     footer: {
-      text: "LogHorizon Arena & LFG Matchmaking",
+      text: "LogHorizon Gaming Lounge & LFG Matchmaking",
     },
     timestamp: new Date().toISOString(),
   };
 
-  await sendDiscordWebhook({
+  await sendDiscordChannelMessage("lfg", {
     embeds: [embed],
   });
 }
 
 /**
- * 3. Event: Tiket Rekber Baru / Laporan Konten (Alert Staff: .odyssia & Fikkk01)
+ * 3. Channel #🛡️・mod-logs
+ * Event: Tiket Rekber Baru / Laporan Konten / Security Alert
  */
 export async function notifyStaffAlert(data: {
-  type: "ESCROW" | "REPORT";
+  type: "ESCROW" | "REPORT" | "SECURITY";
   title: string;
   actorName?: string | null;
   details: string;
@@ -213,14 +167,21 @@ export async function notifyStaffAlert(data: {
   const actor = data.actorName || "Member";
 
   const isEscrow = data.type === "ESCROW";
+  const isSecurity = data.type === "SECURITY";
+  const categoryLabel = isEscrow
+    ? "🛡️ Rekber Marketplace"
+    : isSecurity
+    ? "🚨 Log Keamanan Satpam AI"
+    : "⚠️ Laporan Konten / Member";
+
   const fields: DiscordEmbedField[] = [
     { name: "👤 Pembuat / Pelapor", value: actor, inline: true },
-    { name: "📌 Kategori", value: isEscrow ? "🛡️ Rekber Marketplace" : "⚠️ Laporan Konten / Member", inline: true },
+    { name: "📌 Kategori", value: categoryLabel, inline: true },
   ];
 
   if (data.amountOrTarget) {
     fields.push({
-      name: isEscrow ? "💵 Nilai Transaksi" : "🎯 Objek Terlapor",
+      name: isEscrow ? "💵 Nilai Transaksi" : "🎯 Objek Terkait",
       value: data.amountOrTarget,
       inline: true,
     });
@@ -232,27 +193,148 @@ export async function notifyStaffAlert(data: {
   );
 
   const embed: DiscordEmbed = {
-    title: isEscrow ? `🛡️ TIKET REKBER BARU: ${data.title}` : `🚨 LAPORAN KONTEN MASUK: ${data.title}`,
+    title: isEscrow
+      ? `🛡️ TIKET REKBER BARU: ${data.title}`
+      : isSecurity
+      ? `🚨 ALERT KEAMANAN: ${data.title}`
+      : `⚠️ LAPORAN KONTEN MASUK: ${data.title}`,
     description: isEscrow
       ? `Transaksi rekber resmi guild baru saja dibuat dan menunggu penanganan pengurus kas.`
+      : isSecurity
+      ? `Percobaan eksploitasi atau pelanggaran keamanan dicegah oleh Satpam AI.`
       : `Member melaporkan konten atau pelanggaran aturan komunitas yang memerlukan review moderator.`,
     url: adminUrl,
-    color: isEscrow ? 0x10B981 : 0xEF4444, // Emerald or Rose
+    color: isEscrow ? 0x10B981 : isSecurity ? 0xEF4444 : 0xF59E0B,
     fields,
     footer: {
-      text: "LogHorizon Security Guard • Staff Alert",
+      text: "LogHorizon Security Guard • Mod Logs Alert",
     },
     timestamp: new Date().toISOString(),
   };
 
-  await sendDiscordWebhook({
-    content: "🚨 **PANGGILAN KEAMANAN STAFF GUILD** (Attention: **.odyssia** & **Fikkk01**)",
+  await sendDiscordChannelMessage("mod_logs", {
+    content: "🚨 **PANGGILAN KEAMANAN STAFF GUILD** (Attention: **.odyssia** & Staff Council)",
+    embeds: [embed],
+  });
+}
+
+/**
+ * 4. Channel #📡・info-live
+ * Event: Pertandingan Turnamen Mulai (Status LIVE) / Siaran Langsung
+ */
+export async function notifyTournamentMatchLive(data: {
+  tournamentTitle: string;
+  tournamentId: string;
+  matchId: string;
+  roundName: string;
+  teamAName: string;
+  teamBName: string;
+  liveUrl?: string | null;
+}): Promise<void> {
+  const baseUrl = getBaseAppUrl();
+  const matchUrl = data.liveUrl || `${baseUrl}/events/turnamen/${data.tournamentId}`;
+
+  const embed: DiscordEmbed = {
+    title: `🔴 PERTANDINGAN SEDANG BERMAIN (LIVE): #${data.matchId.toUpperCase()} • ${data.roundName}`,
+    description: `Pertandingan turnamen **${data.tournamentTitle}** resmi dimulai!\n\n⚔️ **${data.teamAName}** vs **${data.teamBName}**`,
+    url: matchUrl,
+    color: 0xEF4444, // Red Live
+    fields: [
+      { name: "🏆 Turnamen", value: data.tournamentTitle, inline: true },
+      { name: "⚡ Status", value: "🔴 SEDANG BERMAIN", inline: true },
+      { name: "📺 Tonton Bagan & Live Match", value: `[Buka Bagan Turnamen di Website](${matchUrl})`, inline: false },
+    ],
+    footer: {
+      text: "LogHorizon Esports League • Live Arena",
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  await sendDiscordChannelMessage("info_live", {
+    content: `📡 **MATCH LIVE UPDATE!** Pertandingan **#${data.matchId.toUpperCase()}** sedang bertanding di server LogHorizon! @here`,
+    embeds: [embed],
+  });
+}
+
+/**
+ * 5. Channel #🤝・partnership
+ * Event: Promosi Donatur / VIP & Mitra Sponsor Baru
+ */
+export async function notifyPartnership(data: {
+  title: string;
+  sponsorOrMemberName: string;
+  tierOrBadge?: string | null;
+  linkUrl?: string | null;
+  description: string;
+  logoUrl?: string | null;
+}): Promise<void> {
+  const baseUrl = getBaseAppUrl();
+  const targetUrl = data.linkUrl || baseUrl;
+
+  const embed: DiscordEmbed = {
+    title: `🤝 OFFICIAL PARTNERSHIP & VIP SPOTLIGHT: ${data.title}`,
+    description: data.description,
+    url: targetUrl,
+    color: 0x8B5CF6, // Purple
+    fields: [
+      { name: "✨ Mitra / Donatur", value: data.sponsorOrMemberName, inline: true },
+      { name: "👑 Tier / Pangkat", value: data.tierOrBadge || "Official Guild Partner", inline: true },
+      { name: "🔗 Laman Profil / Website", value: `[Kunjungi Tautan](${targetUrl})`, inline: false },
+    ],
+    footer: {
+      text: "LogHorizon Guild Partnership & Benefactor Network",
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  if (data.logoUrl) {
+    embed.thumbnail = { url: data.logoUrl };
+  }
+
+  await sendDiscordChannelMessage("partnership", {
+    embeds: [embed],
+  });
+}
+
+/**
+ * 6. Channel #🎁・events-giveaway
+ * Event: Giveaway / Undian Berhadiah Komunitas
+ */
+export async function notifyGiveaway(data: {
+  title: string;
+  prize: string;
+  description: string;
+  eventUrl?: string | null;
+  endDateText?: string | null;
+}): Promise<void> {
+  const baseUrl = getBaseAppUrl();
+  const eventUrl = data.eventUrl || `${baseUrl}/events`;
+
+  const embed: DiscordEmbed = {
+    title: `🎁 COMMUNITY GIVEAWAY RESMI: ${data.title}`,
+    description: data.description,
+    url: eventUrl,
+    color: 0xEC4899, // Pink
+    fields: [
+      { name: "🏆 Hadiah Undian", value: data.prize, inline: true },
+      { name: "⏳ Periode Berakhir", value: data.endDateText || "Lihat di Website", inline: true },
+      { name: "🎟️ Cara Ikut & Syarat", value: `[Buka Event di Website LogHorizon](${eventUrl})`, inline: false },
+    ],
+    footer: {
+      text: "LogHorizon Community Events & Giveaways",
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  await sendDiscordChannelMessage("giveaway", {
+    content: "🎁 **COMMUNITY GIVEAWAY ALERT!** Jangan lewatkan undian berhadiah resmi guild! @everyone",
     embeds: [embed],
   });
 }
 
 /**
  * Legacy compatibility helper for simple channel/title notices.
+ * Intelligently routes to the correct Discord channel based on topic or channel name parameter!
  */
 export async function sendDiscordNotice(
   channel: string,
@@ -261,15 +343,23 @@ export async function sendDiscordNotice(
   url?: string | null,
   imageUrl?: string | null
 ): Promise<boolean> {
+  const targetChannelKey = resolveDiscordChannelKey(channel);
+
   const embed: DiscordEmbed = {
-    title: `[${channel.toUpperCase()}] ${title}`,
-    description: detail,
+    title: title.slice(0, 256),
+    description: detail.slice(0, 4000),
     color: 0x7C3AED,
     timestamp: new Date().toISOString(),
+    footer: {
+      text: "LogHorizon Guild Dispatch",
+    },
   };
   if (url) embed.url = url;
   if (imageUrl) embed.image = { url: imageUrl };
-  return sendDiscordWebhook({
+
+  const result = await sendDiscordChannelMessage(targetChannelKey, {
     embeds: [embed],
   });
+
+  return result.success;
 }

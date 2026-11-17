@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { DISCORD_CHANNELS, DiscordChannelKey } from "@/lib/discord-bot";
 import {
   Terminal,
   Send,
@@ -112,6 +113,7 @@ export function AiAdminTerminal({
   const [draftTitle, setDraftTitle] = useState("");
   const [draftContent, setDraftContent] = useState("");
   const [draftTarget, setDraftTarget] = useState<"WEB_ONLY" | "DISCORD_ONLY" | "BOTH">("WEB_ONLY");
+  const [draftChannel, setDraftChannel] = useState<DiscordChannelKey>("announcements");
 
   // Sync draft state whenever a new pending confirmation arrives
   useEffect(() => {
@@ -121,6 +123,8 @@ export function AiAdminTerminal({
       setDraftContent(String(args.content || ""));
       const rawTarget = String(args.targetPlatform || "WEB_ONLY").toUpperCase();
       setDraftTarget(rawTarget === "DISCORD_ONLY" || rawTarget === "BOTH" ? rawTarget : "WEB_ONLY");
+      const rawChannel = String(args.targetChannel || "announcements").toLowerCase();
+      setDraftChannel((rawChannel in DISCORD_CHANNELS ? rawChannel : "announcements") as DiscordChannelKey);
     }
   }, [pendingConfirmation]);
 
@@ -530,6 +534,34 @@ export function AiAdminTerminal({
                       className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg bg-white dark:bg-[#0A0512] border border-slate-300 dark:border-[#2A1B42] text-slate-900 dark:text-white focus:outline-hidden focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] transition leading-relaxed resize-y"
                     />
                   </div>
+
+                  {/* Channel Discord Selector if target includes Discord */}
+                  {draftTarget !== "WEB_ONLY" && (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-lg bg-[#5865F2]/10 border border-[#5865F2]/30 animate-in fade-in duration-150">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">{DISCORD_CHANNELS[draftChannel]?.icon || "💬"}</span>
+                        <div>
+                          <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200 block">
+                            Saluran Discord Tujuan:
+                          </span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {DISCORD_CHANNELS[draftChannel]?.description}
+                          </span>
+                        </div>
+                      </div>
+                      <select
+                        value={draftChannel}
+                        onChange={(e) => setDraftChannel(e.target.value as DiscordChannelKey)}
+                        className="px-3 py-1.5 text-xs font-mono font-bold rounded-lg bg-white dark:bg-[#11091D] border border-slate-300 dark:border-[#2A1B42] text-slate-900 dark:text-white focus:outline-none focus:border-[#5865F2] shrink-0 cursor-pointer"
+                      >
+                        {Object.values(DISCORD_CHANNELS).map((ch) => (
+                          <option key={ch.key} value={ch.key}>
+                            {ch.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions & Target Summary */}
@@ -540,8 +572,8 @@ export function AiAdminTerminal({
                       {draftTarget === "WEB_ONLY"
                         ? "🌐 Website LogHorizon Saja"
                         : draftTarget === "DISCORD_ONLY"
-                          ? "💬 Channel Discord Guild Saja"
-                          : "🌐 + 💬 Website LogHorizon & Channel Discord"}
+                          ? `💬 Discord (${DISCORD_CHANNELS[draftChannel]?.name || "#announcements"}) Saja`
+                          : `🌐 Website & 💬 Discord (${DISCORD_CHANNELS[draftChannel]?.name || "#announcements"})`}
                     </strong>
                   </div>
 
@@ -554,6 +586,7 @@ export function AiAdminTerminal({
                           title: draftTitle.trim(),
                           content: draftContent.trim(),
                           targetPlatform: draftTarget,
+                          targetChannel: draftChannel,
                         })
                       }
                       className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 transition shadow-sm disabled:opacity-50 cursor-pointer"

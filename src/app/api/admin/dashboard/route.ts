@@ -174,6 +174,12 @@ export async function GET(request: Request) {
     minDonation: 10000,
     discordInviteUrl: "https://discord.gg/aJvbVyTxNb",
     discordWebhookUrl: null,
+    discordAnnouncementChannelId: "1547552373629780038",
+    discordGiveawayChannelId: null,
+    discordInfoLiveChannelId: null,
+    discordPartnershipChannelId: null,
+    discordLfgChannelId: null,
+    discordModLogChannelId: null,
   };
 
   const isAdmin = access.user.role === Role.ADMIN;
