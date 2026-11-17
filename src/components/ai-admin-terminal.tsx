@@ -279,8 +279,10 @@ export function AiAdminTerminal({
   useEffect(() => {
     if (pendingConfirmation && pendingConfirmation.actionType === "BROADCAST_PREVIEW") {
       const args = pendingConfirmation.payload?.args || {};
-      setDraftTitle(String(args.title || ""));
-      setDraftContent(String(args.content || ""));
+      const rawTitle = String(args.title || "").replace(/\*\*/g, "");
+      const rawContent = String(args.content || "").replace(/\*\*/g, "");
+      setDraftTitle(rawTitle);
+      setDraftContent(rawContent);
       const rawTarget = String(args.targetPlatform || "WEB_ONLY").toUpperCase();
       setDraftTarget(rawTarget === "DISCORD_ONLY" || rawTarget === "BOTH" ? rawTarget : "WEB_ONLY");
       const rawChannel = String(args.targetChannel || "announcements").toLowerCase();
@@ -312,10 +314,17 @@ export function AiAdminTerminal({
 
     try {
       // Kirim riwayat percakapan sesi (multi-turn memory) untuk LogHorizon Command Bot
-      const historyPayload = history.slice(-10).map((h) => ({
-        role: h.sender === "user" ? "user" : "assistant",
-        content: h.text || h.response?.reply || "",
-      }));
+      const historyPayload = history.slice(-10).map((h) => {
+        let text = h.text || h.response?.reply || "";
+        if (h.response?.payload?.tool === "broadcastAnnouncement") {
+          const args = (h.response.payload.args || {}) as Record<string, string>;
+          text += `\n[DRAF PREVIEW SEBELUMNYA]:\nJudul: ${args.title || ""}\nIsi:\n${args.content || ""}\nTarget: ${args.targetPlatform || "WEB_ONLY"}`;
+        }
+        return {
+          role: h.sender === "user" ? "user" : "assistant",
+          content: text,
+        };
+      });
 
       const res = await fetch("/api/admin/ai-command", {
         method: "POST",
@@ -331,16 +340,17 @@ export function AiAdminTerminal({
         throw new Error(data.error || "Gagal memproses perintah AI.");
       }
 
+      const aiItem: HistoryItem = {
+        id: `ai-${Date.now()}`,
+        sender: "ai",
+        response: data,
+        timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+      };
+      setHistory((prev) => [...prev, aiItem]);
+
       if (data.requiresConfirmation) {
         setPendingConfirmation(data);
       } else {
-        const aiItem: HistoryItem = {
-          id: `ai-${Date.now()}`,
-          sender: "ai",
-          response: data,
-          timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
-        };
-        setHistory((prev) => [...prev, aiItem]);
         setPendingConfirmation(null);
       }
 
@@ -697,16 +707,28 @@ export function AiAdminTerminal({
                   <div>
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1.5">
                       <Edit3 size={13} className="text-[#7C3AED] dark:text-[#A78BFA]" />
-                      <span>Isi Lengkap Pengumuman:</span>
+                      <span>Isi Lengkap Pengumuman (Dapat Diedit):</span>
                     </label>
                     <textarea
-                      rows={4}
+                      rows={5}
                       value={draftContent}
                       onChange={(e) => setDraftContent(e.target.value)}
                       placeholder="Tuliskan isi pengumuman lengkap..."
-                      className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg bg-white dark:bg-[#0A0512] border border-slate-300 dark:border-[#2A1B42] text-slate-900 dark:text-white focus:outline-hidden focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] transition leading-relaxed resize-y"
+                      className="w-full px-3 py-2 text-xs sm:text-sm rounded-lg bg-white dark:bg-[#0A0512] border border-slate-300 dark:border-[#2A1B42] text-slate-900 dark:text-white focus:outline-hidden focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] transition leading-relaxed resize-y font-normal"
                     />
                   </div>
+
+                  {/* Clean Visual Preview Box (Rendered Markdown without Raw Characters) */}
+                  {draftContent && (
+                    <div className="p-3 rounded-lg border border-purple-500/25 bg-purple-500/5 dark:bg-[#080312]/60 space-y-1.5">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#7C3AED] dark:text-[#A78BFA] font-bold block">
+                        👁️ PRATINJAU VISUAL AKHIR:
+                      </span>
+                      <div className="text-xs text-slate-800 dark:text-slate-200">
+                        <AdminMessageRenderer content={draftContent} />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Channel Discord Selector if target includes Discord */}
                   {draftTarget !== "WEB_ONLY" && (
@@ -772,7 +794,7 @@ export function AiAdminTerminal({
                       ) : (
                         <>
                           <Check size={14} />
-                          <span>✅ ACC &amp; Kirim Sekarang</span>
+                          <span>ACC &amp; Kirim Sekarang</span>
                         </>
                       )}
                     </button>
@@ -786,16 +808,16 @@ export function AiAdminTerminal({
                           sender: "ai",
                           response: {
                             success: false,
-                            reply: `✏️ Draf pengumuman "${draftTitle || "Broadcast"}" dibatalkan oleh Admin. Tidak ada pesan yang dipublikasikan ke Website maupun Discord.`,
+                            reply: `✏️ Draf pengumuman "${draftTitle || "Broadcast"}" dibatalkan oleh Admin. Ketik instruksi baru jika ingin merevisi.`,
                           },
                           timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
                         };
                         setHistory((prev) => [...prev, cancelItem]);
                       }}
-                      className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold text-slate-700 dark:text-slate-300 transition flex items-center gap-1 cursor-pointer"
+                      className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold text-slate-700 dark:text-slate-300 transition flex items-center gap-1.5 cursor-pointer"
                     >
                       <X size={14} />
-                      <span>✏️ Minta Revisi / Batal</span>
+                      <span>Minta Revisi / Batal</span>
                     </button>
                   </div>
                 </div>
@@ -832,7 +854,7 @@ export function AiAdminTerminal({
                     ) : (
                       <>
                         <Check size={14} />
-                        <span>✅ Konfirmasi &amp; Jalankan</span>
+                        <span>Konfirmasi &amp; Jalankan</span>
                       </>
                     )}
                   </button>
@@ -842,7 +864,7 @@ export function AiAdminTerminal({
                     onClick={() => {
                       setPendingConfirmation(null);
                     }}
-                    className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition flex items-center gap-1 cursor-pointer"
+                    className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
                   >
                     <X size={14} />
                     <span>Batal</span>
@@ -855,7 +877,7 @@ export function AiAdminTerminal({
             {loading && (
               <div className="flex items-center gap-2 p-3 text-xs text-[#7C3AED] dark:text-[#A78BFA] font-mono">
                 <Loader2 size={15} className="animate-spin" />
-                <span>Satpam Horizon sedang menganalisis perintah &amp; menyiapkan eksekusi…</span>
+                <span>LogHorizon Command Bot sedang menganalisis perintah &amp; menyiapkan eksekusi…</span>
               </div>
             )}
 

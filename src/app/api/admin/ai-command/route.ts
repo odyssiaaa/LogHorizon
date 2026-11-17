@@ -396,7 +396,21 @@ export async function POST(request: Request) {
     totalUsers,
   ] = await Promise.all([
     prisma.tournament.findMany({
-      select: { id: true, title: true, game: true, entryFee: true, prizePool: true, status: true, format: true },
+      select: {
+        id: true,
+        title: true,
+        game: true,
+        entryFee: true,
+        prizePool: true,
+        status: true,
+        format: true,
+        maxSlots: true,
+        mainPlayersCount: true,
+        subPlayersCount: true,
+        eventDate: true,
+        rules: true,
+        _count: { select: { participants: true } },
+      },
       take: 8,
       orderBy: { eventDate: "desc" },
     }),
@@ -428,8 +442,32 @@ export async function POST(request: Request) {
 
   const contextPrompt = `Konteks Live Database LogHorizon saat ini:
 - Total Member: ${totalUsers} petualang
-- Turnamen Aktif/Tersedia:
-${tournaments.map((t) => `  * [ID: ${t.id}] "${t.title}" (${t.game}) | Biaya: Rp ${t.entryFee.toLocaleString("id-ID")} | Hadiah: ${t.prizePool} | Status: ${t.status}`).join("\n") || "  (Belum ada turnamen)"}
+- Turnamen Aktif/Tersedia di Database:
+${tournaments.map((t) => {
+  const registered = t._count?.participants || 0;
+  const remaining = Math.max(0, t.maxSlots - registered);
+  const formattedDate = t.eventDate
+    ? new Date(t.eventDate).toLocaleDateString("id-ID", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Asia/Jakarta",
+      }) + " WIB"
+    : "Segera Diumumkan";
+  const feeLabel = t.entryFee === 0 ? "Free Entry (Gratis)" : `Rp ${t.entryFee.toLocaleString("id-ID")}`;
+  const directLink = `https://loghorizon.vercel.app/events/turnamen/${t.id}`;
+  return `  * [ID: ${t.id}] "${t.title}" (${t.game})
+    - Jadwal: ${formattedDate}
+    - Total Hadiah (Prize Pool): ${t.prizePool}
+    - Biaya Registrasi: ${feeLabel}
+    - Format Roster: ${t.mainPlayersCount} Pemain Inti + ${t.subPlayersCount} Cadangan (${t.format || `${t.maxSlots} Tim`})
+    - Kuota Slot: ${registered}/${t.maxSlots} Tim (Sisa ${remaining} slot)
+    - Status: ${t.status}
+    - Link Pendaftaran Resmi Website: ${directLink}`;
+}).join("\n") || "  (Belum ada turnamen)"}
 - Antrean Donasi Pending: ${pendingDonations.length} donasi (${pendingDonations.map((d) => `"${d.senderName || d.user?.username}" Rp ${d.amount.toLocaleString("id-ID")}`).join(", ") || "Nihil"})
 - Antrean Tim Turnamen Pending: ${pendingParticipants.length} tim (${pendingParticipants.map((p) => `Tim "${p.teamName}" di "${p.tournament.title}"`).join(", ") || "Nihil"})
 - Transaksi Rekber In-Escrow: ${activeEscrows.length} transaksi (${activeEscrows.map((e) => `[ID: ${e.id}] Lapak "${e.post.title}" Rp ${e.amount.toLocaleString("id-ID")}`).join(", ") || "Nihil"})
@@ -445,6 +483,22 @@ IDENTITAS & GAYA KOMUNIKASI:
 - Berbicaralah secara taktis, sopan, terstruktur, tegas, dan berwibawa layaknya asisten dewan kerajaan eksekutif.
 - Selalu gunakan salam taktis kepada Admin (contoh: "Siap Yang Mulia / Dewan Admin,", "Laporan operasional kerajaan:", "Titah Anda telah diproses:").
 - Format balasan harus rapi dan terstruktur: gunakan poin-poin jelas, format angka rupiah standar (contoh: Rp 2.500.000), dan jelaskan rincian data dengan transparan. Hindari karakter markdown acak yang berantakan.
+
+ATURAN PROACTIVE & COMPLETE COPYWRITING (PENGUMUMAN & WARTA RESMI):
+- Ketika Admin memerintahkan membuat pengumuman/broadcast (baik turnamen, event mabar, giveaway, update kas, atau forum):
+  1. WAJIB MENARIK SELURUH DATA LENGKAP dari konteks database di atas secara otomatis dan proaktif. Jangan membuat draf yang terlalu singkat atau malas meminta Admin mengisi sendiri!
+  2. Untuk Pengumuman Turnamen, draf pengumuman ("broadcastAnnouncement") WAJIB memuat 6 poin krusial berikut secara lengkap, terstruktur, dan menggugah semangat:
+     • Judul Turnamen & Divisi Game (lengkap dengan edisi/musim).
+     • Jadwal Tanggal & Jam Pertandingan (wajib format WIB, misal: "Sabtu, 7 Desember 2026 • 20:00 WIB").
+     • Total Hadiah (Prize Pool) & Benefit Juara (trofi, e-certificate, spotlight Hall of Winners).
+     • Biaya Pendaftaran (Free Entry / Nominal Rupiah via QRIS) & Format Roster (contoh: 5 Pemain Inti + 1 Cadangan).
+     • Sisa Kuota Slot Tim yang masih tersedia saat ini.
+     • Tautan Pendaftaran Langsung (Call-to-Action): Wajib sertakan tautan resmi website "https://loghorizon.vercel.app/events/turnamen/[id]" (atau rute terkait) agar para anggota dan tim tinggal klik untuk langsung mendaftar!
+  3. Gunakan copywriting yang bersemangat, profesional, dan rapi ala kerajaan petualang LogHorizon.
+  4. HINDARI PENGGUNAAN KARAKTER BINTANG GANDA (**) YANG BERLEBIHAN ATAU MERUSAK KETERBACAAN. Gunakan huruf kapital, baris baru yang rapi, dan poin strip (-) atau bullet (•) yang bersih.
+
+DUKUNGAN PERINTAH REVISI BERKELANJUTAN (ITERATIVE DRAFT REFINEMENT):
+- Jika sudah ada draf pengumuman sebelumnya di percakapan ini dan Admin memberikan instruksi revisi (seperti "kurang lengkap", "tambahin jam dan link daftarnya", "bikin lebih heboh", "ganti channel ke announcements", "ubah hadiahnya"), kamu WAJIB langsung memanggil kembali tool "broadcastAnnouncement" dengan draf yang sudah diperbarui dan disempurnakan secara menyeluruh sesuai revisi Admin!
 
 MEMORI PERCAKAPAN (MULTI-TURN MEMORY):
 - Pahami dan rujuk konteks dari pesan-pesan sebelumnya dalam riwayat percakapan sesi ini.
