@@ -328,6 +328,15 @@ export function EventsBoard() {
     match: TournamentMatch;
   } | null>(null);
 
+  // Instant Real-Time sync on custom events (e.g. from Satpam AI Co-Pilot creation)
+  useEffect(() => {
+    const handleLfgRefresh = () => {
+      setRefreshKey((prev) => prev + 1);
+    };
+    window.addEventListener("lh:lfg-refresh", handleLfgRefresh);
+    return () => window.removeEventListener("lh:lfg-refresh", handleLfgRefresh);
+  }, []);
+
   useEffect(() => {
     let active = true;
     Promise.all([
@@ -1515,10 +1524,10 @@ export function EventsBoard() {
             <button
               type="button"
               onClick={() => setShowLfgForm((prev) => !prev)}
-              className="button button-primary text-xs font-bold inline-flex items-center gap-1.5"
+              className="button button-primary text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
             >
               {showLfgForm ? <X size={15} /> : <Plus size={15} />}
-              <span>{showLfgForm ? "Tutup Form" : "+ Buat Ajakan Mabar"}</span>
+              <span>{showLfgForm ? "Tutup Form" : "Buat Ajakan Mabar"}</span>
             </button>
           </div>
 
@@ -1684,8 +1693,8 @@ export function EventsBoard() {
                         <span className="px-2.5 py-0.5 rounded-none text-[10px] font-mono font-extrabold bg-[#7C3AED] text-[#F8FAFC] uppercase">
                           {post.game}
                         </span>
-                        <span className="text-[11px] font-mono text-slate-600 dark:text-[#A78BFA]">
-                          {post.joins.length + 1}/{post.maxSlots} SLOT
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/30">
+                          {currentFilled}/{post.maxSlots} SLOT
                         </span>
                       </div>
                       <span className="text-[11px] font-mono text-slate-600 dark:text-[#A78BFA] flex items-center gap-1">

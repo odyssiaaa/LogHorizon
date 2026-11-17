@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import {
   Bot,
   ChevronDown,
@@ -15,6 +15,7 @@ import {
   Send,
   Shield,
   Sparkles,
+  Check,
   X,
 } from "lucide-react";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -129,17 +130,31 @@ function renderFormattedAssistantMessage(content: string) {
   return elements;
 }
 
+export type MessageAction = {
+  type: "navigate" | "party_created" | "thread_created" | "require_login" | "broadcast_preview" | "tournament_created" | string;
+  url?: string;
+  label?: string;
+  details?: string;
+  requiresConfirmation?: boolean;
+  payload?: {
+    tool: string;
+    args: Record<string, unknown>;
+    confirmed?: boolean;
+  };
+};
+
 type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: string;
+  action?: MessageAction;
 };
 
 const SUGGESTIONS = [
-  "🎮 Info Party Mabar LFG",
+  "🎮 Cari Teman Mabar",
+  "➕ Buatkan Party Mabar ML",
   "🏆 Jadwal Turnamen",
-  "💎 Cara Jadi Benefactor",
   "👑 Siapa Top XP Guild?",
 ];
 
@@ -158,6 +173,7 @@ export function HorizonChatWidget() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmingAction, setConfirmingAction] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -312,11 +328,17 @@ export function HorizonChatWidget() {
       const data = await res.json();
       const replyText = typeof data.reply === "string" ? data.reply : "Laporan diterima, petualang!";
 
+      // If AI created a new LFG party, instantly trigger page sync
+      if (data.action?.type === "party_created" && typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("lh:lfg-refresh"));
+      }
+
       const botMessage: Message = {
         id: `bot-${Date.now()}`,
         role: "assistant",
         content: replyText,
         timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+        action: data.action,
       };
 
       setMessages((prev) => [...prev, botMessage]);
@@ -334,6 +356,54 @@ export function HorizonChatWidget() {
       ]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleConfirmAction(payload: { tool: string; args: Record<string, unknown>; confirmed?: boolean }) {
+    if (confirmingAction) return;
+    setConfirmingAction(true);
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confirmedPayload: {
+            ...payload,
+            confirmed: true,
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.error || "Gagal mengonfirmasi aksi.");
+      }
+
+      const data = await res.json();
+      const replyText = typeof data.reply === "string" ? data.reply : "Aksi berhasil dikonfirmasi dan dijalankan!";
+
+      const confirmedMessage: Message = {
+        id: `conf-${Date.now()}`,
+        role: "assistant",
+        content: replyText,
+        timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+        action: data.action,
+      };
+
+      setMessages((prev) => [...prev, confirmedMessage]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Gagal mengonfirmasi aksi.";
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: "assistant",
+          content: `❌ ${msg}`,
+          timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+        },
+      ]);
+    } finally {
+      setConfirmingAction(false);
     }
   }
 
@@ -515,7 +585,7 @@ export function HorizonChatWidget() {
                   )}
 
                   {/* Bubble */}
-                  <div className={`max-w-[80%] space-y-1 ${isUser ? "items-end" : "items-start"}`}>
+                  <div className={`max-w-[85%] space-y-1 ${isUser ? "items-end" : "items-start"}`}>
                     <div
                       className={`px-3.5 py-2.5 rounded-none leading-relaxed whitespace-pre-wrap break-words ${
                         isUser
@@ -524,6 +594,88 @@ export function HorizonChatWidget() {
                       }`}
                     >
                       {isUser ? m.content : renderFormattedAssistantMessage(m.content)}
+
+                      {/* Interactive Action Card / Buttons */}
+                      {!isUser && m.action && (
+                        <div className="pt-2.5 mt-2 border-t border-slate-200 dark:border-white/10 space-y-2">
+                          {/* 1. Login Prompt Button */}
+                          {m.action.type === "require_login" && (
+                            <button
+                              type="button"
+                              onClick={() => void signIn("discord")}
+                              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-xs shadow-md transition cursor-pointer"
+                            >
+                              <span>🔑 Login Discord Sekarang</span>
+                            </button>
+                          )}
+
+                          {/* 2. Direct Navigation / Created Object Button */}
+                          {(m.action.type === "party_created" ||
+                            m.action.type === "thread_created" ||
+                            m.action.type === "tournament_created" ||
+                            m.action.type === "navigate") &&
+                            m.action.url && (
+                              <Link
+                                href={m.action.url}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#9D4EDD] hover:opacity-95 text-white font-bold text-xs shadow-md transition cursor-pointer"
+                              >
+                                <Sparkles size={13} />
+                                <span>{m.action.label || "Buka Halaman ↗"}</span>
+                              </Link>
+                            )}
+
+                          {/* 3. Broadcast Draft Confirmation (Admin Only) */}
+                          {m.action.type === "broadcast_preview" && m.action.payload && (
+                            <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 space-y-2 text-xs">
+                              <div className="font-bold text-[11px] text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+                                ⚠️ Pratinjau Draf Broadcast
+                              </div>
+                              <p className="text-[11px] text-slate-700 dark:text-slate-300">
+                                {m.action.details || "Broadcast siap dikirim setelah persetujuan Admin."}
+                              </p>
+                              <div className="flex items-center gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  disabled={confirmingAction}
+                                  onClick={() => void handleConfirmAction(m.action!.payload!)}
+                                  className="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1 transition cursor-pointer disabled:opacity-50"
+                                >
+                                  {confirmingAction ? (
+                                    <>
+                                      <Loader2 size={11} className="animate-spin" />
+                                      <span>Mengirim…</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check size={12} />
+                                      <span>✅ ACC &amp; Kirim</span>
+                                    </>
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={confirmingAction}
+                                  onClick={() => {
+                                    setMessages((prev) =>
+                                      prev.map((msg) => (msg.id === m.id ? { ...msg, action: undefined } : msg))
+                                    );
+                                  }}
+                                  className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-white/5 text-[11px] text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                                >
+                                  Batal
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Action Details Badge */}
+                          {m.action.details && m.action.type !== "broadcast_preview" && (
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                              ℹ️ {m.action.details}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <span className="text-[10px] text-gray-400 font-mono px-1 block">
                       {m.timestamp}
