@@ -243,7 +243,7 @@ export function HorizonChatWidget() {
 
   const getPopupStyle = (): React.CSSProperties => {
     if (typeof window !== "undefined" && window.innerWidth < 640) {
-      return {}; // Handled by responsive Tailwind classes: inset-x-3 top-20 bottom-20 w-auto h-auto max-h-[75vh]
+      return {}; // Handled by responsive Tailwind classes: inset-x-3 top-16 bottom-24 w-auto h-auto max-h-[75vh]
     }
     if (!position || typeof window === "undefined") return {};
     const popupWidth = 384;
@@ -424,8 +424,8 @@ export function HorizonChatWidget() {
               }
             : undefined
         }
-        className={`fixed z-[45] touch-none select-none scale-90 sm:scale-100 ${
-          !position ? "bottom-20 right-4 sm:bottom-6 sm:right-6" : ""
+        className={`fixed z-[45] touch-none select-none scale-85 sm:scale-100 ${
+          !position ? "bottom-24 right-3 sm:bottom-6 sm:right-6" : ""
         }`}
       >
         <div
@@ -507,7 +507,7 @@ export function HorizonChatWidget() {
           role="dialog"
           aria-label="Jendela Chat Satpam Horizon"
           style={getPopupStyle()}
-          className={`fixed z-[50] rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 inset-x-3 top-20 bottom-20 w-auto h-auto max-h-[75vh] sm:inset-auto sm:w-96 sm:h-[520px] sm:max-h-[82vh] ${
+          className={`fixed z-[50] rounded-xl border-2 border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 inset-x-3 top-16 bottom-24 w-auto h-auto max-h-[75vh] sm:inset-auto sm:w-96 sm:h-[520px] sm:max-h-[82vh] ${
             !position ? "sm:bottom-6 sm:right-6" : ""
           }`}
         >

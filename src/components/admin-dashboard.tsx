@@ -2500,7 +2500,7 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
 
                                       {/* Tombol Aksi Admin */}
                                       {isPending && (
-                                        <div className="flex items-center gap-2 shrink-0">
+                                        <div className="flex flex-wrap items-center gap-2 shrink-0">
                                           <button
                                             type="button"
                                             disabled={adminVerificationLoading === p.id}

@@ -202,8 +202,22 @@ export function EventsBoard() {
 
   // Search State for Public Bracket Tree (per tournamentId)
   const [bracketSearchQueries, setBracketSearchQueries] = useState<Record<string, string>>({});
-  // Zoom State for Bracket Tree (per tournamentId, default 1.0 = 100%)
+  // Zoom State for Bracket Tree (per tournamentId, default 1.0 on desktop, 0.75 on mobile < 640px)
   const [bracketZoomLevels, setBracketZoomLevels] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 640) {
+      setBracketZoomLevels((prev) => {
+        const next: Record<string, number> = { ...prev };
+        tournaments.forEach((t) => {
+          if (next[t.id] === undefined) {
+            next[t.id] = 0.75;
+          }
+        });
+        return next;
+      });
+    }
+  }, [tournaments]);
   const [massScheduleRound, setMassScheduleRound] = useState<number>(1);
   const [massScheduleInput, setMassScheduleInput] = useState<string>("");
   const [activeLobbyMatch, setActiveLobbyMatch] = useState<{ tournamentId: string; match: TournamentMatch } | null>(null);
@@ -1492,11 +1506,17 @@ export function EventsBoard() {
                     </div>
 
                     {matches.length > 0 ? (
-                      <DragScrollContainer
-                        buttonPosition="top"
-                        label="🖱️ Drag mouse / tombol ◀ ▶: Sayap Kiri ➔ GRAND FINAL 🏆 ⬅ Sayap Kanan"
-                        className="pt-1 pb-3"
-                      >
+                      <>
+                        {/* Mobile horizontal scroll hint */}
+                        <div className="lg:hidden flex items-center justify-between px-3 py-1.5 mb-2 bg-purple-50 dark:bg-[#1A0E2E] border border-[#7C3AED]/30 text-[11px] font-mono text-[#7C3AED] dark:text-[#A78BFA]">
+                          <span>← Geser atau Zoom Bagan →</span>
+                          <span className="font-bold">75% Default Mobile</span>
+                        </div>
+                        <DragScrollContainer
+                          buttonPosition="top"
+                          label="🖱️ Drag mouse / tombol ◀ ▶: Sayap Kiri ➔ GRAND FINAL 🏆 ⬅ Sayap Kanan"
+                          className="pt-1 pb-3 touch-pan-x"
+                        >
                         <div
                           style={{
                             transform: `scale(${bracketZoomLevels[tournament.id] ?? 1.0})`,
@@ -1519,6 +1539,7 @@ export function EventsBoard() {
                           />
                         </div>
                       </DragScrollContainer>
+                      </>
                     ) : (
                       <p className="text-xs text-gray-500 text-center py-6">
                         Bagan belum dibuat. Admin dapat mengatur bagan melalui tombol &quot;Kelola Tim &amp; Skor&quot;.
@@ -1793,12 +1814,12 @@ export function EventsBoard() {
                       </button>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end mt-1 sm:mt-0">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
                       {(post.isOwner || isAdminOrMod) && (
                         <button
                           type="button"
                           onClick={() => deleteParty(post.id, post.game)}
-                          className="px-2 py-1.5 rounded-none border border-red-500/30 text-xs font-mono text-rose-400 hover:text-rose-300 hover:bg-red-950/20 inline-flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                          className="w-full sm:w-auto px-2 py-1.5 rounded-none border border-red-500/30 text-xs font-mono text-rose-400 hover:text-rose-300 hover:bg-red-950/20 inline-flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
                           title="Hapus / Tutup Party Mabar"
                         >
                           <Trash2 size={13} />
@@ -1810,7 +1831,7 @@ export function EventsBoard() {
                           type="button"
                           disabled={!post.joinedByViewer && isFull}
                           onClick={() => toggleJoin(post.id, post.joinedByViewer)}
-                          className={`w-full sm:w-auto px-4 py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition text-center justify-center flex items-center cursor-pointer ${
+                          className={`w-full sm:w-auto px-4 py-2 sm:py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition text-center justify-center flex items-center cursor-pointer ${
                             post.joinedByViewer
                               ? "bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30"
                               : isFull

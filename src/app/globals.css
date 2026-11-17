@@ -173,6 +173,13 @@ body {
   overflow-wrap: break-word;
 }
 
+/* Ensure mobile pages have clearance at the bottom so elements are never obscured by bottom bar or mascot */
+@media (max-width: 1023px) {
+  main {
+    padding-bottom: 96px !important;
+  }
+}
+
 .dark body,
 html.dark body {
   background-color: var(--bg-void);

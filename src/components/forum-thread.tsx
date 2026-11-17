@@ -309,7 +309,7 @@ export function ForumThread({ id }: { id: string }) {
             </div>
             <div className="break-words mt-2 text-xs sm:text-sm leading-relaxed text-[#F8FAFC]/90 font-sans"><FormattedPostContent text={item.content} onImageClick={setLightboxImg} /></div>
             {!user?.isBanned && (
-              <div className="mt-2.5 flex items-center gap-3">
+              <div className="mt-2.5 flex flex-wrap items-center gap-2 sm:gap-3">
                 <button
                   type="button"
                   className="inline-flex items-center gap-1.5 text-[11px] font-mono text-[#A78BFA] hover:text-[#F8FAFC] uppercase tracking-wider"
