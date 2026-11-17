@@ -156,7 +156,7 @@ export function QuickMatchScoreModal({
                 }}
                 className="px-3 py-1.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-mono font-bold transition shrink-0"
               >
-                {schedSaved ? "✓ TERSIMPAN" : "SET JADWAL"}
+                {schedSaved ? "✓ TERSIMPAN" : "SIMPAN JADWAL"}
               </button>
               {schedInput && (
                 <button
@@ -175,10 +175,10 @@ export function QuickMatchScoreModal({
               )}
             </div>
 
-            {match.scheduledAt && (
+            {(match.scheduledAt || schedInput) && (
               <div className="text-[11px] text-gray-400 font-mono flex items-center gap-2 pt-0.5">
                 <Clock size={12} className="text-[#A78BFA]" />
-                <span>Status Waktu: <strong className="text-purple-300 font-mono">{formatMatchScheduleDisplay(match.scheduledAt, match.schedule, match.manualOverride).badgeText}</strong></span>
+                <span>Status Waktu: <strong className="text-purple-300 font-mono">{formatMatchScheduleDisplay(match.scheduledAt || (schedInput ? dateTimeLocalToIso(schedInput) : null), match.schedule, match.manualOverride).badgeText}</strong></span>
               </div>
             )}
           </div>

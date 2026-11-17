@@ -278,7 +278,7 @@ export function advanceMatchWinner(
   lossReason: TournamentLossReason = "NORMAL"
 ): TournamentMatch[] {
   const updatedMatches = matches.map((match) => ({ ...match }));
-  const current = updatedMatches.find((m) => m.matchId === matchId);
+  const current = updatedMatches.find((m) => m.matchId?.toLowerCase() === matchId.toLowerCase());
   if (!current) return matches;
 
   current.winner = winnerName;
@@ -290,7 +290,7 @@ export function advanceMatchWinner(
 
   // 1. Pemenang melaju ke babak berikutnya (Grand Final / Babak Lanjutan)
   if (current.nextMatchId && current.nextSlot) {
-    const nextMatch = updatedMatches.find((m) => m.matchId === current.nextMatchId);
+    const nextMatch = updatedMatches.find((m) => m.matchId?.toLowerCase() === current.nextMatchId?.toLowerCase());
     if (nextMatch) {
       if (current.nextSlot === "teamA") {
         nextMatch.teamA = { ...nextMatch.teamA, id: winnerId, name: winnerName };
@@ -304,7 +304,7 @@ export function advanceMatchWinner(
   const isSemi =
     current.roundName?.toLowerCase().includes("semifinal") ||
     (current.nextMatchId &&
-      updatedMatches.find((m) => m.matchId === current.nextMatchId)?.roundName?.toLowerCase().includes("final"));
+      updatedMatches.find((m) => m.matchId?.toLowerCase() === current.nextMatchId?.toLowerCase())?.roundName?.toLowerCase().includes("final"));
 
   if (isSemi) {
     const isWinnerA = current.teamA?.name === winnerName;
@@ -334,7 +334,7 @@ export function advanceMatchWinner(
       }
 
       // Semifinal 1 (nextSlot teamA / m1) masuk ke teamA, Semifinal 2 (nextSlot teamB / m2) masuk ke teamB
-      const isSlotA = current.nextSlot === "teamA" || current.matchId.endsWith("-m1");
+      const isSlotA = current.nextSlot === "teamA" || current.matchId.toLowerCase().endsWith("-m1");
       if (isSlotA) {
         bronzeMatch.teamA = { ...bronzeMatch.teamA, id: loserId, name: loserName, score: 0 };
       } else {
@@ -351,7 +351,7 @@ export function resetMatchResult(
   matchId: string
 ): TournamentMatch[] {
   const updatedMatches = matches.map((match) => ({ ...match }));
-  const current = updatedMatches.find((m) => m.matchId === matchId);
+  const current = updatedMatches.find((m) => m.matchId?.toLowerCase() === matchId.toLowerCase());
   if (!current) return matches;
 
   const previousWinner = current.winner;
@@ -362,7 +362,7 @@ export function resetMatchResult(
 
   // If this winner was advanced to next round, reset the next match's slot
   if (current.nextMatchId && current.nextSlot && previousWinner) {
-    const nextMatch = updatedMatches.find((m) => m.matchId === current.nextMatchId);
+    const nextMatch = updatedMatches.find((m) => m.matchId?.toLowerCase() === current.nextMatchId?.toLowerCase());
     if (nextMatch) {
       if (current.nextSlot === "teamA" && nextMatch.teamA?.name === previousWinner) {
         nextMatch.teamA = { id: undefined, name: "TBD", score: 0 };
@@ -386,14 +386,14 @@ export function resetMatchResult(
   const isSemi =
     current.roundName?.toLowerCase().includes("semifinal") ||
     (current.nextMatchId &&
-      updatedMatches.find((m) => m.matchId === current.nextMatchId)?.roundName?.toLowerCase().includes("final"));
+      updatedMatches.find((m) => m.matchId?.toLowerCase() === current.nextMatchId?.toLowerCase())?.roundName?.toLowerCase().includes("final"));
 
   if (isSemi) {
     const bronzeMatch = updatedMatches.find(
       (m) => m.matchId === "BRONZE-01" || m.roundName?.toLowerCase().includes("bronze")
     );
     if (bronzeMatch) {
-      const isSlotA = current.nextSlot === "teamA" || current.matchId.endsWith("-m1");
+      const isSlotA = current.nextSlot === "teamA" || current.matchId.toLowerCase().endsWith("-m1");
       if (isSlotA) {
         const prevLoser = bronzeMatch.teamA?.name;
         bronzeMatch.teamA = { id: undefined, name: "Kalah Semifinal 1", score: 0 };
@@ -424,7 +424,7 @@ export function updateMatchStatus(
   manualOverride?: boolean
 ): TournamentMatch[] {
   return matches.map((m) => {
-    if (m.matchId === matchId) {
+    if (m.matchId?.toLowerCase() === matchId.toLowerCase()) {
       return {
         ...m,
         matchStatus: status,
@@ -549,27 +549,85 @@ export function formatMatchScheduleDisplay(
 }
 
 /**
- * Convert ISO string to YYYY-MM-DDTHH:mm string in local Asia/Jakarta or client timezone for <input type="datetime-local" />.
+ * Convert ISO string to YYYY-MM-DDTHH:mm string accurately in Asia/Jakarta (WIB) timezone for <input type="datetime-local" />.
  */
 export function isoToDateTimeLocal(isoString?: string | null): string {
   if (!isoString) return "";
   const date = new Date(isoString);
   if (isNaN(date.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const year = date.getFullYear();
-  const month = pad(date.getMonth() + 1);
-  const day = pad(date.getDate());
-  const hours = pad(date.getHours());
-  const minutes = pad(date.getMinutes());
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+
+  try {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(date);
+    const getPart = (type: string) => parts.find((p) => p.type === type)?.value || "";
+    const year = getPart("year");
+    const month = getPart("month");
+    const day = getPart("day");
+    let hour = getPart("hour");
+    if (hour === "24") hour = "00";
+    const minute = getPart("minute");
+
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+  } catch {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const year = date.getFullYear();
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
 }
 
 /**
- * Convert YYYY-MM-DDTHH:mm string from <input type="datetime-local" /> to ISO timestamp string.
+ * Convert YYYY-MM-DDTHH:mm string from <input type="datetime-local" /> to ISO timestamp string with accurate WIB (+07:00) offset.
  */
 export function dateTimeLocalToIso(localString: string): string | null {
   if (!localString || !localString.trim()) return null;
-  const date = new Date(localString);
-  if (isNaN(date.getTime())) return null;
+  const trimmed = localString.trim();
+
+  // If already contains timezone indicator Z or offset like +07:00 / -05:00
+  if (trimmed.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(trimmed)) {
+    const d = new Date(trimmed);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  }
+
+  // Treat input as Asia/Jakarta (WIB, UTC+07:00)
+  const withSecs = trimmed.length === 16 ? `${trimmed}:00` : trimmed;
+  const wibIsoString = `${withSecs}+07:00`;
+  const date = new Date(wibIsoString);
+  if (isNaN(date.getTime())) {
+    const fallback = new Date(trimmed);
+    return isNaN(fallback.getTime()) ? null : fallback.toISOString();
+  }
   return date.toISOString();
+}
+
+/**
+ * Format ISO timestamp into user-friendly Indonesian WIB string (e.g. "7 Des • 20.00 WIB" or "17 Nov • 14:30 WIB").
+ */
+export function formatWibDateTime(isoString?: string | null): string {
+  if (!isoString) return "-";
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return "-";
+  const dayMonth = date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Jakarta",
+  });
+  const time = date.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jakarta",
+  });
+  return `${dayMonth} • ${time} WIB`;
 }

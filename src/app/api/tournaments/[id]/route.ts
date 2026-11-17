@@ -126,13 +126,18 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (data.roundSchedule && typeof data.roundSchedule === "object") {
     const rs = data.roundSchedule as { round?: number; scheduledAt?: string | null };
     if (typeof rs.round === "number") {
-      const newSched = typeof rs.scheduledAt === "string" && rs.scheduledAt.trim() ? rs.scheduledAt.trim() : null;
+      let newSched: string | null = null;
+      if (typeof rs.scheduledAt === "string" && rs.scheduledAt.trim()) {
+        const trimmed = rs.scheduledAt.trim();
+        const dateObj = new Date(trimmed.includes("+") || trimmed.endsWith("Z") ? trimmed : `${trimmed}+07:00`);
+        newSched = !isNaN(dateObj.getTime()) ? dateObj.toISOString() : trimmed;
+      }
       updatedMatches = updatedMatches.map((m) => {
         if (m.round === rs.round) {
           return {
             ...m,
             scheduledAt: newSched,
-            manualOverride: false, // Reset override when a new schedule is established
+            manualOverride: false, // Reset override when a new schedule is established so auto-live runs
           };
         }
         return m;
@@ -173,21 +178,25 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         );
       }
       if (data.scheduledAt !== undefined) {
-        const newSched =
-          typeof data.scheduledAt === "string" && data.scheduledAt.trim() ? data.scheduledAt.trim() : null;
+        let newSched: string | null = null;
+        if (typeof data.scheduledAt === "string" && data.scheduledAt.trim()) {
+          const trimmed = data.scheduledAt.trim();
+          const dateObj = new Date(trimmed.includes("+") || trimmed.endsWith("Z") ? trimmed : `${trimmed}+07:00`);
+          newSched = !isNaN(dateObj.getTime()) ? dateObj.toISOString() : trimmed;
+        }
         updatedMatches = updatedMatches.map((m) =>
-          m.matchId === matchId
+          m.matchId?.toLowerCase() === matchId.toLowerCase()
             ? {
                 ...m,
                 scheduledAt: newSched,
-                manualOverride: typeof data.manualOverride === "boolean" ? data.manualOverride : false,
+                manualOverride: false, // Reset override to false on schedule update so auto-live triggers
               }
             : m
         );
       }
       if (data.manualOverride !== undefined && data.matchStatus === undefined && data.scheduledAt === undefined) {
         updatedMatches = updatedMatches.map((m) =>
-          m.matchId === matchId ? { ...m, manualOverride: Boolean(data.manualOverride) } : m
+          m.matchId?.toLowerCase() === matchId.toLowerCase() ? { ...m, manualOverride: Boolean(data.manualOverride) } : m
         );
       }
       if (data.winner !== undefined) {

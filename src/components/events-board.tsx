@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { readApiResponse } from "@/lib/api-response";
-import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, DEFAULT_TOURNAMENT_RULES, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, DEFAULT_TOURNAMENT_RULES, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso, formatWibDateTime } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
@@ -208,6 +208,7 @@ export function EventsBoard() {
   const [massScheduleInput, setMassScheduleInput] = useState<string>("");
   const [activeLobbyMatch, setActiveLobbyMatch] = useState<{ tournamentId: string; match: TournamentMatch } | null>(null);
   const [editingTournament, setEditingTournament] = useState<any | null>(null);
+  const pausePollingUntilRef = useRef<number>(0);
 
   // Gacha Bracket Modal State
   const [gachaModalState, setGachaModalState] = useState<{
@@ -367,6 +368,9 @@ export function EventsBoard() {
       if (typeof document !== "undefined" && document.visibilityState !== "visible") {
         return;
       }
+      if (Date.now() < pausePollingUntilRef.current) {
+        return;
+      }
       const shouldPoll =
         activeTab === "turnamen" ||
         tournaments.some((t) => t.status === "ONGOING" || t.status === "REGISTRATION");
@@ -499,8 +503,11 @@ export function EventsBoard() {
     const targetTournament = tournaments.find((t) => t.id === tournamentId);
     if (!targetTournament) return;
 
+    // Pause polling for 3 seconds to protect optimistic state from stale responses
+    pausePollingUntilRef.current = Date.now() + 3000;
+
     const updatedMatches = (targetTournament.matches || []).map((m) =>
-      m.matchId === matchId ? { ...m, scheduledAt, manualOverride: false } : m
+      m.matchId?.toLowerCase() === matchId.toLowerCase() ? { ...m, scheduledAt, manualOverride: false } : m
     );
 
     setTournaments((prev) =>
@@ -510,7 +517,22 @@ export function EventsBoard() {
       setManageMatches(updatedMatches);
       setManagingTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
     }
-    setNotice(`Jadwal Match #${matchId} berhasil diperbarui.`);
+
+    setQuickScoreModalMatch((prev) =>
+      prev
+        ? {
+            ...prev,
+            match: { ...prev.match, scheduledAt, manualOverride: false },
+          }
+        : null
+    );
+
+    const wibText = scheduledAt ? formatWibDateTime(scheduledAt) : "-";
+    setNotice(
+      scheduledAt
+        ? `🕒 Jadwal pertandingan #${matchId.toUpperCase()} berhasil diperbarui menjadi ${wibText}.`
+        : `🕒 Jadwal pertandingan #${matchId.toUpperCase()} berhasil dihapus.`
+    );
 
     fetch(`/api/tournaments/${tournamentId}`, {
       method: "PATCH",
@@ -526,6 +548,9 @@ export function EventsBoard() {
     const iso = dateTimeLocalToIso(massScheduleInput);
     if (!iso) return;
 
+    // Pause polling for 3 seconds to protect optimistic state
+    pausePollingUntilRef.current = Date.now() + 3000;
+
     const updated = manageMatches.map((m) =>
       m.round === massScheduleRound ? { ...m, scheduledAt: iso, manualOverride: false } : m
     );
@@ -537,7 +562,8 @@ export function EventsBoard() {
 
     const roundName =
       manageMatches.find((m) => m.round === massScheduleRound)?.roundName || `Ronde ${massScheduleRound}`;
-    setNotice(`Jadwal massal untuk seluruh match di ${roundName} berhasil diterapkan serentak!`);
+    const wibText = formatWibDateTime(iso);
+    setNotice(`🕒 Jadwal seluruh pertandingan di ${roundName} berhasil diperbarui menjadi ${wibText}.`);
 
     fetch(`/api/tournaments/${managingTournament.id}`, {
       method: "PATCH",
@@ -2376,11 +2402,21 @@ export function EventsBoard() {
                                   value={isoToDateTimeLocal(m.scheduledAt)}
                                   onChange={(e) => {
                                     const iso = dateTimeLocalToIso(e.target.value);
+                                    pausePollingUntilRef.current = Date.now() + 3000;
                                     const updated = manageMatches.map((match) =>
-                                      match.matchId === m.matchId ? { ...match, scheduledAt: iso, manualOverride: false } : match
+                                      match.matchId?.toLowerCase() === m.matchId.toLowerCase()
+                                        ? { ...match, scheduledAt: iso, manualOverride: false }
+                                        : match
                                     );
                                     setManageMatches(updated);
+                                    setManagingTournament((prev) => (prev ? { ...prev, matches: updated } : prev));
                                     if (managingTournament) {
+                                      setTournaments((prev) =>
+                                        prev.map((t) => (t.id === managingTournament.id ? { ...t, matches: updated } : t))
+                                      );
+                                      if (iso) {
+                                        setNotice(`🕒 Jadwal pertandingan #${m.matchId.toUpperCase()} berhasil diperbarui menjadi ${formatWibDateTime(iso)}.`);
+                                      }
                                       fetch(`/api/tournaments/${managingTournament.id}`, {
                                         method: "PATCH",
                                         headers: { "Content-Type": "application/json" },
@@ -2394,11 +2430,19 @@ export function EventsBoard() {
                                   <button
                                     type="button"
                                     onClick={() => {
+                                      pausePollingUntilRef.current = Date.now() + 3000;
                                       const updated = manageMatches.map((match) =>
-                                        match.matchId === m.matchId ? { ...match, scheduledAt: null, manualOverride: false } : match
+                                        match.matchId?.toLowerCase() === m.matchId.toLowerCase()
+                                          ? { ...match, scheduledAt: null, manualOverride: false }
+                                          : match
                                       );
                                       setManageMatches(updated);
+                                      setManagingTournament((prev) => (prev ? { ...prev, matches: updated } : prev));
                                       if (managingTournament) {
+                                        setTournaments((prev) =>
+                                          prev.map((t) => (t.id === managingTournament.id ? { ...t, matches: updated } : t))
+                                        );
+                                        setNotice(`🕒 Jadwal pertandingan #${m.matchId.toUpperCase()} berhasil dihapus.`);
                                         fetch(`/api/tournaments/${managingTournament.id}`, {
                                           method: "PATCH",
                                           headers: { "Content-Type": "application/json" },

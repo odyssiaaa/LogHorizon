@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState, useRef, FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
@@ -26,7 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
-import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso, formatWibDateTime } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { DualWingBracketView } from "@/components/events-board";
@@ -274,6 +274,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   const [bracketSearchQuery, setBracketSearchQuery] = useState("");
   // Zoom State for Bracket Tree (default 1.0 = 100%)
   const [bracketZoomLevel, setBracketZoomLevel] = useState<number>(1.0);
+  const pausePollingUntilRef = useRef<number>(0);
 
   // SMART AUTO-POLLING (Setiap 4 Detik saat tab browser aktif)
   useEffect(() => {
@@ -290,6 +291,9 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
     const poll = async () => {
       if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        return;
+      }
+      if (Date.now() < pausePollingUntilRef.current) {
         return;
       }
       if (!tournament || (tournament.status !== "ONGOING" && tournament.status !== "REGISTRATION")) {
@@ -388,11 +392,31 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
   function handleUpdateMatchSchedule(matchId: string, scheduledAt: string | null) {
     if (!tournament) return;
+
+    // Pause polling for 3 seconds to protect optimistic state
+    pausePollingUntilRef.current = Date.now() + 3000;
+
     const updatedMatches = (tournament.matches || []).map((m) =>
-      m.matchId === matchId ? { ...m, scheduledAt, manualOverride: false } : m
+      m.matchId?.toLowerCase() === matchId.toLowerCase() ? { ...m, scheduledAt, manualOverride: false } : m
     );
     setTournament((prev) => (prev ? { ...prev, matches: updatedMatches } : prev));
-    setNotice(`Jadwal Match #${matchId} berhasil diperbarui.`);
+
+    setQuickScoreModalMatch((prev) =>
+      prev
+        ? {
+            ...prev,
+            scheduledAt,
+            manualOverride: false,
+          }
+        : null
+    );
+
+    const wibText = scheduledAt ? formatWibDateTime(scheduledAt) : "-";
+    setNotice(
+      scheduledAt
+        ? `🕒 Jadwal pertandingan #${matchId.toUpperCase()} berhasil diperbarui menjadi ${wibText}.`
+        : `🕒 Jadwal pertandingan #${matchId.toUpperCase()} berhasil dihapus.`
+    );
 
     fetch(`/api/tournaments/${tournament.id}`, {
       method: "PATCH",
