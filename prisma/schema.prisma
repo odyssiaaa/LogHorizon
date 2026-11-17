@@ -357,13 +357,14 @@ model Notification {
 }
 
 model Announcement {
-  id        String   @id @default(cuid())
-  authorId  String
-  title     String
-  content   String   @db.Text
-  createdAt DateTime @default(now())
-  expiresAt DateTime @default(now())
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  authorId    String
+  title       String
+  content     String   @db.Text
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime @default(now())
+  showAsPopup Boolean  @default(true)
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([createdAt, expiresAt])
 }

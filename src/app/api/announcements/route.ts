@@ -5,7 +5,21 @@ export async function GET() {
     const activeAnnouncement = await prisma.announcement.findFirst({
       where: { expiresAt: { gt: new Date() } },
       orderBy: { createdAt: "desc" },
-      include: { author: { select: { username: true } } },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        expiresAt: true,
+        showAsPopup: true,
+        author: {
+          select: {
+            username: true,
+            name: true,
+            role: true,
+          },
+        },
+      },
     });
     return Response.json({ announcement: activeAnnouncement });
   } catch {

@@ -16,7 +16,10 @@ export async function POST(request: Request) {
   }
 
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 jam tayang di Landing Page
+  const rawDuration = typeof data.durationHours === "number" ? data.durationHours : 48;
+  const durationHours = Math.min(720, Math.max(1, rawDuration));
+  const expiresAt = new Date(now.getTime() + durationHours * 60 * 60 * 1000);
+  const showAsPopup = data.showAsPopup === false ? false : true;
 
   const announcement = await prisma.announcement.create({
     data: {
@@ -25,6 +28,7 @@ export async function POST(request: Request) {
       content,
       createdAt: now,
       expiresAt,
+      showAsPopup,
     },
     include: {
       author: { select: { username: true } },

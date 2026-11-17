@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { HeroLogo } from "@/components/hero-logo";
-import { GuildBroadcastBanner } from "@/components/guild-broadcast-banner";
+import { GuildAnnouncementCard } from "@/components/guild-announcement-card";
+import { AnnouncementPopupModal } from "@/components/announcement-popup-modal";
 import {
   ArrowUpRight,
   AudioLines,
@@ -135,9 +136,6 @@ export default async function Home() {
 
   return (
     <main className="w-full max-w-full overflow-x-hidden bg-[#F8FAFC] dark:bg-[#09040F] text-[#0F172A] dark:text-[#F8FAFC] transition-colors duration-300">
-      {/* 24-HOUR ACTIVE GUILD BROADCAST BANNER */}
-      <GuildBroadcastBanner />
-
       {/* ===================================================================== */}
       {/* 3. HERO SECTION (Asymmetric 12-Column Grid: 7 Left : 5 Right)          */}
       {/* ===================================================================== */}
@@ -353,6 +351,9 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* OFFICIAL GUILD ANNOUNCEMENT BOARD (PROMINENT FULL-WIDTH CARD) */}
+      <GuildAnnouncementCard />
 
       {/* ===================================================================== */}
       {/* 01 / TENTANG GUILD (Clean Editorial Block)                             */}
@@ -658,6 +659,9 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* TIMED VISITOR ANNOUNCEMENT POPUP MODAL */}
+      <AnnouncementPopupModal />
     </main>
   );
 }

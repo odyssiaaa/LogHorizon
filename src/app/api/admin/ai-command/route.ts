@@ -324,6 +324,14 @@ const GEMINI_TOOLS = [
               type: "STRING",
               enum: ["announcements", "giveaway", "info_live", "partnership", "lfg", "mod_logs", "auto"],
               description: "Channel Discord tujuan: 'announcements' (#📢・announcements), 'giveaway' (#🎁・events-giveaway), 'info_live' (#📡・info-live), 'partnership' (#🤝・partnership), 'lfg' (#🎮・gaming-lounge), 'mod_logs' (#🛡️・mod-logs), atau 'auto' (otomatis sesuai topik). Default: 'auto'"
+            },
+            durationHours: {
+              type: "NUMBER",
+              description: "Masa berlaku pengumuman / pop-up dalam jam (default: 48, atau sesuai permintaan Admin seperti 24 jam / 72 jam)"
+            },
+            showAsPopup: {
+              type: "BOOLEAN",
+              description: "Apakah pengumuman ini otomatis muncul sebagai pop-up timed modal bagi pengunjung website (default: true)"
             }
           },
           required: ["title", "content"]
@@ -1630,6 +1638,10 @@ async function executeToolAction(
           ? `💬 Discord (${channelMeta.name})`
           : `🌐 Website & 💬 Discord (${channelMeta.name})`;
 
+    const rawDuration = typeof args.durationHours === "number" ? args.durationHours : 48;
+    const durationHours = Math.min(720, Math.max(1, rawDuration));
+    const showAsPopup = args.showAsPopup === false ? false : true;
+
     // Draft Preview Gate: Require Admin Approval Before Sending
     if (!isConfirmed) {
       return {
@@ -1640,7 +1652,7 @@ async function executeToolAction(
         summary: `Pratinjau Draf Broadcast: "${title}" (${targetLabel})`,
         payload: {
           tool: "broadcastAnnouncement",
-          args: { title, content, targetPlatform, targetChannel },
+          args: { title, content, targetPlatform, targetChannel, durationHours, showAsPopup },
           confirmed: true,
         },
       };
@@ -1649,7 +1661,7 @@ async function executeToolAction(
     // Execution after Admin confirmation
     let announcementId = "DISCORD_NOTICE_ONLY";
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+    const expiresAt = new Date(now.getTime() + durationHours * 60 * 60 * 1000);
 
     if (targetPlatform === "WEB_ONLY" || targetPlatform === "BOTH") {
       const announcement = await prisma.announcement.create({
@@ -1659,6 +1671,7 @@ async function executeToolAction(
           content,
           createdAt: now,
           expiresAt,
+          showAsPopup,
         },
       });
       announcementId = announcement.id;
