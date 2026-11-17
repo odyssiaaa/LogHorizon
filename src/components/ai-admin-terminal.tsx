@@ -16,6 +16,11 @@ import {
   Loader2,
   Check,
   X,
+  Plus,
+  Dices,
+  MessageSquare,
+  Gamepad2,
+  Coins,
 } from "lucide-react";
 
 type ToolResult = {
@@ -43,24 +48,39 @@ type CommandResponse = {
 
 const QUICK_PROMPTS = [
   {
-    label: "Ubah Biaya Turnamen",
-    icon: Trophy,
-    prompt: "Ubah biaya pendaftaran turnamen S1 menjadi 100.000",
+    label: "+ Buat Turnamen",
+    icon: Plus,
+    prompt: "Buat turnamen baru Mobile Legends Championship S2 hadiah Rp 3.000.000 + E-Certificate dengan 8 tim dan biaya registrasi gratis",
+  },
+  {
+    label: "+ Buat Thread",
+    icon: MessageSquare,
+    prompt: "Buat thread forum pengumuman resmi tentang panduan dan tata tertib kompetisi guild LogHorizon Season 1",
+  },
+  {
+    label: "+ Buat LFG Mabar",
+    icon: Gamepad2,
+    prompt: "Buat ajakan mabar Valorant butuh 2 pemain rank Diamond untuk push rank malam ini",
+  },
+  {
+    label: "Gacha Bagan",
+    icon: Dices,
+    prompt: "Gacha dan acak ulang bagan turnamen S1 secara adil",
+  },
+  {
+    label: "ACC Antrean",
+    icon: Coins,
+    prompt: "Cek dan ACC antrean donasi kas QRIS atau pendaftaran turnamen yang masih pending",
+  },
+  {
+    label: "Broadcast Info",
+    icon: Megaphone,
+    prompt: "Kirim broadcast pengumuman: Jadwal Mabar dan Turnamen Akhir Pekan LogHorizon dimulai hari Sabtu pukul 19:00 WIB!",
   },
   {
     label: "Update Hadiah",
     icon: Sparkles,
     prompt: "Ubah total hadiah turnamen S1 menjadi Rp 2.500.000 + E-Certificate",
-  },
-  {
-    label: "Kirim Broadcast",
-    icon: Megaphone,
-    prompt: "Kirim broadcast pengumuman: Jadwal Mabar dan Turnamen Akhir Pekan LogHorizon dimulai hari Sabtu pukul 19:00 WIB!",
-  },
-  {
-    label: "Cek Antrean Pending",
-    icon: Clock,
-    prompt: "Cek seluruh antrean pending donasi QRIS dan pendaftaran turnamen yang belum di-ACC",
   },
 ];
 
