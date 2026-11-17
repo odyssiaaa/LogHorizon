@@ -53,6 +53,7 @@ import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 import { EditTournamentModal } from "@/components/edit-tournament-modal";
+import { TournamentBackupDropdown } from "@/components/tournament-backup-dropdown";
 import { RosterPlayerRow } from "@/components/roster-player-row";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
@@ -2316,6 +2317,7 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                               >
                                 <span>✏️ Edit Turnamen</span>
                               </button>
+                              <TournamentBackupDropdown tournament={curTournament} />
                               <button
                                 type="button"
                                 onClick={() => setAdminRulesViewModal(curTournament)}

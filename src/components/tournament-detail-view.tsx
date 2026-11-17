@@ -39,6 +39,7 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import { MatchLobbyModal } from "@/components/match-lobby-modal";
 import { BracketZoomControl } from "@/components/bracket-zoom-control";
 import { EditTournamentModal } from "@/components/edit-tournament-modal";
+import { TournamentBackupDropdown } from "@/components/tournament-backup-dropdown";
 
 type TournamentData = {
   id: string;
@@ -794,14 +795,17 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             )}
 
             {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && (
-              <button
-                type="button"
-                onClick={() => setShowEditTournamentModal(true)}
-                className="border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] text-xs px-3 py-2 rounded-none font-mono font-bold inline-flex items-center justify-center gap-1.5 text-slate-800 dark:text-[#F8FAFC] transition-all cursor-pointer"
-                title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
-              >
-                <span>✏️ Edit Turnamen</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditTournamentModal(true)}
+                  className="border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] text-xs px-3 py-2 rounded-none font-mono font-bold inline-flex items-center justify-center gap-1.5 text-slate-800 dark:text-[#F8FAFC] transition-all cursor-pointer"
+                  title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
+                >
+                  <span>✏️ Edit Turnamen</span>
+                </button>
+                <TournamentBackupDropdown tournament={tournament} />
+              </div>
             )}
 
             <div className="flex items-center gap-2">
@@ -871,14 +875,17 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             />
 
             {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && (
-              <button
-                type="button"
-                onClick={() => setShowEditTournamentModal(true)}
-                className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition-all cursor-pointer"
-                title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
-              >
-                <span>✏️ Edit Turnamen</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowEditTournamentModal(true)}
+                  className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition-all cursor-pointer"
+                  title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
+                >
+                  <span>✏️ Edit Turnamen</span>
+                </button>
+                <TournamentBackupDropdown tournament={tournament} />
+              </>
             )}
 
             {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && tournament.status !== "COMPLETED" && (
