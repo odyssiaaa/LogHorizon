@@ -41,6 +41,7 @@ import {
   Users,
   CheckCircle,
   Eye,
+  Terminal,
   X,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
@@ -53,6 +54,7 @@ import { EditTournamentModal } from "@/components/edit-tournament-modal";
 import { RosterPlayerRow } from "@/components/roster-player-row";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
+import { AiAdminTerminal } from "@/components/ai-admin-terminal";
 
 type Role = "MEMBER" | "MODERATOR" | "ADMIN";
 
@@ -195,7 +197,7 @@ type DashboardData = {
   currentUserId: string;
 };
 
-type Tab = "overview" | "settings" | "tournaments" | "hall_of_winners" | "treasury" | "members" | "moderation" | "security_logs";
+type Tab = "overview" | "ai_command" | "settings" | "tournaments" | "hall_of_winners" | "treasury" | "members" | "moderation" | "security_logs";
 
 const formatMoney = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
@@ -538,6 +540,13 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     fetchTournaments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search]);
+
+  // Strict Moderator Guard: Ensure non-admins never access admin-only tabs
+  useEffect(() => {
+    if (!isAdmin && (tab === "settings" || tab === "treasury" || tab === "ai_command")) {
+      setTab("overview");
+    }
+  }, [isAdmin, tab]);
 
   useLiveSync(() => {
     const query = new URLSearchParams({ page: String(page), search });
@@ -1028,8 +1037,29 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
           {/* DESKTOP SIDEBAR (< md hidden) */}
           <aside className="hidden md:flex flex-col gap-1.5 sticky top-24 p-3 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm">
             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-1.5">
-              6 MODUL UTAMA COMMAND CENTER
+              {isAdmin ? "MODUL COMMAND CENTER" : "MODUL MODERASI & WASIT"}
             </p>
+
+            {/* AI COMMAND ASSISTANT (KHUSUS ADMIN) */}
+            {isAdmin && (
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+                  tab === "ai_command"
+                    ? "bg-[#9D4EDD] text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+                }`}
+                onClick={() => setTab("ai_command")}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Terminal size={16} />
+                  <span>AI Command Assistant</span>
+                </div>
+                <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-bold ${tab === "ai_command" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                  AI
+                </span>
+              </button>
+            )}
 
             {/* 1. RINGKASAN & KEUANGAN */}
             <button
@@ -1043,7 +1073,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             >
               <div className="flex items-center gap-2.5">
                 <LayoutDashboard size={16} />
-                <span>Ringkasan &amp; Keuangan</span>
+                <span>{isAdmin ? "Ringkasan & Keuangan" : "Ringkasan & Moderasi"}</span>
               </div>
             </button>
 
@@ -1074,26 +1104,28 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               })()}
             </button>
 
-            {/* 3. VERIFIKASI KAS DONASI & REKBER */}
-            <button
-              type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
-                tab === "treasury"
-                  ? "bg-[#9D4EDD] text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
-              }`}
-              onClick={() => setTab("treasury")}
-            >
-              <div className="flex items-center gap-2.5">
-                <Coins size={16} />
-                <span>Kas Donasi &amp; Rekber</span>
-              </div>
-              {Boolean(data?.stats.pendingDonations) && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "treasury" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
-                  {data?.stats.pendingDonations}
-                </span>
-              )}
-            </button>
+            {/* 3. VERIFIKASI KAS DONASI & REKBER (KHUSUS ADMIN) */}
+            {isAdmin && (
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+                  tab === "treasury"
+                    ? "bg-[#9D4EDD] text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+                }`}
+                onClick={() => setTab("treasury")}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Coins size={16} />
+                  <span>Kas Donasi &amp; Rekber</span>
+                </div>
+                {Boolean(data?.stats.pendingDonations) && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "treasury" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                    {data?.stats.pendingDonations}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* 4. MANAJEMEN MEMBER & KASTA */}
             <button
@@ -1164,6 +1196,18 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
           {/* MOBILE HORIZONTAL SCROLLABLE TABS (>= md hidden) */}
           <div className="md:hidden flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-2 mb-6 border-b border-gray-200 dark:border-[#2E1E45] -mx-4 px-4">
+            {isAdmin && (
+              <button
+                type="button"
+                className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
+                  tab === "ai_command" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                }`}
+                onClick={() => setTab("ai_command")}
+              >
+                <Terminal size={14} /> ⚡ AI Command
+              </button>
+            )}
+
             <button
               type="button"
               className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
@@ -1171,7 +1215,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               }`}
               onClick={() => setTab("overview")}
             >
-              <LayoutDashboard size={14} /> 1. Ringkasan
+              <LayoutDashboard size={14} /> {isAdmin ? "1. Ringkasan" : "1. Ringkasan & Wasit"}
             </button>
 
             <button
@@ -1195,20 +1239,22 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               })()}
             </button>
 
-            <button
-              type="button"
-              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "treasury" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
-              }`}
-              onClick={() => setTab("treasury")}
-            >
-              <Coins size={14} /> 3. Kas &amp; Rekber
-              {Boolean(data?.stats.pendingDonations) && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500 text-black font-extrabold">
-                  {data?.stats.pendingDonations}
-                </span>
-              )}
-            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
+                  tab === "treasury" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                }`}
+                onClick={() => setTab("treasury")}
+              >
+                <Coins size={14} /> 3. Kas &amp; Rekber
+                {Boolean(data?.stats.pendingDonations) && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500 text-black font-extrabold">
+                    {data?.stats.pendingDonations}
+                  </span>
+                )}
+              </button>
+            )}
 
             <button
               type="button"
@@ -1258,30 +1304,58 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
           {/* MAIN TAB CONTENT */}
           <div className="min-w-0">
             {/* ========================================================================= */}
+            {/* TAB: AI ADMIN COMMAND ASSISTANT TERMINAL (EXCLUSIVE ADMIN) */}
+            {/* ========================================================================= */}
+            {tab === "ai_command" && isAdmin && (
+              <section className="space-y-6" role="tabpanel">
+                <AiAdminTerminal
+                  onActionExecuted={() => {
+                    loadDashboard();
+                    fetchTournaments();
+                  }}
+                />
+              </section>
+            )}
+
+            {/* ========================================================================= */}
             {/* TAB 1: OVERVIEW & STATISTIK GUILD */}
             {/* ========================================================================= */}
             {tab === "overview" && (
               <section className="space-y-6" role="tabpanel">
+                {/* AI COMMAND ASSISTANT LAUNCHPAD (ADMIN ONLY) */}
+                {isAdmin && (
+                  <AiAdminTerminal
+                    onActionExecuted={() => {
+                      loadDashboard();
+                      fetchTournaments();
+                    }}
+                  />
+                )}
+
                 {/* EXECUTIVE HEADER WITH CSV EXPORT */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <div>
                     <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                       <DollarSign size={16} className="text-[#9D4EDD]" />
-                      <span>Ringkasan Eksekutif &amp; Kas Perbendaharaan Guild</span>
+                      <span>{isAdmin ? "Ringkasan Eksekutif & Kas Perbendaharaan Guild" : "Ringkasan Pengawasan & Wasit Turnamen Guild"}</span>
                     </h2>
                     <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-                      Pemasukan kas terverifikasi bersifat rahasia dan hanya dapat diakses oleh jajaran pengurus di sini.
+                      {isAdmin
+                        ? "Pemasukan kas terverifikasi bersifat rahasia dan hanya dapat diakses oleh jajaran pengurus di sini."
+                        : "Pantau aktivitas petualang, laporan konten, dan antrean wasit pertandingan komunitas."}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => exportFinancialReportCSV()}
-                    className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-none bg-[#9D4EDD] hover:bg-[#7B2CBF] text-white transition shadow-sm shrink-0"
-                    title="Unduh seluruh mutasi donasi kas dalam format spreadsheet CSV"
-                  >
-                    <Download size={14} />
-                    <span>Export Laporan Keuangan (.CSV)</span>
-                  </button>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => exportFinancialReportCSV()}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-none bg-[#9D4EDD] hover:bg-[#7B2CBF] text-white transition shadow-sm shrink-0"
+                      title="Unduh seluruh mutasi donasi kas dalam format spreadsheet CSV"
+                    >
+                      <Download size={14} />
+                      <span>Export Laporan Keuangan (.CSV)</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* 5 METRIC CARDS */}
@@ -1296,40 +1370,76 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                     </strong>
                   </article>
 
-                  <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
-                    <div className="flex items-center justify-between text-purple-400">
-                      <DollarSign size={20} />
-                    </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Kas Terverifikasi</span>
-                    <strong className="text-base sm:text-lg font-black text-purple-600 dark:text-purple-300 block mt-0.5 truncate">
-                      {data ? formatMoney.format(data.stats.totalDonations) : "Rp 0"}
-                    </strong>
-                  </article>
+                  {isAdmin ? (
+                    <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
+                      <div className="flex items-center justify-between text-purple-400">
+                        <DollarSign size={20} />
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Kas Terverifikasi</span>
+                      <strong className="text-base sm:text-lg font-black text-purple-600 dark:text-purple-300 block mt-0.5 truncate">
+                        {data ? formatMoney.format(data.stats.totalDonations) : "Rp 0"}
+                      </strong>
+                    </article>
+                  ) : (
+                    <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
+                      <div className="flex items-center justify-between text-rose-500">
+                        <ShieldAlert size={20} />
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Laporan Konten</span>
+                      <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
+                        {data?.stats.pendingReports ?? 0}
+                      </strong>
+                    </article>
+                  )}
 
-                  <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
-                    <div className="flex items-center justify-between text-amber-500">
-                      <Coins size={20} />
-                      {Boolean(data?.stats.pendingDonations) && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/20 text-amber-400">
-                          AKSI
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Donasi Pending</span>
-                    <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-                      {data?.stats.pendingDonations ?? 0}
-                    </strong>
-                  </article>
+                  {isAdmin ? (
+                    <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
+                      <div className="flex items-center justify-between text-amber-500">
+                        <Coins size={20} />
+                        {Boolean(data?.stats.pendingDonations) && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/20 text-amber-400">
+                            AKSI
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Donasi Pending</span>
+                      <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
+                        {data?.stats.pendingDonations ?? 0}
+                      </strong>
+                    </article>
+                  ) : (
+                    <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
+                      <div className="flex items-center justify-between text-purple-400">
+                        <Trophy size={20} />
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Turnamen Aktif</span>
+                      <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
+                        {tournamentsList.length}
+                      </strong>
+                    </article>
+                  )}
 
-                  <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
-                    <div className="flex items-center justify-between text-blue-500">
-                      <Store size={20} />
-                    </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Rekber Aktif</span>
-                    <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-                      {data?.stats.activeEscrows ?? 0}
-                    </strong>
-                  </article>
+                  {isAdmin ? (
+                    <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
+                      <div className="flex items-center justify-between text-blue-500">
+                        <Store size={20} />
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Rekber Aktif</span>
+                      <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
+                        {data?.stats.activeEscrows ?? 0}
+                      </strong>
+                    </article>
+                  ) : (
+                    <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
+                      <div className="flex items-center justify-between text-blue-500">
+                        <Store size={20} />
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Lapak Komunitas</span>
+                      <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
+                        {data?.stats.activeMarketplaceListings ?? 0}
+                      </strong>
+                    </article>
+                  )}
 
                   <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] col-span-2 lg:col-span-1">
                     <div className="flex items-center justify-between text-amber-400">
@@ -1357,6 +1467,19 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                       {isAdmin && (
                         <button
                           type="button"
+                          onClick={() => setTab("ai_command")}
+                          className="w-full text-left px-3.5 py-2.5 rounded-none border border-purple-500/30 bg-purple-500/5 hover:border-[#9D4EDD] text-xs font-semibold text-purple-700 dark:text-purple-300 flex items-center justify-between transition-colors"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Terminal size={14} className="text-[#9D4EDD]" />
+                            <span>⚡ Buka AI Admin Command Assistant</span>
+                          </span>
+                          <ChevronRight size={14} className="text-gray-400" />
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <button
+                          type="button"
                           onClick={() => setTab("settings")}
                           className="w-full text-left px-3.5 py-2.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
                         >
@@ -1364,16 +1487,18 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <ChevronRight size={14} className="text-gray-400" />
                         </button>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => setTab("treasury")}
-                        className="w-full text-left px-3.5 py-2.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
-                      >
-                        <span>💎 Verifikasi Kas Donasi &amp; Rekber</span>
-                        <span className="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">
-                          {data?.stats.pendingDonations ?? 0} pending
-                        </span>
-                      </button>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => setTab("treasury")}
+                          className="w-full text-left px-3.5 py-2.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                        >
+                          <span>💎 Verifikasi Kas Donasi &amp; Rekber</span>
+                          <span className="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">
+                            {data?.stats.pendingDonations ?? 0} pending
+                          </span>
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => setTab("members")}
@@ -2550,9 +2675,9 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
             )}
 
             {/* ========================================================================= */}
-            {/* TAB 3: VERIFIKASI DONASI & TRANSAKSI REKBER */}
+            {/* TAB 3: VERIFIKASI DONASI & TRANSAKSI REKBER (KHUSUS ADMIN) */}
             {/* ========================================================================= */}
-            {tab === "treasury" && (
+            {tab === "treasury" && isAdmin && (
               <section className="space-y-8" role="tabpanel">
                 {/* TOOLBAR & RESET DATA SIMULASI */}
                 <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

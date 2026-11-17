@@ -176,31 +176,33 @@ export async function GET(request: Request) {
     discordWebhookUrl: null,
   };
 
+  const isAdmin = access.user.role === Role.ADMIN;
+
   return Response.json({
     stats: {
       totalMembers,
       totalForumThreads,
       activeMarketplaceListings: activeListings,
-      activeEscrows,
-      pendingDonations: pendingDonationsCount,
+      activeEscrows: isAdmin ? activeEscrows : 0,
+      pendingDonations: isAdmin ? pendingDonationsCount : 0,
       pendingTournamentRegistrations,
       pendingReports,
-      totalDonations: totalDonationsSum._sum.amount ?? 0,
+      totalDonations: isAdmin ? (totalDonationsSum._sum.amount ?? 0) : 0,
     },
     reports,
     recentPosts,
     users,
     marketplaceListings,
-    donations,
+    donations: isAdmin ? donations : [],
     announcements,
-    siteConfig: siteConfig ?? defaultSiteConfig,
+    siteConfig: isAdmin ? (siteConfig ?? defaultSiteConfig) : null,
     sponsors,
-    escrowTransactions,
+    escrowTransactions: isAdmin ? escrowTransactions : [],
     securityLogs,
     pagination: { page, pageSize: PAGE_SIZE, total: totalUsers, totalPages: Math.ceil(totalUsers / PAGE_SIZE) },
-    canManageRoles: access.user.role === Role.ADMIN,
+    canManageRoles: isAdmin,
     canBanMembers: true,
-    canBroadcast: access.user.role === Role.ADMIN,
+    canBroadcast: isAdmin,
     currentUserId: access.user.id,
   });
 }
