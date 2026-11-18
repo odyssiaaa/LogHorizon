@@ -2224,3 +2224,15 @@ body {
 .dropdown-item.logout-item:hover {
   background: color-mix(in srgb, #ef4444 12%, transparent);
 }
+
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

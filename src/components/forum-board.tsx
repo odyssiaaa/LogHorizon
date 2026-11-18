@@ -15,6 +15,7 @@ import { motion } from "framer-motion";
 import type { ForumPostRecord } from "@/types/community";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
+import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown";
 
 type Category = "GENERAL_CHAT" | "PROMOTION" | "FEEDBACK";
 type ForumLiveRow = { id: string };
@@ -448,27 +449,40 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                           label="Share"
                           variant="ghost"
                         />
-                        {(user?.role === "ADMIN" || user?.role === "MODERATOR") && (
-                          <button
-                            type="button"
-                            className={`inline-flex items-center gap-1 ml-auto ${post.isPinned ? "text-[#A78BFA] font-bold" : "text-[#A78BFA]/70 hover:text-[#F8FAFC]"}`}
-                            onClick={() => void handleTogglePin(post.id, post.isPinned)}
-                            title={post.isPinned ? "Lepas sematan (Unpin)" : "Sematkan thread (Pin)"}
-                          >
-                            <Pin size={12} /> {post.isPinned ? "Unpin" : "Pin"}
-                          </button>
-                        )}
                         <button className="text-[#A78BFA]/70 hover:text-rose-400 inline-flex items-center gap-1" onClick={() => handleReportPost(post.id)}>
                           <Flag size={12} /> Laporkan
                         </button>
-                        {user && (user.id === post.author.id || user.username === post.author.username || user.role === "ADMIN" || user.role === "MODERATOR" || user.username === ".odyssia") && (
+
+                        {/* Tombol Hapus Pemilik Thread Biasa */}
+                        {user && !(user.role === "ADMIN" || user.role === "MODERATOR") && (user.id === post.author.id || user.username === post.author.username) && (
                           <button
-                            className="text-rose-400 hover:text-rose-300 inline-flex items-center gap-1 text-xs font-mono"
+                            className="text-rose-400 hover:text-rose-300 inline-flex items-center gap-1 text-xs font-mono ml-auto"
                             onClick={() => void handleDeletePost(post.id)}
-                            title="Hapus postingan"
+                            title="Hapus postingan saya"
                           >
                             <Trash2 size={12} /> Hapus
                           </button>
+                        )}
+
+                        {/* Menu Moderasi Staf (Admin & Moderator) */}
+                        {(user?.role === "ADMIN" || user?.role === "MODERATOR") && (
+                          <div className="ml-auto">
+                            <StaffCardModerationMenu
+                              actions={[
+                                {
+                                  label: post.isPinned ? "Lepas Sematan (Unpin)" : "Sematkan Thread (Pin)",
+                                  icon: <Pin size={13} />,
+                                  onClick: () => handleTogglePin(post.id, post.isPinned),
+                                },
+                                {
+                                  label: "Hapus Paksa Thread",
+                                  icon: <Trash2 size={13} />,
+                                  danger: true,
+                                  onClick: () => handleDeletePost(post.id),
+                                },
+                              ]}
+                            />
+                          </div>
                         )}
                       </div>
                     </div>

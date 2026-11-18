@@ -19,6 +19,8 @@ import {
   Edit3,
   ExternalLink,
   Eye,
+  FileCode,
+  FileSpreadsheet,
   Flame,
   Headphones,
   ImageIcon,
@@ -53,6 +55,8 @@ import { MatchLobbyModal } from "@/components/match-lobby-modal";
 import { BracketZoomControl } from "@/components/bracket-zoom-control";
 import { EditTournamentModal } from "@/components/edit-tournament-modal";
 import { TournamentBackupDropdown } from "@/components/tournament-backup-dropdown";
+import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown";
+import { exportTournamentToCsv, exportTournamentToJson } from "@/lib/tournament-export";
 
 type Participant = {
   id: string;
@@ -1413,7 +1417,26 @@ export function EventsBoard() {
                           )}
 
                           {isAdminOrMod && (
-                            <TournamentBackupDropdown tournament={tournament} />
+                            <StaffCardModerationMenu
+                              label="⚙️ Opsi Staf"
+                              actions={[
+                                {
+                                  label: "Unduh Laporan (.CSV)",
+                                  icon: <FileSpreadsheet size={13} />,
+                                  onClick: () => exportTournamentToCsv(tournament),
+                                },
+                                {
+                                  label: "Unduh Backup JSON",
+                                  icon: <FileCode size={13} />,
+                                  onClick: () => exportTournamentToJson(tournament),
+                                },
+                                {
+                                  label: "Buka Detail & Kelola",
+                                  icon: <Trophy size={13} />,
+                                  onClick: () => { window.location.href = `/events/turnamen/${tournament.id}`; },
+                                },
+                              ]}
+                            />
                           )}
                         </div>
                       </div>
@@ -1736,15 +1759,27 @@ export function EventsBoard() {
                     </div>
 
                     <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
-                      {(post.isOwner || isAdminOrMod) && (
+                      {isAdminOrMod && (
+                        <StaffCardModerationMenu
+                          actions={[
+                            {
+                              label: "Hapus / Bubarkan Party",
+                              icon: <Trash2 size={13} />,
+                              danger: true,
+                              onClick: () => deleteParty(post.id, post.game),
+                            },
+                          ]}
+                        />
+                      )}
+                      {post.isOwner && !isAdminOrMod && (
                         <button
                           type="button"
                           onClick={() => deleteParty(post.id, post.game)}
-                          className="w-full sm:w-auto px-2 py-1.5 rounded-none border border-red-500/30 text-xs font-mono text-rose-400 hover:text-rose-300 hover:bg-red-950/20 inline-flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
+                          className="w-full sm:w-auto px-2.5 py-1.5 rounded-none border border-red-500/30 text-xs font-mono text-rose-400 hover:text-rose-300 hover:bg-red-950/20 inline-flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
                           title="Hapus / Tutup Party Mabar"
                         >
                           <Trash2 size={13} />
-                          <span>Hapus</span>
+                          <span>Hapus Party</span>
                         </button>
                       )}
                       {!post.isOwner && (

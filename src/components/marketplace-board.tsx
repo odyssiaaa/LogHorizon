@@ -18,6 +18,7 @@ import type { MarketplacePostRecord } from "@/types/community";
 import { motion } from "framer-motion";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
+import { StaffCardModerationMenu, StaffActionItem } from "@/components/staff-moderation-dropdown";
 
 type MarketPost = MarketplacePostRecord;
 
@@ -526,22 +527,70 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                   <ShieldCheck size={13} /> Ruang Rekber 3-Pihak
                 </button>
               ))}
-              {(user?.id === post.authorId || user?.role === "ADMIN" || user?.role === "MODERATOR") && market.status !== "IN_ESCROW" && <button className="px-3 py-1.5 rounded-none font-mono text-xs uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED]" disabled={escrowLoading === post.id} onClick={() => void updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD")}>{market.status === "SOLD" ? "Tandai tersedia" : "Tandai terjual"}</button>}
-              {post.escrowTransactions?.filter((transaction) => transaction.sellerId === user?.id || user?.role === "ADMIN" || user?.role === "MODERATOR").map((transaction) => <button key={transaction.id} className="px-3 py-1.5 rounded-none font-mono text-xs uppercase tracking-wider bg-[#10B981] text-slate-900 font-bold" disabled={escrowLoading === post.id} onClick={() => void completeEscrow(transaction.id, post.id)}>{escrowLoading === post.id ? "Memproses…" : "Konfirmasi selesai"}</button>)}
               <button className="text-xs font-mono text-slate-500 dark:text-[#A78BFA] hover:text-rose-500 inline-flex items-center gap-1" onClick={() => void report(post.id)}><Flag size={14} /> Report</button>
-              {(user?.id === post.authorId || user?.role === "ADMIN" || user?.role === "MODERATOR" || user?.username === ".odyssia") && (
-                <button
-                  className={`text-xs font-mono inline-flex items-center gap-1 ml-auto transition-colors ${
-                    market.status === "IN_ESCROW"
-                      ? "text-slate-500 cursor-not-allowed opacity-50"
-                      : "text-rose-400 hover:text-rose-300"
-                  }`}
-                  disabled={escrowLoading === post.id || market.status === "IN_ESCROW"}
-                  onClick={() => void deleteListing(post.id)}
-                  title={market.status === "IN_ESCROW" ? "Lapak sedang dalam transaksi Rekber aktif dan tidak dapat dihapus" : "Hapus lapak"}
-                >
-                  <Trash2 size={14} /> Hapus
-                </button>
+
+              {/* Author Actions (Non-Staff) */}
+              {user && !(user.role === "ADMIN" || user.role === "MODERATOR") && user.id === post.authorId && (
+                <div className="flex items-center gap-2 ml-auto">
+                  {market.status !== "IN_ESCROW" && (
+                    <button
+                      className="px-2.5 py-1 rounded-none font-mono text-xs uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED]"
+                      disabled={escrowLoading === post.id}
+                      onClick={() => void updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD")}
+                    >
+                      {market.status === "SOLD" ? "Tandai tersedia" : "Tandai terjual"}
+                    </button>
+                  )}
+                  {post.escrowTransactions?.filter((tr) => tr.sellerId === user.id).map((tr) => (
+                    <button
+                      key={tr.id}
+                      className="px-2.5 py-1 rounded-none font-mono text-xs uppercase tracking-wider bg-[#10B981] text-slate-900 font-bold"
+                      disabled={escrowLoading === post.id}
+                      onClick={() => void completeEscrow(tr.id, post.id)}
+                    >
+                      {escrowLoading === post.id ? "Memproses…" : "Konfirmasi selesai"}
+                    </button>
+                  ))}
+                  <button
+                    className={`text-xs font-mono inline-flex items-center gap-1 transition-colors ${
+                      market.status === "IN_ESCROW"
+                        ? "text-slate-500 cursor-not-allowed opacity-50"
+                        : "text-rose-400 hover:text-rose-300"
+                    }`}
+                    disabled={escrowLoading === post.id || market.status === "IN_ESCROW"}
+                    onClick={() => void deleteListing(post.id)}
+                    title={market.status === "IN_ESCROW" ? "Lapak dalam transaksi aktif" : "Hapus lapak"}
+                  >
+                    <Trash2 size={13} /> Hapus
+                  </button>
+                </div>
+              )}
+
+              {/* Staff Moderation Menu (Admin & Moderator) */}
+              {(user?.role === "ADMIN" || user?.role === "MODERATOR") && (
+                <div className="ml-auto">
+                  <StaffCardModerationMenu
+                    actions={[
+                      {
+                        label: market.status === "SOLD" ? "Tandai Tersedia" : "Tandai Terjual",
+                        disabled: market.status === "IN_ESCROW",
+                        onClick: () => updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD"),
+                      },
+                      ...(post.escrowTransactions?.map((tr) => ({
+                        label: "Konfirmasi Selesai (Rekber)",
+                        icon: <ShieldCheck size={13} />,
+                        onClick: () => completeEscrow(tr.id, post.id),
+                      })) || []),
+                      {
+                        label: "Hapus Paksa Lapak",
+                        icon: <Trash2 size={13} />,
+                        danger: true,
+                        disabled: market.status === "IN_ESCROW",
+                        onClick: () => deleteListing(post.id),
+                      },
+                    ]}
+                  />
+                </div>
               )}
             </div>
           </div>

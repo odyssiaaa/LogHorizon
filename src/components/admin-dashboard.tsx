@@ -1093,9 +1093,9 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
         {/* ========================================================================= */}
         {/* RESPONSIVE LAYOUT: DESKTOP SIDEBAR + MOBILE HORIZONTAL TABS */}
         {/* ========================================================================= */}
-        <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-8 items-start">
+        <div className="lg:flex lg:gap-8 items-start">
           {/* DESKTOP SIDEBAR (< lg hidden) */}
-          <aside className="hidden lg:flex flex-col gap-1.5 sticky top-24 p-3 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm">
+          <aside className="hidden lg:flex flex-col w-64 shrink-0 space-y-1 sticky top-24 p-3 rounded-lg border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm">
             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-1.5">
               {isAdmin ? "MODUL COMMAND CENTER" : "MODUL MODERASI & WASIT"}
             </p>
@@ -1104,7 +1104,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {isAdmin && (
               <button
                 type="button"
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
                   tab === "ai_command"
                     ? "bg-[#9D4EDD] text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -1124,7 +1124,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {/* 1. RINGKASAN & KEUANGAN */}
             <button
               type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
                 tab === "overview"
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -1140,7 +1140,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {/* 2. TURNAMEN & VERIFIKASI PESERTA */}
             <button
               type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
                 tab === "tournaments" || tab === "hall_of_winners"
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -1157,7 +1157,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               {(() => {
                 const totalPending = tournamentsList.reduce((acc, t) => acc + (t.participants?.filter((p: any) => p.paymentStatus === "PENDING_PAYMENT").length || 0), 0);
                 return totalPending > 0 ? (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "tournaments" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${tab === "tournaments" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
                     {totalPending}
                   </span>
                 ) : null;
@@ -1168,7 +1168,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {isAdmin && (
               <button
                 type="button"
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
                   tab === "treasury"
                     ? "bg-[#9D4EDD] text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -1180,7 +1180,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   <span>Kas Donasi &amp; Rekber</span>
                 </div>
                 {Boolean(data?.stats.pendingDonations) && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "treasury" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${tab === "treasury" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
                     {data?.stats.pendingDonations}
                   </span>
                 )}
@@ -1190,7 +1190,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {/* 4. MANAJEMEN MEMBER & KASTA */}
             <button
               type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
                 tab === "members"
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -1206,7 +1206,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {/* 5. MODERASI & LOG KEAMANAN SATPAM AI */}
             <button
               type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
                 tab === "moderation" || tab === "security_logs"
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -1218,7 +1218,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                 <span>Moderasi &amp; Log AI</span>
               </div>
               {Boolean(data?.stats.pendingReports) && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-none font-mono font-bold ${tab === "moderation" ? "bg-white text-[#9D4EDD]" : "bg-rose-500/20 text-rose-400"}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${tab === "moderation" ? "bg-white text-[#9D4EDD]" : "bg-rose-500/20 text-rose-400"}`}>
                   {data?.stats.pendingReports}
                 </span>
               )}
@@ -1228,7 +1228,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {isAdmin && (
               <button
                 type="button"
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold transition-colors ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
                   tab === "settings"
                     ? "bg-[#9D4EDD] text-white"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
@@ -1244,7 +1244,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
             <Link
               href="/events?view=turnamen"
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-none text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724] border border-dashed border-[#9D4EDD]/40 mt-3 bg-[#9D4EDD]/5 transition-colors"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724] border border-dashed border-[#9D4EDD]/40 mt-3 bg-[#9D4EDD]/5 transition-colors"
             >
               <div className="flex items-center gap-2.5 text-[#9D4EDD]">
                 <Trophy size={16} />
@@ -1255,40 +1255,40 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
           </aside>
 
           {/* MOBILE HORIZONTAL SCROLLABLE TABS (>= lg hidden) */}
-          <div className="lg:hidden flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-2 mb-6 border-b border-gray-200 dark:border-[#2E1E45] -mx-4 px-4">
+          <div className="lg:hidden flex overflow-x-auto gap-2 pb-2 mb-6 border-b border-gray-200 dark:border-[#2E1E45] no-scrollbar -mx-4 px-4">
             {isAdmin && (
               <button
                 type="button"
-                className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                  tab === "ai_command" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
+                  tab === "ai_command" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
                 }`}
                 onClick={() => setTab("ai_command")}
               >
-                <Terminal size={14} /> ⚡ AI Command
+                <Terminal size={14} /> <span>⚡ AI Command</span>
               </button>
             )}
 
             <button
               type="button"
-              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "overview" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+              className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
+                tab === "overview" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => setTab("overview")}
             >
-              <LayoutDashboard size={14} /> {isAdmin ? "1. Ringkasan" : "1. Ringkasan & Wasit"}
+              <LayoutDashboard size={14} /> <span>{isAdmin ? "1. Ringkasan" : "1. Ringkasan & Wasit"}</span>
             </button>
 
             <button
               type="button"
-              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "tournaments" || tab === "hall_of_winners" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+              className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
+                tab === "tournaments" || tab === "hall_of_winners" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => {
                 setTab("tournaments");
                 fetchTournaments();
               }}
             >
-              <Trophy size={14} /> 2. Turnamen
+              <Trophy size={14} /> <span>2. Turnamen</span>
               {(() => {
                 const totalPending = tournamentsList.reduce((acc, t) => acc + (t.participants?.filter((p: any) => p.paymentStatus === "PENDING_PAYMENT").length || 0), 0);
                 return totalPending > 0 ? (
@@ -1302,12 +1302,12 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {isAdmin && (
               <button
                 type="button"
-                className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                  tab === "treasury" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
+                  tab === "treasury" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
                 }`}
                 onClick={() => setTab("treasury")}
               >
-                <Coins size={14} /> 3. Kas &amp; Rekber
+                <Coins size={14} /> <span>3. Kas &amp; Rekber</span>
                 {Boolean(data?.stats.pendingDonations) && (
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500 text-black font-extrabold">
                     {data?.stats.pendingDonations}
@@ -1318,22 +1318,22 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
             <button
               type="button"
-              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "members" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+              className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
+                tab === "members" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => setTab("members")}
             >
-              <Users size={14} /> 4. Member &amp; Kasta
+              <Users size={14} /> <span>4. Member &amp; Kasta</span>
             </button>
 
             <button
               type="button"
-              className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                tab === "moderation" || tab === "security_logs" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+              className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
+                tab === "moderation" || tab === "security_logs" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => setTab("moderation")}
             >
-              <ShieldAlert size={14} /> 5. Moderasi &amp; AI
+              <ShieldAlert size={14} /> <span>5. Moderasi &amp; AI</span>
               {Boolean(data?.stats.pendingReports) && (
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-extrabold">
                   {data?.stats.pendingReports}
@@ -1344,25 +1344,25 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {isAdmin && (
               <button
                 type="button"
-                className={`px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-2 shrink-0 ${
-                  tab === "settings" ? "bg-[#9D4EDD] text-white" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
+                  tab === "settings" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
                 }`}
                 onClick={() => setTab("settings")}
               >
-                <Settings size={14} /> 6. Web CMS &amp; AI
+                <Settings size={14} /> <span>6. Web CMS &amp; AI</span>
               </button>
             )}
 
             <Link
               href="/events?view=turnamen"
-              className="px-3.5 py-2 rounded-none text-xs font-bold flex items-center gap-1.5 shrink-0 bg-[#9D4EDD]/10 text-[#9D4EDD] border border-[#9D4EDD]/30"
+              className="whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-[#9D4EDD]/10 text-[#9D4EDD] border border-[#9D4EDD]/30"
             >
-              <Trophy size={14} /> Bagan Turnamen
+              <Trophy size={14} /> <span>Bagan Live</span>
             </Link>
           </div>
 
           {/* MAIN TAB CONTENT */}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             {/* ========================================================================= */}
             {/* TAB: AI ADMIN COMMAND ASSISTANT TERMINAL (EXCLUSIVE ADMIN) */}
             {/* ========================================================================= */}
@@ -2558,24 +2558,24 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
 
                                       {/* Tombol Aksi Admin */}
                                       {isPending && (
-                                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                        <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto shrink-0">
                                           <button
                                             type="button"
                                             disabled={adminVerificationLoading === p.id}
                                             onClick={() => handleAdminVerification(curTournament.id, p.id, "APPROVE")}
-                                            className="px-3.5 py-2 rounded-none text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm transition"
+                                            className="h-9 px-3.5 py-2 rounded-md text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 shadow-sm transition disabled:opacity-50"
                                           >
-                                            <CheckCircle size={15} />
-                                            <span>{adminVerificationLoading === p.id ? "Memproses..." : "ACC & Masukkan ke Bagan"}</span>
+                                            <CheckCircle size={14} />
+                                            <span>{adminVerificationLoading === p.id ? "Memproses..." : "✅ ACC"}</span>
                                           </button>
                                           <button
                                             type="button"
                                             disabled={adminVerificationLoading === p.id}
                                             onClick={() => handleAdminVerification(curTournament.id, p.id, "REJECT")}
-                                            className="px-3 py-2 rounded-none text-xs font-bold bg-rose-600/80 hover:bg-rose-600 text-white flex items-center gap-1 shadow-sm transition"
+                                            className="h-9 px-3 py-2 rounded-md text-xs font-bold bg-rose-600/80 hover:bg-rose-600 text-white flex items-center justify-center gap-1 shadow-sm transition disabled:opacity-50"
                                           >
-                                            <X size={15} />
-                                            <span>Tolak Pendaftaran</span>
+                                            <X size={14} />
+                                            <span>❌ Tolak</span>
                                           </button>
                                         </div>
                                       )}
@@ -3002,86 +3002,167 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                     </div>
                   </div>
 
-                  <DragScrollContainer
-                    buttonPosition="top"
-                    label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat detail antrean donasi"
-                  >
-                    <table className="w-full text-left text-xs min-w-[700px]">
-                      <thead>
-                        <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400">
-                          <th className="py-2.5">Pengirim Rekening</th>
-                          <th className="py-2.5">Akun Member</th>
-                          <th className="py-2.5">Nominal</th>
-                          <th className="py-2.5">Catatan / Ref</th>
-                          <th className="py-2.5">Bukti Transfer</th>
-                          <th className="py-2.5">Waktu</th>
-                          <th className="py-2.5 text-right">Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]">
-                        {pendingDonationsList.map((item) => (
-                          <tr key={item.id}>
-                            <td className="py-3 font-bold text-gray-900 dark:text-white">
-                              {item.senderName || "-"}
-                            </td>
-                            <td className="py-3">
-                              <div className="flex items-center gap-2">
-                                <DiscordAvatar src={item.user?.avatar ?? null} username={item.user?.username ?? "Member"} size={22} />
-                                <span className="font-semibold text-gray-800 dark:text-gray-200">{item.user?.username ?? "Member"}</span>
-                              </div>
-                            </td>
-                            <td className="py-3 font-extrabold text-purple-600 dark:text-purple-300">
+                  {/* MOBILE CARD VIEW (< md) */}
+                  <div className="block md:hidden space-y-3">
+                    {pendingDonationsList.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-gray-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#130921]"
+                      >
+                        <div className="space-y-1.5 text-xs text-left">
+                          <div className="flex items-center gap-2 justify-between">
+                            <div className="flex items-center gap-2">
+                              <DiscordAvatar src={item.user?.avatar ?? null} username={item.user?.username ?? "Member"} size={22} />
+                              <span className="font-bold text-gray-900 dark:text-white">
+                                {item.user?.username ?? "Member"}
+                              </span>
+                            </div>
+                            <span className="font-extrabold text-purple-600 dark:text-purple-300">
                               {formatMoney.format(item.amount)}
-                            </td>
-                            <td className="py-3 text-gray-500 max-w-[150px] truncate">{item.notes || "-"}</td>
-                            <td className="py-3">
-                              {item.proofUrl ? (
-                                <a
-                                  href={item.proofUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-xs text-[#9D4EDD] hover:underline font-bold inline-flex items-center gap-1"
-                                >
-                                  <span>Lihat Bukti</span>
-                                  <ExternalLink size={12} />
-                                </a>
-                              ) : (
-                                <span className="text-gray-400 text-[11px]">Tanpa bukti link</span>
-                              )}
-                            </td>
-                            <td className="py-3 text-gray-500 text-[11px]">
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-gray-500">
+                            Pengirim: <strong className="text-gray-700 dark:text-gray-300">{item.senderName || "-"}</strong>
+                          </p>
+
+                          {item.notes && (
+                            <p className="text-[11px] text-gray-500 italic">
+                              &ldquo;{item.notes}&rdquo;
+                            </p>
+                          )}
+
+                          <div className="flex items-center gap-3 pt-1 text-[11px]">
+                            {item.proofUrl ? (
+                              <a
+                                href={item.proofUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[#9D4EDD] hover:underline font-bold inline-flex items-center gap-1"
+                              >
+                                <span>Lihat Bukti Transfer</span>
+                                <ExternalLink size={12} />
+                              </a>
+                            ) : (
+                              <span className="text-gray-400">Tanpa link bukti</span>
+                            )}
+                            <span className="text-gray-400">•</span>
+                            <span className="text-gray-400">
                               {new Date(item.createdAt).toLocaleDateString("id-ID")}
-                            </td>
-                            <td className="py-3 text-right space-x-2 whitespace-nowrap">
-                              <button
-                                type="button"
-                                disabled={busyId === item.id}
-                                onClick={() => void verifyDonation(item.id, "APPROVED")}
-                                className="px-2.5 py-1 rounded text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 hover:bg-emerald-500/25"
-                              >
-                                ACC / Verifikasi
-                              </button>
-                              <button
-                                type="button"
-                                disabled={busyId === item.id}
-                                onClick={() => void verifyDonation(item.id, "REJECTED")}
-                                className="px-2.5 py-1 rounded text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-                              >
-                                Tolak
-                              </button>
-                            </td>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200 dark:border-[#2E1E45]">
+                          <button
+                            type="button"
+                            disabled={busyId === item.id}
+                            onClick={() => void verifyDonation(item.id, "APPROVED")}
+                            className="h-9 px-3 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-md flex items-center justify-center gap-1 shadow-sm transition disabled:opacity-50"
+                          >
+                            <span>✅ ACC</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busyId === item.id}
+                            onClick={() => void verifyDonation(item.id, "REJECTED")}
+                            className="h-9 px-3 text-xs font-bold bg-rose-600/80 hover:bg-rose-600 text-white rounded-md flex items-center justify-center gap-1 shadow-sm transition disabled:opacity-50"
+                          >
+                            <span>❌ Tolak</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {pendingDonationsList.length === 0 && (
+                      <p className="p-4 text-center text-xs text-gray-400">
+                        Tidak ada antrean donasi pending saat ini.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* DESKTOP TABLE VIEW (>= md) */}
+                  <div className="hidden md:block">
+                    <DragScrollContainer
+                      buttonPosition="top"
+                      label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat detail antrean donasi"
+                    >
+                      <table className="w-full text-left text-xs min-w-[700px]">
+                        <thead>
+                          <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400">
+                            <th className="py-2.5">Pengirim Rekening</th>
+                            <th className="py-2.5">Akun Member</th>
+                            <th className="py-2.5">Nominal</th>
+                            <th className="py-2.5">Catatan / Ref</th>
+                            <th className="py-2.5">Bukti Transfer</th>
+                            <th className="py-2.5">Waktu</th>
+                            <th className="py-2.5 text-right">Aksi</th>
                           </tr>
-                        ))}
-                        {pendingDonationsList.length === 0 && (
-                          <tr>
-                            <td className="py-6 text-center text-gray-400" colSpan={7}>
-                              Tidak ada antrean donasi pending saat ini.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </DragScrollContainer>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]">
+                          {pendingDonationsList.map((item) => (
+                            <tr key={item.id}>
+                              <td className="py-3 font-bold text-gray-900 dark:text-white">
+                                {item.senderName || "-"}
+                              </td>
+                              <td className="py-3">
+                                <div className="flex items-center gap-2">
+                                  <DiscordAvatar src={item.user?.avatar ?? null} username={item.user?.username ?? "Member"} size={22} />
+                                  <span className="font-semibold text-gray-800 dark:text-gray-200">{item.user?.username ?? "Member"}</span>
+                                </div>
+                              </td>
+                              <td className="py-3 font-extrabold text-purple-600 dark:text-purple-300">
+                                {formatMoney.format(item.amount)}
+                              </td>
+                              <td className="py-3 text-gray-500 max-w-[150px] truncate">{item.notes || "-"}</td>
+                              <td className="py-3">
+                                {item.proofUrl ? (
+                                  <a
+                                    href={item.proofUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs text-[#9D4EDD] hover:underline font-bold inline-flex items-center gap-1"
+                                  >
+                                    <span>Lihat Bukti</span>
+                                    <ExternalLink size={12} />
+                                  </a>
+                                ) : (
+                                  <span className="text-gray-400 text-[11px]">Tanpa bukti link</span>
+                                )}
+                              </td>
+                              <td className="py-3 text-gray-500 text-[11px]">
+                                {new Date(item.createdAt).toLocaleDateString("id-ID")}
+                              </td>
+                              <td className="py-3 text-right space-x-2 whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  disabled={busyId === item.id}
+                                  onClick={() => void verifyDonation(item.id, "APPROVED")}
+                                  className="px-2.5 py-1 rounded text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 hover:bg-emerald-500/25"
+                                >
+                                  ACC / Verifikasi
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={busyId === item.id}
+                                  onClick={() => void verifyDonation(item.id, "REJECTED")}
+                                  className="px-2.5 py-1 rounded text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                                >
+                                  Tolak
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {pendingDonationsList.length === 0 && (
+                            <tr>
+                              <td className="py-6 text-center text-gray-400" colSpan={7}>
+                                Tidak ada antrean donasi pending saat ini.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </DragScrollContainer>
+                  </div>
                 </div>
 
                 {/* 2. RIWAYAT DONASI TERVERIFIKASI */}
@@ -3158,94 +3239,173 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                     </div>
                   </div>
 
-                  <DragScrollContainer
-                    buttonPosition="top"
-                    label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat tiket rekber 3-pihak"
-                  >
-                    <table className="w-full text-left text-xs min-w-[700px]">
-                      <thead>
-                        <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400">
-                          <th className="py-2.5">Lapak Transaksi</th>
-                          <th className="py-2.5">Buyer &amp; Seller</th>
-                          <th className="py-2.5">Nominal</th>
-                          <th className="py-2.5">Penengah Rekber</th>
-                          <th className="py-2.5">Status</th>
-                          <th className="py-2.5 text-right">Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]">
-                        {data?.escrowTransactions?.map((escrow) => {
-                          const isClaimedByMe = escrow.claimedById === data.currentUserId;
-                          const isUnclaimed = !escrow.claimedById;
-
-                          return (
-                            <tr key={escrow.id} className="hover:bg-purple-950/10">
-                              <td className="py-3 font-semibold text-gray-900 dark:text-white max-w-xs truncate">
+                  {/* MOBILE CARD VIEW (< md) */}
+                  <div className="block md:hidden space-y-3">
+                    {data?.escrowTransactions?.map((escrow) => {
+                      const isUnclaimed = !escrow.claimedById;
+                      return (
+                        <div
+                          key={escrow.id}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-gray-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#130921]"
+                        >
+                          <div className="space-y-1.5 text-xs text-left">
+                            <div className="flex items-center justify-between gap-2">
+                              <h4 className="font-bold text-gray-900 dark:text-white truncate max-w-[220px]">
                                 {escrow.post.title}
-                              </td>
-                              <td className="py-3 text-gray-400">
-                                <div>🛒 {escrow.buyer.username ?? "Buyer"}</div>
-                                <div>🏷️ {escrow.seller.username ?? "Seller"}</div>
-                              </td>
-                              <td className="py-3 font-bold text-emerald-400">
+                              </h4>
+                              <span className="font-extrabold text-emerald-400 shrink-0">
                                 {formatMoney.format(escrow.amount)}
-                              </td>
-                              <td className="py-3">
-                                {escrow.claimedBy ? (
-                                  <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                                    🛡️ {escrow.claimedBy.username}
-                                  </span>
-                                ) : (
-                                  <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/20 animate-pulse">
-                                    Menunggu Claim
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-3">
-                                <span
-                                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                    escrow.status === "COMPLETED"
-                                      ? "bg-emerald-500/15 text-emerald-400"
-                                      : escrow.status === "CANCELLED"
-                                        ? "bg-red-500/15 text-red-400"
-                                        : "bg-purple-500/15 text-purple-400"
-                                  }`}
-                                >
-                                  {escrow.status}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-gray-500">
+                              🛒 Buyer: <strong className="text-gray-700 dark:text-gray-300">@{escrow.buyer.username ?? "Buyer"}</strong> • 🏷️ Seller: <strong className="text-gray-700 dark:text-gray-300">@{escrow.seller.username ?? "Seller"}</strong>
+                            </p>
+                            <div className="flex items-center gap-2 pt-0.5">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  escrow.status === "COMPLETED"
+                                    ? "bg-emerald-500/15 text-emerald-400"
+                                    : escrow.status === "CANCELLED"
+                                      ? "bg-red-500/15 text-red-400"
+                                      : "bg-purple-500/15 text-purple-400"
+                                }`}
+                              >
+                                {escrow.status}
+                              </span>
+                              {escrow.claimedBy ? (
+                                <span className="text-[10px] font-semibold text-emerald-500">
+                                  🛡️ {escrow.claimedBy.username}
                                 </span>
-                              </td>
-                              <td className="py-3 text-right space-x-1.5 whitespace-nowrap">
-                                {isUnclaimed && escrow.status === "IN_ESCROW" && (
+                              ) : (
+                                <span className="text-[10px] font-bold text-amber-500 animate-pulse">
+                                  ⏳ Menunggu Claim
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200 dark:border-[#2E1E45]">
+                            {isUnclaimed && escrow.status === "IN_ESCROW" ? (
+                              <button
+                                type="button"
+                                disabled={busyId === escrow.id}
+                                onClick={() => void claimEscrow(escrow.id)}
+                                className="h-9 px-3 text-xs bg-[#9D4EDD] hover:bg-[#8338EC] text-white font-bold rounded-md flex items-center justify-center gap-1 transition shadow-sm disabled:opacity-50"
+                              >
+                                <span>Ambil Tiket</span>
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedEscrowId(escrow.id)}
+                              className={`h-9 px-3 text-xs border border-purple-500/40 text-purple-400 hover:bg-purple-500/10 font-medium rounded-md flex items-center justify-center gap-1 transition shadow-sm ${
+                                isUnclaimed && escrow.status === "IN_ESCROW" ? "" : "col-span-2 sm:col-span-1"
+                              }`}
+                            >
+                              <span>💬 Buka Chat</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {!data?.escrowTransactions?.length && (
+                      <p className="p-4 text-center text-xs text-gray-400">
+                        Belum ada transaksi rekber 3-pihak yang aktif.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* DESKTOP TABLE VIEW (>= md) */}
+                  <div className="hidden md:block">
+                    <DragScrollContainer
+                      buttonPosition="top"
+                      label="🖱️ Drag mouse / tombol ◀ ▶ untuk melihat tiket rekber 3-pihak"
+                    >
+                      <table className="w-full text-left text-xs min-w-[700px]">
+                        <thead>
+                          <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400">
+                            <th className="py-2.5">Lapak Transaksi</th>
+                            <th className="py-2.5">Buyer &amp; Seller</th>
+                            <th className="py-2.5">Nominal</th>
+                            <th className="py-2.5">Penengah Rekber</th>
+                            <th className="py-2.5">Status</th>
+                            <th className="py-2.5 text-right">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]">
+                          {data?.escrowTransactions?.map((escrow) => {
+                            const isClaimedByMe = escrow.claimedById === data.currentUserId;
+                            const isUnclaimed = !escrow.claimedById;
+
+                            return (
+                              <tr key={escrow.id} className="hover:bg-purple-950/10">
+                                <td className="py-3 font-semibold text-gray-900 dark:text-white max-w-xs truncate">
+                                  {escrow.post.title}
+                                </td>
+                                <td className="py-3 text-gray-400">
+                                  <div>🛒 {escrow.buyer.username ?? "Buyer"}</div>
+                                  <div>🏷️ {escrow.seller.username ?? "Seller"}</div>
+                                </td>
+                                <td className="py-3 font-bold text-emerald-400">
+                                  {formatMoney.format(escrow.amount)}
+                                </td>
+                                <td className="py-3">
+                                  {escrow.claimedBy ? (
+                                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                                      🛡️ {escrow.claimedBy.username}
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/20 animate-pulse">
+                                      Menunggu Claim
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-3">
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                      escrow.status === "COMPLETED"
+                                        ? "bg-emerald-500/15 text-emerald-400"
+                                        : escrow.status === "CANCELLED"
+                                          ? "bg-red-500/15 text-red-400"
+                                          : "bg-purple-500/15 text-purple-400"
+                                    }`}
+                                  >
+                                    {escrow.status}
+                                  </span>
+                                </td>
+                                <td className="py-3 text-right space-x-1.5 whitespace-nowrap">
+                                  {isUnclaimed && escrow.status === "IN_ESCROW" && (
+                                    <button
+                                      type="button"
+                                      disabled={busyId === escrow.id}
+                                      onClick={() => void claimEscrow(escrow.id)}
+                                      className="px-2.5 py-1 rounded text-xs bg-[#9D4EDD] hover:bg-[#8338EC] text-white font-bold transition-all"
+                                    >
+                                      Ambil Tiket Rekber (Claim)
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
-                                    disabled={busyId === escrow.id}
-                                    onClick={() => void claimEscrow(escrow.id)}
-                                    className="px-2.5 py-1 rounded text-xs bg-[#9D4EDD] hover:bg-[#8338EC] text-white font-bold transition-all"
+                                    onClick={() => setSelectedEscrowId(escrow.id)}
+                                    className="px-2.5 py-1 rounded text-xs border border-purple-500/40 text-purple-400 hover:bg-purple-500/10 font-medium transition-all"
                                   >
-                                    Ambil Tiket Rekber (Claim)
+                                    💬 Buka Ruang Chat
                                   </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedEscrowId(escrow.id)}
-                                  className="px-2.5 py-1 rounded text-xs border border-purple-500/40 text-purple-400 hover:bg-purple-500/10 font-medium transition-all"
-                                >
-                                  💬 Buka Ruang Chat
-                                </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          {!data?.escrowTransactions?.length && (
+                            <tr>
+                              <td className="py-6 text-center text-gray-400" colSpan={6}>
+                                Belum ada transaksi rekber 3-pihak yang aktif.
                               </td>
                             </tr>
-                          );
-                        })}
-                        {!data?.escrowTransactions?.length && (
-                          <tr>
-                            <td className="py-6 text-center text-gray-400" colSpan={6}>
-                              Belum ada transaksi rekber 3-pihak yang aktif.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </DragScrollContainer>
+                          )}
+                        </tbody>
+                      </table>
+                    </DragScrollContainer>
+                  </div>
                 </div>
 
                 {/* 4. PANTAUAN REKBER MARKETPLACE */}
@@ -3361,119 +3521,218 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                     </div>
                   </div>
 
-                  <DragScrollContainer
-                    buttonPosition="top"
-                    label="🖱️ Drag mouse / tombol ◀ ▶ untuk mengelola akun member & kasta"
-                  >
-                    <table className="w-full text-left text-xs min-w-[700px]">
-                      <thead>
-                        <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400">
-                          <th className="py-2.5">Member</th>
-                          <th className="py-2.5">Role Web</th>
-                          <th className="py-2.5">Level / XP</th>
-                          <th className="py-2.5">Status Premium</th>
-                          <th className="py-2.5 text-right">Aksi Akun</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]">
-                        {data?.users.map((member) => {
-                          const isSelf = member.id === data.currentUserId;
-                          const isOwnerMember =
-                            member.username?.toLowerCase() === ".odyssia" ||
-                            member.username?.toLowerCase() === "odyssia" ||
-                            member.discordId === "706661230835925042";
-                          return (
-                            <tr key={member.id}>
-                              <td className="py-3">
-                                <div className="flex items-center gap-2.5">
-                                  <DiscordAvatar src={member.avatar} username={member.username ?? "Member"} size={28} />
-                                  <div>
-                                    <span className="font-bold text-gray-900 dark:text-white block">
-                                      {member.username ?? "Gamer"}
-                                    </span>
-                                    <span className="text-[10px] text-gray-400">ID: {member.discordId || member.id}</span>
-                                  </div>
-                                </div>
-                              </td>
+                  {/* MOBILE CARD VIEW (< md) */}
+                  <div className="block md:hidden space-y-3">
+                    {data?.users.map((member) => {
+                      const isSelf = member.id === data.currentUserId;
+                      const isOwnerMember =
+                        member.username?.toLowerCase() === ".odyssia" ||
+                        member.username?.toLowerCase() === "odyssia" ||
+                        member.discordId === "706661230835925042";
+                      return (
+                        <div
+                          key={member.id}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border border-gray-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#130921]"
+                        >
+                          <div className="space-y-2 text-xs text-left">
+                            <div className="flex items-center gap-2.5">
+                              <DiscordAvatar src={member.avatar} username={member.username ?? "Member"} size={28} />
+                              <div>
+                                <span className="font-bold text-gray-900 dark:text-white block">
+                                  {member.username ?? "Gamer"}
+                                </span>
+                                <span className="text-[10px] text-gray-400">ID: {member.discordId || member.id}</span>
+                              </div>
+                            </div>
 
-                              <td className="py-3">
-                                {isOwnerMember ? (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                                    👑 Emperor (Owner)
-                                  </span>
-                                ) : (
-                                  <select
-                                    disabled={!isAdmin || isSelf || busyId === member.id}
-                                    value={member.role}
-                                    onChange={(e) => void updateMember(member, { role: e.target.value as Role })}
-                                    className="px-2 py-1 rounded text-xs border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none"
-                                  >
-                                    <option value="MEMBER">MEMBER (Adventurer)</option>
-                                    <option value="MODERATOR">MODERATOR (⚔️ Lord Commander)</option>
-                                    <option value="ADMIN">ADMIN (✨ Prince / Princess)</option>
-                                  </select>
-                                )}
-                              </td>
-
-                              <td className="py-3">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-bold text-[#9D4EDD]">Lv. {member.level ?? 1}</span>
-                                  <span className="text-gray-400">({(member.xp ?? 0).toLocaleString("id-ID")} XP)</span>
-                                  {isAdmin && !isOwnerMember && (
-                                    <button
-                                      type="button"
-                                      disabled={busyId === member.id}
-                                      onClick={() => void handleEditXpLevel(member)}
-                                      className="px-1.5 py-0.5 text-[10px] font-bold border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 rounded-none ml-1 transition"
-                                      title="Edit Level & XP Manual"
-                                    >
-                                      ✏️ Edit
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-
-                              <td className="py-3">
-                                <button
-                                  type="button"
-                                  disabled={busyId === member.id}
-                                  onClick={() => void updateMember(member, { isPremium: !member.isPremium })}
-                                  className={`px-2.5 py-1 rounded text-[11px] font-bold border ${
-                                    member.isPremium
-                                      ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
-                                      : "bg-gray-100 dark:bg-gray-800 text-gray-500 border-transparent"
-                                  }`}
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                              {isOwnerMember ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                  👑 Emperor
+                                </span>
+                              ) : (
+                                <select
+                                  disabled={!isAdmin || isSelf || busyId === member.id}
+                                  value={member.role}
+                                  onChange={(e) => void updateMember(member, { role: e.target.value as Role })}
+                                  className="px-2 py-1 rounded text-xs border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none"
                                 >
-                                  {member.isPremium ? "★ Premium Aktif" : "Standar"}
-                                </button>
-                              </td>
+                                  <option value="MEMBER">MEMBER</option>
+                                  <option value="MODERATOR">⚔️ MODERATOR</option>
+                                  <option value="ADMIN">✨ ADMIN</option>
+                                </select>
+                              )}
 
-                              <td className="py-3 text-right">
-                                {isOwnerMember ? (
-                                  <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20">
-                                    👑 Owner Mutlak
-                                  </span>
-                                ) : !isSelf ? (
+                              <span className="font-bold text-[#9D4EDD] text-xs">
+                                Lv. {member.level ?? 1}
+                              </span>
+
+                              <button
+                                type="button"
+                                disabled={busyId === member.id}
+                                onClick={() => void updateMember(member, { isPremium: !member.isPremium })}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                  member.isPremium
+                                    ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                                    : "bg-gray-100 dark:bg-gray-800 text-gray-500 border-transparent"
+                                }`}
+                              >
+                                {member.isPremium ? "★ Premium" : "Standar"}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200 dark:border-[#2E1E45]">
+                            {isAdmin && !isOwnerMember && (
+                              <button
+                                type="button"
+                                disabled={busyId === member.id}
+                                onClick={() => void handleEditXpLevel(member)}
+                                className="h-9 px-3 text-xs font-bold border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 rounded-md flex items-center justify-center gap-1 transition shadow-sm"
+                              >
+                                <span>✏️ Edit XP</span>
+                              </button>
+                            )}
+                            {isOwnerMember ? (
+                              <span className="h-9 px-3 text-xs font-bold text-amber-400 bg-amber-500/10 rounded-md border border-amber-500/20 flex items-center justify-center col-span-2 sm:col-span-1">
+                                👑 Owner
+                              </span>
+                            ) : !isSelf ? (
+                              <button
+                                type="button"
+                                disabled={busyId === member.id}
+                                onClick={() => void updateMember(member, { isBanned: !member.isBanned })}
+                                className={`h-9 px-3 text-xs font-bold rounded-md flex items-center justify-center gap-1 shadow-sm transition ${
+                                  member.isBanned
+                                    ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                                    : "bg-rose-500/15 text-rose-500 border border-rose-500/30 hover:bg-rose-500/25"
+                                } ${!isAdmin ? "col-span-2 sm:col-span-1" : ""}`}
+                              >
+                                <span>{member.isBanned ? "Buka Ban" : "Ban Member"}</span>
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* DESKTOP TABLE VIEW (>= md) */}
+                  <div className="hidden md:block">
+                    <DragScrollContainer
+                      buttonPosition="top"
+                      label="🖱️ Drag mouse / tombol ◀ ▶ untuk mengelola akun member & kasta"
+                    >
+                      <table className="w-full text-left text-xs min-w-[700px]">
+                        <thead>
+                          <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400">
+                            <th className="py-2.5">Member</th>
+                            <th className="py-2.5">Role Web</th>
+                            <th className="py-2.5">Level / XP</th>
+                            <th className="py-2.5">Status Premium</th>
+                            <th className="py-2.5 text-right">Aksi Akun</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-[#2E1E45]">
+                          {data?.users.map((member) => {
+                            const isSelf = member.id === data.currentUserId;
+                            const isOwnerMember =
+                              member.username?.toLowerCase() === ".odyssia" ||
+                              member.username?.toLowerCase() === "odyssia" ||
+                              member.discordId === "706661230835925042";
+                            return (
+                              <tr key={member.id}>
+                                <td className="py-3">
+                                  <div className="flex items-center gap-2.5">
+                                    <DiscordAvatar src={member.avatar} username={member.username ?? "Member"} size={28} />
+                                    <div>
+                                      <span className="font-bold text-gray-900 dark:text-white block">
+                                        {member.username ?? "Gamer"}
+                                      </span>
+                                      <span className="text-[10px] text-gray-400">ID: {member.discordId || member.id}</span>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td className="py-3">
+                                  {isOwnerMember ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                      👑 Emperor (Owner)
+                                    </span>
+                                  ) : (
+                                    <select
+                                      disabled={!isAdmin || isSelf || busyId === member.id}
+                                      value={member.role}
+                                      onChange={(e) => void updateMember(member, { role: e.target.value as Role })}
+                                      className="px-2 py-1 rounded text-xs border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white focus:outline-none"
+                                    >
+                                      <option value="MEMBER">MEMBER (Adventurer)</option>
+                                      <option value="MODERATOR">MODERATOR (⚔️ Lord Commander)</option>
+                                      <option value="ADMIN">ADMIN (✨ Prince / Princess)</option>
+                                    </select>
+                                  )}
+                                </td>
+
+                                <td className="py-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-[#9D4EDD]">Lv. {member.level ?? 1}</span>
+                                    <span className="text-gray-400">({(member.xp ?? 0).toLocaleString("id-ID")} XP)</span>
+                                    {isAdmin && !isOwnerMember && (
+                                      <button
+                                        type="button"
+                                        disabled={busyId === member.id}
+                                        onClick={() => void handleEditXpLevel(member)}
+                                        className="px-1.5 py-0.5 text-[10px] font-bold border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 rounded-none ml-1 transition"
+                                        title="Edit Level & XP Manual"
+                                      >
+                                        ✏️ Edit
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+
+                                <td className="py-3">
                                   <button
                                     type="button"
                                     disabled={busyId === member.id}
-                                    onClick={() => void updateMember(member, { isBanned: !member.isBanned })}
-                                    className={`px-2.5 py-1 rounded text-xs font-bold ${
-                                      member.isBanned
-                                        ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
-                                        : "bg-rose-500/15 text-rose-500 border border-rose-500/30 hover:bg-rose-500/25"
+                                    onClick={() => void updateMember(member, { isPremium: !member.isPremium })}
+                                    className={`px-2.5 py-1 rounded text-[11px] font-bold border ${
+                                      member.isPremium
+                                        ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                                        : "bg-gray-100 dark:bg-gray-800 text-gray-500 border-transparent"
                                     }`}
                                   >
-                                    {member.isBanned ? "Buka Ban (Unban)" : "Ban Member"}
+                                    {member.isPremium ? "★ Premium Aktif" : "Standar"}
                                   </button>
-                                ) : null}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </DragScrollContainer>
+                                </td>
+
+                                <td className="py-3 text-right">
+                                  {isOwnerMember ? (
+                                    <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20">
+                                      👑 Owner Mutlak
+                                    </span>
+                                  ) : !isSelf ? (
+                                    <button
+                                      type="button"
+                                      disabled={busyId === member.id}
+                                      onClick={() => void updateMember(member, { isBanned: !member.isBanned })}
+                                      className={`px-2.5 py-1 rounded text-xs font-bold ${
+                                        member.isBanned
+                                          ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                                          : "bg-rose-500/15 text-rose-500 border border-rose-500/30 hover:bg-rose-500/25"
+                                      }`}
+                                    >
+                                      {member.isBanned ? "Buka Ban (Unban)" : "Ban Member"}
+                                    </button>
+                                  ) : null}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </DragScrollContainer>
+                  </div>
 
                   {/* Pagination */}
                   {Boolean(data?.pagination && data.pagination.totalPages > 1) && (

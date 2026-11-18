@@ -19,8 +19,10 @@ import {
   QrCode,
   RefreshCw,
   Search,
+  Settings,
   Shield,
   Swords,
+  Trash2,
   Trophy,
   Users,
   X,
@@ -139,6 +141,27 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
   const [showCertificate, setShowCertificate] = useState(false);
   const [activeLobbyMatch, setActiveLobbyMatch] = useState<TournamentMatch | null>(null);
+  const [deletingTournament, setDeletingTournament] = useState(false);
+
+  async function handleDeleteTournament() {
+    if (!tournament) return;
+    const confirmed = window.confirm(
+      `Apakah kamu yakin ingin menghapus turnamen "${tournament.title}" secara permanen?\n\nSemua data pendaftar, bagan pertandingan, dan skor akan dihapus.`
+    );
+    if (!confirmed) return;
+
+    setDeletingTournament(true);
+    try {
+      const res = await fetch(`/api/tournaments/${tournament.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menghapus turnamen.");
+      window.location.href = "/events?view=turnamen";
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Gagal menghapus turnamen.");
+    } finally {
+      setDeletingTournament(false);
+    }
+  }
 
   async function handleDetailGachaBracket() {
     if (!tournament) return;
@@ -794,20 +817,6 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               </button>
             )}
 
-            {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && (
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowEditTournamentModal(true)}
-                  className="border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] text-xs px-3 py-2 rounded-none font-mono font-bold inline-flex items-center justify-center gap-1.5 text-slate-800 dark:text-[#F8FAFC] transition-all cursor-pointer"
-                  title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
-                >
-                  <span>✏️ Edit Turnamen</span>
-                </button>
-                <TournamentBackupDropdown tournament={tournament} />
-              </div>
-            )}
-
             <div className="flex items-center gap-2">
               <ShareButton
                 url={shareUrl}
@@ -822,8 +831,74 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         </div>
       </div>
 
+      {/* PANEL BAR STAF (KHUSUS ADMIN & MODERATOR) */}
+      {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && (
+        <div className="mb-8 p-3.5 rounded-lg bg-slate-100 dark:bg-[#11091D] border border-[#7C3AED]/30 shadow-md">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#7C3AED] dark:text-[#A78BFA] flex items-center gap-1.5">
+                <span>🛡️</span>
+                <span>PANEL OPERASIONAL STAF</span>
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/30">
+                {session?.user?.role}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowEditTournamentModal(true)}
+                className="h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#1A0E2E] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition cursor-pointer shadow-sm"
+                title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
+              >
+                <span>✏️ Edit Info</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => document.getElementById("bracket-section")?.scrollIntoView({ behavior: "smooth" })}
+                className="h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition cursor-pointer shadow-sm"
+                title="Langsung kelola tim & skor di bagan pertandingan"
+              >
+                <Settings size={14} className="text-indigo-500" />
+                <span>⚙️ Kelola Tim &amp; Skor</span>
+              </button>
+
+              {tournament.status !== "COMPLETED" && (
+                <button
+                  type="button"
+                  onClick={handleDetailGachaBracket}
+                  className="h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-[#F59E0B]/50 bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 text-[#F59E0B] transition cursor-pointer shadow-sm"
+                  title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
+                >
+                  <Dices size={14} className="text-[#F59E0B]" />
+                  <span>🎲 Gacha Bagan</span>
+                </button>
+              )}
+
+              <TournamentBackupDropdown
+                tournament={tournament}
+                triggerClassName="h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition cursor-pointer shadow-sm w-full"
+              />
+
+              <button
+                type="button"
+                disabled={deletingTournament}
+                onClick={handleDeleteTournament}
+                className="h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition cursor-pointer disabled:opacity-50 shadow-sm"
+                title="Hapus turnamen ini secara permanen"
+              >
+                <Trash2 size={14} className="text-rose-500" />
+                <span>🗑️ {deletingTournament ? "Menghapus..." : "Hapus"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bracket Tree Section */}
-      <section className="p-5 sm:p-7 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl mb-10">
+      <section id="bracket-section" className="p-5 sm:p-7 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl mb-10">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2 border-b border-slate-200 dark:border-[#2E1E45] pb-4">
           <div className="flex items-center gap-2.5 flex-wrap">
             <Flame size={20} className="text-[#7C3AED]" />
@@ -874,31 +949,6 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               onZoomChange={setBracketZoomLevel}
             />
 
-            {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setShowEditTournamentModal(true)}
-                  className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition-all cursor-pointer"
-                  title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
-                >
-                  <span>✏️ Edit Turnamen</span>
-                </button>
-                <TournamentBackupDropdown tournament={tournament} />
-              </>
-            )}
-
-            {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && tournament.status !== "COMPLETED" && (
-              <button
-                type="button"
-                onClick={handleDetailGachaBracket}
-                className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-[#F59E0B]/50 bg-[#F59E0B]/10 text-[#F59E0B] hover:bg-[#F59E0B]/20 transition-all cursor-pointer"
-                title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
-              >
-                <Dices size={14} className="text-[#F59E0B]" />
-                <span>🎲 Gacha Bagan</span>
-              </button>
-            )}
             <span className="text-xs font-mono text-gray-400 hidden xl:inline">
               💡 Drag mouse / tombol ◀ ▶ untuk navigasi
             </span>

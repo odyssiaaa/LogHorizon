@@ -4,7 +4,15 @@ import { useState, useRef, useEffect } from "react";
 import { Download, FileSpreadsheet, FileCode, ChevronDown } from "lucide-react";
 import { exportTournamentToCsv, exportTournamentToJson, ExportableTournament } from "@/lib/tournament-export";
 
-export function TournamentBackupDropdown({ tournament }: { tournament: ExportableTournament }) {
+export function TournamentBackupDropdown({
+  tournament,
+  className = "",
+  triggerClassName,
+}: {
+  tournament: ExportableTournament;
+  className?: string;
+  triggerClassName?: string;
+}) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -18,16 +26,18 @@ export function TournamentBackupDropdown({ tournament }: { tournament: Exportabl
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const defaultTrigger = "border border-[#2A1B42] bg-[#11091D] hover:border-[#10B981] text-xs px-3 py-2 rounded-none font-mono font-bold inline-flex items-center gap-1.5 text-slate-200 hover:text-[#10B981] transition-all cursor-pointer shadow-sm";
+
   return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
+    <div className={`relative inline-block text-left ${className}`} ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="border border-[#2A1B42] bg-[#11091D] hover:border-[#10B981] text-xs px-3 py-2 rounded-none font-mono font-bold inline-flex items-center gap-1.5 text-slate-200 hover:text-[#10B981] transition-all cursor-pointer shadow-sm"
+        className={triggerClassName || defaultTrigger}
         title="Simpan dan unduh cadangan data turnamen (.CSV / .JSON)"
       >
         <Download size={13} className="text-[#10B981]" />
-        <span>💾 Save / Backup Data</span>
+        <span>💾 Backup Data</span>
         <ChevronDown size={12} className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
       </button>
 
