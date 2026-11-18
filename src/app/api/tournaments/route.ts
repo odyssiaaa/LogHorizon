@@ -13,7 +13,12 @@ export async function GET() {
     include: {
       participants: {
         orderBy: { createdAt: "asc" },
-        include: {
+        select: {
+          id: true,
+          teamName: true,
+          roster: true,
+          paymentStatus: true,
+          createdAt: true,
           leader: {
             select: { id: true, username: true, discordId: true, name: true, image: true },
           },
@@ -129,12 +134,12 @@ export async function GET() {
         participants: tournament.participants.map((participant) => ({
           id: participant.id,
           teamName: participant.teamName,
-          phone: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.phone ?? null : null,
+          phone: null,
           roster: participant.roster ?? [],
           paymentStatus: participant.paymentStatus ?? "APPROVED",
-          senderName: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.senderName ?? null : null,
-          paymentProof: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.paymentProof ?? null : null,
-          rejectionReason: participant.rejectionReason ?? null,
+          senderName: null,
+          paymentProof: null,
+          rejectionReason: null,
           createdAt: participant.createdAt.toISOString(),
           leader: {
             id: participant.leader.id,

@@ -23,6 +23,7 @@ import {
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { readApiResponse } from "@/lib/api-response";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { useLiveSync } from "@/hooks/use-live-sync";
 
 type UserSummary = {
   id: string;
@@ -252,13 +253,10 @@ export function MessagesView() {
     }
   }, [activeConvId, loadConversationDetail]);
 
-  // Efficient Polling Mechanism (4-5s interval, only while document is visible)
-  useEffect(() => {
-    if (!activeConvId) return;
-
-    const interval = setInterval(async () => {
-      // Don't poll if document is hidden (user minimized or switched tabs)
-      if (typeof document !== "undefined" && document.hidden) return;
+  // Efficient Polling Mechanism via useLiveSync
+  useLiveSync(
+    async () => {
+      if (!activeConvId) return;
 
       const after = lastMessageTimestampRef.current;
       const url = after
@@ -284,10 +282,9 @@ export function MessagesView() {
       } catch {
         // Silently catch background polling errors
       }
-    }, 4500);
-
-    return () => clearInterval(interval);
-  }, [activeConvId, scrollToBottom]);
+    },
+    { intervalMs: 4000, enabled: Boolean(activeConvId), revalidateOnFocus: true }
+  );
 
   // Send message
   async function handleSendMessage(e: FormEvent) {

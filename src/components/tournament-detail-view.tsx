@@ -42,6 +42,7 @@ import { MatchLobbyModal } from "@/components/match-lobby-modal";
 import { BracketZoomControl } from "@/components/bracket-zoom-control";
 import { EditTournamentModal } from "@/components/edit-tournament-modal";
 import { TournamentBackupDropdown } from "@/components/tournament-backup-dropdown";
+import { useLiveSync } from "@/hooks/use-live-sync";
 
 type TournamentData = {
   id: string;
@@ -322,11 +323,10 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   const [bracketZoomLevel, setBracketZoomLevel] = useState<number>(1.0);
   const pausePollingUntilRef = useRef<number>(0);
 
-  // SMART AUTO-POLLING (Setiap 4 Detik saat tab browser aktif)
+  // Live sync countdown tick
   useEffect(() => {
     const tickInterval = setInterval(() => {
       setSyncSecondsAgo(Math.max(0, Math.floor((Date.now() - lastSyncTime) / 1000)));
-      // Auto-evaluate live matches every second if tournament is ONGOING
       setTournament((prev) => {
         if (!prev || prev.status !== "ONGOING" || !prev.matches) return prev;
         const { updatedMatches, hasChanges } = evaluateAutoLiveMatches(prev.matches);
@@ -334,17 +334,14 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         return { ...prev, matches: updatedMatches };
       });
     }, 1000);
+    return () => clearInterval(tickInterval);
+  }, [lastSyncTime]);
 
-    const poll = async () => {
-      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
-        return;
-      }
-      if (Date.now() < pausePollingUntilRef.current) {
-        return;
-      }
-      if (!tournament || (tournament.status !== "ONGOING" && tournament.status !== "REGISTRATION")) {
-        return;
-      }
+  // SMART AUTO-POLLING (useLiveSync berbasis Silent JSON Diffing)
+  useLiveSync(
+    async () => {
+      if (Date.now() < pausePollingUntilRef.current) return;
+      if (!tournament || (tournament.status !== "ONGOING" && tournament.status !== "REGISTRATION")) return;
 
       try {
         const res = await fetch(`/api/tournaments/${tournamentId}?t=${Date.now()}`, {
@@ -365,24 +362,9 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       } catch {
         // Silently skip transient network failure during background polling
       }
-    };
-
-    const pollInterval = setInterval(poll, 4000);
-    const handleRevalidate = () => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        void poll();
-      }
-    };
-    window.addEventListener("focus", handleRevalidate);
-    document.addEventListener("visibilitychange", handleRevalidate);
-
-    return () => {
-      clearInterval(tickInterval);
-      clearInterval(pollInterval);
-      window.removeEventListener("focus", handleRevalidate);
-      document.removeEventListener("visibilitychange", handleRevalidate);
-    };
-  }, [tournamentId, tournament, lastSyncTime]);
+    },
+    { intervalMs: 4000, revalidateOnFocus: true }
+  );
 
   // Optimistic Quick Update handler for bracket cards
   function handleAdminQuickUpdate(

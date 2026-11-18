@@ -1,3 +1,4 @@
 {
-  "liveServer.settings.multiRootWorkspaceName": "Project LogHorizon"
+  "liveServer.settings.multiRootWorkspaceName": "Project LogHorizon",
+  "python.terminal.useEnvFile": true
 }

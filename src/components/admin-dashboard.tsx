@@ -137,6 +137,7 @@ type SiteConfig = {
   discordWebhookUrl?: string | null;
   discordAnnouncementChannelId?: string | null;
   discordGiveawayChannelId?: string | null;
+  discordTournamentLiveChannelId?: string | null;
   discordInfoLiveChannelId?: string | null;
   discordPartnershipChannelId?: string | null;
   discordShopChannelId?: string | null;
@@ -517,6 +518,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     discordWebhookUrl: "",
     discordAnnouncementChannelId: "1547552373629780038",
     discordGiveawayChannelId: "1547552377396011118",
+    discordTournamentLiveChannelId: "1572575614974693427",
     discordInfoLiveChannelId: "1547552381221339149",
     discordPartnershipChannelId: "1572235405770887269",
     discordShopChannelId: "1547552452725973093",
@@ -567,6 +569,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             ...result.siteConfig,
             discordAnnouncementChannelId: result.siteConfig.discordAnnouncementChannelId || "1547552373629780038",
             discordGiveawayChannelId: result.siteConfig.discordGiveawayChannelId || "1547552377396011118",
+            discordTournamentLiveChannelId: result.siteConfig.discordTournamentLiveChannelId || "1572575614974693427",
             discordInfoLiveChannelId: result.siteConfig.discordInfoLiveChannelId || "1547552381221339149",
             discordPartnershipChannelId: result.siteConfig.discordPartnershipChannelId || "1572235405770887269",
             discordShopChannelId: result.siteConfig.discordShopChannelId || "1547552452725973093",
@@ -625,6 +628,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
         ...result.config,
         discordAnnouncementChannelId: result.config.discordAnnouncementChannelId || "1547552373629780038",
         discordGiveawayChannelId: result.config.discordGiveawayChannelId || "1547552377396011118",
+        discordTournamentLiveChannelId: result.config.discordTournamentLiveChannelId || "1572575614974693427",
         discordInfoLiveChannelId: result.config.discordInfoLiveChannelId || "1547552381221339149",
         discordPartnershipChannelId: result.config.discordPartnershipChannelId || "1572235405770887269",
         discordShopChannelId: result.config.discordShopChannelId || "1547552452725973093",
@@ -1834,17 +1838,50 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           </div>
                         </div>
 
-                        {/* 3. Info Live */}
+                        {/* 3. Live Info Turnamen (#🏆・live-info-tournament) */}
+                        <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                              <span>🏆</span>
+                              <span>3. Channel Live Info Turnamen (#🏆・live-info-tournament)</span>
+                            </label>
+                            <span className="text-[10px] font-mono text-purple-500 font-bold">Match &amp; Bagan</span>
+                          </div>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            Siaran otomatis jalannya pertandingan turnamen (Match mulai LIVE, update skor akhir, keputusan WO/DQ, dan hasil pengacakan bagan baru).
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={configForm.discordTournamentLiveChannelId ?? "1572575614974693427"}
+                              onChange={(e) => setConfigForm({ ...configForm, discordTournamentLiveChannelId: e.target.value })}
+                              className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                              placeholder="1572575614974693427"
+                            />
+                            <button
+                              type="button"
+                              disabled={testingBotChannel === "tournament_live"}
+                              onClick={() => void handleTestDiscordBot("tournament_live", configForm.discordTournamentLiveChannelId ?? "1572575614974693427")}
+                              className="px-3 py-1.5 rounded-none bg-purple-600 hover:bg-purple-500 text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
+                              title="Kirim pesan tes diagnostik ke channel ini"
+                            >
+                              {testingBotChannel === "tournament_live" ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+                              <span>⚡ Tes Bot</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 4. Live Streaming (#📡・info-live) */}
                         <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
                               <span>📡</span>
-                              <span>3. #info-live</span>
+                              <span>4. Channel Live Streaming (#📡・info-live — Khusus Info Live Stream)</span>
                             </label>
-                            <span className="text-[10px] font-mono text-red-500 font-bold">🔴 Match LIVE</span>
+                            <span className="text-[10px] font-mono text-red-500 font-bold">🔴 Live Stream</span>
                           </div>
                           <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                            Notifikasi langsung saat pertandingan turnamen mulai berstatus 🔴 SEDANG BERMAIN atau pengumuman live streaming.
+                            Khusus info dan pengumuman siaran langsung streaming YouTube, Twitch, TikTok, atau broadcast livestream resmi.
                           </p>
                           <div className="flex items-center gap-2">
                             <input
@@ -1867,12 +1904,12 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           </div>
                         </div>
 
-                        {/* 4. Partnership */}
+                        {/* 5. Partnership */}
                         <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
                               <span>🤝</span>
-                              <span>4. #partnership</span>
+                              <span>5. #partnership</span>
                             </label>
                             <span className="text-[10px] font-mono text-amber-500 font-bold">Sponsor &amp; VIP</span>
                           </div>
@@ -1900,12 +1937,12 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           </div>
                         </div>
 
-                        {/* 5. Server Shop (Marketplace) */}
+                        {/* 6. Server Shop (Marketplace) */}
                         <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
                               <span>🛒</span>
-                              <span>5. #server-shop</span>
+                              <span>6. #server-shop</span>
                             </label>
                             <span className="text-[10px] font-mono text-emerald-500 font-bold">Marketplace</span>
                           </div>
@@ -1933,12 +1970,12 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           </div>
                         </div>
 
-                        {/* 6. Gaming Lounge (LFG) */}
+                        {/* 7. Gaming Lounge (LFG) */}
                         <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
                               <span>🎮</span>
-                              <span>6. #gaming-lounge</span>
+                              <span>7. #gaming-lounge</span>
                             </label>
                             <span className="text-[10px] font-mono text-indigo-500 font-bold">Mabar LFG</span>
                           </div>
@@ -1966,12 +2003,12 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           </div>
                         </div>
 
-                        {/* 7. Mod Logs */}
+                        {/* 8. Mod Logs */}
                         <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
                               <span>🛡️</span>
-                              <span>7. #mod-logs</span>
+                              <span>8. #mod-logs</span>
                             </label>
                             <span className="text-[10px] font-mono text-red-500 font-bold">Rahasia Staf</span>
                           </div>

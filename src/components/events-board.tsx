@@ -57,6 +57,7 @@ import { EditTournamentModal } from "@/components/edit-tournament-modal";
 import { TournamentBackupDropdown } from "@/components/tournament-backup-dropdown";
 import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown";
 import { exportTournamentToCsv, exportTournamentToJson } from "@/lib/tournament-export";
+import { useLiveSync } from "@/hooks/use-live-sync";
 
 type Participant = {
   id: string;
@@ -451,77 +452,61 @@ export function EventsBoard() {
     };
   }, [refreshKey]);
 
-  // SMART AUTO-POLLING (Setiap 4 Detik saat tab browser aktif + revalidate on focus)
+  // Sync seconds ago counter
   useEffect(() => {
     const tickInterval = setInterval(() => {
       setSyncSecondsAgo(Math.max(0, Math.floor((Date.now() - lastSyncTime) / 1000)));
     }, 1000);
+    return () => clearInterval(tickInterval);
+  }, [lastSyncTime]);
 
-    const poll = async () => {
-      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
-        return;
-      }
-      if (Date.now() < pausePollingUntilRef.current) {
-        return;
-      }
-      const shouldPoll =
-        activeTab === "turnamen" ||
-        tournaments.some((t) => t.status === "ONGOING" || t.status === "REGISTRATION");
-      if (!shouldPoll) return;
+  // SMART AUTO-POLLING (useLiveSync berbasis Silent JSON Diffing)
+  useLiveSync(
+    async () => {
+      if (Date.now() < pausePollingUntilRef.current) return;
 
       try {
-        const res = await fetch(`/api/tournaments?t=${Date.now()}`, {
-          cache: "no-store",
-          headers: { "Cache-Control": "no-cache" },
-        });
-        if (!res.ok) return;
-        const fresh = await res.json();
-        if (Array.isArray(fresh)) {
-          setTournaments((prev) => (JSON.stringify(prev) === JSON.stringify(fresh) ? prev : fresh));
+        const [freshTournaments, freshLfg] = await Promise.all([
+          fetch(`/api/tournaments?t=${Date.now()}`, {
+            cache: "no-store",
+            headers: { "Cache-Control": "no-cache" },
+          }).then((r) => (r.ok ? r.json() : null)),
+          fetch(`/api/lfg?t=${Date.now()}`, {
+            cache: "no-store",
+            headers: { "Cache-Control": "no-cache" },
+          }).then((r) => (r.ok ? r.json() : null)),
+        ]);
+
+        if (Array.isArray(freshTournaments)) {
+          setTournaments((prev) => (JSON.stringify(prev) === JSON.stringify(freshTournaments) ? prev : freshTournaments));
           setLastSyncTime(Date.now());
           setSyncSecondsAgo(0);
 
           if (managingTournament) {
-            const current = fresh.find((t) => t.id === managingTournament.id);
+            const current = freshTournaments.find((t: Tournament) => t.id === managingTournament.id);
             if (current) {
-              setManagingTournament((prev) => {
-                if (JSON.stringify(prev) === JSON.stringify(current)) return prev;
-                return prev ? { ...prev, ...current } : prev;
-              });
+              setManagingTournament((prev) => (JSON.stringify(prev) === JSON.stringify(current) ? prev : { ...prev, ...current }));
               setManageMatches((prev) => {
                 const freshMatches = current.matches || [];
-                if (JSON.stringify(prev) === JSON.stringify(freshMatches)) return prev;
-                return freshMatches;
+                return JSON.stringify(prev) === JSON.stringify(freshMatches) ? prev : freshMatches;
               });
               setManageTeams((prev) => {
                 const freshTeams = current.teams || [];
-                if (JSON.stringify(prev) === JSON.stringify(freshTeams)) return prev;
-                return freshTeams;
+                return JSON.stringify(prev) === JSON.stringify(freshTeams) ? prev : freshTeams;
               });
             }
           }
         }
+
+        if (Array.isArray(freshLfg)) {
+          setLfgPosts((prev) => (JSON.stringify(prev) === JSON.stringify(freshLfg) ? prev : freshLfg));
+        }
       } catch {
-        // Silently skip transient network failure during polling
+        // Silently skip transient network failure during background polling
       }
-    };
-
-    const pollInterval = setInterval(poll, 4000);
-    const handleRevalidate = () => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        void poll();
-      }
-    };
-    window.addEventListener("focus", handleRevalidate);
-    document.addEventListener("visibilitychange", handleRevalidate);
-
-    return () => {
-      clearInterval(tickInterval);
-      clearInterval(pollInterval);
-      window.removeEventListener("focus", handleRevalidate);
-      document.removeEventListener("visibilitychange", handleRevalidate);
-    };
-  }, [activeTab, tournaments, managingTournament, lastSyncTime]);
+    },
+    { intervalMs: 5000, revalidateOnFocus: true }
+  );
 
   // Optimistic Quick Update handler for bracket card admin action buttons
   function handleAdminQuickUpdate(

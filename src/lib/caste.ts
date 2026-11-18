@@ -1,64 +1,10 @@
 /**
  * Centralized Guild Caste & Hierarchy Logic for LogHorizon
- * 
- * Absolute Hierarchy:
- * - 👑 Emperor: Exclusive to Owner (.odyssia)
- * - ✨ Prince / Princess: High Council & Admins (role === 'ADMIN')
- * - ⚔️ Lord Commander: Elite Moderators (role === 'MODERATOR')
- * - 💎 Noble Patron: Top Benefactors / Donors
- * - 🎮 Adventurer: Guild Members (role === 'MEMBER')
+ * Re-exports core caste logic from @/lib/auth-guard.
  */
 
-export type CasteUserLike = {
-  id?: string | null;
-  username?: string | null;
-  name?: string | null;
-  discordId?: string | null;
-  email?: string | null;
-  role?: string | null;
-  isPremium?: boolean | null;
-  badges?: string[] | null;
-};
-
-/**
- * Checks whether the user is the sole Guild Owner (.odyssia).
- * No other account can ever be Emperor regardless of their ADMIN role.
- */
-export function isGuildOwner(user?: CasteUserLike | null): boolean {
-  if (!user) return false;
-  const username = (user.username ?? "").toLowerCase().trim();
-  const name = (user.name ?? "").toLowerCase().trim();
-  const email = (user.email ?? "").toLowerCase().trim();
-  const discordId = (user.discordId ?? "").trim();
-
-  return (
-    username === ".odyssia" ||
-    username === "odyssia" ||
-    name === ".odyssia" ||
-    name === "odyssia" ||
-    discordId === "706661230835925042" ||
-    email === "farrel.andhikapratama0905@gmail.com"
-  );
-}
-
-/**
- * Returns the exact title for the user based on absolute hierarchy.
- */
-export function getCasteTitle(user?: CasteUserLike | null): string {
-  if (isGuildOwner(user)) {
-    return "👑 Emperor";
-  }
-  if (user?.role === "ADMIN") {
-    return "✨ Prince / Princess";
-  }
-  if (user?.role === "MODERATOR") {
-    return "⚔️ Lord Commander";
-  }
-  if (user?.isPremium) {
-    return "💎 Noble Patron";
-  }
-  return "🎮 Adventurer";
-}
+export * from "@/lib/auth-guard";
+import { isGuildOwner, CasteUserLike } from "@/lib/auth-guard";
 
 /**
  * Sanitizes badges array so that "👑 Emperor" is NEVER granted to anyone except .odyssia.

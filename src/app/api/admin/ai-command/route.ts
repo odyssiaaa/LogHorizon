@@ -402,6 +402,8 @@ export async function POST(request: Request) {
     sponsors,
     recentPosts,
     totalUsers,
+    activeLfgParties,
+    hallOfWinners,
   ] = await Promise.all([
     prisma.tournament.findMany({
       select: {
@@ -446,6 +448,17 @@ export async function POST(request: Request) {
       orderBy: { createdAt: "desc" },
     }),
     prisma.user.count(),
+    prisma.lfgPost.findMany({
+      where: { status: "OPEN" },
+      select: { id: true, game: true, maxSlots: true, description: true, author: { select: { username: true } } },
+      take: 6,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.hallOfWinner.findMany({
+      select: { tournamentTitle: true, game: true, championTeam: true, runnerUpTeam: true, thirdPlaceTeam: true, prizePool: true },
+      take: 5,
+      orderBy: { eventDate: "desc" },
+    }),
   ]);
 
   const contextPrompt = `Konteks Live Database LogHorizon saat ini:
@@ -476,6 +489,10 @@ ${tournaments.map((t) => {
     - Status: ${t.status}
     - Link Pendaftaran Resmi Website: ${directLink}`;
 }).join("\n") || "  (Belum ada turnamen)"}
+- Arsip Juara Hall of Winners:
+${hallOfWinners.map((w) => `  * "${w.tournamentTitle}" (${w.game}): 🥇 ${w.championTeam}${w.runnerUpTeam ? ` | 🥈 ${w.runnerUpTeam}` : ""}${w.thirdPlaceTeam ? ` | 🥉 ${w.thirdPlaceTeam}` : ""}`).join("\n") || "  (Belum ada riwayat juara)"}
+- Party Mabar LFG Aktif:
+${activeLfgParties.map((p) => `  * [ID: ${p.id}] ${p.game} (${p.maxSlots} slot) oleh @${p.author?.username}: "${p.description}"`).join("\n") || "  (Tidak ada party aktif)"}
 - Antrean Donasi Pending: ${pendingDonations.length} donasi (${pendingDonations.map((d) => `"${d.senderName || d.user?.username}" Rp ${d.amount.toLocaleString("id-ID")}`).join(", ") || "Nihil"})
 - Antrean Tim Turnamen Pending: ${pendingParticipants.length} tim (${pendingParticipants.map((p) => `Tim "${p.teamName}" di "${p.tournament.title}"`).join(", ") || "Nihil"})
 - Transaksi Rekber In-Escrow: ${activeEscrows.length} transaksi (${activeEscrows.map((e) => `[ID: ${e.id}] Lapak "${e.post.title}" Rp ${e.amount.toLocaleString("id-ID")}`).join(", ") || "Nihil"})
@@ -483,6 +500,7 @@ ${tournaments.map((t) => {
 - Thread Forum Terkini:
 ${recentPosts.map((p) => `  * [ID: ${p.id}] "${p.title}" (${p.category}) [${p.isPinned ? "PINNED" : "NORMAL"}]`).join("\n") || "  (Belum ada thread)"}
 - SiteConfig: Discord="${siteConfig?.discordInviteUrl || "-"}", Webhook="${siteConfig?.discordWebhookUrl ? "Aktif" : "Kosong"}", RekberFee="Rp ${siteConfig?.rekberFee?.toLocaleString("id-ID") || "-"}"
+- Ingatan Khusus AI (aiKnowledgeBase): "${siteConfig?.aiKnowledgeBase || "(Kosong)"}"
 `;
 
   const systemPrompt = `Kamu adalah "LogHorizon Command Bot" (👑 ADMIN COMMAND BOT), asisten kendali eksekutif tertinggi khusus melayani jajaran kepengurusan inti guild LogHorizon (Emperor .odyssia, Prince/Princess, dan Grand Chancellor).

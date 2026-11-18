@@ -3,7 +3,13 @@ import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { advanceMatchWinner, resetMatchResult, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES, updateMatchStatus, TournamentLossReason, evaluateAutoLiveMatches, checkAllFinalsFinished, extractTournamentPodium } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
-import { notifyTournamentChampion, notifyTournamentMatchLive } from "@/lib/discord-webhook";
+import {
+  notifyTournamentChampion,
+  notifyTournamentMatchLive,
+  notifyTournamentMatchResult,
+  notifyTournamentMatchDecision,
+  notifyTournamentBracketShuffle,
+} from "@/lib/discord-webhook";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -305,6 +311,41 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         if (finalsCheck.isFinished) {
           nextStatus = TournamentStatus.COMPLETED;
         }
+
+        // Notify Discord #live-info-tournament regarding match result / WO / DQ
+        const finishedMatch = updatedMatches.find((m) => m.matchId?.toLowerCase() === matchId.toLowerCase());
+        if (finishedMatch && winnerName) {
+          const teamAName = finishedMatch.teamA?.name || "Tim A";
+          const teamBName = finishedMatch.teamB?.name || "Tim B";
+          const loserName = teamAName === winnerName ? teamBName : teamAName;
+          const roundName = finishedMatch.roundName || `Ronde ${finishedMatch.round}`;
+
+          if (lossReason === "WO" || lossReason === "DQ") {
+            notifyTournamentMatchDecision({
+              tournamentTitle: liveTournament.title,
+              game: liveTournament.game,
+              matchId,
+              roundName,
+              winnerName,
+              loserName,
+              decisionType: lossReason,
+              tournamentId: id,
+            }).catch((e) => console.warn("[Discord Bot] notifyTournamentMatchDecision error:", e));
+          } else {
+            notifyTournamentMatchResult({
+              tournamentTitle: liveTournament.title,
+              game: liveTournament.game,
+              matchId,
+              roundName,
+              teamAName,
+              teamBName,
+              scoreA: typeof scoreA === "number" ? scoreA : (finishedMatch.teamA?.score || 0),
+              scoreB: typeof scoreB === "number" ? scoreB : (finishedMatch.teamB?.score || 0),
+              winnerName,
+              tournamentId: id,
+            }).catch((e) => console.warn("[Discord Bot] notifyTournamentMatchResult error:", e));
+          }
+        }
       }
 
       // Jika pertandingan berstatus selesai atau pemenang ditentukan, tetapkan kedaluwarsa 24 jam untuk arsip audit panitia
@@ -498,6 +539,15 @@ export async function PATCH(request: Request, { params }: RouteContext) {
           prizePool: updated.prizePool,
         }).catch((e) => console.warn("[Discord Webhook] Error:", e));
       }
+    }
+
+    if (data.shuffleBracket === true || data.randomizeBracket === true) {
+      notifyTournamentBracketShuffle({
+        tournamentTitle: updated.title,
+        game: updated.game,
+        totalTeams: updatedTeams.filter((t) => t.teamName && t.teamName !== "TBD" && t.teamName !== "BYE").length,
+        tournamentId: id,
+      }).catch((e) => console.warn("[Discord Bot] notifyTournamentBracketShuffle error:", e));
     }
 
     return Response.json({

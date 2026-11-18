@@ -229,6 +229,7 @@ async function getLiveDatabaseContext(userId?: string) {
       allMarketListings,
       openTournaments,
       openLfg,
+      pastWinners,
     ] = await Promise.all([
       userId
         ? prisma.user.findUnique({
@@ -362,6 +363,18 @@ async function getLiveDatabaseContext(userId?: string) {
           joins: { select: { id: true, user: { select: { username: true } } } },
         },
       }),
+      prisma.hallOfWinner.findMany({
+        orderBy: { eventDate: "desc" },
+        take: 5,
+        select: {
+          tournamentTitle: true,
+          game: true,
+          prizePool: true,
+          championTeam: true,
+          runnerUpTeam: true,
+          thirdPlaceTeam: true,
+        },
+      }),
     ]);
 
     // Parse active LFG party listings
@@ -468,6 +481,17 @@ async function getLiveDatabaseContext(userId?: string) {
           .join("\n")
       : "Belum ada turnamen resmi yang dijadwalkan di /events?view=turnamen.";
 
+    const hallOfWinnersSummary = pastWinners.length
+      ? pastWinners
+          .map(
+            (w) =>
+              `• "${w.tournamentTitle}" (${w.game}): 🥇 Juara 1: ${w.championTeam}${
+                w.runnerUpTeam ? ` | 🥈 Juara 2: ${w.runnerUpTeam}` : ""
+              }${w.thirdPlaceTeam ? ` | 🥉 Juara 3: ${w.thirdPlaceTeam}` : ""} (Hadiah: ${w.prizePool || "-"})`
+          )
+          .join("\n")
+      : "Belum ada riwayat turnamen yang diarsipkan di Hall of Winners.";
+
     return {
       userContext: currentUser
         ? `Username: "${currentUser.username ?? "Gamer"}", Role: ${currentUser.role}, Level: ${currentUser.level}, XP: ${currentUser.xp}, Status Premium: ${currentUser.isPremium ? "Ya (Elite Member)" : "Tidak"}`
@@ -482,6 +506,7 @@ async function getLiveDatabaseContext(userId?: string) {
       aiKnowledgeBase,
       marketSummary,
       tournamentSummary,
+      hallOfWinnersSummary,
     };
   } catch (error) {
     console.error("[gemini-chat] Failed to fetch live database context:", error);
@@ -497,6 +522,7 @@ async function getLiveDatabaseContext(userId?: string) {
       aiKnowledgeBase: "",
       marketSummary: "Lapak marketplace tersedia dengan sistem Escrow aman.",
       tournamentSummary: "Turnamen resmi dan bagan bracket live dapat dilihat di /events?view=turnamen.",
+      hallOfWinnersSummary: "Arsip kejuaraan dapat dilihat di /hall-of-winners.",
     };
   }
 }
@@ -1082,6 +1108,7 @@ export async function POST(request: Request) {
     `- Penanya saat ini: ${dbContext.userContext}`,
     `- Daftar Party Mabar LFG Aktif di /events?view=mabar:\n${dbContext.lfgSummary}`,
     `- Turnamen Resmi & Bracket Aktif:\n${dbContext.tournamentSummary}`,
+    `- Arsip Juara Hall of Winners (1, 2, 3):\n${dbContext.hallOfWinnersSummary}`,
     `- Data Lapak Marketplace Terbaru:\n${dbContext.marketSummary}`,
     `- Topik Hot Forum Diskusi Terkini:\n${dbContext.hotForumSummary}`,
     `- Warta Berita & Pengumuman Discord Terkini:\n${dbContext.liveNewsSummary}`,

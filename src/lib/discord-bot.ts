@@ -28,6 +28,7 @@ export type DiscordEmbed = {
 export type DiscordChannelKey =
   | "announcements"
   | "giveaway"
+  | "tournament_live"
   | "info_live"
   | "partnership"
   | "shop"
@@ -40,6 +41,7 @@ export interface DiscordChannelMeta {
   fieldName:
     | "discordAnnouncementChannelId"
     | "discordGiveawayChannelId"
+    | "discordTournamentLiveChannelId"
     | "discordInfoLiveChannelId"
     | "discordPartnershipChannelId"
     | "discordShopChannelId"
@@ -67,12 +69,20 @@ export const DISCORD_CHANNELS: Record<DiscordChannelKey, DiscordChannelMeta> = {
     description: "Pengumuman Event Giveaway / Undian Berhadiah komunitas",
     icon: "🎁",
   },
+  tournament_live: {
+    key: "tournament_live",
+    name: "#🏆・live-info-tournament",
+    fieldName: "discordTournamentLiveChannelId",
+    defaultId: "1572575614974693427",
+    description: "Pembaruan pertandingan turnamen LIVE, hasil skor, WO/DQ, & acak bagan",
+    icon: "🏆",
+  },
   info_live: {
     key: "info_live",
     name: "#📡・info-live",
     fieldName: "discordInfoLiveChannelId",
     defaultId: "1547552381221339149",
-    description: "Notifikasi match turnamen LIVE & siaran langsung streaming",
+    description: "Khusus pengumuman siaran langsung streaming live YouTube, Twitch, TikTok",
     icon: "📡",
   },
   partnership: {
@@ -130,6 +140,7 @@ export async function getDiscordChannelId(channelKey: DiscordChannelKey): Promis
       select: {
         discordAnnouncementChannelId: true,
         discordGiveawayChannelId: true,
+        discordTournamentLiveChannelId: true,
         discordInfoLiveChannelId: true,
         discordPartnershipChannelId: true,
         discordShopChannelId: true,
@@ -326,22 +337,84 @@ export function resolveDiscordChannelKey(input?: string): DiscordChannelKey {
   if (!input) return "announcements";
   const s = input.toLowerCase().trim();
 
-  if (s.includes("giveaway") || s.includes("undian") || s.includes("hadiah") || s.includes("bagi-bagi")) {
+  if (
+    s.includes("giveaway") ||
+    s.includes("undian") ||
+    s.includes("hadiah") ||
+    s.includes("bagi-bagi") ||
+    s.includes("event")
+  ) {
     return "giveaway";
   }
-  if (s.includes("live") || s.includes("stream") || s.includes("tanding") || s.includes("bermain") || s.includes("info-live") || s.includes("infolive")) {
+  if (
+    s.includes("tournament_live") ||
+    s.includes("live-info-tournament") ||
+    s.includes("info-tournament") ||
+    s.includes("tanding") ||
+    s.includes("match live") ||
+    s.includes("skor") ||
+    s.includes("score") ||
+    s.includes("wo") ||
+    s.includes("dq") ||
+    s.includes("gacha") ||
+    s.includes("bracket") ||
+    s.includes("bagan")
+  ) {
+    return "tournament_live";
+  }
+  if (
+    s.includes("stream") ||
+    s.includes("youtube") ||
+    s.includes("twitch") ||
+    s.includes("tiktok") ||
+    s.includes("live stream") ||
+    s.includes("livestream") ||
+    s.includes("info-live") ||
+    s.includes("infolive")
+  ) {
     return "info_live";
   }
-  if (s.includes("partner") || s.includes("sponsor") || s.includes("donatur") || s.includes("vip") || s.includes("iklan") || s.includes("kolaborasi")) {
+  if (
+    s.includes("partner") ||
+    s.includes("sponsor") ||
+    s.includes("donatur") ||
+    s.includes("vip") ||
+    s.includes("iklan") ||
+    s.includes("kolaborasi") ||
+    s.includes("treasury") ||
+    s.includes("donate") ||
+    s.includes("donasi")
+  ) {
     return "partnership";
   }
-  if (s.includes("shop") || s.includes("market") || s.includes("lapak") || s.includes("jual") || s.includes("beli") || s.includes("store") || s.includes("wts") || s.includes("wtb") || s.includes("jasa")) {
+  if (
+    s.includes("shop") ||
+    s.includes("market") ||
+    s.includes("lapak") ||
+    s.includes("jual") ||
+    s.includes("beli") ||
+    s.includes("store") ||
+    s.includes("wts") ||
+    s.includes("wtb") ||
+    s.includes("jasa")
+  ) {
     return "shop";
   }
   if (s.includes("lfg") || s.includes("mabar") || s.includes("party") || s.includes("lobby") || s.includes("gaming") || s.includes("lounge")) {
     return "lfg";
   }
-  if (s.includes("mod") || s.includes("staf") || s.includes("staff") || s.includes("rekber") || s.includes("report") || s.includes("laporan") || s.includes("satpam") || s.includes("audit") || s.includes("keamanan")) {
+  if (
+    s.includes("mod") ||
+    s.includes("staf") ||
+    s.includes("staff") ||
+    s.includes("rekber") ||
+    s.includes("report") ||
+    s.includes("laporan") ||
+    s.includes("satpam") ||
+    s.includes("audit") ||
+    s.includes("keamanan") ||
+    s.includes("escrow")
+  ) {
     return "mod_logs";
   }
 
