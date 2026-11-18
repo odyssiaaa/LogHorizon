@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, Flag, MessageCircle, Pin, Send, Trash2, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
@@ -11,6 +11,7 @@ import { PostReactions, type PostReaction } from "@/components/post-reactions";
 import { ShareButton } from "@/components/share-button";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
+import { MentionHashtagInput, type MentionUser } from "@/components/mention-hashtag-input";
 
 type CommentRecord = {
   id: string;
@@ -21,6 +22,7 @@ type CommentRecord = {
   createdAt: string;
   author: { id: string; username: string | null; avatar: string | null; isPremium: boolean; role?: string };
 };
+
 type ThreadRecord = {
   id: string;
   title: string;
@@ -39,8 +41,9 @@ type ThreadRecord = {
 function formatInlineMarkdown(rawText: string): React.ReactNode[] {
   // Bersihkan sisa tag header berulang jika ada komentar lama di database
   const text = rawText.replace(/^(?:🛡️\s*)?(?:\*{1,2})?\[?(?:SATPAM\s*HORIZON|AI\s*GUARDIAN)[^\]]*\]?(?:\*{1,2})?\s*[:\n]*/i, "");
-  // Tokenize **bold**, *italic*, `code`
-  const tokenRegex = /(\*\*[^*]+?\*\*|\*[^*\n]+?\*|`[^`\n]+`)/g;
+
+  // Tokenize **bold**, *italic*, `code`, @mention, #hashtag, URLs
+  const tokenRegex = /(\*\*[^*]+?\*\*|\*[^*\n]+?\*|`[^`\n]+`|@(?:satpam|[a-zA-Z0-9_.-]+)|#[a-zA-Z0-9_]+|https?:\/\/[^\s<]+)/gi;
   const nodes: React.ReactNode[] = [];
   let lastIdx = 0;
   let match: RegExpExecArray | null;
@@ -50,6 +53,7 @@ function formatInlineMarkdown(rawText: string): React.ReactNode[] {
       nodes.push(text.slice(lastIdx, match.index));
     }
     const token = match[0];
+
     if (token.startsWith("**") && token.endsWith("**") && token.length >= 4) {
       nodes.push(
         <strong key={`b-${match.index}`} className="font-bold text-slate-900 dark:text-white">
@@ -68,7 +72,50 @@ function formatInlineMarkdown(rawText: string): React.ReactNode[] {
           {token.slice(1, -1)}
         </code>
       );
+    } else if (token.toLowerCase() === "@satpam") {
+      nodes.push(
+        <span key={`satpam-${match.index}`} className="inline-flex items-center gap-0.5 text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-[#7C3AED]/25 text-[#7C3AED] dark:text-[#C4B5FD] border border-[#7C3AED]/50 select-none">
+          🛡️ @satpam
+        </span>
+      );
+    } else if (token.startsWith("@") && token.length > 1) {
+      const username = token.slice(1);
+      nodes.push(
+        <Link
+          key={`m-${match.index}`}
+          href={`/u/${username}`}
+          className="text-[#7C3AED] dark:text-[#A78BFA] font-semibold hover:underline"
+        >
+          @{username}
+        </Link>
+      );
+    } else if (token.startsWith("#") && token.length > 1) {
+      const tag = token.slice(1);
+      nodes.push(
+        <Link
+          key={`h-${match.index}`}
+          href={`/forum?tag=${encodeURIComponent(tag)}`}
+          className="inline-flex items-center text-xs font-mono font-medium text-[#7C3AED] dark:text-[#A78BFA] hover:text-[#6D28D9] dark:hover:text-white bg-[#7C3AED]/10 hover:bg-[#7C3AED]/20 px-1.5 py-0.5 rounded transition-colors"
+        >
+          #{tag}
+        </Link>
+      );
+    } else if (token.startsWith("http://") || token.startsWith("https://")) {
+      nodes.push(
+        <a
+          key={`u-${match.index}`}
+          href={token}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[#7C3AED] dark:text-[#A78BFA] hover:underline break-all"
+        >
+          {token}
+        </a>
+      );
+    } else {
+      nodes.push(token);
     }
+
     lastIdx = match.index + token.length;
   }
 
@@ -103,7 +150,7 @@ function FormattedPostContent({ text, onImageClick }: { text: string; onImageCli
           src={src}
           alt={alt}
           loading="lazy"
-          className="mt-2 max-h-80 w-auto rounded-lg border border-[#2A1B42] bg-[#09040F] object-contain cursor-zoom-in hover:border-[#7C3AED] transition-all shadow-md"
+          className="mt-2 max-h-80 w-auto rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-slate-100 dark:bg-[#09040F] object-contain cursor-zoom-in hover:border-[#7C3AED] transition-all shadow-md"
           onClick={() => onImageClick?.(src)}
         />
       </span>
@@ -129,8 +176,10 @@ export function ForumThread({ id }: { id: string }) {
   const [comment, setComment] = useState("");
   const [commentImg, setCommentImg] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyTarget, setReplyTarget] = useState<CommentRecord | null>(null);
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
+  const [isSatpamTyping, setIsSatpamTyping] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [loginAction, setLoginAction] = useState("");
   const [reportOpen, setReportOpen] = useState(false);
@@ -146,17 +195,51 @@ export function ForumThread({ id }: { id: string }) {
         if (active) {
           setThread(data);
           setError("");
+          // Check if Satpam comment arrived to stop typing indicator
+          if (isSatpamTyping) {
+            const hasSatpam = data.comments.some(
+              (c) => (c.author.username === "satpam-horizon" || c.author.username === "Satpam Horizon") &&
+                     Date.now() - new Date(c.createdAt).getTime() < 30000
+            );
+            if (hasSatpam) setIsSatpamTyping(false);
+          }
         }
       })
       .catch((reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : "Gagal memuat thread."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [id, refreshKey]);
+  }, [id, refreshKey, isSatpamTyping]);
 
   // Smart Live Sync: Refresh thread & komentar setiap 10 detik dan seketika saat tab kembali aktif
   useLiveSync(() => {
     setRefreshKey((prev) => prev + 1);
   }, { intervalMs: 10000, revalidateOnFocus: true });
+
+  // Daftar member relevan untuk mention autocomplete
+  const relevantUsers: MentionUser[] = useMemo(() => {
+    const map = new Map<string, MentionUser>();
+    if (thread?.author?.username) {
+      map.set(thread.author.username.toLowerCase(), {
+        id: thread.author.id,
+        username: thread.author.username,
+        avatar: thread.author.avatar,
+        role: thread.author.role,
+        isPremium: thread.author.isPremium,
+      });
+    }
+    for (const c of thread?.comments ?? []) {
+      if (c.author?.username) {
+        map.set(c.author.username.toLowerCase(), {
+          id: c.author.id,
+          username: c.author.username,
+          avatar: c.author.avatar,
+          role: c.author.role,
+          isPremium: c.author.isPremium,
+        });
+      }
+    }
+    return Array.from(map.values());
+  }, [thread]);
 
   async function deleteThread() {
     if (!confirm("Apakah kamu yakin ingin menghapus thread ini secara permanen?")) return;
@@ -200,15 +283,64 @@ export function ForumThread({ id }: { id: string }) {
     }
   }
 
-  const commentsByParent = useMemo(() => {
-    const groups = new Map<string | null, CommentRecord[]>();
-    for (const item of thread?.comments ?? []) {
-      const parent = item.parentId && thread?.comments.some((entry) => entry.id === item.parentId) ? item.parentId : null;
-      groups.set(parent, [...(groups.get(parent) ?? []), item]);
+  // 1-Level Flat Threading Structuring:
+  // Root comments (Level 0) and flat list of descendant replies (Level 1)
+  const { rootComments, repliesByRootId, commentMap } = useMemo(() => {
+    const cMap = new Map<string, CommentRecord>();
+    for (const c of thread?.comments ?? []) {
+      cMap.set(c.id, c);
     }
-    return groups;
+
+    const roots: CommentRecord[] = [];
+    const rootIds = new Set<string>();
+
+    for (const c of thread?.comments ?? []) {
+      if (!c.parentId || !cMap.has(c.parentId)) {
+        roots.push(c);
+        rootIds.add(c.id);
+      }
+    }
+
+    function findRootId(commentId: string): string {
+      let cur = cMap.get(commentId);
+      while (cur?.parentId && cMap.has(cur.parentId)) {
+        cur = cMap.get(cur.parentId);
+      }
+      return cur?.id ?? commentId;
+    }
+
+    const repliesMap = new Map<string, CommentRecord[]>();
+    for (const c of thread?.comments ?? []) {
+      if (!rootIds.has(c.id)) {
+        const rootId = findRootId(c.id);
+        const list = repliesMap.get(rootId) ?? [];
+        list.push(c);
+        repliesMap.set(rootId, list);
+      }
+    }
+
+    return { rootComments: roots, repliesByRootId: repliesMap, commentMap: cMap };
   }, [thread?.comments]);
 
+  // Handle Quick Inline Reply Start
+  const handleStartReply = (target: CommentRecord) => {
+    if (!user) {
+      setLoginAction("membalas komentar");
+      return;
+    }
+    if (replyTo === target.id) {
+      setReplyTo(null);
+      setReplyTarget(null);
+      setReplyText("");
+      return;
+    }
+    const isSatpam = target.author.username === "satpam-horizon" || target.author.username === "Satpam Horizon";
+    setReplyTo(target.id);
+    setReplyTarget(target);
+    setReplyText(`@${isSatpam ? "satpam" : (target.author.username ?? "gamer")} `);
+  };
+
+  // Optimistic Comment Submission
   async function sendComment(parentId: string | null, body: string) {
     if (!user) {
       setLoginAction("berkomentar");
@@ -218,28 +350,100 @@ export function ForumThread({ id }: { id: string }) {
       setError("Akun kamu sedang dibatasi dan tidak dapat berkomentar.");
       return;
     }
-    setSending(true);
+    const cleanBody = body.trim();
+    if (!cleanBody) return;
+
+    let finalBody = cleanBody;
+    if (!parentId && commentImg) {
+      finalBody = `${cleanBody}\n\n![Lampiran](${commentImg})`;
+    }
+
+    const isMentioningSatpam = /@satpam\b/i.test(finalBody);
+    const isReplyingToSatpam = Boolean(
+      parentId && (
+        replyTarget?.author.username === "satpam-horizon" ||
+        replyTarget?.author.username === "Satpam Horizon"
+      )
+    );
+    const willTriggerSatpam = isMentioningSatpam || isReplyingToSatpam;
+
+    // 0ms Optimistic UI update
+    const tempId = `temp-${Date.now()}`;
+    const optimisticComment: CommentRecord = {
+      id: tempId,
+      postId: id,
+      authorId: user.id,
+      parentId,
+      content: finalBody,
+      createdAt: new Date().toISOString(),
+      author: {
+        id: user.id,
+        username: user.username,
+        avatar: user.avatar,
+        isPremium: Boolean(user.isPremium),
+        role: user.role,
+      },
+    };
+
+    if (thread) {
+      setThread({
+        ...thread,
+        comments: [...thread.comments, optimisticComment],
+      });
+    }
+
+    // Reset compose states immediately
+    setComment("");
+    setCommentImg("");
+    setReplyText("");
+    setReplyTo(null);
+    setReplyTarget(null);
     setError("");
+
+    if (willTriggerSatpam) {
+      setIsSatpamTyping(true);
+    }
+
+    setSending(true);
     try {
-      let finalBody = body;
-      if (!parentId && commentImg) {
-        finalBody = `${body}\n\n![Lampiran](${commentImg})`;
+      const response = await fetch(`/api/posts/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: finalBody, parentId }),
+      });
+      const realComment = await readApiResponse<CommentRecord>(response, "Komentar gagal dikirim.");
+
+      // Replace optimistic comment with real server comment
+      setThread((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          comments: prev.comments.map((c) => (c.id === tempId ? realComment : c)),
+        };
+      });
+
+      // Poll for Satpam AI response if triggered
+      if (willTriggerSatpam) {
+        setTimeout(() => setRefreshKey((v) => v + 1), 2500);
+        setTimeout(() => setRefreshKey((v) => v + 1), 5000);
+        setTimeout(() => setRefreshKey((v) => v + 1), 8000);
+        // Safety timeout to turn off typing indicator after 20 seconds
+        setTimeout(() => setIsSatpamTyping(false), 20000);
       }
-      const response = await fetch(`/api/posts/${id}/comments`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: finalBody, parentId }) });
-      await readApiResponse<unknown>(response, "Komentar gagal dikirim.");
-      setComment("");
-      setCommentImg("");
-      setReplyText("");
-      setReplyTo(null);
-      setLoading(true);
-      setRefreshKey((value) => value + 1);
-      // Auto-polling jika memanggil @satpam atau membalas Satpam Bot agar balasan AI muncul mulus
-      if (/@satpam\b/i.test(finalBody) || parentId) {
-        setTimeout(() => setRefreshKey((value) => value + 1), 2500);
-        setTimeout(() => setRefreshKey((value) => value + 1), 5000);
-      }
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Komentar gagal dikirim."); }
-    finally { setSending(false); }
+    } catch (reason) {
+      // Revert optimistic update on failure
+      setThread((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          comments: prev.comments.filter((c) => c.id !== tempId),
+        };
+      });
+      setError(reason instanceof Error ? reason.message : "Komentar gagal dikirim.");
+      setIsSatpamTyping(false);
+    } finally {
+      setSending(false);
+    }
   }
 
   function reportPost() {
@@ -271,63 +475,83 @@ export function ForumThread({ id }: { id: string }) {
   if (loading) return <main className="community-page py-12 text-center text-[#A78BFA] font-mono text-xs"><div className="empty-state">MEMUAT THREAD…</div></main>;
   if (!thread) return <main className="community-page page-shell py-12 text-center max-w-xl mx-auto"><div className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none mb-4">{error || "Thread tidak ditemukan."}</div><Link className="inline-flex items-center gap-1.5 text-xs font-mono text-[#A78BFA] hover:text-[#F8FAFC]" href="/forum"><ArrowLeft size={16} /> KEMBALI KE FORUM</Link></main>;
 
-  const renderComments = (parentId: string | null, depth = 0): React.ReactNode => (commentsByParent.get(parentId) ?? []).map((item) => {
+  // Render a single comment card (used for both Root and Replies)
+  const renderCommentCard = (item: CommentRecord, isReply = false) => {
     const isSatpamBot = item.author.username === "satpam-horizon" || item.author.username === "Satpam Horizon";
     const isCommentAuthor = Boolean(user && (item.author.id === user.id || item.authorId === user.id || item.author.username === user.username));
     const isStaff = user?.role === "ADMIN" || user?.role === "MODERATOR" || user?.username === ".odyssia";
     const canDeleteComment = !user?.isBanned && (isCommentAuthor || isStaff);
 
+    // Identify who this reply is addressing
+    const targetParent = item.parentId ? commentMap.get(item.parentId) : null;
+    const replyTargetUsername = targetParent?.author?.username ?? "gamer";
+
     return (
       <article
-        className={`comment-card p-4 rounded-none my-2 transition-all ${
-          isSatpamBot
-            ? "bg-[#7C3AED]/10 border-l-2 border-[#7C3AED] border-t border-r border-b border-[#2E1E45]"
-            : "border border-[#2E1E45] bg-[#130921]"
-        }`}
         key={item.id}
-        style={{ marginLeft: depth ? `${Math.min(depth, 3) * 16}px` : undefined }}
+        className={`p-3.5 sm:p-4 rounded-lg my-2 transition-all w-full ${
+          isSatpamBot
+            ? "bg-[#7C3AED]/10 border-l-4 border-l-[#7C3AED] border border-slate-200 dark:border-[#2E1E45]"
+            : isReply
+            ? "border border-slate-200 dark:border-[#2E1E45]/80 bg-slate-50/80 dark:bg-[#160B29] shadow-sm"
+            : "border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm"
+        }`}
       >
+        {/* Reply Indicator (↪ Membalas @username) */}
+        {isReply && (
+          <div className="text-[11px] font-mono text-[#7C3AED] dark:text-[#A78BFA] mb-1.5 flex items-center gap-1.5 select-none">
+            <span>↪ Membalas</span>
+            <Link
+              href={`/u/${replyTargetUsername}`}
+              className="font-semibold text-slate-800 dark:text-[#C4B5FD] hover:underline"
+            >
+              @{replyTargetUsername}
+            </Link>
+          </div>
+        )}
+
         <div className="flex items-start gap-3">
-          <DiscordAvatar className="comment-avatar shrink-0" src={item.author.avatar} username={item.author.username} size={28} />
+          <DiscordAvatar className="comment-avatar shrink-0 mt-0.5" src={item.author.avatar} username={item.author.username} size={28} />
           <div className="comment-content min-w-0 flex-1">
-            <div className="comment-meta flex flex-wrap items-center gap-2">
-              <strong className={isSatpamBot ? "font-bold text-[#A78BFA]" : (item.author.isPremium || item.author.username === ".odyssia") ? "premium-username" : "text-[#F8FAFC] font-bold text-xs"}>
+            {/* Header: Author + Badges + Timestamp */}
+            <div className="comment-meta flex flex-wrap items-center gap-1.5">
+              <strong className={isSatpamBot ? "font-bold text-[#7C3AED] dark:text-[#A78BFA]" : (item.author.isPremium || item.author.username === ".odyssia") ? "premium-username" : "text-slate-900 dark:text-[#F8FAFC] font-bold text-xs"}>
                 {isSatpamBot ? "Satpam Horizon" : (item.author.username ?? "Gamer")}
               </strong>
               {isSatpamBot ? (
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#7C3AED] text-white border border-[#7C3AED] shadow-sm flex items-center gap-1">
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#7C3AED] text-white shadow-sm flex items-center gap-1 whitespace-nowrap">
                   🛡️ SATPAM AI • BOT GUILD
                 </span>
               ) : (item.author.username?.toLowerCase() === ".odyssia" || item.author.username?.toLowerCase() === "odyssia") ? (
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30">👑 Emperor</span>
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 whitespace-nowrap">👑 Emperor</span>
               ) : item.author.role === "ADMIN" ? (
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30">✨ Prince</span>
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/30 whitespace-nowrap">✨ Prince</span>
               ) : item.author.role === "MODERATOR" ? (
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-blue-500/15 text-blue-400 border border-blue-500/30">⚔️ Mod</span>
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-500 dark:text-blue-400 border border-blue-500/30 whitespace-nowrap">⚔️ Mod</span>
               ) : null}
-              <time className="text-[11px] font-mono text-[#A78BFA]/70">{new Date(item.createdAt).toLocaleString("id-ID")}</time>
+              <span className="text-slate-400 dark:text-[#A78BFA]/40 text-[10px]">•</span>
+              <time className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]/70 whitespace-nowrap">{new Date(item.createdAt).toLocaleString("id-ID")}</time>
             </div>
-            <div className="break-words mt-2 text-xs sm:text-sm leading-relaxed text-[#F8FAFC]/90 font-sans"><FormattedPostContent text={item.content} onImageClick={setLightboxImg} /></div>
+
+            {/* Comment Body */}
+            <div className="break-words mt-2 text-xs sm:text-sm leading-relaxed text-slate-800 dark:text-[#F8FAFC]/90 font-sans">
+              <FormattedPostContent text={item.content} onImageClick={setLightboxImg} />
+            </div>
+
+            {/* Action Bar */}
             {!user?.isBanned && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className="mt-2.5 flex flex-wrap items-center gap-3 whitespace-nowrap">
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1.5 text-[11px] font-mono text-[#A78BFA] hover:text-[#F8FAFC] uppercase tracking-wider"
-                  onClick={() => {
-                    if (!user) {
-                      setLoginAction("membalas komentar");
-                      return;
-                    }
-                    setReplyTo(replyTo === item.id ? null : item.id);
-                    setReplyText("");
-                  }}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-mono text-[#7C3AED] dark:text-[#A78BFA] hover:text-[#6D28D9] dark:hover:text-[#F8FAFC] uppercase tracking-wider transition-colors"
+                  onClick={() => handleStartReply(item)}
                 >
                   <MessageCircle size={13} /> {isSatpamBot ? "Balas Satpam AI" : "Balas"}
                 </button>
                 {canDeleteComment && (
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 text-xs font-mono text-rose-400 hover:text-rose-300 transition-colors"
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-rose-500 hover:text-rose-400 transition-colors"
                     onClick={() => void deleteComment(item.id)}
                     title="Hapus komentar"
                   >
@@ -336,58 +560,115 @@ export function ForumThread({ id }: { id: string }) {
                 )}
               </div>
             )}
+
+            {/* Inline Quick-Reply Box (Tepat di bawah komentar) */}
             {replyTo === item.id && (
-              <form className="reply-form mt-3 space-y-2" onSubmit={(event) => { event.preventDefault(); void sendComment(item.id, replyText); }}>
-                <textarea
-                  required
-                  maxLength={5000}
+              <div className="mt-3 p-3 rounded-lg border border-[#7C3AED]/50 bg-slate-50 dark:bg-[#1A0E2E] shadow-md animate-in fade-in duration-200">
+                {/* Discord-Style Context Quote Bar */}
+                <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded bg-white dark:bg-[#11091D] border-l-2 border-[#7C3AED] text-xs font-mono text-[#7C3AED] dark:text-[#A78BFA] mb-2">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="text-slate-400 dark:text-[#A78BFA]/70">Membalas</span>
+                    <strong className="text-slate-900 dark:text-white font-semibold">
+                      @{isSatpamBot ? "satpam" : (item.author.username ?? "gamer")}
+                    </strong>
+                    <span className="text-slate-500 dark:text-[#A78BFA]/60 truncate">
+                      &ldquo;{item.content.replace(/!\[.*?\]\([^)]+\)/g, "").slice(0, 60)}...&rdquo;
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReplyTo(null);
+                      setReplyTarget(null);
+                      setReplyText("");
+                    }}
+                    className="text-slate-400 hover:text-rose-400 p-0.5 shrink-0"
+                    title="Batal balas"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                {/* Inline Mention/Hashtag Input */}
+                <MentionHashtagInput
+                  autoFocus
                   rows={2}
+                  maxLength={5000}
                   value={replyText}
-                  onChange={(event) => setReplyText(event.target.value)}
-                  placeholder={isSatpamBot ? "Tanya atau balas Satpam Horizon..." : `Balas ${item.author.username ?? "gamer"}…`}
-                  className="w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] font-sans text-xs focus:outline-none focus:border-[#7C3AED]"
+                  onChange={setReplyText}
+                  onSubmit={() => void sendComment(item.id, replyText)}
+                  relevantUsers={relevantUsers}
+                  placeholder={
+                    isSatpamBot
+                      ? "Tanya atau balas Satpam Horizon... (Ctrl+Enter untuk kirim)"
+                      : `Balas @${item.author.username ?? "gamer"}... (Ctrl+Enter untuk kirim)`
+                  }
+                  className="w-full p-2.5 rounded-lg border border-slate-300 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-slate-900 dark:text-[#F8FAFC] font-sans text-xs focus:outline-none focus:border-[#7C3AED]"
                 />
-                <button className="px-3 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED]" disabled={sending}>
-                  <Send size={12} className="inline mr-1" /> Balas
-                </button>
-              </form>
+
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-mono text-slate-400 dark:text-[#A78BFA]/60">
+                    Shortcut: <strong>Ctrl + Enter</strong>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReplyTo(null);
+                        setReplyTarget(null);
+                        setReplyText("");
+                      }}
+                      className="px-2.5 py-1 text-xs font-mono text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void sendComment(item.id, replyText)}
+                      disabled={sending || !replyText.trim()}
+                      className="px-3.5 py-1.5 rounded font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <Send size={12} /> Kirim Balasan
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
-            <div className="nested-comments mt-2">{renderComments(item.id, depth + 1)}</div>
           </div>
         </div>
       </article>
     );
-  });
+  };
 
   return (
     <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 overflow-x-hidden">
       <div className="page-shell px-0 sm:px-0 thread-layout">
         <div>
-          <Link className="back-link inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#A78BFA] hover:text-[#F8FAFC] mb-4 uppercase tracking-wider" href="/forum">
+          <Link className="back-link inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#7C3AED] dark:text-[#A78BFA] hover:text-[#6D28D9] dark:hover:text-[#F8FAFC] mb-4 uppercase tracking-wider" href="/forum">
             <ArrowLeft size={16} /> KEMBALI KE FORUM
           </Link>
-          <article className="thread-card p-5 sm:p-7 rounded-none border border-[#2E1E45] bg-[#130921]">
+          <article className="thread-card p-5 sm:p-7 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
             {thread.isPinned && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-[#A78BFA] uppercase tracking-wider mb-2">
+              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider mb-2">
                 <Pin size={12} className="text-[#7C3AED]" /> PINNED THREAD
               </span>
             )}
-            <p className="section-kicker font-mono text-xs font-bold text-[#A78BFA] uppercase tracking-wider">
+            <p className="section-kicker font-mono text-xs font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider">
               {thread.category.toLowerCase().replaceAll("_", " ")}
             </p>
-            <h1 className="page-title font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#F8FAFC] uppercase tracking-tight break-words mt-2 leading-tight">
+            <h1 className="page-title font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-tight break-words mt-2 leading-tight">
               {thread.title}
             </h1>
-            <div className="thread-meta flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-[#A78BFA] font-mono my-3 pt-2 border-t border-[#2E1E45]">
+            <div className="thread-meta flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-[#7C3AED] dark:text-[#A78BFA] font-mono my-3 pt-2 border-t border-slate-200 dark:border-[#2E1E45]">
               <span className="post-author flex items-center gap-1.5">
                 <DiscordAvatar src={thread.author.avatar} username={thread.author.username} size={20} />
-                <span>oleh <Link href={`/u/${thread.author.username ?? "user"}`} className={`hover:underline ${(thread.author.isPremium || thread.author.username === ".odyssia") ? "premium-username" : "font-semibold text-[#F8FAFC]"}`}>{thread.author.username ?? "Gamer"}</Link>
+                <span>oleh <Link href={`/u/${thread.author.username ?? "user"}`} className={`hover:underline ${(thread.author.isPremium || thread.author.username === ".odyssia") ? "premium-username" : "font-semibold text-slate-900 dark:text-[#F8FAFC]"}`}>{thread.author.username ?? "Gamer"}</Link>
                   {(thread.author.username?.toLowerCase() === ".odyssia" || thread.author.username?.toLowerCase() === "odyssia") ? (
                     <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 ml-1.5">👑 Emperor</span>
                   ) : thread.author.role === "ADMIN" ? (
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30 ml-1.5">✨ Prince / Princess</span>
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/30 ml-1.5">✨ Prince / Princess</span>
                   ) : thread.author.role === "MODERATOR" ? (
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-blue-500/15 text-blue-400 border border-blue-500/30 ml-1.5">⚔️ Lord Commander</span>
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-blue-500/15 text-blue-500 dark:text-blue-400 border border-blue-500/30 ml-1.5">⚔️ Lord Commander</span>
                   ) : null}
                 </span>
               </span>
@@ -395,17 +676,17 @@ export function ForumThread({ id }: { id: string }) {
               <span>{new Date(thread.createdAt).toLocaleString("id-ID")}</span>
             </div>
             <PostReactions postId={thread.id} likes={thread.likes} dislikes={thread.dislikes} reaction={thread.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} />
-            <div className="thread-body break-words leading-relaxed text-sm sm:text-base my-5 text-[#F8FAFC]/90 font-sans">
+            <div className="thread-body break-words leading-relaxed text-sm sm:text-base my-5 text-slate-800 dark:text-[#F8FAFC]/90 font-sans">
               <FormattedPostContent text={thread.content} onImageClick={setLightboxImg} />
             </div>
-            <div className="thread-actions flex flex-wrap items-center gap-2 sm:gap-3 pt-3 border-t border-[#2E1E45]">
+            <div className="thread-actions flex flex-wrap items-center gap-2 sm:gap-3 pt-3 border-t border-slate-200 dark:border-[#2E1E45]">
               <ShareButton url={`/forum/${thread.id}`} title={thread.title} text={`Baca dan diskusikan di Forum LogHorizon: ${thread.title}`} label="Bagikan Diskusi 🔗" variant="outline" />
-              <button className="text-xs font-mono text-[#A78BFA] hover:text-rose-400 inline-flex items-center gap-1.5" onClick={reportPost}>
+              <button className="text-xs font-mono text-[#7C3AED] dark:text-[#A78BFA] hover:text-rose-400 inline-flex items-center gap-1.5" onClick={reportPost}>
                 <Flag size={14} /> Report
               </button>
               {user && (user.role === "ADMIN" || user.role === "MODERATOR") && (
                 <button
-                  className={`text-xs font-mono inline-flex items-center gap-1.5 ${thread.isPinned ? "text-[#A78BFA] font-bold" : "text-[#A78BFA]/70 hover:text-[#F8FAFC]"}`}
+                  className={`text-xs font-mono inline-flex items-center gap-1.5 ${thread.isPinned ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold" : "text-slate-500 dark:text-[#A78BFA]/70 hover:text-slate-900 dark:hover:text-[#F8FAFC]"}`}
                   onClick={() => void togglePin()}
                   title={thread.isPinned ? "Lepas Pin" : "Pin Thread"}
                 >
@@ -413,57 +694,132 @@ export function ForumThread({ id }: { id: string }) {
                 </button>
               )}
               {user && (user.role === "ADMIN" || user.role === "MODERATOR" || user.username === ".odyssia" || user.id === thread.author?.id || user.id === thread.authorId || user.username === thread.author?.username) && (
-                <button className="text-xs font-mono text-rose-400 hover:text-rose-300 inline-flex items-center gap-1.5 ml-auto" onClick={() => void deleteThread()}>
+                <button className="text-xs font-mono text-rose-500 hover:text-rose-400 inline-flex items-center gap-1.5 ml-auto" onClick={() => void deleteThread()}>
                   <Trash2 size={14} /> Hapus
                 </button>
               )}
             </div>
           </article>
-          {error && <div className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none mt-3" role="status">{error}<button className="ml-2" onClick={() => setError("")} aria-label="Tutup"><X size={15} /></button></div>}
-          <section className="comments-section mt-8">
-            <div className="section-heading flex items-center justify-between gap-3 mb-4 border-b border-[#2E1E45] pb-3">
-              <h2 className="font-display text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-[#F8FAFC]">Diskusi</h2>
-              <span className="text-xs font-mono text-[#A78BFA]">{thread.comments.length} KOMENTAR</span>
+
+          {error && (
+            <div className="p-3 text-xs font-mono text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 border border-rose-500/30 rounded-none mt-3" role="status">
+              {error}
+              <button className="ml-2" onClick={() => setError("")} aria-label="Tutup"><X size={15} /></button>
             </div>
+          )}
+
+          {/* Discussion / Comments Section */}
+          <section className="comments-section mt-8">
+            <div className="section-heading flex items-center justify-between gap-3 mb-4 border-b border-slate-200 dark:border-[#2E1E45] pb-3">
+              <h2 className="font-display text-xl sm:text-2xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC]">Diskusi</h2>
+              <span className="text-xs font-mono text-[#7C3AED] dark:text-[#A78BFA]">{thread.comments.length} KOMENTAR</span>
+            </div>
+
+            {/* Root Comment Composer */}
             {user && !user.isBanned ? (
-              <form className="comment-compose space-y-3 p-4 rounded-none border border-[#2E1E45] bg-[#130921]" onSubmit={(event) => { event.preventDefault(); void sendComment(null, comment); }}>
-                <textarea
-                  required
-                  maxLength={5000}
+              <form
+                className="comment-compose space-y-3 p-4 rounded-lg border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void sendComment(null, comment);
+                }}
+              >
+                <MentionHashtagInput
                   rows={3}
+                  maxLength={5000}
                   value={comment}
-                  onChange={(event) => setComment(event.target.value)}
-                  placeholder="Bagikan pendapatmu…"
-                  className="w-full p-2.5 rounded-none border border-[#2E1E45] bg-[#1A0E2E] text-[#F8FAFC] font-sans text-sm focus:outline-none focus:border-[#7C3AED]"
+                  onChange={setComment}
+                  onSubmit={() => void sendComment(null, comment)}
+                  relevantUsers={relevantUsers}
+                  placeholder="Bagikan pendapatmu... (Ctrl+Enter untuk kirim langsung)"
+                  className="w-full p-2.5 rounded-lg border border-slate-300 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-900 dark:text-[#F8FAFC] font-sans text-sm focus:outline-none focus:border-[#7C3AED]"
                 />
-                <p className="text-[11px] font-mono text-[#A78BFA] flex items-center gap-1.5 select-none">
+
+                <p className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA] flex items-center gap-1.5 select-none">
                   <span>💡</span>
-                  <span>Tips: Ketik <strong className="text-white bg-[#7C3AED]/25 px-1.5 py-0.5 border border-[#7C3AED]/40">@satpam</strong> di komentarmu untuk meminta pendapat atau rangkuman dari AI.</span>
+                  <span>Tips: Ketik <strong className="text-white bg-[#7C3AED] px-1.5 py-0.5 rounded">@satpam</strong> untuk berdiskusi dengan AI. Tekan <strong>Ctrl + Enter</strong> untuk kirim.</span>
                 </p>
+
                 <ImageUploader
                   value={commentImg}
                   onChange={setCommentImg}
                   label="Lampiran Gambar (Opsional)"
                   description="Pilih foto langsung dari galeri HP atau PC. Otomatis dikompresi."
                 />
-                <button className="w-full sm:w-auto px-4 py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] flex items-center justify-center gap-2" disabled={sending}>
-                  <Send size={15} /> Kirim komentar
-                </button>
+
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <span className="text-xs font-mono text-slate-400 dark:text-[#A78BFA]/60 hidden sm:inline">
+                    {comment.length} / 5000 karakter
+                  </span>
+                  <button
+                    type="submit"
+                    className="w-full sm:w-auto px-5 py-2 rounded-lg font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50"
+                    disabled={sending || !comment.trim()}
+                  >
+                    <Send size={15} /> Kirim komentar
+                  </button>
+                </div>
               </form>
             ) : user?.isBanned ? (
-              <p className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none">Akun kamu sedang dibatasi dan tidak dapat berkomentar.</p>
+              <p className="p-3 text-xs font-mono text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-500/30 rounded-lg">
+                Akun kamu sedang dibatasi dan tidak dapat berkomentar.
+              </p>
             ) : (
-              <button className="w-full sm:w-auto px-4 py-2.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#1A0E2E] text-[#A78BFA] border border-[#2E1E45] hover:border-[#7C3AED]" onClick={() => setLoginAction("berkomentar")}>
+              <button
+                className="w-full sm:w-auto px-4 py-2.5 rounded-lg font-mono text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-[#7C3AED] dark:text-[#A78BFA] border border-slate-300 dark:border-[#2E1E45] hover:border-[#7C3AED]"
+                onClick={() => setLoginAction("berkomentar")}
+              >
                 Login untuk ikut berdiskusi
               </button>
             )}
-            <div className="comments-list space-y-3 mt-6">{renderComments(null)}</div>
-            {!thread.comments.length && <div className="p-8 text-center font-mono text-xs text-[#A78BFA] rounded-none border border-[#2E1E45] bg-[#130921] mt-4">Belum ada komentar. Jadilah yang pertama membalas.</div>}
+
+            {/* Satpam Horizon Typing Indicator */}
+            {isSatpamTyping && (
+              <div className="flex items-center gap-2.5 p-3 rounded-lg bg-[#7C3AED]/15 border border-[#7C3AED]/40 text-xs font-mono text-[#7C3AED] dark:text-[#C4B5FD] my-4 shadow-sm animate-pulse">
+                <span className="text-base">🛡️</span>
+                <span className="font-bold text-slate-900 dark:text-white">Satpam Horizon</span>
+                <span>sedang meracik balasan...</span>
+                <span className="inline-flex gap-1 ml-1 items-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] animate-bounce [animation-delay:-0.3s]"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] animate-bounce [animation-delay:-0.15s]"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] animate-bounce"></span>
+                </span>
+              </div>
+            )}
+
+            {/* Comments List (1-Level Flat Threading Layout) */}
+            <div className="comments-list space-y-4 mt-6">
+              {rootComments.map((root) => {
+                const descendantReplies = repliesByRootId.get(root.id) ?? [];
+
+                return (
+                  <div key={root.id} className="root-thread-group">
+                    {/* Level 0: Root Comment (Full Width) */}
+                    {renderCommentCard(root, false)}
+
+                    {/* Level 1: Flat Descendant Replies (Strictly 1 Indentation Level) */}
+                    {descendantReplies.length > 0 && (
+                      <div className="ml-4 sm:ml-6 pl-3 sm:pl-4 border-l-2 border-[#7C3AED]/40 mt-2 space-y-2.5">
+                        {descendantReplies.map((reply) => renderCommentCard(reply, true))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {!thread.comments.length && (
+              <div className="p-8 text-center font-mono text-xs text-slate-500 dark:text-[#A78BFA] rounded-lg border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] mt-4">
+                Belum ada komentar. Jadilah yang pertama membalas.
+              </div>
+            )}
           </section>
         </div>
       </div>
+
       <LoginPrompt open={Boolean(loginAction)} action={loginAction} onClose={() => setLoginAction("")} />
       <ReportDialog postId={id} open={reportOpen} onClose={() => setReportOpen(false)} onSuccess={setError} />
+
       {lightboxImg && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm cursor-zoom-out"

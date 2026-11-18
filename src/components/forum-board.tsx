@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { createRealtimeClient, type SealedLiveQuery } from "@neon/realtime/client";
 import { Flag, Loader2, MessageCircle, Pin, Plus, Search, Trash2, X } from "lucide-react";
@@ -16,6 +16,7 @@ import type { ForumPostRecord } from "@/types/community";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
 import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown";
+import { MentionHashtagInput } from "@/components/mention-hashtag-input";
 
 type Category = "GENERAL_CHAT" | "PROMOTION" | "FEEDBACK";
 type ForumLiveRow = { id: string };
@@ -39,6 +40,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [posts, setPosts] = useState<ForumPostRecord[]>([]);
   const [searchValue, setSearchValue] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedTag, setSelectedTag] = useState<string>("");
   const [isSearching, setIsSearching] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -53,6 +55,42 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const { data: session, status } = useSession();
   const user = session?.user;
   const activeCategory = categories.find((item) => item.id === category)!;
+
+  // Baca parameter ?tag= dari URL saat pertama kali dimuat
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tagParam = params.get("tag");
+      if (tagParam) setSelectedTag(tagParam.replace(/^#/, ""));
+    }
+  }, []);
+
+  // Hitung 5 Hashtag Terhangat (Populer & Dinamis dari Posts)
+  const trendingHashtags = useMemo(() => {
+    const counts = new Map<string, number>();
+    const defaultTags = ["MobileLegends", "Valorant", "CariMabar", "TurnamenLH", "TipsBuild"];
+
+    for (const p of posts) {
+      const matches = `${p.title} ${p.content}`.match(/#([a-zA-Z0-9_]+)/g);
+      if (matches) {
+        for (const m of matches) {
+          const clean = m.slice(1);
+          counts.set(clean, (counts.get(clean) ?? 0) + 1);
+        }
+      }
+    }
+
+    const sortedTags = Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([t]) => t);
+
+    const combined = [...sortedTags];
+    for (const d of defaultTags) {
+      if (!combined.includes(d)) combined.push(d);
+    }
+
+    return combined.slice(0, 5);
+  }, [posts]);
 
   // 500ms Debouncing Search System
   useEffect(() => {
@@ -70,6 +108,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
     setLoading(true);
     const query = new URLSearchParams({ category });
     if (search) query.set("search", search);
+    if (selectedTag) query.set("tag", selectedTag);
 
     fetch(`/api/posts?${query}`)
       .then(async (response) => {
@@ -89,7 +128,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
     return () => {
       active = false;
     };
-  }, [category, refreshKey, search]);
+  }, [category, refreshKey, search, selectedTag]);
 
   // Smart Live Sync: Polling 12 detik dan langsung refresh saat tab kembali aktif
   useLiveSync(() => {
@@ -257,6 +296,48 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-4">
           {/* MAIN COLUMN: SEARCH + SUB-FORUM STRIP + FEED */}
           <div className="lg:col-span-8 xl:col-span-9 space-y-4">
+            {/* 5 HASHTAG TERHANGAT STRIP */}
+            <div className="flex flex-wrap items-center gap-2 p-3 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm">
+              <span className="text-xs font-mono font-bold text-slate-500 dark:text-[#A78BFA] flex items-center gap-1.5 select-none shrink-0">
+                <span className="text-[#F59E0B]">🔥</span> HASHTAG TERHANGAT:
+              </span>
+              <div className="flex flex-wrap items-center gap-1.5 flex-1">
+                {trendingHashtags.map((tag) => {
+                  const isTagActive = selectedTag.toLowerCase() === tag.toLowerCase();
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        const nextTag = isTagActive ? "" : tag;
+                        setSelectedTag(nextTag);
+                        setLoading(true);
+                      }}
+                      className={`text-xs font-mono px-2.5 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer ${
+                        isTagActive
+                          ? "bg-[#7C3AED] text-white font-bold shadow-md shadow-[#7C3AED]/30 border border-[#7C3AED]"
+                          : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] hover:bg-[#7C3AED]/20 hover:text-[#7C3AED] dark:hover:text-white border border-slate-200 dark:border-[#2E1E45]"
+                      }`}
+                    >
+                      <span>#{tag}</span>
+                    </button>
+                  );
+                })}
+                {selectedTag && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedTag("");
+                      setLoading(true);
+                    }}
+                    className="text-xs font-mono text-rose-500 hover:text-rose-400 ml-auto flex items-center gap-1 cursor-pointer"
+                  >
+                    <X size={12} /> Reset Filter #{selectedTag}
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* SEARCH BAR WITH FLEXBOX ALIGNMENT */}
             <form
               className="w-full"
@@ -383,6 +464,29 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                       <Link className="block text-base sm:text-lg font-display font-bold uppercase tracking-tight break-words text-slate-900 dark:text-[#F8FAFC] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] transition-colors leading-snug" href={`/forum/${post.id}`}>
                         {post.title}
                       </Link>
+                      {(() => {
+                        const tagsInPost = [...new Set(`${post.title} ${post.content}`.match(/#([a-zA-Z0-9_]+)/g) || [])];
+                        if (!tagsInPost.length) return null;
+                        return (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {tagsInPost.slice(0, 4).map((t) => (
+                              <button
+                                key={t}
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setSelectedTag(t.slice(1));
+                                  setLoading(true);
+                                }}
+                                className="text-[11px] font-mono text-[#7C3AED] dark:text-[#A78BFA] hover:text-white bg-[#7C3AED]/10 hover:bg-[#7C3AED] px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                              >
+                                {t}
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })()}
                       {(() => {
                         const { cleanText, imageUrl } = parsePostContent(post.content);
                         return (
@@ -672,13 +776,12 @@ function ThreadModal({
           </label>
           <label className="block text-xs font-mono text-slate-600 dark:text-[#A78BFA] uppercase">
             Isi thread
-            <textarea
-              required
-              maxLength={10000}
+            <MentionHashtagInput
               rows={6}
+              maxLength={10000}
               value={content}
-              onChange={(event) => setContent(event.target.value)}
-              placeholder="Ceritakan lebih lanjut…"
+              onChange={setContent}
+              placeholder="Ceritakan lebih lanjut… (Gunakan @ untuk mention member/Satpam, # untuk topik. Ctrl+Enter untuk kirim)"
               className="mt-1 w-full p-2.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-900 dark:text-[#F8FAFC] font-sans text-sm focus:outline-none focus:border-[#7C3AED]"
             />
           </label>

@@ -3,6 +3,7 @@ import { activeUser, authenticatedUser, jsonError } from "@/lib/http";
 import { marketJson, type MarketData } from "@/lib/market-data";
 import { prisma } from "@/lib/prisma";
 import { addXpInTransaction } from "@/lib/xp";
+import { createNotification } from "@/lib/notifications";
 import { sendDiscordNotice, notifyMarketplaceListing } from "@/lib/discord-webhook";
 import { sanitizePlainText, sanitizeText } from "@/lib/sanitize";
 import { checkContentSafety } from "@/lib/satpam-guardian";
@@ -32,11 +33,22 @@ export async function GET(request: Request) {
     if (categoryParam && !category) return jsonError("Kategori tidak valid.", 400);
     const search = url.searchParams.get("search")?.trim();
     if (search && search.length > 120) return jsonError("Pencarian maksimal 120 karakter.", 400);
+    const tag = url.searchParams.get("tag")?.trim().replace(/^#/, "");
+    if (tag && tag.length > 50) return jsonError("Tag maksimal 50 karakter.", 400);
     const game = url.searchParams.get("game")?.trim();
     const type = url.searchParams.get("type");
     const sort = url.searchParams.get("sort");
     const filters: Prisma.PostWhereInput[] = [];
     if (category) filters.push({ category });
+    if (tag) {
+      filters.push({
+        OR: [
+          { content: { contains: `#${tag}`, mode: "insensitive" } },
+          { title: { contains: `#${tag}`, mode: "insensitive" } },
+          { title: { contains: tag, mode: "insensitive" } },
+        ],
+      });
+    }
     if (search) {
       const searchFilters: Prisma.PostWhereInput[] = [
         { title: { contains: search, mode: "insensitive" } },
@@ -193,5 +205,27 @@ export async function POST(request: Request) {
     await addXpInTransaction(tx, user.id, 10);
     return created;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+  // Notifikasi real-time jika ada member yang di-mention (@username) di dalam thread
+  const mentionMatches = [...new Set(content.match(/@([a-zA-Z0-9_.-]+)/g) || [])];
+  const usernames = mentionMatches
+    .map((m) => m.slice(1).toLowerCase())
+    .filter((u) => u !== "satpam" && u !== user.username?.toLowerCase());
+  if (usernames.length > 0) {
+    void prisma.user.findMany({
+      where: { username: { in: usernames, mode: "insensitive" }, id: { not: user.id } },
+      select: { id: true, username: true },
+    }).then((mentionedUsers) => {
+      for (const mentioned of mentionedUsers) {
+        void createNotification({
+          userId: mentioned.id,
+          type: "REPLY",
+          message: `${user.username ?? "Seseorang"} menyebutmu (@${mentioned.username}) di thread: "${title.slice(0, 45)}"`,
+          link: `/forum/${post.id}`,
+        });
+      }
+    }).catch((err) => console.error("[mention-notification] Error:", err));
+  }
+
   return Response.json(post, { status: 201 });
 }

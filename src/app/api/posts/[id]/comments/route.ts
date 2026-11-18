@@ -127,5 +127,46 @@ export async function POST(request: Request, { params }: RouteContext) {
     });
   }
 
+  // Notifikasi jika membalas komentar orang lain (parentComment author)
+  if (parentComment?.author?.username) {
+    const parentUsername = parentComment.author.username;
+    void prisma.user.findFirst({
+      where: { username: parentUsername },
+      select: { id: true },
+    }).then((parentAuthor) => {
+      if (parentAuthor && parentAuthor.id !== user.id && parentAuthor.id !== post.authorId) {
+        void createNotification({
+          userId: parentAuthor.id,
+          type: "REPLY",
+          message: `${user.username ?? "Seseorang"} membalas komentarmu di thread "${post.title.slice(0, 45)}"`,
+          link: `/forum/${post.id}`,
+        });
+      }
+    }).catch((err) => console.error("[reply-notification] Error:", err));
+  }
+
+  // Notifikasi real-time mention (@username) pada komentar
+  const mentionMatches = [...new Set(content.match(/@([a-zA-Z0-9_.-]+)/g) || [])];
+  const usernames = mentionMatches
+    .map((m) => m.slice(1).toLowerCase())
+    .filter((u) => u !== "satpam" && u !== user.username?.toLowerCase());
+  if (usernames.length > 0) {
+    void prisma.user.findMany({
+      where: { username: { in: usernames, mode: "insensitive" }, id: { not: user.id } },
+      select: { id: true, username: true },
+    }).then((mentionedUsers) => {
+      for (const mentioned of mentionedUsers) {
+        // Jangan duplikasi jika sudah dinotifikasi via reply ke post author atau parent
+        if (mentioned.id === post.authorId) continue;
+        void createNotification({
+          userId: mentioned.id,
+          type: "REPLY",
+          message: `${user.username ?? "Seseorang"} menyebutmu (@${mentioned.username}) di komentar thread "${post.title.slice(0, 45)}"`,
+          link: `/forum/${post.id}`,
+        });
+      }
+    }).catch((err) => console.error("[mention-notification] Error:", err));
+  }
+
   return Response.json(comment, { status: 201 });
 }
