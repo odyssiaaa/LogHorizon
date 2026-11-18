@@ -15,7 +15,7 @@ export function StaffCardModerationMenu({
   actions,
   className = "",
   buttonClassName,
-  label = "⋮ Moderasi",
+  label = "Moderasi",
 }: {
   actions: StaffActionItem[];
   className?: string;
@@ -37,6 +37,10 @@ export function StaffCardModerationMenu({
 
   if (!actions.length) return null;
 
+  // Bersihkan karakter titik ganda '⋮' jika ada di label agar tidak dobel dengan ikon MoreVertical
+  const displayLabel = label.replace(/^⋮\s*/, "");
+  const hasCustomIcon = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(displayLabel);
+
   return (
     <div className={`relative inline-block text-left ${className}`} ref={menuRef}>
       <button
@@ -48,18 +52,18 @@ export function StaffCardModerationMenu({
         }}
         className={
           buttonClassName ||
-          "h-7 px-2 rounded-md font-mono text-[11px] font-bold inline-flex items-center gap-1 border border-[#7C3AED]/30 bg-purple-500/10 hover:bg-[#7C3AED]/20 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-sm shrink-0"
+          "h-7 px-2 rounded-none font-mono text-[11px] font-bold inline-flex items-center gap-1 border border-[#7C3AED]/30 bg-purple-500/10 hover:bg-[#7C3AED]/20 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-sm shrink-0 whitespace-nowrap"
         }
         title="Opsi Moderasi Staf (Admin & Moderator)"
       >
-        <MoreVertical size={13} className="shrink-0" />
-        <span>{label}</span>
+        {!hasCustomIcon && <MoreVertical size={13} className="shrink-0" />}
+        <span>{displayLabel}</span>
       </button>
 
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-0 top-full mt-1 min-w-[270px] w-max whitespace-nowrap rounded-md bg-white dark:bg-[#11091D] border border-[#7C3AED]/60 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-150 text-left"
+          className="absolute right-0 top-full mt-1 min-w-[220px] w-max whitespace-nowrap rounded-none bg-white dark:bg-[#11091D] border border-[#7C3AED]/60 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-150 text-left"
         >
           <div className="px-3 py-1.5 border-b border-slate-100 dark:border-[#1F1430] text-[10px] font-mono uppercase text-[#7C3AED] dark:text-[#A78BFA] font-bold flex items-center gap-1">
             <Shield size={11} />

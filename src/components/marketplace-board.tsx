@@ -357,83 +357,115 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
           </span>
         </div>
 
-        <section className="market-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] mb-6 text-left shadow-sm dark:shadow-none" aria-label="Filter dan pencarian marketplace">
-          <div className="flex items-center gap-3 px-3.5 h-11 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] focus-within:border-[#7C3AED] transition-colors sm:col-span-2 lg:col-span-1">
-            <div className="shrink-0 text-slate-400 dark:text-[#A78BFA] flex items-center">
-              {isSearching ? (
-                <Loader2 size={16} className="animate-spin text-[#7C3AED]" />
-              ) : (
-                <Search size={16} />
+        <section className="market-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] mb-6 text-left shadow-sm dark:shadow-none" aria-label="Filter dan pencarian marketplace">
+          {/* Kolom 1: Pencarian */}
+          <div className="flex flex-col gap-1 w-full">
+            <label className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] uppercase font-semibold">
+              PENCARIAN
+            </label>
+            <div className="flex items-center gap-3 px-3.5 h-11 w-full rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] focus-within:border-[#7C3AED] transition-colors">
+              <div className="shrink-0 text-slate-400 dark:text-[#A78BFA] flex items-center">
+                {isSearching ? (
+                  <Loader2 size={16} className="animate-spin text-[#7C3AED]" />
+                ) : (
+                  <Search size={16} />
+                )}
+              </div>
+              <input
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder="Cari judul, game, penjual…"
+                aria-label="Cari lapak"
+                className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#A78BFA]/50 p-0 font-sans"
+              />
+              {searchValue && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchValue("");
+                    setSearch("");
+                  }}
+                  aria-label="Hapus pencarian"
+                  className="shrink-0 text-slate-400 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] font-mono text-xs uppercase cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
               )}
             </div>
-            <input
-              value={searchValue}
-              onChange={(event) => setSearchValue(event.target.value)}
-              placeholder="Cari judul, game, penjual…"
-              aria-label="Cari lapak"
-              className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#A78BFA]/50 p-0 font-sans"
-            />
-            {searchValue && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchValue("");
-                  setSearch("");
-                }}
-                aria-label="Hapus pencarian"
-                className="shrink-0 text-slate-400 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] font-mono text-xs uppercase"
-              >
-                <X size={14} />
-              </button>
-            )}
           </div>
-          <label className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] uppercase">
-            Tipe transaksi
-            <select className="mt-1 w-full p-2.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] text-xs font-mono focus:border-[#7C3AED]" value={type} onChange={(event) => setType(event.target.value)}>
+
+          {/* Kolom 2: Tipe Transaksi */}
+          <div className="flex flex-col gap-1 w-full">
+            <label className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] uppercase font-semibold">
+              TIPE TRANSAKSI
+            </label>
+            <select
+              className="h-11 w-full px-3 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] text-xs font-mono focus:border-[#7C3AED] focus:outline-none"
+              value={type}
+              onChange={(event) => setType(event.target.value)}
+            >
               <option value="ALL">Semua Tipe</option>
               <option value="WTS">WTS · Dijual</option>
               <option value="WTB">WTB · Dicari</option>
             </select>
-          </label>
-          <label className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] uppercase">
-            Nama game
-            <input className="mt-1 w-full p-2.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] text-xs font-sans focus:border-[#7C3AED]" value={game} onChange={(event) => setGame(event.target.value)} placeholder="Semua game" />
-          </label>
-          <label className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] uppercase">
-            <span className="flex items-center gap-1"><ArrowDownUp size={12} /> Urutkan harga</span>
-            <select className="mt-1 w-full p-2.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] text-xs font-mono focus:border-[#7C3AED]" value={sort} onChange={(event) => setSort(event.target.value)}>
+          </div>
+
+          {/* Kolom 3: Nama Game */}
+          <div className="flex flex-col gap-1 w-full">
+            <label className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] uppercase font-semibold">
+              NAMA GAME
+            </label>
+            <input
+              className="h-11 w-full px-3 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] text-xs font-sans focus:border-[#7C3AED] focus:outline-none placeholder:text-slate-400 dark:placeholder:text-[#A78BFA]/50"
+              value={game}
+              onChange={(event) => setGame(event.target.value)}
+              placeholder="Semua game"
+            />
+          </div>
+
+          {/* Kolom 4: Urutkan Harga */}
+          <div className="flex flex-col gap-1 w-full">
+            <label className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] uppercase font-semibold flex items-center gap-1">
+              <ArrowDownUp size={12} />
+              <span>URUTKAN HARGA</span>
+            </label>
+            <select
+              className="h-11 w-full px-3 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] text-xs font-mono focus:border-[#7C3AED] focus:outline-none"
+              value={sort}
+              onChange={(event) => setSort(event.target.value)}
+            >
               <option value="newest">Terbaru</option>
               <option value="cheapest">Termurah</option>
               <option value="expensive">Termahal</option>
             </select>
-          </label>
+          </div>
         </section>
 
         {notice && <div className="inline-notice mb-4" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Tutup notifikasi"><X size={15} /></button></div>}
         {error && <div className="inline-error mb-4" role="alert">{error}</div>}
 
         {loading ? (
-          <div className="market-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+          <div className="market-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((key) => (
               <SkeletonMarketCard key={key} />
             ))}
           </div>
         ) : posts.length ? (
-          <section className="market-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+          <section className="market-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {posts.map((post, index) => {
             if (!isPublicMarketData(post.marketData)) return <article className="market-card p-4 rounded-none border border-[#2E1E45] bg-[#130921]" key={post.id}><p className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none">Data lapak tidak valid.</p></article>;
             const market = post.marketData;
             return <motion.article className={`market-card rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#7C3AED] transition-all p-4 shadow-sm dark:shadow-none ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold opacity-60" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
-              <div className="market-listing-labels flex flex-wrap gap-1.5 mb-3 font-mono">
-                {post.isPinned && <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/40">PINNED</span>}
+              <div className="market-listing-labels flex flex-wrap items-center gap-1.5 mb-3 font-mono">
+                {post.isPinned && <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/40 whitespace-nowrap">PINNED</span>}
                 {(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") && (
-                  <span className="px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase bg-amber-500/15 text-amber-600 dark:text-[#F59E0B] border border-amber-500/30">
+                  <span className="px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase bg-amber-500/15 text-amber-600 dark:text-[#F59E0B] border border-amber-500/30 whitespace-nowrap">
                     ✦ VERIFIED SELLER
                   </span>
                 )}
-                <span className={`px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase ${market.type === "WTS" ? "bg-[#7C3AED] text-white" : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45]"}`}>{market.type}</span>
-                <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45]">{market.game}</span>
-                <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-emerald-500/15 text-emerald-600 dark:text-[#10B981] border border-emerald-500/30">
+                <span className={`px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase whitespace-nowrap ${market.type === "WTS" ? "bg-[#7C3AED] text-white" : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45]"}`}>{market.type}</span>
+                <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] whitespace-nowrap">{market.game}</span>
+                <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-emerald-500/15 text-emerald-600 dark:text-[#10B981] border border-emerald-500/30 whitespace-nowrap">
                   {market.status === "IN_ESCROW" ? "IN ESCROW" : market.status}
                 </span>
               </div>

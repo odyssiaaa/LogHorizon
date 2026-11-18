@@ -1943,9 +1943,9 @@ export function EventsBoard() {
           )}
 
           {/* LIST POSTINGAN MABAR */}
-          <div className="lfg-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="lfg-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {visibleLfgPosts.length === 0 && (
-              <p className="empty-state sm:col-span-2 lg:col-span-3 xl:col-span-4">
+              <p className="empty-state col-span-1 md:col-span-2 lg:col-span-3">
                 {search ? "Tidak ada party yang cocok dengan pencarian." : "Belum ada ajakan mabar aktif. Jadilah yang pertama membuat party!"}
               </p>
             )}
@@ -1963,16 +1963,16 @@ export function EventsBoard() {
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded-none text-[10px] font-mono font-extrabold bg-[#7C3AED] text-[#F8FAFC] uppercase">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                        <span className="px-2.5 py-0.5 rounded-none text-[10px] font-mono font-extrabold bg-[#7C3AED] text-[#F8FAFC] uppercase whitespace-nowrap shrink-0">
                           {post.game}
                         </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/30">
+                        <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/30 whitespace-nowrap shrink-0">
                           {currentFilled}/{post.maxSlots} SLOT
                         </span>
                       </div>
-                      <span className="text-[11px] font-mono text-slate-600 dark:text-[#A78BFA] flex items-center gap-1">
-                        <Clock size={12} /> {formatRemainingTime(post.expiresAt)}
+                      <span className="text-[11px] font-mono text-slate-600 dark:text-[#A78BFA] flex items-center gap-1 whitespace-nowrap shrink-0">
+                        <Clock size={12} className="shrink-0" /> {formatRemainingTime(post.expiresAt)}
                       </span>
                     </div>
 
@@ -2014,74 +2014,80 @@ export function EventsBoard() {
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-200 dark:border-[#2E1E45] flex flex-wrap items-center justify-between gap-2 font-mono">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <a
-                        href="https://discord.gg/aJvbVyTxNb"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs font-semibold text-[#5865F2] hover:underline inline-flex items-center gap-1"
-                      >
-                        <Headphones size={13} /> <span>Voice</span>
-                      </a>
-                      <ShareButton
-                        url={`/events?view=mabar&post=${post.id}`}
-                        title={`🎮 Mabar ${post.game} - LogHorizon`}
-                        text={`Yuk mabar ${post.game}! Dibutuhkan rekan party di LogHorizon:`}
-                        label="Share"
-                        variant="ghost"
-                      />
+                  {/* Secondary Actions Row */}
+                  <div className="pt-3 border-t border-slate-200 dark:border-[#2E1E45] flex items-center gap-3 text-xs font-mono">
+                    <a
+                      href="https://discord.gg/aJvbVyTxNb"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-semibold text-[#5865F2] hover:underline inline-flex items-center gap-1"
+                    >
+                      <Headphones size={13} /> <span>Voice</span>
+                    </a>
+                    <ShareButton
+                      url={`/events?view=mabar&post=${post.id}`}
+                      title={`🎮 Mabar ${post.game} - LogHorizon`}
+                      text={`Yuk mabar ${post.game}! Dibutuhkan rekan party di LogHorizon:`}
+                      label="Share"
+                      variant="ghost"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setActivePartyChat(activePartyChat === post.id ? null : post.id)}
+                      className="text-slate-600 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <MessageSquare size={13} />
+                      <span>Chat ({partyChatMessages[post.id]?.length ?? 0})</span>
+                    </button>
+                  </div>
+
+                  {/* Primary Actions Row */}
+                  <div className="flex items-center gap-2 pt-3 border-t border-slate-200 dark:border-[#2A1B42] mt-2.5">
+                    {!post.isOwner ? (
                       <button
                         type="button"
-                        onClick={() => setActivePartyChat(activePartyChat === post.id ? null : post.id)}
-                        className="text-xs text-slate-600 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] inline-flex items-center gap-1 ml-1 cursor-pointer"
+                        disabled={!post.joinedByViewer && isFull}
+                        onClick={() => toggleJoin(post.id, post.joinedByViewer)}
+                        className={`flex-1 h-9 px-4 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition text-center justify-center flex items-center cursor-pointer whitespace-nowrap ${
+                          post.joinedByViewer
+                            ? "bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30"
+                            : isFull
+                              ? "bg-slate-100 dark:bg-[#1A0E2E] text-slate-400 dark:text-[#A78BFA]/50 border border-slate-200 dark:border-[#2E1E45] cursor-not-allowed"
+                              : "bg-[#7C3AED] text-[#F8FAFC] hover:bg-[#6D28D9] border border-[#7C3AED]"
+                        }`}
                       >
-                        <MessageSquare size={13} />
-                        <span>Chat ({partyChatMessages[post.id]?.length ?? 0})</span>
+                        {post.joinedByViewer ? "Keluar Party" : isFull ? "Penuh" : "GABUNG PARTY"}
                       </button>
-                    </div>
+                    ) : (
+                      <div className="flex-1 h-9 flex items-center text-xs font-mono text-purple-600 dark:text-[#A78BFA] font-bold px-2">
+                        👑 Host Party
+                      </div>
+                    )}
 
-                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
-                      {isAdminOrMod && (
-                        <StaffCardModerationMenu
-                          actions={[
-                            {
-                              label: "Hapus / Bubarkan Party",
-                              icon: <Trash2 size={13} />,
-                              danger: true,
-                              onClick: () => deleteParty(post.id, post.game),
-                            },
-                          ]}
-                        />
-                      )}
-                      {post.isOwner && !isAdminOrMod && (
-                        <button
-                          type="button"
-                          onClick={() => deleteParty(post.id, post.game)}
-                          className="w-full sm:w-auto px-2.5 py-1.5 rounded-none border border-red-500/30 text-xs font-mono text-rose-400 hover:text-rose-300 hover:bg-red-950/20 inline-flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0"
-                          title="Hapus / Tutup Party Mabar"
-                        >
-                          <Trash2 size={13} />
-                          <span>Hapus Party</span>
-                        </button>
-                      )}
-                      {!post.isOwner && (
-                        <button
-                          type="button"
-                          disabled={!post.joinedByViewer && isFull}
-                          onClick={() => toggleJoin(post.id, post.joinedByViewer)}
-                          className={`w-full sm:w-auto px-4 py-2 sm:py-1.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition text-center justify-center flex items-center cursor-pointer ${
-                            post.joinedByViewer
-                              ? "bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30"
-                              : isFull
-                                ? "bg-slate-100 dark:bg-[#1A0E2E] text-slate-400 dark:text-[#A78BFA]/50 border border-slate-200 dark:border-[#2E1E45] cursor-not-allowed"
-                                : "bg-[#7C3AED] text-[#F8FAFC] hover:bg-[#6D28D9] border border-[#7C3AED]"
-                          }`}
-                        >
-                          {post.joinedByViewer ? "Keluar Party" : isFull ? "Penuh" : "GABUNG PARTY"}
-                        </button>
-                      )}
-                    </div>
+                    {isAdminOrMod ? (
+                      <StaffCardModerationMenu
+                        label="Moderasi"
+                        buttonClassName="shrink-0 h-9 px-3 rounded-none font-mono text-xs font-bold inline-flex items-center justify-center gap-1 border border-[#7C3AED]/40 bg-purple-500/15 hover:bg-[#7C3AED]/25 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-sm whitespace-nowrap"
+                        actions={[
+                          {
+                            label: "Hapus / Bubarkan Party",
+                            icon: <Trash2 size={13} />,
+                            danger: true,
+                            onClick: () => deleteParty(post.id, post.game),
+                          },
+                        ]}
+                      />
+                    ) : post.isOwner ? (
+                      <button
+                        type="button"
+                        onClick={() => deleteParty(post.id, post.game)}
+                        className="shrink-0 h-9 px-3 rounded-none border border-red-500/30 text-xs font-mono text-rose-400 hover:text-rose-300 hover:bg-red-950/20 inline-flex items-center justify-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                        title="Hapus / Tutup Party Mabar"
+                      >
+                        <Trash2 size={13} />
+                        <span>Hapus Party</span>
+                      </button>
+                    ) : null}
                   </div>
 
                   {/* MINI PARTY CHAT */}
