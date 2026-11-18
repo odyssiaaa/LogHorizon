@@ -323,6 +323,47 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   const [bracketZoomLevel, setBracketZoomLevel] = useState<number>(1.0);
   const pausePollingUntilRef = useRef<number>(0);
 
+  // Pinch-to-Zoom Touch Gestures on Bracket Tree
+  const pinchStartDistanceRef = useRef<number | null>(null);
+  const pinchStartZoomRef = useRef<number>(1.0);
+
+  const handleBracketTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const dist = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY
+      );
+      pinchStartDistanceRef.current = dist;
+      pinchStartZoomRef.current = bracketZoomLevel;
+    } else {
+      pinchStartDistanceRef.current = null;
+    }
+  };
+
+  const handleBracketTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2 && pinchStartDistanceRef.current !== null && pinchStartDistanceRef.current > 0) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const dist = Math.hypot(
+        touch1.clientX - touch2.clientX,
+        touch1.clientY - touch2.clientY
+      );
+      if (dist > 0) {
+        const factor = dist / pinchStartDistanceRef.current;
+        const newZoom = Math.min(1.5, Math.max(0.5, Math.round(pinchStartZoomRef.current * factor * 100) / 100));
+        setBracketZoomLevel(newZoom);
+      }
+    }
+  };
+
+  const handleBracketTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length < 2) {
+      pinchStartDistanceRef.current = null;
+    }
+  };
+
   // Live sync countdown tick
   useEffect(() => {
     const tickInterval = setInterval(() => {
@@ -678,16 +719,36 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   const teams = (tournament.teams as TournamentTeam[]) || [];
   const matches = (tournament.matches as TournamentMatch[]) || [];
 
-  // Registered teams (exclude pure empty slots)
-  const realTeams = teams.filter(
-    (t) =>
+  // Active participants (filter out REJECTED)
+  const activeParticipants = (tournament.participants || []).filter(
+    (p: any) => p.paymentStatus !== "REJECTED" && p.status !== "REJECTED"
+  );
+  const rejectedTeamNames = new Set(
+    (tournament.participants || [])
+      .filter((p: any) => p.paymentStatus === "REJECTED" || p.status === "REJECTED")
+      .map((p: any) => (p.teamName || "").trim().toLowerCase())
+  );
+
+  // Registered teams (exclude pure empty slots and rejected teams)
+  const realTeams = teams.filter((t: any) => {
+    if (t.paymentStatus === "REJECTED" || t.status === "REJECTED") return false;
+    const name = (t.teamName || "").trim().toLowerCase();
+    if (name && rejectedTeamNames.has(name)) return false;
+
+    return (
       Boolean(t.captainName && t.captainName !== "TBD") ||
       (t.teamName &&
         !t.teamName.startsWith("Slot ") &&
         !t.teamName.startsWith("Tim ") &&
         t.teamName !== "TBD" &&
         t.teamName !== "BYE")
-  );
+    );
+  });
+
+  const registeredSlotsCount =
+    tournament.participants && tournament.participants.length > 0
+      ? activeParticipants.length
+      : realTeams.length;
 
   // Group matches by round
   const roundsMap = new Map<number, TournamentMatch[]>();
@@ -795,7 +856,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               </span>
               <span>•</span>
               <span className="flex items-center gap-1.5">
-                <Users size={16} /> Slot Terdaftar: <strong className="text-slate-900 dark:text-[#F8FAFC]">{realTeams.length} / {tournament.maxSlots} TIM</strong>
+                <Users size={16} /> Slot Terdaftar: <strong className="text-slate-900 dark:text-[#F8FAFC]">{registeredSlotsCount} / {tournament.maxSlots} TIM</strong>
               </span>
               <span>•</span>
               <span className="text-slate-500 dark:text-[#A78BFA]/80">
@@ -976,52 +1037,53 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => setShowEditTournamentModal(true)}
-                className="h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#1A0E2E] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition cursor-pointer shadow-sm"
+                className="w-full sm:w-auto h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#1A0E2E] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition cursor-pointer shadow-sm"
                 title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
               >
-                <span>✏️ Edit Info &amp; Waktu Mulai</span>
+                <Edit3 size={14} className="text-slate-500 dark:text-[#A78BFA]" />
+                <span>Edit Info &amp; Waktu Mulai</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => document.getElementById("bracket-section")?.scrollIntoView({ behavior: "smooth" })}
-                className="h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition cursor-pointer shadow-sm"
+                className="w-full sm:w-auto h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition cursor-pointer shadow-sm"
                 title="Langsung kelola tim & skor di bagan pertandingan"
               >
                 <Settings size={14} className="text-indigo-500" />
-                <span>⚙️ Kelola Tim &amp; Skor</span>
+                <span>Kelola Tim &amp; Skor</span>
               </button>
 
               {tournament.status !== "COMPLETED" && (
                 <button
                   type="button"
                   onClick={handleDetailGachaBracket}
-                  className="h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-[#F59E0B]/50 bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 text-[#F59E0B] transition cursor-pointer shadow-sm"
+                  className="w-full sm:w-auto h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-[#F59E0B]/50 bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 text-[#F59E0B] transition cursor-pointer shadow-sm"
                   title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
                 >
                   <Dices size={14} className="text-[#F59E0B]" />
-                  <span>🎲 Gacha Bagan</span>
+                  <span>Gacha Bagan</span>
                 </button>
               )}
 
               <TournamentBackupDropdown
                 tournament={tournament}
-                triggerClassName="h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition cursor-pointer shadow-sm w-full"
+                triggerClassName="w-full sm:w-auto h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition cursor-pointer shadow-sm"
               />
 
               <button
                 type="button"
                 disabled={deletingTournament}
                 onClick={handleDeleteTournament}
-                className="h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition cursor-pointer disabled:opacity-50 shadow-sm"
+                className="w-full sm:w-auto h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition cursor-pointer disabled:opacity-50 shadow-sm"
                 title="Hapus turnamen ini secara permanen"
               >
                 <Trash2 size={14} className="text-rose-500" />
-                <span>🗑️ {deletingTournament ? "Menghapus..." : "Hapus"}</span>
+                <span>{deletingTournament ? "Menghapus..." : "Hapus"}</span>
               </button>
             </div>
           </div>
@@ -1048,16 +1110,16 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               </span>
             </span>
           </div>
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
             {/* INSTANT SEARCH BAR DI POHON BAGAN */}
-            <div className="relative w-56 sm:w-72">
+            <div className="relative w-full sm:w-72">
               <div className="flex items-center gap-2 px-3 h-9 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] focus-within:border-[#7C3AED] transition-all">
                 <Search size={13} className="text-slate-400 dark:text-[#A78BFA] shrink-0" />
                 <input
                   type="text"
                   value={bracketSearchQuery}
                   onChange={(e) => setBracketSearchQuery(e.target.value)}
-                  placeholder="Cari tim atau kode #R1-M12…"
+                  placeholder="Cari nama tim..."
                   className="w-full bg-transparent text-xs text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#A78BFA]/50 focus:outline-none font-sans"
                 />
                 {bracketSearchQuery && (
@@ -1087,34 +1149,46 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         </div>
 
         {matches.length > 0 ? (
-          <DragScrollContainer
-            buttonPosition="top"
-            label="🖱️ Drag mouse / tombol ◀ ▶: Sayap Kiri ➔ GRAND FINAL 🏆 ⬅ Sayap Kanan"
-            className="pt-2 pb-4"
+          <div
+            onTouchStart={handleBracketTouchStart}
+            onTouchMove={handleBracketTouchMove}
+            onTouchEnd={handleBracketTouchEnd}
+            style={{ touchAction: "pan-x pan-y" }}
           >
-            <div
-              style={{
-                transform: `scale(${bracketZoomLevel})`,
-                transformOrigin: "top center",
-                transition: "transform 0.15s ease-out",
-              }}
-              className="w-fit min-w-full"
+            <DragScrollContainer
+              buttonPosition="top"
+              label={
+                <>
+                  <span className="sm:hidden">👆 Usap 1 jari / Cubit 2 jari untuk zoom</span>
+                  <span className="hidden sm:inline">🖱️ Drag mouse / tombol ◀ ▶: Sayap Kiri ➔ GRAND FINAL 🏆 ⬅ Sayap Kanan</span>
+                </>
+              }
+              className="pt-2 pb-4"
             >
-              <DualWingBracketView
-                sortedRoundNumbers={sortedRoundNumbers}
-                roundsMap={roundsMap}
-                teams={teams}
-                onTeamClick={(team) => setViewingRoster(team)}
-                isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
-                onAdminQuickUpdate={handleAdminQuickUpdate}
-                searchQuery={bracketSearchQuery}
-                onOpenLobby={(m) => setActiveLobbyMatch(m)}
-                currentUserId={session?.user?.id}
-                currentUsername={session?.user?.username || session?.user?.name || undefined}
-                tournamentEventDate={tournament.eventDate}
-              />
-            </div>
-          </DragScrollContainer>
+              <div
+                style={{
+                  transform: `scale(${bracketZoomLevel})`,
+                  transformOrigin: "top center",
+                  transition: pinchStartDistanceRef.current ? "none" : "transform 0.15s ease-out",
+                }}
+                className="w-fit min-w-full"
+              >
+                <DualWingBracketView
+                  sortedRoundNumbers={sortedRoundNumbers}
+                  roundsMap={roundsMap}
+                  teams={teams}
+                  onTeamClick={(team) => setViewingRoster(team)}
+                  isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
+                  onAdminQuickUpdate={handleAdminQuickUpdate}
+                  searchQuery={bracketSearchQuery}
+                  onOpenLobby={(m) => setActiveLobbyMatch(m)}
+                  currentUserId={session?.user?.id}
+                  currentUsername={session?.user?.username || session?.user?.name || undefined}
+                  tournamentEventDate={tournament.eventDate}
+                />
+              </div>
+            </DragScrollContainer>
+          </div>
         ) : (
           <p className="text-xs text-gray-500 text-center py-10">
             Bagan pertandingan belum dibuat atau sedang dipersiapkan oleh panitia.
@@ -1128,7 +1202,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           <div>
             <h2 className="font-display text-base sm:text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
               <Shield size={18} className="text-[#7C3AED]" />
-              <span>Daftar Tim Terdaftar ({realTeams.length} TIM)</span>
+              <span>Daftar Tim Terdaftar ({registeredSlotsCount} TIM)</span>
             </h2>
             <p className="text-xs text-slate-600 dark:text-[#A78BFA] mt-0.5 font-sans">
               Klik kartu tim untuk memeriksa komposisi roster pemain inti dan cadangan.

@@ -9,7 +9,7 @@ interface DragScrollContainerProps {
   innerClassName?: string;
   showScrollButtons?: boolean;
   buttonPosition?: "top" | "float";
-  label?: string;
+  label?: React.ReactNode;
 }
 
 export function DragScrollContainer({

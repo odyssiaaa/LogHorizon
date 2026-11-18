@@ -137,7 +137,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       }
 
       const count = await tx.participant.count({
-        where: { tournamentId: id, paymentStatus: "APPROVED" },
+        where: { tournamentId: id, paymentStatus: { in: ["APPROVED", "PENDING_PAYMENT"] } },
       });
       if (count >= tournament.maxSlots) throw new Error("TOURNAMENT_FULL");
 
@@ -364,6 +364,69 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         await tx.participant.update({
           where: { id: participantId },
           data: { paymentStatus: "REJECTED", rejectionReason: reason || "Bukti transfer tidak valid/sesuai" },
+        });
+
+        // Also prune team from tournament.teams if present
+        let currentTeams: any[] = [];
+        try {
+          currentTeams = Array.isArray(tournament.teams) ? tournament.teams : JSON.parse((tournament.teams as string) || "[]");
+        } catch {
+          currentTeams = [];
+        }
+
+        const teamNameNorm = participant.teamName.trim().toLowerCase();
+        const updatedTeams = currentTeams.filter((t: any) => {
+          const tName = typeof t === "string" ? t : t?.name || t?.teamName || "";
+          return tName.trim().toLowerCase() !== teamNameNorm;
+        });
+
+        // Clean up matches if this team was assigned to any match
+        let currentMatches: any[] = [];
+        try {
+          currentMatches = Array.isArray(tournament.matches) ? tournament.matches : JSON.parse((tournament.matches as string) || "[]");
+        } catch {
+          currentMatches = [];
+        }
+
+        let matchesChanged = false;
+        const updatedMatches = currentMatches.map((m: any) => {
+          let modified = false;
+          let teamA = m.teamA;
+          let teamB = m.teamB;
+          const nameA = typeof teamA === "string" ? teamA : teamA?.name || teamA?.teamName || "";
+          const nameB = typeof teamB === "string" ? teamB : teamB?.name || teamB?.teamName || "";
+
+          if (nameA.trim().toLowerCase() === teamNameNorm || teamA?.id === participant.id) {
+            teamA = { name: "TBD", score: 0, status: "WAITING" };
+            modified = true;
+          }
+          if (nameB.trim().toLowerCase() === teamNameNorm || teamB?.id === participant.id) {
+            teamB = { name: "TBD", score: 0, status: "WAITING" };
+            modified = true;
+          }
+          if (modified) {
+            matchesChanged = true;
+            return { ...m, teamA, teamB };
+          }
+          return m;
+        });
+
+        const activeCount = await tx.participant.count({
+          where: {
+            tournamentId: id,
+            paymentStatus: { in: ["APPROVED", "PENDING_PAYMENT"] },
+          },
+        });
+
+        const shouldRevertToOpen = tournament.status === TournamentStatus.FULL && activeCount < tournament.maxSlots;
+
+        await tx.tournament.update({
+          where: { id },
+          data: {
+            status: shouldRevertToOpen ? TournamentStatus.OPEN : tournament.status,
+            teams: updatedTeams as unknown as Prisma.InputJsonValue,
+            ...(matchesChanged ? { matches: updatedMatches as unknown as Prisma.InputJsonValue } : {}),
+          },
         });
 
         // Notify team leader

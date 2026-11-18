@@ -1413,7 +1413,12 @@ export function EventsBoard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                   {activeTournaments.map((tournament) => {
-                    const registeredTeamsCount = tournament.participants?.length || tournament.teams?.length || 0;
+                    const registeredTeamsCount = tournament.participants
+                      ? tournament.participants.filter((p: any) => p.paymentStatus !== "REJECTED" && p.status !== "REJECTED").length
+                      : (tournament.teams?.filter((t: any) => {
+                          if (typeof t === "string") return !t.startsWith("Slot ") && !t.startsWith("Tim ") && t !== "TBD" && t !== "BYE";
+                          return t?.status !== "REJECTED" && t?.paymentStatus !== "REJECTED" && t?.teamName !== "TBD" && t?.teamName !== "BYE" && !t?.teamName?.startsWith("Slot ") && !t?.teamName?.startsWith("Tim ");
+                        }).length || 0);
                     const isRegistrationOpen = tournament.status === "OPEN" || tournament.status === "REGISTRATION";
                     const eventDateStr = tournament.eventDate
                       ? new Date(tournament.eventDate).toLocaleString("id-ID", {
@@ -1563,7 +1568,12 @@ export function EventsBoard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                   {historyTournaments.map((tournament) => {
-                    const registeredTeamsCount = tournament.participants?.length || tournament.teams?.length || 0;
+                    const registeredTeamsCount = tournament.participants
+                      ? tournament.participants.filter((p: any) => p.paymentStatus !== "REJECTED" && p.status !== "REJECTED").length
+                      : (tournament.teams?.filter((t: any) => {
+                          if (typeof t === "string") return !t.startsWith("Slot ") && !t.startsWith("Tim ") && t !== "TBD" && t !== "BYE";
+                          return t?.status !== "REJECTED" && t?.paymentStatus !== "REJECTED" && t?.teamName !== "TBD" && t?.teamName !== "BYE" && !t?.teamName?.startsWith("Slot ") && !t?.teamName?.startsWith("Tim ");
+                        }).length || 0);
                     const finishDateStr = formatWibDateTime(tournament.completedAt || tournament.eventDate);
                     const podium = extractTournamentPodium(tournament);
 

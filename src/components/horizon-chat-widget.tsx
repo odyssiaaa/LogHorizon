@@ -315,7 +315,7 @@ export function HorizonChatWidget() {
               }
             : undefined
         }
-        className={`fixed z-[45] touch-none select-none scale-85 sm:scale-100 ${
+        className={`fixed z-[45] touch-none select-none scale-75 opacity-90 sm:scale-100 sm:opacity-100 ${
           !position ? "bottom-24 right-3 sm:bottom-6 sm:right-6" : ""
         }`}
       >
