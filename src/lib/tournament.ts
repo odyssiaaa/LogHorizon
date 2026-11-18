@@ -48,6 +48,10 @@ export type TournamentMatch = {
   customRoomPassword?: string | null;
   nextMatchId?: string;
   nextSlot?: "teamA" | "teamB";
+  teamAReady?: boolean;
+  teamBReady?: boolean;
+  teamAReadyAt?: string | null;
+  teamBReadyAt?: string | null;
 };
 
 export const DEFAULT_TOURNAMENT_RULES = `### 1. MASALAH RADIO & CHAT ALL
@@ -442,23 +446,51 @@ export function updateMatchStatus(
 }
 
 /**
- * Evaluates and auto-transitions matches from UPCOMING to LIVE if their scheduledAt time has arrived/passed,
- * unless they were manually set to UPCOMING by an Admin (manualOverride === true).
+ * Evaluates and auto-transitions matches from UPCOMING to LIVE:
+ * 1. Round 1 matches default to tournament eventDate unless overridden by match.scheduledAt,
+ *    and auto-transition to LIVE when start time is reached if two valid teams are assigned.
+ * 2. Subsequent rounds (Round > 1) auto-transition to LIVE if both captains marked Ready (teamAReady && teamBReady),
+ *    or if committee set a scheduledAt time and that time has arrived.
  */
 export function evaluateAutoLiveMatches(
   matches: TournamentMatch[],
-  currentTimeMs: number = Date.now()
+  currentTimeMs: number = Date.now(),
+  tournamentEventDate?: string | Date | null
 ): { updatedMatches: TournamentMatch[]; hasChanges: boolean } {
   let hasChanges = false;
+  const eventDateTime = tournamentEventDate ? new Date(tournamentEventDate).getTime() : NaN;
+
   const updatedMatches = matches.map((match) => {
-    if (
-      match.matchStatus === "UPCOMING" &&
-      match.scheduledAt &&
-      match.manualOverride !== true &&
-      !match.winner
-    ) {
-      const scheduledTime = new Date(match.scheduledAt).getTime();
-      if (!isNaN(scheduledTime) && currentTimeMs >= scheduledTime) {
+    // If match already has winner or is finished, leave it unchanged
+    if (match.matchStatus === "FINISHED" || Boolean(match.winner)) {
+      return match;
+    }
+
+    // 1. ROUND 1 MATCHES: Scheduled by default to tournament eventDate (unless custom scheduledAt is set)
+    if (match.round === 1) {
+      const matchSchedTime = match.scheduledAt
+        ? new Date(match.scheduledAt).getTime()
+        : !isNaN(eventDateTime)
+        ? eventDateTime
+        : NaN;
+
+      const hasValidTwoTeams = Boolean(
+        match.teamA?.name &&
+        match.teamB?.name &&
+        match.teamA.name !== "TBD" &&
+        match.teamB.name !== "TBD" &&
+        match.teamB.name !== "BYE" &&
+        !match.teamA.name.startsWith("Tim ") &&
+        !match.teamB.name.startsWith("Tim ")
+      );
+
+      if (
+        match.matchStatus !== "LIVE" &&
+        match.manualOverride !== true &&
+        hasValidTwoTeams &&
+        !isNaN(matchSchedTime) &&
+        currentTimeMs >= matchSchedTime
+      ) {
         hasChanges = true;
         return {
           ...match,
@@ -466,10 +498,132 @@ export function evaluateAutoLiveMatches(
         };
       }
     }
+
+    // 2. SUBSEQUENT ROUNDS (Round > 1): Auto-live triggered IF both captains marked READY (teamAReady && teamBReady)
+    // OR if scheduledAt is explicitly set and due
+    if (match.round > 1) {
+      if (
+        match.matchStatus !== "LIVE" &&
+        match.teamAReady === true &&
+        match.teamBReady === true
+      ) {
+        hasChanges = true;
+        return {
+          ...match,
+          matchStatus: "LIVE" as const,
+        };
+      }
+
+      if (
+        match.matchStatus === "UPCOMING" &&
+        match.scheduledAt &&
+        match.manualOverride !== true
+      ) {
+        const scheduledTime = new Date(match.scheduledAt).getTime();
+        if (!isNaN(scheduledTime) && currentTimeMs >= scheduledTime) {
+          hasChanges = true;
+          return {
+            ...match,
+            matchStatus: "LIVE" as const,
+          };
+        }
+      }
+    }
+
     return match;
   });
 
   return { updatedMatches, hasChanges };
+}
+
+/**
+ * Checks if all final matches (Grand Final, and Bronze match if present) are completed with winners.
+ */
+export function checkAllFinalsFinished(matches: TournamentMatch[]): {
+  isFinished: boolean;
+  championName?: string;
+  runnerUpName?: string;
+  thirdPlaceName?: string | null;
+} {
+  if (!matches || matches.length === 0) return { isFinished: false };
+
+  const maxRound = Math.max(...matches.map((m) => m.round || 1));
+  const gfMatch = matches.find(
+    (m) =>
+      m.matchId !== "BRONZE-01" &&
+      !m.roundName?.toLowerCase().includes("bronze") &&
+      !m.roundName?.toLowerCase().includes("juara 3") &&
+      (m.roundName?.toLowerCase().includes("grand final") ||
+        m.roundName?.toLowerCase() === "final" ||
+        m.round === maxRound)
+  );
+
+  if (!gfMatch || !gfMatch.winner) return { isFinished: false };
+
+  const bronzeMatch = matches.find(
+    (m) =>
+      m.matchId === "BRONZE-01" ||
+      m.roundName?.toLowerCase().includes("juara 3") ||
+      m.roundName?.toLowerCase().includes("bronze")
+  );
+
+  // If there's a bronze match with both teams assigned, it must also be finished
+  if (bronzeMatch && bronzeMatch.teamA?.name && bronzeMatch.teamB?.name) {
+    const isTeamReady = bronzeMatch.teamA.name !== "TBD" && bronzeMatch.teamB.name !== "TBD";
+    if (isTeamReady && !bronzeMatch.winner) {
+      return { isFinished: false };
+    }
+  }
+
+  const championName = gfMatch.winner;
+  const runnerUpName = gfMatch.teamA.name === championName ? gfMatch.teamB.name : gfMatch.teamA.name;
+  const thirdPlaceName = bronzeMatch?.winner || null;
+
+  return {
+    isFinished: true,
+    championName,
+    runnerUpName,
+    thirdPlaceName,
+  };
+}
+
+/**
+ * Calculate countdown string given target date (e.g. "02j 14m 35d").
+ */
+export function formatLiveCountdown(targetIsoDate?: string | Date | null, nowMs: number = Date.now()): {
+  formatted: string;
+  isDue: boolean;
+  totalSeconds: number;
+} {
+  if (!targetIsoDate) {
+    return { formatted: "Menunggu Jadwal", isDue: false, totalSeconds: 0 };
+  }
+  const targetTime = new Date(targetIsoDate).getTime();
+  if (isNaN(targetTime)) {
+    return { formatted: "Menunggu Jadwal", isDue: false, totalSeconds: 0 };
+  }
+  const diff = targetTime - nowMs;
+  if (diff <= 0) {
+    return { formatted: "00:00:00", isDue: true, totalSeconds: 0 };
+  }
+
+  const totalSeconds = Math.floor(diff / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  let formatted = "";
+  if (days > 0) {
+    formatted = `${days}h ${pad(hours)}j ${pad(minutes)}m ${pad(seconds)}d`;
+  } else if (hours > 0) {
+    formatted = `${pad(hours)}j ${pad(minutes)}m ${pad(seconds)}d`;
+  } else {
+    formatted = `${pad(minutes)}m ${pad(seconds)}d`;
+  }
+
+  return { formatted, isDue: false, totalSeconds };
 }
 
 /**

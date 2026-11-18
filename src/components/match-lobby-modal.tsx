@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
+  CheckCircle2,
   Clock,
   MessageSquare,
   Send,
@@ -94,12 +95,20 @@ export function MatchLobbyModal({
   const [sending, setSending] = useState(false);
   const [callingReferee, setCallingReferee] = useState(false);
   const [serverFinished, setServerFinished] = useState(false);
+  const [teamAReady, setTeamAReady] = useState(Boolean(match?.teamAReady));
+  const [teamBReady, setTeamBReady] = useState(Boolean(match?.teamBReady));
+  const [matchLiveStatus, setMatchLiveStatus] = useState(match?.matchStatus || "UPCOMING");
+  const [isCapA, setIsCapA] = useState(false);
+  const [isCapB, setIsCapB] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
+  const [togglingReady, setTogglingReady] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const currentUser = session?.user;
 
   const isMatchFinished =
     serverFinished ||
+    matchLiveStatus === "FINISHED" ||
     match?.matchStatus === "FINISHED" ||
     Boolean(match?.winner) ||
     Boolean(match && (match.teamA.score > 0 || match.teamB.score > 0) && match.winner);
@@ -119,10 +128,48 @@ export function MatchLobbyModal({
       if (typeof data.isFinished === "boolean") {
         setServerFinished(data.isFinished);
       }
+      if (typeof data.teamAReady === "boolean") setTeamAReady(data.teamAReady);
+      if (typeof data.teamBReady === "boolean") setTeamBReady(data.teamBReady);
+      if (data.matchStatus) setMatchLiveStatus(data.matchStatus);
+      if (typeof data.isCapA === "boolean") setIsCapA(data.isCapA);
+      if (typeof data.isCapB === "boolean") setIsCapB(data.isCapB);
+      if (typeof data.isStaff === "boolean") setIsStaff(data.isStaff);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memuat ruang koordinasi.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleToggleReady() {
+    if (!match || isMatchFinished || togglingReady) return;
+    setTogglingReady(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentId}/match-chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matchId: match.matchId,
+          action: "TOGGLE_READY",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal mengubah status ready.");
+      if (typeof data.teamAReady === "boolean") setTeamAReady(data.teamAReady);
+      if (typeof data.teamBReady === "boolean") setTeamBReady(data.teamBReady);
+      if (data.matchStatus) setMatchLiveStatus(data.matchStatus);
+      if (data.bothReady) {
+        setNotice("🔥 Kedua tim telah siap! Pertandingan kini resmi berstatus 🔴 SEDANG BERMAIN (LIVE)!");
+      } else {
+        setNotice("Status kesiapan tim berhasil diperbarui!");
+      }
+      setTimeout(() => setNotice(""), 4000);
+      await fetchChatData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal mengubah status kesiapan.");
+    } finally {
+      setTogglingReady(false);
     }
   }
 
@@ -277,6 +324,78 @@ export function MatchLobbyModal({
             <span className="leading-snug">
               Pertandingan ini telah selesai. Riwayat chat disimpan selama 24 jam untuk keperluan audit panitia sebelum terhapus otomatis.
             </span>
+          </div>
+        )}
+
+        {/* CAPTAIN READY CHECK BAR */}
+        {!isMatchFinished && (
+          <div className="p-3 bg-slate-100 dark:bg-[#150A26] border-b border-slate-200 dark:border-[#2A1B42] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-[#A78BFA] uppercase">
+                Kesiapan Tim:
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[120px]">
+                  {match.teamA.name || "Tim A"}:
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                    teamAReady
+                      ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40"
+                      : "bg-slate-200 dark:bg-white/5 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-white/10"
+                  }`}
+                >
+                  {teamAReady ? "✅ SIAP TANDING" : "⏳ BELUM SIAP"}
+                </span>
+              </div>
+              <span className="text-slate-400 dark:text-slate-600">vs</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[120px]">
+                  {match.teamB.name || "Tim B"}:
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                    teamBReady
+                      ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40"
+                      : "bg-slate-200 dark:bg-white/5 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-white/10"
+                  }`}
+                >
+                  {teamBReady ? "✅ SIAP TANDING" : "⏳ BELUM SIAP"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {matchLiveStatus === "LIVE" ? (
+                <span className="px-2.5 py-1 rounded bg-red-500/20 text-red-500 dark:text-red-400 border border-red-500/30 font-bold text-[11px] flex items-center gap-1.5 animate-pulse">
+                  <span className="w-2 h-2 bg-red-500 rounded-full" />
+                  <span>🔴 SEDANG BERMAIN (LIVE)</span>
+                </span>
+              ) : (isCapA || isCapB || isStaff) ? (
+                <button
+                  type="button"
+                  onClick={handleToggleReady}
+                  disabled={togglingReady}
+                  className={`px-3 py-1.5 rounded-none font-bold text-xs flex items-center gap-1.5 transition uppercase cursor-pointer shadow-sm ${
+                    (isCapA && teamAReady) || (isCapB && teamBReady)
+                      ? "bg-slate-200 dark:bg-[#2E1E45] hover:bg-slate-300 text-slate-800 dark:text-[#F8FAFC] border border-slate-300 dark:border-purple-500/30"
+                      : "bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500"
+                  }`}
+                  title="Klik untuk menyatakan kesiapan tim tanding"
+                >
+                  <CheckCircle2 size={14} />
+                  <span>
+                    {(isCapA && teamAReady) || (isCapB && teamBReady)
+                      ? "Batalkan Status Siap"
+                      : "✅ Tim Siap Tanding (Ready)"}
+                  </span>
+                </button>
+              ) : (
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 italic">
+                  Menunggu kesiapan kapten kedua tim...
+                </span>
+              )}
+            </div>
           </div>
         )}
 

@@ -871,27 +871,13 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             </div>
 
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
-              <div className="h-9 px-2.5 rounded font-mono border border-purple-500/40 bg-white dark:bg-[#1A0E2E] flex items-center gap-1.5 shadow-sm col-span-2 sm:col-span-1">
-                <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Status:</span>
-                <select
-                  value={tournament.status}
-                  onChange={(e) => handleQuickStatusChange(e.target.value)}
-                  className="bg-transparent text-xs font-bold font-mono text-purple-700 dark:text-purple-300 focus:outline-none cursor-pointer"
-                  title="Ubah Status Siklus Turnamen"
-                >
-                  <option value="REGISTRATION" className="bg-white dark:bg-[#11091D] text-slate-900 dark:text-white">🟢 BUKA REGIST</option>
-                  <option value="ONGOING" className="bg-white dark:bg-[#11091D] text-slate-900 dark:text-white">🔴 ONGOING</option>
-                  <option value="COMPLETED" className="bg-white dark:bg-[#11091D] text-slate-900 dark:text-white">🏁 SELESAI</option>
-                </select>
-              </div>
-
               <button
                 type="button"
                 onClick={() => setShowEditTournamentModal(true)}
                 className="h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#1A0E2E] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition cursor-pointer shadow-sm"
                 title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
               >
-                <span>✏️ Edit Info</span>
+                <span>✏️ Edit Info &amp; Waktu Mulai</span>
               </button>
 
               <button
@@ -1019,6 +1005,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                 onOpenLobby={(m) => setActiveLobbyMatch(m)}
                 currentUserId={session?.user?.id}
                 currentUsername={session?.user?.username || session?.user?.name || undefined}
+                tournamentEventDate={tournament.eventDate}
               />
             </div>
           </DragScrollContainer>

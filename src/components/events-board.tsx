@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { readApiResponse } from "@/lib/api-response";
-import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, DEFAULT_TOURNAMENT_RULES, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso, formatWibDateTime } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, DEFAULT_TOURNAMENT_RULES, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso, formatWibDateTime, formatLiveCountdown } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
@@ -133,6 +133,49 @@ function formatRemainingTime(expiresAtStr?: string) {
     return `${hours}j ${minutes}m`;
   }
   return `${minutes}m`;
+}
+
+export function TournamentCardCountdownBadge({
+  eventDate,
+  status,
+}: {
+  eventDate?: string | Date;
+  status: string;
+}) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (status === "COMPLETED") {
+    return (
+      <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+        ● SELESAI
+      </span>
+    );
+  }
+
+  const target = eventDate ? new Date(eventDate).getTime() : NaN;
+  const diff = !isNaN(target) ? target - now : 1;
+
+  if (status === "ONGOING" || diff <= 0) {
+    return (
+      <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-red-500/20 text-red-500 dark:text-red-400 border border-red-500/30 animate-pulse flex items-center gap-1">
+        <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+        ● SEDANG BERMAIN (LIVE)
+      </span>
+    );
+  }
+
+  const countdown = formatLiveCountdown(eventDate, now);
+
+  return (
+    <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse flex items-center gap-1">
+      ⏳ Mulai dalam: {countdown.formatted}
+    </span>
+  );
 }
 
 export function EventsBoard() {
@@ -1368,21 +1411,7 @@ export function EventsBoard() {
                           <span className="px-2.5 py-0.5 rounded-none text-[10px] font-mono font-extrabold uppercase bg-[#7C3AED] text-white">
                             {tournament.game}
                           </span>
-                          <span
-                            className={`px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase ${
-                              tournament.status === "ONGOING"
-                                ? "bg-amber-500/20 text-amber-500 dark:text-amber-400 border border-amber-500/30"
-                                : tournament.status === "COMPLETED"
-                                ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-                                : "bg-purple-500/15 text-[#7C3AED] dark:text-[#C4B5FD] border border-[#7C3AED]/30"
-                            }`}
-                          >
-                            {tournament.status === "ONGOING"
-                              ? "● BERLANGSUNG"
-                              : tournament.status === "COMPLETED"
-                              ? "● SELESAI"
-                              : "● PENDAFTARAN BUKA"}
-                          </span>
+                          <TournamentCardCountdownBadge eventDate={tournament.eventDate} status={tournament.status} />
                           {tournament.isFreeEntry || !tournament.entryFee ? (
                             <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-extrabold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 uppercase">
                               FREE ENTRY
@@ -1420,6 +1449,15 @@ export function EventsBoard() {
                               <strong className="text-emerald-600 dark:text-emerald-400">{registeredTeamsCount}</strong> / {tournament.maxSlots} Tim Terdaftar
                             </span>
                           </div>
+                          {tournament.status !== "COMPLETED" && (
+                            <div className="flex items-center justify-between gap-2 pt-1 border-t border-dashed border-slate-200 dark:border-[#211438]">
+                              <span className="text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                <Clock size={12} className="text-[#7C3AED]" />
+                                <span>Hitung Mundur:</span>
+                              </span>
+                              <TournamentCardCountdownBadge eventDate={tournament.eventDate} status={tournament.status} />
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1430,7 +1468,7 @@ export function EventsBoard() {
                           className="h-10 px-4 whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center justify-center gap-2 transition-all shadow-sm"
                         >
                           <Trophy size={14} />
-                          <span>🏆 Buka Bagan &amp; Detail Turnamen</span>
+                          <span>Buka Bagan &amp; Detail Turnamen</span>
                         </Link>
 
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -1451,34 +1489,36 @@ export function EventsBoard() {
                               buttonClassName="h-10 px-3.5 w-full sm:w-auto justify-center rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-[#7C3AED]/40 bg-purple-500/15 hover:bg-[#7C3AED]/25 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-sm shrink-0 whitespace-nowrap"
                               actions={[
                                 {
-                                  label: "🟢 Set: Pendaftaran Buka",
-                                  disabled: tournament.status === "REGISTRATION",
-                                  onClick: () => handleQuickUpdateTournamentStatus(tournament.id, "REGISTRATION", tournament.title),
+                                  label: "⚙️ Kelola Tim, Jadwal & Skor",
+                                  icon: <Settings size={13} />,
+                                  onClick: () => { window.location.href = `/events/turnamen/${tournament.id}#bracket-section`; },
                                 },
                                 {
-                                  label: "🔴 Set: Sedang Berlangsung",
-                                  disabled: tournament.status === "ONGOING",
-                                  onClick: () => handleQuickUpdateTournamentStatus(tournament.id, "ONGOING", tournament.title),
+                                  label: "✏️ Edit Info & Waktu Mulai",
+                                  icon: <Edit3 size={13} />,
+                                  onClick: () => setEditingTournament(tournament),
                                 },
                                 {
-                                  label: "🏁 Set: Turnamen Selesai",
+                                  label: "🎲 Gacha / Acak Bagan",
+                                  icon: <Dices size={13} />,
                                   disabled: tournament.status === "COMPLETED",
-                                  onClick: () => handleQuickUpdateTournamentStatus(tournament.id, "COMPLETED", tournament.title),
+                                  onClick: () => handleGachaBracket(tournament),
                                 },
                                 {
-                                  label: "🏆 Buka Bagan & Kelola Skor",
-                                  icon: <Trophy size={13} />,
-                                  onClick: () => { window.location.href = `/events/turnamen/${tournament.id}`; },
-                                },
-                                {
-                                  label: "Unduh Laporan (.CSV)",
+                                  label: "💾 Unduh Laporan Excel (.CSV)",
                                   icon: <FileSpreadsheet size={13} />,
                                   onClick: () => exportTournamentToCsv(tournament),
                                 },
                                 {
-                                  label: "Unduh Backup JSON",
+                                  label: "📦 Unduh Backup (.JSON)",
                                   icon: <FileCode size={13} />,
                                   onClick: () => exportTournamentToJson(tournament),
+                                },
+                                {
+                                  label: "🗑️ Hapus Turnamen",
+                                  icon: <Trash2 size={13} />,
+                                  danger: true,
+                                  onClick: () => handleDeleteTournament(tournament.id, tournament.title),
                                 },
                               ]}
                             />
@@ -3791,6 +3831,7 @@ export function MatchCard({
   onOpenLobby,
   currentUserId,
   currentUsername,
+  tournamentEventDate,
 }: {
   match: TournamentMatch;
   teams: TournamentTeam[];
@@ -3802,7 +3843,14 @@ export function MatchCard({
   onOpenLobby?: (match: TournamentMatch) => void;
   currentUserId?: string;
   currentUsername?: string;
+  tournamentEventDate?: string | Date;
 }) {
+  const [nowMs, setNowMs] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   const teamAData = teams.find((t) => t.teamName.toLowerCase() === match.teamA.name.toLowerCase() || t.id === match.teamA.id);
   const teamBData = teams.find((t) => t.teamName.toLowerCase() === match.teamB.name.toLowerCase() || t.id === match.teamB.id);
 
@@ -3831,19 +3879,30 @@ export function MatchCard({
 
   const canAccessLobby = hasBothTeams && (isAdminOrMod || isCapA || isCapB);
 
+  const isRound1 = match.round === 1;
+  const effectiveScheduledAt =
+    match.scheduledAt ||
+    (isRound1 && tournamentEventDate
+      ? typeof tournamentEventDate === "string"
+        ? tournamentEventDate
+        : tournamentEventDate.toISOString()
+      : null);
+
   const isScheduledDue = Boolean(
     !hasWinner &&
     match.matchStatus !== "FINISHED" &&
-    match.scheduledAt &&
+    effectiveScheduledAt &&
     match.manualOverride !== true &&
-    Date.now() >= new Date(match.scheduledAt).getTime()
+    nowMs >= new Date(effectiveScheduledAt).getTime()
   );
 
-  const isLive = (match.matchStatus === "LIVE" || isScheduledDue) && !hasWinner;
+  const isBothCaptainsReady = Boolean(match.teamAReady && match.teamBReady);
+  const isLive = (match.matchStatus === "LIVE" || (isRound1 && isScheduledDue && hasBothTeams) || isBothCaptainsReady) && !hasWinner;
   const isFinished = match.matchStatus === "FINISHED" || hasWinner || (match.teamA.score > 0 || match.teamB.score > 0);
   const isUpcoming = !isLive && !isFinished;
 
-  const scheduleInfo = formatMatchScheduleDisplay(match.scheduledAt, match.schedule, match.manualOverride);
+  const scheduleInfo = formatMatchScheduleDisplay(effectiveScheduledAt, match.schedule, match.manualOverride, nowMs);
+  const r1Countdown = formatLiveCountdown(effectiveScheduledAt, nowMs);
 
   // Search match highlight
   const isSearchActive = Boolean(searchQuery && searchQuery.trim().length > 0);
@@ -3890,17 +3949,37 @@ export function MatchCard({
             <span className="whitespace-nowrap shrink-0 px-2 py-0.5 rounded-none bg-[#10B981]/15 border border-[#10B981]/40 text-[#10B981] font-mono font-bold text-[10px]">
               ✓ SELESAI
             </span>
+          ) : isRound1 ? (
+            hasBothTeams && !r1Countdown.isDue ? (
+              <span className="whitespace-nowrap shrink-0 px-2 py-0.5 rounded-none bg-amber-500/15 border border-amber-500/40 text-amber-500 font-mono font-bold text-[10px] animate-pulse">
+                ⏳ Mulai dalam: {r1Countdown.formatted}
+              </span>
+            ) : hasBothTeams && r1Countdown.isDue ? (
+              <span className="whitespace-nowrap shrink-0 px-2 py-0.5 rounded-none bg-red-500/15 border border-red-500/30 text-red-500 dark:text-red-400 font-mono font-bold text-[10px] animate-pulse">
+                🔴 LIVE
+              </span>
+            ) : (
+              <span className="whitespace-nowrap shrink-0 px-2 py-0.5 rounded-none bg-slate-100 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45] text-slate-500 font-mono font-bold text-[10px]">
+                ⏳ MENUNGGU LAWAN
+              </span>
+            )
+          ) : hasBothTeams ? (
+            match.teamAReady || match.teamBReady ? (
+              <span className="whitespace-nowrap shrink-0 px-2 py-0.5 rounded-none bg-amber-500/15 border border-amber-500/40 text-amber-500 font-mono font-bold text-[10px] animate-pulse">
+                ⏳ 1/2 TIM SIAP
+              </span>
+            ) : match.scheduledAt ? (
+              <span className="whitespace-nowrap shrink-0 px-2 py-0.5 rounded-none bg-purple-500/15 border border-purple-500/30 text-purple-400 font-mono font-bold text-[10px]">
+                {scheduleInfo.badgeText}
+              </span>
+            ) : (
+              <span className="whitespace-nowrap shrink-0 px-2 py-0.5 rounded-none bg-slate-100 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45] text-slate-600 dark:text-[#A78BFA] font-mono font-bold text-[10px]">
+                ⏳ MENUNGGU KESIAPAN TIM
+              </span>
+            )
           ) : (
-            <span
-              className={`whitespace-nowrap shrink-0 px-2 py-0.5 rounded-none font-mono font-bold text-[10px] border ${
-                scheduleInfo.isStartingSoon
-                  ? "bg-[#F59E0B]/15 border-[#F59E0B]/40 text-[#F59E0B] animate-pulse"
-                  : match.scheduledAt
-                  ? "bg-[#7C3AED]/15 border-[#7C3AED]/40 text-purple-600 dark:text-[#C77DFF]"
-                  : "bg-slate-100 dark:bg-[#1A0E2E] border-slate-200 dark:border-[#2E1E45] text-slate-600 dark:text-[#A78BFA]"
-              }`}
-            >
-              {scheduleInfo.isStartingSoon ? "⚡ SEGERA" : match.scheduledAt ? scheduleInfo.badgeText : "⏳ MENUNGGU"}
+            <span className="whitespace-nowrap shrink-0 px-2 py-0.5 rounded-none bg-slate-100 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45] text-slate-500 font-mono text-[10px]">
+              ⏳ MENUNGGU BAGAN
             </span>
           )}
         </div>
@@ -4431,6 +4510,7 @@ export function DualWingBracketView({
   onOpenLobby,
   currentUserId,
   currentUsername,
+  tournamentEventDate,
 }: {
   sortedRoundNumbers: number[];
   roundsMap: Map<number, TournamentMatch[]>;
@@ -4442,6 +4522,7 @@ export function DualWingBracketView({
   onOpenLobby?: (match: TournamentMatch) => void;
   currentUserId?: string;
   currentUsername?: string;
+  tournamentEventDate?: string | Date;
 }) {
   const totalRounds = sortedRoundNumbers.length;
 
@@ -4530,6 +4611,7 @@ export function DualWingBracketView({
               onOpenLobby={onOpenLobby}
               currentUserId={currentUserId}
               currentUsername={currentUsername}
+              tournamentEventDate={tournamentEventDate}
             />
           )}
           {gfMatch?.winner && (
@@ -4606,6 +4688,7 @@ export function DualWingBracketView({
                     onOpenLobby={onOpenLobby}
                     currentUserId={currentUserId}
                     currentUsername={currentUsername}
+                    tournamentEventDate={tournamentEventDate}
                   />
                 ))}
               </div>
@@ -4646,6 +4729,7 @@ export function DualWingBracketView({
               onOpenLobby={onOpenLobby}
               currentUserId={currentUserId}
               currentUsername={currentUsername}
+              tournamentEventDate={tournamentEventDate}
             />
           ) : (
             <p className="text-xs text-gray-500 text-center py-4">Menunggu babak final</p>
@@ -4679,6 +4763,7 @@ export function DualWingBracketView({
                 onOpenLobby={onOpenLobby}
                 currentUserId={currentUserId}
                 currentUsername={currentUsername}
+                tournamentEventDate={tournamentEventDate}
               />
               {bronzeMatch.winner && (
                 <div className="p-2 rounded-none bg-slate-100 dark:bg-[#09040F] border border-slate-200 dark:border-[#2E1E45] text-center">
@@ -4730,6 +4815,7 @@ export function DualWingBracketView({
                     onOpenLobby={onOpenLobby}
                     currentUserId={currentUserId}
                     currentUsername={currentUsername}
+                    tournamentEventDate={tournamentEventDate}
                   />
                 ))}
               </div>

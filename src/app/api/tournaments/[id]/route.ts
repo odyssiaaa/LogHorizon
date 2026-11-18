@@ -1,7 +1,7 @@
 import { Prisma, TournamentStatus } from "@prisma/client";
 import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { advanceMatchWinner, resetMatchResult, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES, updateMatchStatus, TournamentLossReason, evaluateAutoLiveMatches } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES, updateMatchStatus, TournamentLossReason, evaluateAutoLiveMatches, checkAllFinalsFinished } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
 import { notifyTournamentChampion, notifyTournamentMatchLive } from "@/lib/discord-webhook";
 
@@ -44,17 +44,41 @@ export async function GET(_request: Request, { params }: RouteContext) {
       }));
 
   let matches = (tournament.matches as unknown as TournamentMatch[]) || [];
-  if (tournament.status === "ONGOING") {
-    const { updatedMatches, hasChanges } = evaluateAutoLiveMatches(matches);
-    if (hasChanges) {
-      matches = updatedMatches;
-      void prisma.tournament
-        .update({
-          where: { id },
-          data: { matches: updatedMatches as unknown as Prisma.InputJsonValue },
-        })
-        .catch((err) => console.error("[api/tournaments] Failed to persist auto-live matches:", err));
-    }
+  let currentStatus = tournament.status;
+  const eventTime = new Date(tournament.eventDate).getTime();
+  const isEventDue = !isNaN(eventTime) && Date.now() >= eventTime;
+  let shouldPersist = false;
+
+  // 1. Auto-close registration & transition to ONGOING when eventDate arrives
+  if (isEventDue && (currentStatus === "REGISTRATION" || currentStatus === "OPEN")) {
+    currentStatus = TournamentStatus.ONGOING;
+    shouldPersist = true;
+  }
+
+  // 2. Evaluate auto-live matches (Round 1 auto-start and Ready Checks)
+  const { updatedMatches, hasChanges } = evaluateAutoLiveMatches(matches, Date.now(), tournament.eventDate);
+  if (hasChanges) {
+    matches = updatedMatches;
+    shouldPersist = true;
+  }
+
+  // 3. Auto-finish if all finals finished
+  const finalsCheck = checkAllFinalsFinished(matches);
+  if (currentStatus === "ONGOING" && finalsCheck.isFinished) {
+    currentStatus = TournamentStatus.COMPLETED;
+    shouldPersist = true;
+  }
+
+  if (shouldPersist) {
+    void prisma.tournament
+      .update({
+        where: { id },
+        data: {
+          status: currentStatus,
+          matches: matches as unknown as Prisma.InputJsonValue,
+        },
+      })
+      .catch((err) => console.error("[api/tournaments/[id]] Failed to persist auto updates:", err));
   }
 
   return Response.json({
@@ -116,6 +140,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     let updatedMatches = (liveTournament.matches as unknown as TournamentMatch[]) || [];
     let updatedTeams = (liveTournament.teams as unknown as TournamentTeam[]) || [];
+    let nextStatus: TournamentStatus | undefined = undefined;
 
   // Update teams list if provided
   if (Array.isArray(data.teams)) {
@@ -220,6 +245,12 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         const scoreB = typeof data.scoreB === "number" ? data.scoreB : undefined;
         const lossReason = (typeof data.lossReason === "string" ? data.lossReason : "NORMAL") as TournamentLossReason;
         updatedMatches = advanceMatchWinner(updatedMatches, matchId, winnerName, winnerId, scoreA, scoreB, lossReason);
+
+        // Auto-finish tournament when Grand Final (and Bronze Match if exists) is completed
+        const finalsCheck = checkAllFinalsFinished(updatedMatches);
+        if (finalsCheck.isFinished) {
+          nextStatus = TournamentStatus.COMPLETED;
+        }
       }
 
       // Jika pertandingan berstatus selesai atau pemenang ditentukan, tetapkan kedaluwarsa 24 jam untuk arsip audit panitia
@@ -327,7 +358,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   // Optional status update
-  let nextStatus: TournamentStatus | undefined = undefined;
   if (typeof data.status === "string") {
     if (Object.values(TournamentStatus).includes(data.status as TournamentStatus)) {
       nextStatus = data.status as TournamentStatus;

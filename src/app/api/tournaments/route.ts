@@ -1,7 +1,7 @@
 import { TournamentStatus, Prisma } from "@prisma/client";
 import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { generateTemplateBracket, TournamentTeam, TournamentMatch, DEFAULT_TOURNAMENT_RULES } from "@/lib/tournament";
+import { generateTemplateBracket, TournamentTeam, TournamentMatch, DEFAULT_TOURNAMENT_RULES, evaluateAutoLiveMatches, checkAllFinalsFinished } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
 
 export async function GET() {
@@ -22,45 +22,90 @@ export async function GET() {
     },
   });
 
-  return Response.json(tournaments.map((tournament) => {
-    const rawTeams = (tournament.teams as unknown as TournamentTeam[]) || [];
-    // Sanitize team representative phone numbers for non-staff
-    const sanitizedTeams = isStaff
-      ? rawTeams
-      : rawTeams.map((team) => ({
-          ...team,
-          representativePhone: undefined,
-        }));
+  const now = Date.now();
+  const processedTournaments = await Promise.all(
+    tournaments.map(async (tournament) => {
+      let currentStatus = tournament.status;
+      let matches = (tournament.matches as unknown as TournamentMatch[]) || [];
+      const eventTime = new Date(tournament.eventDate).getTime();
+      const isEventDue = !isNaN(eventTime) && now >= eventTime;
 
-    return {
-      ...tournament,
-      rules: tournament.rules || DEFAULT_TOURNAMENT_RULES,
-      mainPlayersCount: tournament.mainPlayersCount ?? 5,
-      subPlayersCount: tournament.subPlayersCount ?? 2,
-      entryFee: tournament.entryFee ?? 0,
-      isFreeEntry: tournament.isFreeEntry ?? (tournament.entryFee === 0),
-      participants: tournament.participants.map((participant) => ({
-        id: participant.id,
-        teamName: participant.teamName,
-        phone: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.phone ?? null : null,
-        roster: participant.roster ?? [],
-        paymentStatus: participant.paymentStatus ?? "APPROVED",
-        senderName: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.senderName ?? null : null,
-        paymentProof: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.paymentProof ?? null : null,
-        rejectionReason: participant.rejectionReason ?? null,
-        createdAt: participant.createdAt.toISOString(),
-        leader: {
-          id: participant.leader.id,
-          username: participant.leader.username,
-          discordId: participant.leader.discordId ?? null,
-          name: participant.leader.name,
-        },
-      })),
-      bracket: tournament.bracket,
-      teams: sanitizedTeams,
-      matches: (tournament.matches as unknown as TournamentMatch[]) || [],
-    };
-  }));
+      let shouldPersist = false;
+
+      // 1. Auto-close registration & transition to ONGOING when eventDate arrives
+      if (isEventDue && (currentStatus === "REGISTRATION" || currentStatus === "OPEN")) {
+        currentStatus = TournamentStatus.ONGOING;
+        shouldPersist = true;
+      }
+
+      // 2. Evaluate auto-live matches (Round 1 auto-start and Ready Checks)
+      const { updatedMatches, hasChanges } = evaluateAutoLiveMatches(matches, now, tournament.eventDate);
+      if (hasChanges) {
+        matches = updatedMatches;
+        shouldPersist = true;
+      }
+
+      // 3. Auto-finish if all finals finished
+      const finalsCheck = checkAllFinalsFinished(matches);
+      if (currentStatus === "ONGOING" && finalsCheck.isFinished) {
+        currentStatus = TournamentStatus.COMPLETED;
+        shouldPersist = true;
+      }
+
+      if (shouldPersist) {
+        void prisma.tournament
+          .update({
+            where: { id: tournament.id },
+            data: {
+              status: currentStatus,
+              matches: matches as unknown as Prisma.InputJsonValue,
+            },
+          })
+          .catch((err) => console.error("[api/tournaments] Sync error:", err));
+      }
+
+      const rawTeams = (tournament.teams as unknown as TournamentTeam[]) || [];
+      // Sanitize team representative phone numbers for non-staff
+      const sanitizedTeams = isStaff
+        ? rawTeams
+        : rawTeams.map((team) => ({
+            ...team,
+            representativePhone: undefined,
+          }));
+
+      return {
+        ...tournament,
+        status: currentStatus,
+        rules: tournament.rules || DEFAULT_TOURNAMENT_RULES,
+        mainPlayersCount: tournament.mainPlayersCount ?? 5,
+        subPlayersCount: tournament.subPlayersCount ?? 2,
+        entryFee: tournament.entryFee ?? 0,
+        isFreeEntry: tournament.isFreeEntry ?? (tournament.entryFee === 0),
+        participants: tournament.participants.map((participant) => ({
+          id: participant.id,
+          teamName: participant.teamName,
+          phone: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.phone ?? null : null,
+          roster: participant.roster ?? [],
+          paymentStatus: participant.paymentStatus ?? "APPROVED",
+          senderName: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.senderName ?? null : null,
+          paymentProof: isStaff || (viewer && viewer.id === participant.leader.id) ? participant.paymentProof ?? null : null,
+          rejectionReason: participant.rejectionReason ?? null,
+          createdAt: participant.createdAt.toISOString(),
+          leader: {
+            id: participant.leader.id,
+            username: participant.leader.username,
+            discordId: participant.leader.discordId ?? null,
+            name: participant.leader.name,
+          },
+        })),
+        bracket: tournament.bracket,
+        teams: sanitizedTeams,
+        matches,
+      };
+    })
+  );
+
+  return Response.json(processedTournaments);
 }
 
 export async function POST(request: Request) {

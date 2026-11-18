@@ -1,9 +1,9 @@
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { TournamentMatch, TournamentTeam } from "@/lib/tournament";
-import { NotificationType } from "@prisma/client";
+import { NotificationType, Prisma } from "@prisma/client";
 import { createNotification } from "@/lib/notifications";
-import { sendDiscordNotice } from "@/lib/discord-webhook";
+import { sendDiscordNotice, notifyTournamentMatchLive } from "@/lib/discord-webhook";
 import { checkSatpamCooldown, handleMatchLobbyMention } from "@/lib/satpam-guardian";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -147,6 +147,9 @@ export async function GET(request: Request, { params }: RouteContext) {
     isCapA,
     isCapB,
     isFinished,
+    teamAReady: Boolean(match.teamAReady),
+    teamBReady: Boolean(match.teamBReady),
+    matchStatus: match.matchStatus || "UPCOMING",
     messages,
   });
 }
@@ -248,6 +251,94 @@ export async function POST(request: Request, { params }: RouteContext) {
     : isCapA
     ? `[KAPTEN ${match.teamA.name || "TIM A"}]`
     : `[KAPTEN ${match.teamB.name || "TIM B"}]`;
+
+  // ACTION: TOGGLE READY CHECK FOR CAPTAINS (OR PANITIA)
+  if (data.action === "TOGGLE_READY") {
+    if (!isCapA && !isCapB && !isStaff) {
+      return jsonError("Hanya Kapten Tim atau Panitia yang dapat menyatakan kesiapan tim.", 403);
+    }
+
+    const teamToUpdate = isCapA ? "A" : isCapB ? "B" : (data.team === "B" ? "B" : "A");
+    const captainTeamName = teamToUpdate === "A" ? match.teamA.name : match.teamB.name;
+    const newReady = teamToUpdate === "A" ? !match.teamAReady : !match.teamBReady;
+
+    const updatedMatches = matches.map((m) => {
+      if (m.matchId === matchId) {
+        const teamAReady = teamToUpdate === "A" ? newReady : Boolean(m.teamAReady);
+        const teamBReady = teamToUpdate === "B" ? newReady : Boolean(m.teamBReady);
+        const bothReady = teamAReady && teamBReady;
+        return {
+          ...m,
+          teamAReady,
+          teamBReady,
+          teamAReadyAt: teamAReady ? (m.teamAReadyAt || new Date().toISOString()) : null,
+          teamBReadyAt: teamBReady ? (m.teamBReadyAt || new Date().toISOString()) : null,
+          matchStatus: bothReady ? ("LIVE" as const) : m.matchStatus,
+        };
+      }
+      return m;
+    });
+
+    const targetMatch = updatedMatches.find((m) => m.matchId === matchId);
+    const bothReadyNow = Boolean(targetMatch?.teamAReady && targetMatch?.teamBReady);
+
+    // Save updated tournament matches
+    await prisma.tournament.update({
+      where: { id },
+      data: { matches: updatedMatches as unknown as Prisma.InputJsonValue },
+    });
+
+    // Create system log message in match chat
+    const alertContent = newReady
+      ? `✅ [READY CHECK] Kapten ${captainTeamName} (@${user.username}) menyatakan timnya SIAP TANDING!`
+      : `⏸ [READY CHECK] Kapten ${captainTeamName} (@${user.username}) membatalkan status kesiapan.`;
+
+    const readyMsg = await prisma.matchMessage.create({
+      data: {
+        tournamentId: id,
+        matchId,
+        senderId: user.id,
+        content: alertContent,
+        roleLabel: "[SISTEM LOBBY]",
+      },
+      include: {
+        sender: {
+          select: { id: true, username: true, avatar: true, role: true, isPremium: true },
+        },
+      },
+    });
+
+    // If both ready now, announce match start!
+    if (bothReadyNow) {
+      await prisma.matchMessage.create({
+        data: {
+          tournamentId: id,
+          matchId,
+          senderId: user.id,
+          content: `🔥 [PERTANDINGAN DIMULAI] Kedua tim telah siap! Pertandingan ${match.roundName} resmi berstatus 🔴 SEDANG BERMAIN (LIVE). Selamat bertanding dan junjung tinggi sportivitas!`,
+          roleLabel: "[SISTEM LOBBY]",
+        },
+      });
+
+      notifyTournamentMatchLive({
+        tournamentTitle: tournament.title,
+        tournamentId: id,
+        matchId,
+        roundName: match.roundName || `Ronde ${match.round}`,
+        teamAName: match.teamA?.name || "Tim A",
+        teamBName: match.teamB?.name || "Tim B",
+      }).catch((err) => console.warn("[Discord Bot] Gagal kirim info live match:", err));
+    }
+
+    return Response.json({
+      success: true,
+      teamAReady: targetMatch?.teamAReady,
+      teamBReady: targetMatch?.teamBReady,
+      matchStatus: targetMatch?.matchStatus,
+      bothReady: bothReadyNow,
+      message: readyMsg,
+    });
+  }
 
   // ACTION: EMERGENCY REFEREE ALERT (🚨 PANGGIL PANITIA)
   if (data.action === "CALL_REFEREE") {

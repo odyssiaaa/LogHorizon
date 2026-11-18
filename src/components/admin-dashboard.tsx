@@ -2365,30 +2365,6 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                             </div>
 
                             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                              <select
-                                value={curTournament.status}
-                                onChange={async (e) => {
-                                  const nextSt = e.target.value;
-                                  try {
-                                    const res = await fetch(`/api/tournaments/${curTournament.id}`, {
-                                      method: "PATCH",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ status: nextSt }),
-                                    });
-                                    if (!res.ok) throw new Error("Gagal mengubah status turnamen.");
-                                    await fetchTournaments();
-                                    setNotice(`Status ${curTournament.title} diubah menjadi ${nextSt}.`);
-                                  } catch (err) {
-                                    setError(err instanceof Error ? err.message : "Gagal mengubah status.");
-                                  }
-                                }}
-                                className="px-3 py-2 rounded-none text-xs font-bold border border-purple-500/40 bg-purple-500/10 text-purple-700 dark:text-purple-300 hover:border-purple-500 cursor-pointer focus:outline-none font-mono"
-                                title="Ubah Status Siklus Turnamen"
-                              >
-                                <option value="REGISTRATION" className="bg-white dark:bg-[#11091D] text-slate-900 dark:text-white">🟢 PENDAFTARAN BUKA</option>
-                                <option value="ONGOING" className="bg-white dark:bg-[#11091D] text-slate-900 dark:text-white">🔴 SEDANG BERLANGSUNG</option>
-                                <option value="COMPLETED" className="bg-white dark:bg-[#11091D] text-slate-900 dark:text-white">🏁 SELESAI</option>
-                              </select>
                               <button
                                 type="button"
                                 onClick={() => setEditTournamentModal(curTournament)}
