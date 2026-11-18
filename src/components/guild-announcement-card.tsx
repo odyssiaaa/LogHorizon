@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Megaphone, ExternalLink, Sparkles, Clock, Check } from "lucide-react";
+import { UniversalTextRenderer } from "@/lib/text-parser";
 
 type Announcement = {
   id: string;
@@ -59,155 +60,6 @@ function extractActionLinks(content: string): Array<{ label: string; url: string
   }
 
   return links;
-}
-
-function renderInlineClean(text: string): React.ReactNode[] {
-  // Regex pattern matching:
-  // 1: Markdown Link: [label](url)
-  // 2: Bold: **text**
-  // 3: Inline Code: `code`
-  // 4: Italic: *text*
-  const pattern = /(\[([^\]]+)\]\(([^)]+)\))|(\*\*([^*]+)\*\*)|(`([^`]+)`)|(\*([^*]+)\*)/g;
-  const elements: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      elements.push(text.substring(lastIndex, match.index));
-    }
-    const key = `inline-${match.index}`;
-
-    if (match[1]) {
-      const label = match[2];
-      const url = match[3];
-      elements.push(
-        <Link
-          key={key}
-          href={url}
-          className="text-[#7C3AED] dark:text-[#A78BFA] hover:text-[#6D28D9] dark:hover:text-[#C4B5FD] underline font-semibold transition"
-        >
-          {label}
-        </Link>
-      );
-    } else if (match[4]) {
-      elements.push(
-        <strong key={key} className="font-bold text-slate-900 dark:text-white">
-          {match[5]}
-        </strong>
-      );
-    } else if (match[6]) {
-      elements.push(
-        <code
-          key={key}
-          className="px-1.5 py-0.5 rounded bg-purple-500/15 dark:bg-[#7C3AED]/20 text-[#7C3AED] dark:text-[#C4B5FD] font-mono text-xs border border-purple-500/20 font-semibold"
-        >
-          {match[7]}
-        </code>
-      );
-    } else if (match[8]) {
-      elements.push(
-        <em key={key} className="italic text-[#7C3AED] dark:text-[#C4B5FD]">
-          {match[9]}
-        </em>
-      );
-    }
-
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    elements.push(text.substring(lastIndex));
-  }
-
-  return elements;
-}
-
-function FullAnnouncementRenderer({ content }: { content: string }) {
-  if (!content) return null;
-
-  const lines = content.split("\n");
-  const blocks: React.ReactNode[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const rawLine = lines[i];
-    const trimmed = rawLine.trim();
-
-    if (!trimmed) {
-      blocks.push(<div key={`sp-${i}`} className="h-2" />);
-      continue;
-    }
-
-    // Heading: ### Heading or ## Heading or # Heading
-    if (trimmed.startsWith("### ")) {
-      const headingText = trimmed.replace(/^###\s+/, "");
-      blocks.push(
-        <h4
-          key={`h3-${i}`}
-          className="text-xs sm:text-sm font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider mt-3 mb-1"
-        >
-          {renderInlineClean(headingText)}
-        </h4>
-      );
-      continue;
-    }
-    if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
-      const headingText = trimmed.replace(/^#{1,2}\s+/, "");
-      blocks.push(
-        <h3
-          key={`h2-${i}`}
-          className="text-sm sm:text-base font-extrabold text-[#7C3AED] dark:text-[#C4B5FD] uppercase tracking-wider mt-3.5 mb-1.5"
-        >
-          {renderInlineClean(headingText)}
-        </h3>
-      );
-      continue;
-    }
-
-    // Bullet List Item: * item, - item, • item
-    if (/^(\*|-|•)\s+/.test(trimmed)) {
-      const itemText = trimmed.replace(/^(\*|-|•)\s+/, "");
-      blocks.push(
-        <div key={`bullet-${i}`} className="flex items-start gap-2.5 my-1.5 pl-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] dark:bg-[#A78BFA] mt-2 shrink-0" />
-          <div className="text-xs sm:text-sm leading-relaxed text-slate-800 dark:text-slate-200">
-            {renderInlineClean(itemText)}
-          </div>
-        </div>
-      );
-      continue;
-    }
-
-    // Numbered List: 1. item, 2. item
-    const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
-    if (numMatch) {
-      const num = numMatch[1];
-      const itemText = numMatch[2];
-      blocks.push(
-        <div key={`num-${i}`} className="flex items-start gap-2 my-1.5 pl-1">
-          <span className="text-xs font-mono font-bold text-[#7C3AED] dark:text-[#A78BFA] shrink-0 mt-0.5">
-            {num}.
-          </span>
-          <div className="text-xs sm:text-sm leading-relaxed text-slate-800 dark:text-slate-200">
-            {renderInlineClean(itemText)}
-          </div>
-        </div>
-      );
-      continue;
-    }
-
-    // Normal paragraph
-    blocks.push(
-      <p
-        key={`p-${i}`}
-        className="text-xs sm:text-sm font-medium leading-relaxed text-slate-800 dark:text-slate-200"
-      >
-        {renderInlineClean(rawLine)}
-      </p>
-    );
-  }
-
-  return <div className="space-y-1">{blocks}</div>;
 }
 
 export function GuildAnnouncementCard() {
@@ -277,7 +129,7 @@ export function GuildAnnouncementCard() {
 
           {/* Full Un-truncated Content with Clean Markdown */}
           <div className="p-4 sm:p-5 rounded-lg bg-slate-50 dark:bg-[#0A0512] border border-slate-200 dark:border-[#2A1B42] leading-relaxed">
-            <FullAnnouncementRenderer content={announcement.content} />
+            <UniversalTextRenderer content={announcement.content} enableBlocks={true} />
           </div>
 
           {/* Direct CTA Action Button & Footer Links */}

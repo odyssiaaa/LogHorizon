@@ -34,12 +34,27 @@ export async function GET() {
       manualRecords.map((r) => r.tournamentId).filter(Boolean) as string[]
     );
 
-    // 2. Fetch tournaments from DB that might be completed or have a finished Grand Final
+    // 2. Fetch tournaments from DB that are completed or ongoing
     const tournaments = await prisma.tournament.findMany({
+      where: {
+        status: { in: ["COMPLETED", "ONGOING"] },
+      },
       orderBy: { eventDate: "desc" },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        game: true,
+        format: true,
+        status: true,
+        eventDate: true,
+        prizePool: true,
+        matches: true,
+        teams: true,
         participants: {
-          include: {
+          select: {
+            id: true,
+            teamName: true,
+            roster: true,
             leader: { select: { id: true, username: true } },
           },
         },
