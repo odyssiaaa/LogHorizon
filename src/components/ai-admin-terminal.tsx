@@ -268,6 +268,7 @@ export function AiAdminTerminal({
   const [pendingConfirmation, setPendingConfirmation] = useState<CommandResponse | null>(null);
   const [error, setError] = useState("");
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   // Draft state for interactive Broadcast Previews
   const [draftTitle, setDraftTitle] = useState("");
@@ -417,7 +418,7 @@ export function AiAdminTerminal({
   }
 
   return (
-    <div className="w-full bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl shadow-2xl p-5 sm:p-6 text-slate-900 dark:text-white space-y-5 text-left">
+    <div className="w-full bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl shadow-2xl p-5 sm:p-6 pb-28 sm:pb-24 text-slate-900 dark:text-white space-y-5 text-left">
       {/* Header Panel */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-[#2A1B42]">
         <div className="flex items-center gap-3">
@@ -476,10 +477,14 @@ export function AiAdminTerminal({
                 key={item.label}
                 type="button"
                 onClick={() => {
-                  void handleSendCommand(item.prompt);
+                  setPrompt(item.prompt);
+                  setTimeout(() => {
+                    inputRef.current?.focus();
+                  }, 50);
                 }}
                 disabled={loading}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-slate-50 dark:bg-[#1A0F2E] hover:border-[#7C3AED] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] text-xs font-medium text-slate-700 dark:text-slate-300 transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-slate-50 dark:bg-[#1A0F2E] hover:border-[#7C3AED] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] text-xs font-medium text-slate-700 dark:text-slate-300 transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
+                title="Isi template perintah ke kotak input untuk diedit"
               >
                 <Icon size={13} className="text-[#7C3AED] dark:text-[#A78BFA]" />
                 <span>{item.label}</span>
@@ -904,6 +909,7 @@ export function AiAdminTerminal({
       >
         <div className="relative flex-1">
           <input
+            ref={inputRef}
             type="text"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}

@@ -138,9 +138,13 @@ export function DragScrollContainer({
     setIsDragging(true);
   }
 
-  function handleWheel() {
+  function handleWheel(e: React.WheelEvent) {
     // Batalkan animasi auto-scroll seketika saat user scroll dengan wheel / trackpad
     cancelScrollAnimation();
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 2) {
+      const el = containerRef.current;
+      if (el) el.scrollLeft += e.deltaX;
+    }
   }
 
   function handleTouchStart() {
@@ -247,10 +251,12 @@ export function DragScrollContainer({
         onTouchStart={handleTouchStart}
         onMouseLeave={handleMouseLeave}
         onClickCapture={handleClickCapture}
-        className={`overflow-x-auto scrollbar-none select-none touch-pan-x overscroll-x-contain ${
+        className={`overflow-x-auto scrollbar-none select-none ${
           isDragging ? "cursor-grabbing" : "cursor-grab"
         } ${innerClassName}`}
         style={{
+          touchAction: "pan-x pan-y",
+          overscrollBehaviorY: "auto",
           WebkitOverflowScrolling: "touch",
         }}
       >

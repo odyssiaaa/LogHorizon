@@ -14,10 +14,12 @@ export interface StaffActionItem {
 export function StaffCardModerationMenu({
   actions,
   className = "",
+  buttonClassName,
   label = "⋮ Moderasi",
 }: {
   actions: StaffActionItem[];
   className?: string;
+  buttonClassName?: string;
   label?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -44,7 +46,10 @@ export function StaffCardModerationMenu({
           e.stopPropagation();
           setOpen((prev) => !prev);
         }}
-        className="h-7 px-2 rounded-md font-mono text-[11px] font-bold inline-flex items-center gap-1 border border-[#7C3AED]/30 bg-purple-500/10 hover:bg-[#7C3AED]/20 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-sm shrink-0"
+        className={
+          buttonClassName ||
+          "h-7 px-2 rounded-md font-mono text-[11px] font-bold inline-flex items-center gap-1 border border-[#7C3AED]/30 bg-purple-500/10 hover:bg-[#7C3AED]/20 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-sm shrink-0"
+        }
         title="Opsi Moderasi Staf (Admin & Moderator)"
       >
         <MoreVertical size={13} className="shrink-0" />

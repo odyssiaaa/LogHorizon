@@ -1007,6 +1007,24 @@ export function EventsBoard() {
     }
   }
 
+  async function handleQuickUpdateTournamentStatus(tournamentId: string, nextStatus: string, title: string) {
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal mengubah status turnamen.");
+      setTournaments((prev) =>
+        prev.map((t) => (t.id === tournamentId ? { ...t, status: nextStatus } : t))
+      );
+      setNotice(`Status "${title}" berhasil diubah menjadi ${nextStatus}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal mengubah status turnamen.");
+    }
+  }
+
   // Register Team to Tournament (Structured Form with Main/Sub slots & Representative Contact)
   async function handleRegisterTeam(e: FormEvent) {
     e.preventDefault();
@@ -1289,7 +1307,7 @@ export function EventsBoard() {
                 className="px-4 py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-[#F8FAFC] border border-[#7C3AED] inline-flex items-center gap-2 self-start sm:self-auto"
               >
                 <Plus size={15} />
-                <span>+ Buat Turnamen dari Template</span>
+                <span>Buat Turnamen dari Template</span>
               </button>
             )}
           </div>
@@ -1409,28 +1427,49 @@ export function EventsBoard() {
                       <div className="mt-6 pt-4 border-t border-slate-200 dark:border-[#2E1E45] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
                         <Link
                           href={`/events/turnamen/${tournament.id}`}
-                          className="px-4 py-2.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center justify-center gap-2 transition-all shadow-sm"
+                          className="h-10 px-4 whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center justify-center gap-2 transition-all shadow-sm"
                         >
                           <Trophy size={14} />
                           <span>🏆 Buka Bagan &amp; Detail Turnamen</span>
                         </Link>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                           {isRegistrationOpen && (
                             <button
                               type="button"
                               onClick={() => handlePromptRulesAndRegister(tournament)}
-                              className="w-full sm:w-auto px-3.5 py-2.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-600 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                              className="h-10 px-4 whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-600 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
                             >
                               <Plus size={14} />
-                              <span>+ Daftar Tim</span>
+                              <span>Daftar Tim</span>
                             </button>
                           )}
 
                           {isAdminOrMod && (
                             <StaffCardModerationMenu
                               label="⚙️ Opsi Staf"
+                              buttonClassName="h-10 px-3.5 w-full sm:w-auto justify-center rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-[#7C3AED]/40 bg-purple-500/15 hover:bg-[#7C3AED]/25 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-sm shrink-0 whitespace-nowrap"
                               actions={[
+                                {
+                                  label: "🟢 Set: Pendaftaran Buka",
+                                  disabled: tournament.status === "REGISTRATION",
+                                  onClick: () => handleQuickUpdateTournamentStatus(tournament.id, "REGISTRATION", tournament.title),
+                                },
+                                {
+                                  label: "🔴 Set: Sedang Berlangsung",
+                                  disabled: tournament.status === "ONGOING",
+                                  onClick: () => handleQuickUpdateTournamentStatus(tournament.id, "ONGOING", tournament.title),
+                                },
+                                {
+                                  label: "🏁 Set: Turnamen Selesai",
+                                  disabled: tournament.status === "COMPLETED",
+                                  onClick: () => handleQuickUpdateTournamentStatus(tournament.id, "COMPLETED", tournament.title),
+                                },
+                                {
+                                  label: "🏆 Buka Bagan & Kelola Skor",
+                                  icon: <Trophy size={13} />,
+                                  onClick: () => { window.location.href = `/events/turnamen/${tournament.id}`; },
+                                },
                                 {
                                   label: "Unduh Laporan (.CSV)",
                                   icon: <FileSpreadsheet size={13} />,
@@ -1440,11 +1479,6 @@ export function EventsBoard() {
                                   label: "Unduh Backup JSON",
                                   icon: <FileCode size={13} />,
                                   onClick: () => exportTournamentToJson(tournament),
-                                },
-                                {
-                                  label: "Buka Detail & Kelola",
-                                  icon: <Trophy size={13} />,
-                                  onClick: () => { window.location.href = `/events/turnamen/${tournament.id}`; },
                                 },
                               ]}
                             />
