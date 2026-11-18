@@ -162,6 +162,16 @@ export async function GET(request: Request) {
     }),
   ]);
 
+  const DEFAULT_DISCORD_CHANNELS = {
+    discordAnnouncementChannelId: "1547552373629780038",
+    discordGiveawayChannelId: "1547552377396011118",
+    discordInfoLiveChannelId: "1547552381221339149",
+    discordPartnershipChannelId: "1572235405770887269",
+    discordShopChannelId: "1547552452725973093",
+    discordLfgChannelId: "1547552498833825874",
+    discordModLogChannelId: "1547552557868777552",
+  };
+
   const defaultSiteConfig = {
     id: "default",
     statMembers: "1,200+",
@@ -174,13 +184,21 @@ export async function GET(request: Request) {
     minDonation: 10000,
     discordInviteUrl: "https://discord.gg/aJvbVyTxNb",
     discordWebhookUrl: null,
-    discordAnnouncementChannelId: "1547552373629780038",
-    discordGiveawayChannelId: null,
-    discordInfoLiveChannelId: null,
-    discordPartnershipChannelId: null,
-    discordLfgChannelId: null,
-    discordModLogChannelId: null,
+    ...DEFAULT_DISCORD_CHANNELS,
   };
+
+  const resolvedSiteConfig = siteConfig
+    ? {
+        ...siteConfig,
+        discordAnnouncementChannelId: siteConfig.discordAnnouncementChannelId || DEFAULT_DISCORD_CHANNELS.discordAnnouncementChannelId,
+        discordGiveawayChannelId: siteConfig.discordGiveawayChannelId || DEFAULT_DISCORD_CHANNELS.discordGiveawayChannelId,
+        discordInfoLiveChannelId: siteConfig.discordInfoLiveChannelId || DEFAULT_DISCORD_CHANNELS.discordInfoLiveChannelId,
+        discordPartnershipChannelId: siteConfig.discordPartnershipChannelId || DEFAULT_DISCORD_CHANNELS.discordPartnershipChannelId,
+        discordShopChannelId: siteConfig.discordShopChannelId || DEFAULT_DISCORD_CHANNELS.discordShopChannelId,
+        discordLfgChannelId: siteConfig.discordLfgChannelId || DEFAULT_DISCORD_CHANNELS.discordLfgChannelId,
+        discordModLogChannelId: siteConfig.discordModLogChannelId || DEFAULT_DISCORD_CHANNELS.discordModLogChannelId,
+      }
+    : defaultSiteConfig;
 
   const isAdmin = access.user.role === Role.ADMIN;
 
@@ -201,7 +219,7 @@ export async function GET(request: Request) {
     marketplaceListings,
     donations: isAdmin ? donations : [],
     announcements,
-    siteConfig: isAdmin ? (siteConfig ?? defaultSiteConfig) : null,
+    siteConfig: isAdmin ? resolvedSiteConfig : null,
     sponsors,
     escrowTransactions: isAdmin ? escrowTransactions : [],
     securityLogs,

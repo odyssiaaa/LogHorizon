@@ -3,7 +3,7 @@ import { activeUser, authenticatedUser, jsonError } from "@/lib/http";
 import { marketJson, type MarketData } from "@/lib/market-data";
 import { prisma } from "@/lib/prisma";
 import { addXpInTransaction } from "@/lib/xp";
-import { sendDiscordNotice } from "@/lib/discord-webhook";
+import { sendDiscordNotice, notifyMarketplaceListing } from "@/lib/discord-webhook";
 import { sanitizePlainText, sanitizeText } from "@/lib/sanitize";
 import { checkContentSafety } from "@/lib/satpam-guardian";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
@@ -174,7 +174,15 @@ export async function POST(request: Request) {
     const post = await prisma.post.create({
       data: { authorId: user.id, category: PostCategory.MARKETPLACE, title, content, isPinned, marketData: marketJson(marketData) },
     });
-    void sendDiscordNotice("marketplace", `Lapak baru: ${title}`, `${market.type} · ${market.game} · Rp ${market.price.toLocaleString("id-ID")}`);
+    void notifyMarketplaceListing({
+      postId: post.id,
+      title,
+      type: market.type,
+      game: market.game.trim(),
+      price: market.price,
+      sellerName: user.username,
+      imageUrl: typeof market.imageUrl === "string" ? market.imageUrl : null,
+    });
     return Response.json(post, { status: 201 });
   }
 

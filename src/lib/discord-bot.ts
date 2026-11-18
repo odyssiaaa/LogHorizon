@@ -30,13 +30,21 @@ export type DiscordChannelKey =
   | "giveaway"
   | "info_live"
   | "partnership"
+  | "shop"
   | "lfg"
   | "mod_logs";
 
 export interface DiscordChannelMeta {
   key: DiscordChannelKey;
   name: string;
-  fieldName: "discordAnnouncementChannelId" | "discordGiveawayChannelId" | "discordInfoLiveChannelId" | "discordPartnershipChannelId" | "discordLfgChannelId" | "discordModLogChannelId";
+  fieldName:
+    | "discordAnnouncementChannelId"
+    | "discordGiveawayChannelId"
+    | "discordInfoLiveChannelId"
+    | "discordPartnershipChannelId"
+    | "discordShopChannelId"
+    | "discordLfgChannelId"
+    | "discordModLogChannelId";
   defaultId?: string;
   description: string;
   icon: string;
@@ -55,6 +63,7 @@ export const DISCORD_CHANNELS: Record<DiscordChannelKey, DiscordChannelMeta> = {
     key: "giveaway",
     name: "#🎁・events-giveaway",
     fieldName: "discordGiveawayChannelId",
+    defaultId: "1547552377396011118",
     description: "Pengumuman Event Giveaway / Undian Berhadiah komunitas",
     icon: "🎁",
   },
@@ -62,6 +71,7 @@ export const DISCORD_CHANNELS: Record<DiscordChannelKey, DiscordChannelMeta> = {
     key: "info_live",
     name: "#📡・info-live",
     fieldName: "discordInfoLiveChannelId",
+    defaultId: "1547552381221339149",
     description: "Notifikasi match turnamen LIVE & siaran langsung streaming",
     icon: "📡",
   },
@@ -69,13 +79,23 @@ export const DISCORD_CHANNELS: Record<DiscordChannelKey, DiscordChannelMeta> = {
     key: "partnership",
     name: "#🤝・partnership",
     fieldName: "discordPartnershipChannelId",
+    defaultId: "1572235405770887269",
     description: "Promosi member Donatur/VIP & sponsor/partner resmi baru",
     icon: "🤝",
+  },
+  shop: {
+    key: "shop",
+    name: "#🛒・server-shop",
+    fieldName: "discordShopChannelId",
+    defaultId: "1547552452725973093",
+    description: "Lapak jual-beli akun, item, jasa game & marketplace gamer",
+    icon: "🛒",
   },
   lfg: {
     key: "lfg",
     name: "#🎮・gaming-lounge",
     fieldName: "discordLfgChannelId",
+    defaultId: "1547552498833825874",
     description: "Siaran otomatis ajakan mabar (LFG) baru dari website",
     icon: "🎮",
   },
@@ -83,6 +103,7 @@ export const DISCORD_CHANNELS: Record<DiscordChannelKey, DiscordChannelMeta> = {
     key: "mod_logs",
     name: "#🛡️・mod-logs",
     fieldName: "discordModLogChannelId",
+    defaultId: "1547552557868777552",
     description: "Saluran rahasia staf: tiket Rekber, antrean donasi, & log Satpam AI",
     icon: "🛡️",
   },
@@ -111,6 +132,7 @@ export async function getDiscordChannelId(channelKey: DiscordChannelKey): Promis
         discordGiveawayChannelId: true,
         discordInfoLiveChannelId: true,
         discordPartnershipChannelId: true,
+        discordShopChannelId: true,
         discordLfgChannelId: true,
         discordModLogChannelId: true,
       },
@@ -312,6 +334,9 @@ export function resolveDiscordChannelKey(input?: string): DiscordChannelKey {
   }
   if (s.includes("partner") || s.includes("sponsor") || s.includes("donatur") || s.includes("vip") || s.includes("iklan") || s.includes("kolaborasi")) {
     return "partnership";
+  }
+  if (s.includes("shop") || s.includes("market") || s.includes("lapak") || s.includes("jual") || s.includes("beli") || s.includes("store") || s.includes("wts") || s.includes("wtb") || s.includes("jasa")) {
+    return "shop";
   }
   if (s.includes("lfg") || s.includes("mabar") || s.includes("party") || s.includes("lobby") || s.includes("gaming") || s.includes("lounge")) {
     return "lfg";

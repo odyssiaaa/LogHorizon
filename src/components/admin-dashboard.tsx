@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -139,6 +139,7 @@ type SiteConfig = {
   discordGiveawayChannelId?: string | null;
   discordInfoLiveChannelId?: string | null;
   discordPartnershipChannelId?: string | null;
+  discordShopChannelId?: string | null;
   discordLfgChannelId?: string | null;
   discordModLogChannelId?: string | null;
   aiKnowledgeBase?: string | null;
@@ -501,6 +502,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
   }
 
   // Site Config CMS Form State
+  const isConfigInitializedRef = useRef(false);
   const [configForm, setConfigForm] = useState<SiteConfig>({
     id: "default",
     statMembers: "1,200+",
@@ -514,11 +516,12 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     discordInviteUrl: "https://discord.gg/aJvbVyTxNb",
     discordWebhookUrl: "",
     discordAnnouncementChannelId: "1547552373629780038",
-    discordGiveawayChannelId: "",
-    discordInfoLiveChannelId: "",
-    discordPartnershipChannelId: "",
-    discordLfgChannelId: "",
-    discordModLogChannelId: "",
+    discordGiveawayChannelId: "1547552377396011118",
+    discordInfoLiveChannelId: "1547552381221339149",
+    discordPartnershipChannelId: "1572235405770887269",
+    discordShopChannelId: "1547552452725973093",
+    discordLfgChannelId: "1547552498833825874",
+    discordModLogChannelId: "1547552557868777552",
     aiKnowledgeBase: "",
   });
   const [savingConfig, setSavingConfig] = useState(false);
@@ -559,8 +562,18 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
       .then((response) => readApiResponse<DashboardData>(response, "Gagal memuat dashboard."))
       .then((result) => {
         setData(result);
-        if (result.siteConfig) {
-          setConfigForm(result.siteConfig);
+        if (result.siteConfig && !isConfigInitializedRef.current) {
+          setConfigForm({
+            ...result.siteConfig,
+            discordAnnouncementChannelId: result.siteConfig.discordAnnouncementChannelId || "1547552373629780038",
+            discordGiveawayChannelId: result.siteConfig.discordGiveawayChannelId || "1547552377396011118",
+            discordInfoLiveChannelId: result.siteConfig.discordInfoLiveChannelId || "1547552381221339149",
+            discordPartnershipChannelId: result.siteConfig.discordPartnershipChannelId || "1572235405770887269",
+            discordShopChannelId: result.siteConfig.discordShopChannelId || "1547552452725973093",
+            discordLfgChannelId: result.siteConfig.discordLfgChannelId || "1547552498833825874",
+            discordModLogChannelId: result.siteConfig.discordModLogChannelId || "1547552557868777552",
+          });
+          isConfigInitializedRef.current = true;
         }
         setError("");
       })
@@ -608,7 +621,17 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
         body: JSON.stringify(configForm),
       });
       const result = await readApiResponse<{ config: SiteConfig; message: string }>(response, "Gagal menyimpan konfigurasi.");
-      setConfigForm(result.config);
+      setConfigForm({
+        ...result.config,
+        discordAnnouncementChannelId: result.config.discordAnnouncementChannelId || "1547552373629780038",
+        discordGiveawayChannelId: result.config.discordGiveawayChannelId || "1547552377396011118",
+        discordInfoLiveChannelId: result.config.discordInfoLiveChannelId || "1547552381221339149",
+        discordPartnershipChannelId: result.config.discordPartnershipChannelId || "1572235405770887269",
+        discordShopChannelId: result.config.discordShopChannelId || "1547552452725973093",
+        discordLfgChannelId: result.config.discordLfgChannelId || "1547552498833825874",
+        discordModLogChannelId: result.config.discordModLogChannelId || "1547552557868777552",
+      });
+      isConfigInitializedRef.current = true;
       setNotice(result.message || "Pengaturan website berhasil disimpan!");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Gagal menyimpan konfigurasi.");
@@ -1741,7 +1764,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        1 Bot Discord LogHorizon terhubung langsung ke 6 channel resmi server via Discord REST API v10 (`DISCORD_BOT_TOKEN`). Atur ID Channel di bawah ini dan gunakan tombol <strong>⚡ Tes Bot</strong> untuk memastikan bot memiliki akses baca &amp; kirim pesan ke masing-masing channel.
+                        1 Bot Discord LogHorizon terhubung langsung ke 7 channel resmi server via Discord REST API v10 (`DISCORD_BOT_TOKEN`). Atur ID Channel di bawah ini dan gunakan tombol <strong>⚡ Tes Bot</strong> untuk memastikan bot memiliki akses baca &amp; kirim pesan ke masing-masing channel.
                       </p>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1793,15 +1816,15 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <div className="flex items-center gap-2">
                             <input
                               type="text"
-                              value={configForm.discordGiveawayChannelId ?? ""}
+                              value={configForm.discordGiveawayChannelId ?? "1547552377396011118"}
                               onChange={(e) => setConfigForm({ ...configForm, discordGiveawayChannelId: e.target.value })}
                               className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-                              placeholder="Masukkan Channel ID Discord..."
+                              placeholder="1547552377396011118"
                             />
                             <button
                               type="button"
                               disabled={testingBotChannel === "giveaway"}
-                              onClick={() => void handleTestDiscordBot("giveaway", configForm.discordGiveawayChannelId)}
+                              onClick={() => void handleTestDiscordBot("giveaway", configForm.discordGiveawayChannelId ?? "1547552377396011118")}
                               className="px-3 py-1.5 rounded-none bg-pink-600 hover:bg-pink-500 text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
                               title="Kirim pesan tes diagnostik ke channel ini"
                             >
@@ -1826,15 +1849,15 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <div className="flex items-center gap-2">
                             <input
                               type="text"
-                              value={configForm.discordInfoLiveChannelId ?? ""}
+                              value={configForm.discordInfoLiveChannelId ?? "1547552381221339149"}
                               onChange={(e) => setConfigForm({ ...configForm, discordInfoLiveChannelId: e.target.value })}
                               className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-                              placeholder="Masukkan Channel ID Discord..."
+                              placeholder="1547552381221339149"
                             />
                             <button
                               type="button"
                               disabled={testingBotChannel === "info_live"}
-                              onClick={() => void handleTestDiscordBot("info_live", configForm.discordInfoLiveChannelId)}
+                              onClick={() => void handleTestDiscordBot("info_live", configForm.discordInfoLiveChannelId ?? "1547552381221339149")}
                               className="px-3 py-1.5 rounded-none bg-rose-600 hover:bg-rose-500 text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
                               title="Kirim pesan tes diagnostik ke channel ini"
                             >
@@ -1859,15 +1882,15 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <div className="flex items-center gap-2">
                             <input
                               type="text"
-                              value={configForm.discordPartnershipChannelId ?? ""}
+                              value={configForm.discordPartnershipChannelId ?? "1572235405770887269"}
                               onChange={(e) => setConfigForm({ ...configForm, discordPartnershipChannelId: e.target.value })}
                               className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-                              placeholder="Masukkan Channel ID Discord..."
+                              placeholder="1572235405770887269"
                             />
                             <button
                               type="button"
                               disabled={testingBotChannel === "partnership"}
-                              onClick={() => void handleTestDiscordBot("partnership", configForm.discordPartnershipChannelId)}
+                              onClick={() => void handleTestDiscordBot("partnership", configForm.discordPartnershipChannelId ?? "1572235405770887269")}
                               className="px-3 py-1.5 rounded-none bg-amber-600 hover:bg-amber-500 text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
                               title="Kirim pesan tes diagnostik ke channel ini"
                             >
@@ -1877,12 +1900,45 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           </div>
                         </div>
 
-                        {/* 5. Gaming Lounge (LFG) */}
+                        {/* 5. Server Shop (Marketplace) */}
+                        <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                              <span>🛒</span>
+                              <span>5. #server-shop</span>
+                            </label>
+                            <span className="text-[10px] font-mono text-emerald-500 font-bold">Marketplace</span>
+                          </div>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                            Siaran otomatis setiap kali member membuka lapak jual-beli akun, item, jasa joki, atau WTB baru di marketplace website.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={configForm.discordShopChannelId ?? "1547552452725973093"}
+                              onChange={(e) => setConfigForm({ ...configForm, discordShopChannelId: e.target.value })}
+                              className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
+                              placeholder="1547552452725973093"
+                            />
+                            <button
+                              type="button"
+                              disabled={testingBotChannel === "shop"}
+                              onClick={() => void handleTestDiscordBot("shop", configForm.discordShopChannelId ?? "1547552452725973093")}
+                              className="px-3 py-1.5 rounded-none bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
+                              title="Kirim pesan tes diagnostik ke channel ini"
+                            >
+                              {testingBotChannel === "shop" ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+                              <span>⚡ Tes Bot</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 6. Gaming Lounge (LFG) */}
                         <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
                               <span>🎮</span>
-                              <span>5. #gaming-lounge</span>
+                              <span>6. #gaming-lounge</span>
                             </label>
                             <span className="text-[10px] font-mono text-indigo-500 font-bold">Mabar LFG</span>
                           </div>
@@ -1892,15 +1948,15 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <div className="flex items-center gap-2">
                             <input
                               type="text"
-                              value={configForm.discordLfgChannelId ?? ""}
+                              value={configForm.discordLfgChannelId ?? "1547552498833825874"}
                               onChange={(e) => setConfigForm({ ...configForm, discordLfgChannelId: e.target.value })}
                               className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-                              placeholder="Masukkan Channel ID Discord..."
+                              placeholder="1547552498833825874"
                             />
                             <button
                               type="button"
                               disabled={testingBotChannel === "lfg"}
-                              onClick={() => void handleTestDiscordBot("lfg", configForm.discordLfgChannelId)}
+                              onClick={() => void handleTestDiscordBot("lfg", configForm.discordLfgChannelId ?? "1547552498833825874")}
                               className="px-3 py-1.5 rounded-none bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
                               title="Kirim pesan tes diagnostik ke channel ini"
                             >
@@ -1910,12 +1966,12 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           </div>
                         </div>
 
-                        {/* 6. Mod Logs */}
+                        {/* 7. Mod Logs */}
                         <div className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#0A0512] space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <label className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
                               <span>🛡️</span>
-                              <span>6. #mod-logs</span>
+                              <span>7. #mod-logs</span>
                             </label>
                             <span className="text-[10px] font-mono text-red-500 font-bold">Rahasia Staf</span>
                           </div>
@@ -1925,15 +1981,15 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                           <div className="flex items-center gap-2">
                             <input
                               type="text"
-                              value={configForm.discordModLogChannelId ?? ""}
+                              value={configForm.discordModLogChannelId ?? "1547552557868777552"}
                               onChange={(e) => setConfigForm({ ...configForm, discordModLogChannelId: e.target.value })}
                               className="flex-1 px-3 py-1.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-                              placeholder="Masukkan Channel ID Discord..."
+                              placeholder="1547552557868777552"
                             />
                             <button
                               type="button"
                               disabled={testingBotChannel === "mod_logs"}
-                              onClick={() => void handleTestDiscordBot("mod_logs", configForm.discordModLogChannelId)}
+                              onClick={() => void handleTestDiscordBot("mod_logs", configForm.discordModLogChannelId ?? "1547552557868777552")}
                               className="px-3 py-1.5 rounded-none bg-slate-800 hover:bg-slate-700 text-white text-xs font-mono font-bold flex items-center gap-1 transition shrink-0 disabled:opacity-50 cursor-pointer"
                               title="Kirim pesan tes diagnostik ke channel ini"
                             >

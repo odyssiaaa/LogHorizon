@@ -382,13 +382,14 @@ model SiteConfig {
   discordInviteUrl String   @default("https://discord.gg/aJvbVyTxNb")
   discordWebhookUrl String? @db.Text
 
-  // 6 Channel ID Discord Multi-Channel Bot Router
-  discordAnnouncementChannelId String  @default("1547552373629780038")
-  discordGiveawayChannelId     String?
-  discordInfoLiveChannelId     String?
-  discordPartnershipChannelId  String?
-  discordLfgChannelId          String?
-  discordModLogChannelId       String?
+  // 7 Channel ID Discord Multi-Channel Bot Router (Nilai Default Asli Server LogHorizon)
+  discordAnnouncementChannelId String?  @default("1547552373629780038")
+  discordGiveawayChannelId     String?  @default("1547552377396011118")
+  discordInfoLiveChannelId     String?  @default("1547552381221339149")
+  discordPartnershipChannelId  String?  @default("1572235405770887269")
+  discordShopChannelId         String?  @default("1547552452725973093")
+  discordLfgChannelId          String?  @default("1547552498833825874")
+  discordModLogChannelId       String?  @default("1547552557868777552")
 
   aiKnowledgeBase  String?  @db.Text
   updatedAt        DateTime @updatedAt

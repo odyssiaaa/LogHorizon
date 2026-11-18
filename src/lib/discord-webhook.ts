@@ -333,6 +333,61 @@ export async function notifyGiveaway(data: {
 }
 
 /**
+ * 7. Channel #🛒・server-shop
+ * Event: Lapak Marketplace Baru (WTS / WTB / Jasa)
+ */
+export async function notifyMarketplaceListing(data: {
+  postId: string;
+  title: string;
+  type: string;
+  game: string;
+  price: number;
+  sellerName?: string | null;
+  imageUrl?: string | null;
+}): Promise<void> {
+  const baseUrl = getBaseAppUrl();
+  const listingUrl = `${baseUrl}/marketplace?id=${data.postId}`;
+  const seller = data.sellerName || "Member";
+
+  const typeBadge = data.type === "WTS" ? "🏷️ WTS (Dijual)" : data.type === "WTB" ? "🔍 WTB (Dicari)" : "🛠️ Jasa / Joki";
+  const formattedPrice = `Rp ${data.price.toLocaleString("id-ID")}`;
+
+  const fields: DiscordEmbedField[] = [
+    { name: "📌 Tipe Lapak", value: typeBadge, inline: true },
+    { name: "🎮 Game", value: data.game, inline: true },
+    { name: "💰 Harga", value: formattedPrice, inline: true },
+    { name: "👤 Penjual / Pembeli", value: seller, inline: true },
+    { name: "🛡️ Keamanan", value: "Tersedia Rekber Resmi Guild", inline: true },
+    {
+      name: "🛒 Buka Lapak di Website",
+      value: `[Klik di sini untuk melihat rincian & kontak lapak](${listingUrl})`,
+      inline: false,
+    },
+  ];
+
+  const embed: DiscordEmbed = {
+    title: `🛒 LAPAK BARU DI SERVER SHOP: ${data.title}`,
+    description: `Member **${seller}** baru saja membuka listing **${data.type}** untuk game **${data.game}** seharga **${formattedPrice}**!`,
+    url: listingUrl,
+    color: data.type === "WTS" ? 0x10B981 : data.type === "WTB" ? 0x3B82F6 : 0x8B5CF6,
+    fields,
+    footer: {
+      text: "LogHorizon Gamer Marketplace • Server Shop",
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  if (data.imageUrl) {
+    embed.image = { url: data.imageUrl };
+  }
+
+  await sendDiscordChannelMessage("shop", {
+    content: `🛒 **LAPAK BARU DI MARKETPLACE GUILD!** Silakan cek listing terbaru di #🛒・server-shop:`,
+    embeds: [embed],
+  });
+}
+
+/**
  * Legacy compatibility helper for simple channel/title notices.
  * Intelligently routes to the correct Discord channel based on topic or channel name parameter!
  */
