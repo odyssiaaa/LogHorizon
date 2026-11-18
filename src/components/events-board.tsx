@@ -143,6 +143,35 @@ export function EventsBoard() {
   const [notice, setNotice] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [search, setSearch] = useState("");
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
+
+  // Update currentTime periodically for live cooldown countdown
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Hitung jumlah party aktif milik user dan sisa cooldown 10 menit
+  const isOwner = session?.user?.username?.toLowerCase() === ".odyssia" || session?.user?.username?.toLowerCase() === "odyssia";
+  const myActiveParties = lfgPosts.filter(
+    (p) => p.isOwner && p.expiresAt && new Date(p.expiresAt).getTime() > currentTime
+  );
+  const myActiveCount = myActiveParties.length;
+  const isQuotaFull = myActiveCount >= 3;
+
+  // Cek party terakhir milik user untuk hitung mundur cooldown
+  const myLatestParty = lfgPosts
+    .filter((p) => p.isOwner && p.createdAt)
+    .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())[0];
+
+  const cooldownRemainingSeconds = (() => {
+    if (isOwner || !myLatestParty || !myLatestParty.createdAt) return 0;
+    const diffMs = currentTime - new Date(myLatestParty.createdAt).getTime();
+    const cooldownMs = 10 * 60 * 1000;
+    return diffMs < cooldownMs ? Math.ceil((cooldownMs - diffMs) / 1000) : 0;
+  })();
+
+  const isCooldownActive = cooldownRemainingSeconds > 0;
 
   // Sync tab with URL query parameter
   useEffect(() => {
@@ -1455,9 +1484,20 @@ export function EventsBoard() {
           {showLfgForm && (
             <form className="mb-6 p-4 sm:p-5 rounded-none border border-purple-500/30 bg-purple-950/10 space-y-4 shadow-lg animate-in fade-in duration-200" onSubmit={createLfg}>
               <div className="flex items-center justify-between pb-2 border-b border-purple-500/20">
-                <span className="text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider">
-                  AJAKAN MABAR CEPAT
-                </span>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs font-bold text-[#9D4EDD] dark:text-[#C77DFF] uppercase tracking-wider">
+                    AJAKAN MABAR CEPAT
+                  </span>
+                  {session?.user && (
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
+                      isQuotaFull
+                        ? "bg-rose-500/20 text-rose-400 border-rose-500/40"
+                        : "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                    }`}>
+                      Kuota Party Aktif Kamu: {myActiveCount} / 3
+                    </span>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => setShowLfgForm(false)}
@@ -1467,6 +1507,26 @@ export function EventsBoard() {
                   <X size={16} />
                 </button>
               </div>
+
+              {/* Banner Peringatan Kuota Penuh atau Cooldown */}
+              {isQuotaFull && (
+                <div className="p-3 rounded-none bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-mono">
+                  ⚠️ <strong>Batas Tercapai (3/3):</strong> Kamu sudah memiliki 3 ajakan mabar aktif. Hapus salah satu party lamamu di bawah atau tunggu hingga sesi selesai sebelum membuat yang baru.
+                </div>
+              )}
+
+              {isCooldownActive && !isQuotaFull && (
+                <div className="p-3 rounded-none bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-center justify-between">
+                  <span>
+                    ⏳ <strong>Cooldown Anti-Spam:</strong> Tunggu{" "}
+                    <strong>
+                      {Math.floor(cooldownRemainingSeconds / 60)} menit{" "}
+                      {cooldownRemainingSeconds % 60} detik
+                    </strong>{" "}
+                    lagi sebelum membuat ajakan mabar baru.
+                  </span>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1552,8 +1612,25 @@ export function EventsBoard() {
               </div>
 
               <div className="flex justify-end pt-2">
-                <button type="submit" className="button button-primary text-xs font-bold">
-                  <span>Publikasikan Ajakan Mabar</span>
+                <button
+                  type="submit"
+                  disabled={isQuotaFull || isCooldownActive}
+                  className={`button text-xs font-bold ${
+                    isQuotaFull || isCooldownActive
+                      ? "bg-slate-300 dark:bg-[#211438] text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 cursor-not-allowed opacity-60"
+                      : "button-primary"
+                  }`}
+                >
+                  {isQuotaFull ? (
+                    <span>Batas Tercapai (Maksimal 3 Party)</span>
+                  ) : isCooldownActive ? (
+                    <span>
+                      Tunggu {Math.floor(cooldownRemainingSeconds / 60)}m{" "}
+                      {cooldownRemainingSeconds % 60}s
+                    </span>
+                  ) : (
+                    <span>Publikasikan Ajakan Mabar</span>
+                  )}
                 </button>
               </div>
             </form>

@@ -704,6 +704,57 @@ async function executeAiChatTool(
 
   // 3. Member Tool: createUserLfgParty
   if (name === "createUserLfgParty") {
+    const now = new Date();
+    const isOwner = user.username?.toLowerCase() === ".odyssia" || user.username?.toLowerCase() === "odyssia";
+
+    // Validasi 1: Batas Maksimal 3 Party Aktif per User
+    const activePartiesCount = await prisma.lfgPost.count({
+      where: {
+        authorId: user.id,
+        expiresAt: { gt: now },
+      },
+    });
+
+    if (activePartiesCount >= 3) {
+      return {
+        reply: "Waduh petualang, batas maksimal tercapai! Kamu sudah memiliki 3 ajakan mabar aktif di website. Silakan hapus salah satu party lamamu di halaman [Party Mabar](/events?view=mabar) atau tunggu hingga sesi selesai sebelum membuat yang baru.",
+        action: {
+          type: "navigate",
+          url: "/events?view=mabar",
+          label: "Buka Party Mabar ↗",
+          details: "Kuota party aktif maksimal 3/3",
+        },
+      };
+    }
+
+    // Validasi 2: Cooldown 10 Menit Anti-Spam (Kecuali Owner .odyssia)
+    if (!isOwner) {
+      const latestPost = await prisma.lfgPost.findFirst({
+        where: { authorId: user.id },
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true },
+      });
+
+      if (latestPost) {
+        const diffMs = now.getTime() - new Date(latestPost.createdAt).getTime();
+        const cooldownMs = 10 * 60 * 1000; // 10 menit
+        if (diffMs < cooldownMs) {
+          const remainingMs = cooldownMs - diffMs;
+          const remMin = Math.floor(remainingMs / 60000);
+          const remSec = Math.floor((remainingMs % 60000) / 1000);
+          return {
+            reply: `Mohon bersabar sejenak petualang! Tunggu ${remMin} menit ${remSec} detik lagi sebelum membuat ajakan mabar berikutnya untuk mencegah spam di guild. Kamu bisa mengecek party aktif lainnya di [Halaman Party Mabar](/events?view=mabar).`,
+            action: {
+              type: "navigate",
+              url: "/events?view=mabar",
+              label: "Cek Party Mabar Lain ↗",
+              details: `Cooldown aktif: ${remMin}m ${remSec}s`,
+            },
+          };
+        }
+      }
+    }
+
     const rawGame = String(args.game || "Mobile Legends").trim();
     const rawDesc = String(args.description || "Ayo mabar bareng petualang LogHorizon!").trim();
     const game = sanitizePlainText(rawGame);

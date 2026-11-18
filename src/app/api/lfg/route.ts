@@ -70,6 +70,47 @@ export async function POST(request: Request) {
   const user = await activeUser();
   if (!user) return jsonError("Login diperlukan untuk membuat party.", 401);
 
+  const now = new Date();
+  const isOwner = user.username?.toLowerCase() === ".odyssia" || user.username?.toLowerCase() === "odyssia";
+
+  // 1. Validasi Batas Maksimal 3 Party Aktif per User
+  const activePartiesCount = await prisma.lfgPost.count({
+    where: {
+      authorId: user.id,
+      expiresAt: { gt: now },
+    },
+  });
+
+  if (activePartiesCount >= 3) {
+    return jsonError(
+      "Batas tercapai: Kamu sudah memiliki 3 ajakan mabar aktif. Hapus salah satu party lama atau tunggu hingga selesai sebelum membuat yang baru.",
+      400
+    );
+  }
+
+  // 2. Validasi Cooldown 10 Menit Anti-Spam (Kecuali Owner .odyssia)
+  if (!isOwner) {
+    const latestPost = await prisma.lfgPost.findFirst({
+      where: { authorId: user.id },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    });
+
+    if (latestPost) {
+      const diffMs = now.getTime() - new Date(latestPost.createdAt).getTime();
+      const cooldownMs = 10 * 60 * 1000; // 10 menit
+      if (diffMs < cooldownMs) {
+        const remainingMs = cooldownMs - diffMs;
+        const remMin = Math.floor(remainingMs / 60000);
+        const remSec = Math.floor((remainingMs % 60000) / 1000);
+        return jsonError(
+          `Tunggu ${remMin} menit ${remSec} detik lagi sebelum membuat ajakan mabar berikutnya untuk mencegah spam.`,
+          400
+        );
+      }
+    }
+  }
+
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
   const rawGame = typeof data.game === "string" ? data.game.trim() : "";
