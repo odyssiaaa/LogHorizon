@@ -1,7 +1,7 @@
 import { TournamentStatus, Prisma } from "@prisma/client";
 import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { generateTemplateBracket, TournamentTeam, TournamentMatch, DEFAULT_TOURNAMENT_RULES, evaluateAutoLiveMatches, checkAllFinalsFinished } from "@/lib/tournament";
+import { generateTemplateBracket, TournamentTeam, TournamentMatch, DEFAULT_TOURNAMENT_RULES, evaluateAutoLiveMatches, checkAllFinalsFinished, extractTournamentPodium } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
 
 export async function GET() {
@@ -52,6 +52,9 @@ export async function GET() {
         shouldPersist = true;
       }
 
+      const isCompletedNow = currentStatus === TournamentStatus.COMPLETED;
+      const completedAtDate = isCompletedNow ? (tournament.completedAt || new Date()) : tournament.completedAt;
+
       if (shouldPersist) {
         void prisma.tournament
           .update({
@@ -59,9 +62,50 @@ export async function GET() {
             data: {
               status: currentStatus,
               matches: matches as unknown as Prisma.InputJsonValue,
+              ...(isCompletedNow && !tournament.completedAt ? { completedAt: completedAtDate } : {}),
             },
           })
           .catch((err) => console.error("[api/tournaments] Sync error:", err));
+      }
+
+      // Auto-sync completed tournament into HallOfWinner
+      if (isCompletedNow) {
+        const podium = extractTournamentPodium({
+          matches,
+          teams: tournament.teams,
+          participants: tournament.participants,
+        });
+        if (podium && podium.championTeam) {
+          void prisma.hallOfWinner
+            .upsert({
+              where: { tournamentId: tournament.id },
+              create: {
+                tournamentId: tournament.id,
+                tournamentTitle: tournament.title,
+                game: tournament.game,
+                eventDate: tournament.eventDate,
+                prizePool: tournament.prizePool,
+                championTeam: podium.championTeam,
+                championRoster: (podium.championRoster || []) as unknown as Prisma.InputJsonValue,
+                runnerUpTeam: podium.runnerUpTeam || null,
+                runnerUpRoster: (podium.runnerUpRoster || []) as unknown as Prisma.InputJsonValue,
+                thirdPlaceTeam: podium.thirdPlaceTeam || null,
+                thirdPlaceRoster: (podium.thirdPlaceRoster || []) as unknown as Prisma.InputJsonValue,
+              },
+              update: {
+                tournamentTitle: tournament.title,
+                game: tournament.game,
+                prizePool: tournament.prizePool,
+                championTeam: podium.championTeam,
+                championRoster: (podium.championRoster || []) as unknown as Prisma.InputJsonValue,
+                runnerUpTeam: podium.runnerUpTeam || null,
+                runnerUpRoster: (podium.runnerUpRoster || []) as unknown as Prisma.InputJsonValue,
+                thirdPlaceTeam: podium.thirdPlaceTeam || null,
+                thirdPlaceRoster: (podium.thirdPlaceRoster || []) as unknown as Prisma.InputJsonValue,
+              },
+            })
+            .catch((err) => console.error("[api/tournaments] HallOfWinner sync error:", err));
+        }
       }
 
       const rawTeams = (tournament.teams as unknown as TournamentTeam[]) || [];
@@ -75,6 +119,7 @@ export async function GET() {
 
       return {
         ...tournament,
+        completedAt: completedAtDate ? completedAtDate.toISOString() : null,
         status: currentStatus,
         rules: tournament.rules || DEFAULT_TOURNAMENT_RULES,
         mainPlayersCount: tournament.mainPlayersCount ?? 5,

@@ -129,6 +129,7 @@ model Tournament {
   teams            Json?            @default("[]")
   matches          Json?            @default("[]")
   createdAt        DateTime         @default(now())
+  completedAt      DateTime?
   participants     Participant[]
   matchMessages    MatchMessage[]
 

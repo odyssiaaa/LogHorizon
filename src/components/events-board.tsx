@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { readApiResponse } from "@/lib/api-response";
-import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, DEFAULT_TOURNAMENT_RULES, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso, formatWibDateTime, formatLiveCountdown } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, DEFAULT_TOURNAMENT_RULES, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso, formatWibDateTime, formatLiveCountdown, extractTournamentPodium } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
@@ -89,6 +89,7 @@ type Tournament = {
   isFreeEntry?: boolean;
   rules?: string | null;
   eventDate: string;
+  completedAt?: string | null;
   status: string;
   teams?: TournamentTeam[];
   matches?: TournamentMatch[];
@@ -184,6 +185,7 @@ export function EventsBoard() {
   const viewParam = searchParams.get("view");
 
   const [activeTab, setActiveTab] = useState<"all" | "mabar" | "turnamen">("all");
+  const [tournamentSubTab, setTournamentSubTab] = useState<"active" | "history">("active");
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [lfgPosts, setLfgPosts] = useState<LfgPost[]>([]);
   const [error, setError] = useState("");
@@ -1234,6 +1236,15 @@ export function EventsBoard() {
     ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch))
   );
 
+  const activeTournaments = visibleTournaments.filter((t) => t.status !== "COMPLETED");
+  const historyTournaments = visibleTournaments
+    .filter((t) => t.status === "COMPLETED")
+    .sort((a, b) => {
+      const timeA = new Date(a.completedAt || a.eventDate).getTime();
+      const timeB = new Date(b.completedAt || b.eventDate).getTime();
+      return timeB - timeA;
+    });
+
   const visibleLfgPosts = lfgPosts.filter((post) => {
     const matchesSearch = [
       post.game,
@@ -1378,78 +1389,107 @@ export function EventsBoard() {
             </div>
           </div>
 
+          {/* SUB-TABS TURNAMEN: AKTIF VS HISTORY */}
+          <div className="flex items-center gap-2 mb-6 border-b border-slate-200 dark:border-[#2E1E45] pb-3 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setTournamentSubTab("active")}
+              className={`px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 border ${
+                tournamentSubTab === "active"
+                  ? "bg-[#7C3AED] text-white border-[#7C3AED] shadow-sm"
+                  : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED]/50"
+              }`}
+            >
+              <Flame size={14} className={tournamentSubTab === "active" ? "text-amber-300" : "text-amber-500"} />
+              <span>Turnamen Aktif ({activeTournaments.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTournamentSubTab("history")}
+              className={`px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 border ${
+                tournamentSubTab === "history"
+                  ? "bg-[#7C3AED] text-white border-[#7C3AED] shadow-sm"
+                  : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED]/50"
+              }`}
+            >
+              <Trophy size={14} className={tournamentSubTab === "history" ? "text-amber-300" : "text-amber-500"} />
+              <span>📜 History Turnamen ({historyTournaments.length})</span>
+            </button>
+          </div>
+
           {/* LIST TURNAMEN: GRID KARTU RINGKAS */}
           <div>
-            {visibleTournaments.length === 0 ? (
-              <p className="empty-state">
-                {search ? "Tidak ada turnamen yang cocok dengan kata kunci pencarian." : "Belum ada turnamen resmi yang dijadwalkan."}
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                {visibleTournaments.map((tournament) => {
-                  const registeredTeamsCount = tournament.participants?.length || tournament.teams?.length || 0;
-                  const isRegistrationOpen = tournament.status === "OPEN" || tournament.status === "REGISTRATION";
-                  const eventDateStr = tournament.eventDate
-                    ? new Date(tournament.eventDate).toLocaleString("id-ID", {
-                        day: "numeric",
-                        month: "numeric",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        timeZone: "Asia/Jakarta",
-                      }) + " WIB"
-                    : "Jadwal Segera Diumumkan";
+            {tournamentSubTab === "active" ? (
+              activeTournaments.length === 0 ? (
+                <p className="empty-state">
+                  {search ? "Tidak ada turnamen aktif yang cocok dengan kata kunci pencarian." : "Belum ada turnamen aktif yang sedang berlangsung atau membuka pendaftaran."}
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                  {activeTournaments.map((tournament) => {
+                    const registeredTeamsCount = tournament.participants?.length || tournament.teams?.length || 0;
+                    const isRegistrationOpen = tournament.status === "OPEN" || tournament.status === "REGISTRATION";
+                    const eventDateStr = tournament.eventDate
+                      ? new Date(tournament.eventDate).toLocaleString("id-ID", {
+                          day: "numeric",
+                          month: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          timeZone: "Asia/Jakarta",
+                        }) + " WIB"
+                      : "Jadwal Segera Diumumkan";
 
-                  return (
-                    <article
-                      key={tournament.id}
-                      className="p-5 sm:p-6 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-lg hover:border-[#7C3AED] transition-all flex flex-col justify-between relative group"
-                    >
-                      {/* Top Badges */}
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap mb-3">
-                          <span className="px-2.5 py-0.5 rounded-none text-[10px] font-mono font-extrabold uppercase bg-[#7C3AED] text-white">
-                            {tournament.game}
-                          </span>
-                          <TournamentCardCountdownBadge eventDate={tournament.eventDate} status={tournament.status} />
-                          {tournament.isFreeEntry || !tournament.entryFee ? (
-                            <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-extrabold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 uppercase">
-                              FREE ENTRY
+                    return (
+                      <article
+                        key={tournament.id}
+                        className="p-5 sm:p-6 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-lg hover:border-[#7C3AED] transition-all flex flex-col justify-between relative group"
+                      >
+                        {/* Top Badges */}
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap mb-3">
+                            <span className="px-2.5 py-0.5 rounded-none text-[10px] font-mono font-extrabold uppercase bg-[#7C3AED] text-white">
+                              {tournament.game}
                             </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-extrabold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 uppercase">
-                              BIAYA REGIST: RP {tournament.entryFee.toLocaleString("id-ID")}
-                            </span>
-                          )}
-                        </div>
+                            <TournamentCardCountdownBadge eventDate={tournament.eventDate} status={tournament.status} />
+                            {tournament.isFreeEntry || !tournament.entryFee ? (
+                              <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-extrabold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 uppercase">
+                                FREE ENTRY
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-extrabold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 uppercase">
+                                BIAYA REGIST: RP {tournament.entryFee.toLocaleString("id-ID")}
+                              </span>
+                            )}
+                          </div>
 
-                        {/* Judul Turnamen */}
-                        <Link
-                          href={`/events/turnamen/${tournament.id}`}
-                          className="text-lg sm:text-xl font-display font-extrabold text-slate-900 dark:text-white hover:text-[#7C3AED] dark:hover:text-[#A78BFA] transition-colors uppercase block leading-snug tracking-tight"
-                        >
-                          {tournament.title || `${tournament.game} Community Tournament`}
-                        </Link>
+                          {/* Judul Turnamen */}
+                          <Link
+                            href={`/events/turnamen/${tournament.id}`}
+                            className="text-lg sm:text-xl font-display font-extrabold text-slate-900 dark:text-white hover:text-[#7C3AED] dark:hover:text-[#A78BFA] transition-colors uppercase block leading-snug tracking-tight"
+                          >
+                            {tournament.title || `${tournament.game} Community Tournament`}
+                          </Link>
 
-                        {/* Info Ringkas 3 Baris */}
-                        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-[#211438] space-y-2 text-xs font-mono text-slate-600 dark:text-[#A78BFA]">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-slate-400 dark:text-slate-500">📅 Jadwal Mulai:</span>
-                            <span className="font-semibold text-slate-800 dark:text-slate-200">{eventDateStr}</span>
-                          </div>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-slate-400 dark:text-slate-500">🎁 Total Hadiah:</span>
-                            <span className="font-bold text-amber-600 dark:text-amber-400 truncate max-w-[220px]">
-                              {tournament.prizePool || "Prizepool Resmi Guild"}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-slate-400 dark:text-slate-500">👥 Kuota Tim:</span>
-                            <span className="font-semibold text-slate-800 dark:text-slate-200">
-                              <strong className="text-emerald-600 dark:text-emerald-400">{registeredTeamsCount}</strong> / {tournament.maxSlots} Tim Terdaftar
-                            </span>
-                          </div>
-                          {tournament.status !== "COMPLETED" && (
+                          {/* Info Ringkas 3 Baris */}
+                          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-[#211438] space-y-2 text-xs font-mono text-slate-600 dark:text-[#A78BFA]">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-slate-400 dark:text-slate-500">📅 Jadwal Mulai:</span>
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">{eventDateStr}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-slate-400 dark:text-slate-500">🎁 Total Hadiah:</span>
+                              <span className="font-bold text-amber-600 dark:text-amber-400 truncate max-w-[220px]">
+                                {tournament.prizePool || "Prizepool Resmi Guild"}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-slate-400 dark:text-slate-500">👥 Kuota Tim:</span>
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                <strong className="text-emerald-600 dark:text-emerald-400">{registeredTeamsCount}</strong> / {tournament.maxSlots} Tim Terdaftar
+                              </span>
+                            </div>
                             <div className="flex items-center justify-between gap-2 pt-1 border-t border-dashed border-slate-200 dark:border-[#211438]">
                               <span className="text-slate-400 dark:text-slate-500 flex items-center gap-1">
                                 <Clock size={12} className="text-[#7C3AED]" />
@@ -1457,31 +1497,210 @@ export function EventsBoard() {
                               </span>
                               <TournamentCardCountdownBadge eventDate={tournament.eventDate} status={tournament.status} />
                             </div>
-                          )}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Tombol Aksi Utama */}
-                      <div className="mt-6 pt-4 border-t border-slate-200 dark:border-[#2E1E45] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-                        <Link
-                          href={`/events/turnamen/${tournament.id}`}
-                          className="h-10 px-4 whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center justify-center gap-2 transition-all shadow-sm"
-                        >
-                          <Trophy size={14} />
-                          <span>Buka Bagan &amp; Detail Turnamen</span>
-                        </Link>
+                        {/* Tombol Aksi Utama */}
+                        <div className="mt-6 pt-4 border-t border-slate-200 dark:border-[#2E1E45] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                          <Link
+                            href={`/events/turnamen/${tournament.id}`}
+                            className="h-10 px-4 whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center justify-center gap-2 transition-all shadow-sm"
+                          >
+                            <Trophy size={14} />
+                            <span>Buka Bagan &amp; Detail Turnamen</span>
+                          </Link>
 
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                          {isRegistrationOpen && (
-                            <button
-                              type="button"
-                              onClick={() => handlePromptRulesAndRegister(tournament)}
-                              className="h-10 px-4 whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-600 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                            {isRegistrationOpen && (
+                              <button
+                                type="button"
+                                onClick={() => handlePromptRulesAndRegister(tournament)}
+                                className="h-10 px-4 whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-600 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                              >
+                                <Plus size={14} />
+                                <span>Daftar Tim</span>
+                              </button>
+                            )}
+
+                            {isAdminOrMod && (
+                              <StaffCardModerationMenu
+                                label="⚙️ Opsi Staf"
+                                buttonClassName="h-10 px-3.5 w-full sm:w-auto justify-center rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-[#7C3AED]/40 bg-purple-500/15 hover:bg-[#7C3AED]/25 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-sm shrink-0 whitespace-nowrap"
+                                actions={[
+                                  {
+                                    label: "⚙️ Kelola Tim, Jadwal & Skor",
+                                    icon: <Settings size={13} />,
+                                    onClick: () => { window.location.href = `/events/turnamen/${tournament.id}#bracket-section`; },
+                                  },
+                                  {
+                                    label: "✏️ Edit Info & Waktu Mulai",
+                                    icon: <Edit3 size={13} />,
+                                    onClick: () => setEditingTournament(tournament),
+                                  },
+                                  {
+                                    label: "🎲 Gacha / Acak Bagan",
+                                    icon: <Dices size={13} />,
+                                    disabled: tournament.status === "COMPLETED",
+                                    onClick: () => handleGachaBracket(tournament),
+                                  },
+                                  {
+                                    label: "💾 Unduh Laporan Excel (.CSV)",
+                                    icon: <FileSpreadsheet size={13} />,
+                                    onClick: () => exportTournamentToCsv(tournament),
+                                  },
+                                  {
+                                    label: "📦 Unduh Backup (.JSON)",
+                                    icon: <FileCode size={13} />,
+                                    onClick: () => exportTournamentToJson(tournament),
+                                  },
+                                  {
+                                    label: "🗑️ Hapus Turnamen",
+                                    icon: <Trash2 size={13} />,
+                                    danger: true,
+                                    onClick: () => handleDeleteTournament(tournament.id, tournament.title),
+                                  },
+                                ]}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              /* HISTORY TURNAMEN (ARSIP SELESAI) */
+              historyTournaments.length === 0 ? (
+                <p className="empty-state">
+                  {search ? "Tidak ada history turnamen yang cocok dengan kata kunci pencarian." : "Belum ada turnamen yang selesai diarsipkan."}
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                  {historyTournaments.map((tournament) => {
+                    const registeredTeamsCount = tournament.participants?.length || tournament.teams?.length || 0;
+                    const finishDateStr = formatWibDateTime(tournament.completedAt || tournament.eventDate);
+                    const podium = extractTournamentPodium(tournament);
+
+                    return (
+                      <article
+                        key={tournament.id}
+                        className="p-5 sm:p-6 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-lg hover:border-amber-500/50 transition-all flex flex-col justify-between relative group"
+                      >
+                        {/* Top Badges */}
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap mb-3">
+                            <span className="px-2.5 py-0.5 rounded-none text-[10px] font-mono font-extrabold uppercase bg-[#7C3AED] text-white">
+                              {tournament.game}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-extrabold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 uppercase flex items-center gap-1">
+                              <span>●</span>
+                              <span>SELESAI (COMPLETED)</span>
+                            </span>
+                            {tournament.isFreeEntry || !tournament.entryFee ? (
+                              <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-extrabold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20 uppercase">
+                                FREE ENTRY
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-extrabold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 uppercase">
+                                REGIST: RP {tournament.entryFee.toLocaleString("id-ID")}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Judul Turnamen */}
+                          <Link
+                            href={`/events/turnamen/${tournament.id}`}
+                            className="text-lg sm:text-xl font-display font-extrabold text-slate-900 dark:text-white hover:text-amber-500 transition-colors uppercase block leading-snug tracking-tight"
+                          >
+                            {tournament.title || `${tournament.game} Community Tournament`}
+                          </Link>
+
+                          {/* Info Ringkas 3 Baris */}
+                          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-[#211438] space-y-2 text-xs font-mono text-slate-600 dark:text-[#A78BFA]">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-slate-400 dark:text-slate-500">🏁 Waktu Selesai:</span>
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">{finishDateStr}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-slate-400 dark:text-slate-500">🎁 Total Hadiah:</span>
+                              <span className="font-bold text-amber-600 dark:text-amber-400 truncate max-w-[220px]">
+                                {tournament.prizePool || "Prizepool Resmi Guild"}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-slate-400 dark:text-slate-500">👥 Total Peserta:</span>
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                <strong className="text-slate-900 dark:text-white">{registeredTeamsCount}</strong> / {tournament.maxSlots} Tim Berpartisipasi
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* KOTAK RINGKASAN PODIUM JUARA (1, 2, 3) */}
+                          <div className="mt-4 p-3.5 rounded-none bg-slate-50 dark:bg-[#1A0E2E]/80 border border-amber-500/25 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="font-mono text-[11px] font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1.5">
+                                <Trophy size={13} className="text-amber-400" />
+                                <span>Podium Kejuaraan</span>
+                              </p>
+                              <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">Arsip Resmi</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs font-mono">
+                              <div className="p-2.5 rounded-none bg-amber-500/10 border border-amber-500/30">
+                                <span className="text-[10px] font-bold text-amber-500 block mb-0.5">🥇 JUARA 1 (CHAMPION)</span>
+                                <span className="font-extrabold text-slate-900 dark:text-white truncate block text-sm">
+                                  {podium?.championTeam || "TBD"}
+                                </span>
+                                {podium?.championRoster && podium.championRoster.length > 0 && (
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5 truncate">
+                                    {podium.championRoster.length} Pemain Roster
+                                  </span>
+                                )}
+                              </div>
+                              <div className="p-2.5 rounded-none bg-slate-500/10 border border-slate-400/30">
+                                <span className="text-[10px] font-bold text-slate-400 block mb-0.5">🥈 JUARA 2 (RUNNER-UP)</span>
+                                <span className="font-bold text-slate-800 dark:text-slate-200 truncate block text-sm">
+                                  {podium?.runnerUpTeam || "TBD"}
+                                </span>
+                                {podium?.runnerUpRoster && podium.runnerUpRoster.length > 0 && (
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5 truncate">
+                                    {podium.runnerUpRoster.length} Pemain Roster
+                                  </span>
+                                )}
+                              </div>
+                              <div className="p-2.5 rounded-none bg-amber-700/10 border border-amber-700/30">
+                                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-500 block mb-0.5">🥉 JUARA 3</span>
+                                <span className="font-bold text-slate-800 dark:text-slate-200 truncate block text-sm">
+                                  {podium?.thirdPlaceTeam || "TBD"}
+                                </span>
+                                {podium?.thirdPlaceRoster && podium.thirdPlaceRoster.length > 0 && (
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5 truncate">
+                                    {podium.thirdPlaceRoster.length} Pemain Roster
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Tombol Aksi History */}
+                        <div className="mt-6 pt-4 border-t border-slate-200 dark:border-[#2E1E45] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                            <Link
+                              href={`/events/turnamen/${tournament.id}`}
+                              className="h-10 px-4 whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center justify-center gap-2 transition-all shadow-sm"
                             >
-                              <Plus size={14} />
-                              <span>Daftar Tim</span>
-                            </button>
-                          )}
+                              <Search size={14} />
+                              <span>Lihat Bagan Akhir &amp; Roster Juara</span>
+                            </Link>
+                            <Link
+                              href="/hall-of-winners"
+                              className="h-10 px-4 whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 border border-amber-500/30 inline-flex items-center justify-center gap-2 transition-all shadow-sm"
+                            >
+                              <Award size={14} />
+                              <span>Buka Hall of Winners</span>
+                            </Link>
+                          </div>
 
                           {isAdminOrMod && (
                             <StaffCardModerationMenu
@@ -1489,20 +1708,14 @@ export function EventsBoard() {
                               buttonClassName="h-10 px-3.5 w-full sm:w-auto justify-center rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-[#7C3AED]/40 bg-purple-500/15 hover:bg-[#7C3AED]/25 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-sm shrink-0 whitespace-nowrap"
                               actions={[
                                 {
-                                  label: "⚙️ Kelola Tim, Jadwal & Skor",
+                                  label: "⚙️ Kelola Tim & Bagan",
                                   icon: <Settings size={13} />,
                                   onClick: () => { window.location.href = `/events/turnamen/${tournament.id}#bracket-section`; },
                                 },
                                 {
-                                  label: "✏️ Edit Info & Waktu Mulai",
+                                  label: "✏️ Edit Info Turnamen",
                                   icon: <Edit3 size={13} />,
                                   onClick: () => setEditingTournament(tournament),
-                                },
-                                {
-                                  label: "🎲 Gacha / Acak Bagan",
-                                  icon: <Dices size={13} />,
-                                  disabled: tournament.status === "COMPLETED",
-                                  onClick: () => handleGachaBracket(tournament),
                                 },
                                 {
                                   label: "💾 Unduh Laporan Excel (.CSV)",
@@ -1524,11 +1737,11 @@ export function EventsBoard() {
                             />
                           )}
                         </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )
             )}
           </div>
         </section>

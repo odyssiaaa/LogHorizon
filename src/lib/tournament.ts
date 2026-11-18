@@ -577,13 +577,79 @@ export function checkAllFinalsFinished(matches: TournamentMatch[]): {
 
   const championName = gfMatch.winner;
   const runnerUpName = gfMatch.teamA.name === championName ? gfMatch.teamB.name : gfMatch.teamA.name;
-  const thirdPlaceName = bronzeMatch?.winner || null;
+  let thirdPlaceName = bronzeMatch?.winner || null;
+
+  // If no Bronze Match exists or not defined, pick best semifinalist loser
+  if (!thirdPlaceName && maxRound > 1) {
+    const semiRound = maxRound - 1;
+    const semiMatches = matches.filter((m) => m.round === semiRound && m.winner);
+    const semiLosers = semiMatches
+      .map((m) => {
+        const loser = m.winner === m.teamA?.name ? m.teamB?.name : m.teamA?.name;
+        const score = m.winner === m.teamA?.name ? m.teamB?.score : m.teamA?.score;
+        return { name: loser, score: score || 0 };
+      })
+      .filter((l) => l.name && l.name !== "TBD" && l.name !== "BYE");
+
+    if (semiLosers.length > 0) {
+      semiLosers.sort((a, b) => b.score - a.score);
+      thirdPlaceName = semiLosers[0].name;
+    }
+  }
 
   return {
     isFinished: true,
     championName,
     runnerUpName,
     thirdPlaceName,
+  };
+}
+
+export type TournamentPodium = {
+  championTeam: string;
+  runnerUpTeam?: string | null;
+  thirdPlaceTeam?: string | null;
+  championRoster?: TournamentRosterPlayer[];
+  runnerUpRoster?: TournamentRosterPlayer[];
+  thirdPlaceRoster?: TournamentRosterPlayer[];
+};
+
+export function extractTournamentPodium(
+  tournament: {
+    matches?: unknown;
+    teams?: unknown;
+    participants?: Array<{ teamName?: string; roster?: unknown }>;
+  }
+): TournamentPodium | null {
+  const matches = (tournament.matches as unknown as TournamentMatch[]) || [];
+  if (!matches || matches.length === 0) return null;
+
+  const finalsCheck = checkAllFinalsFinished(matches);
+  if (!finalsCheck.championName) return null;
+
+  const teams = (tournament.teams as unknown as TournamentTeam[]) || [];
+  const participants = tournament.participants || [];
+
+  function getRosterForTeam(name?: string | null): TournamentRosterPlayer[] {
+    if (!name || name === "TBD" || name === "BYE") return [];
+    const foundTeam = teams.find((t) => t.teamName?.toLowerCase() === name.toLowerCase());
+    if (foundTeam?.roster && Array.isArray(foundTeam.roster) && foundTeam.roster.length > 0) {
+      return foundTeam.roster;
+    }
+    const foundPart = participants.find((p) => p.teamName?.toLowerCase() === name.toLowerCase());
+    if (foundPart?.roster && Array.isArray(foundPart.roster)) {
+      return foundPart.roster as unknown as TournamentRosterPlayer[];
+    }
+    return [];
+  }
+
+  return {
+    championTeam: finalsCheck.championName,
+    runnerUpTeam: finalsCheck.runnerUpName || null,
+    thirdPlaceTeam: finalsCheck.thirdPlaceName || null,
+    championRoster: getRosterForTeam(finalsCheck.championName),
+    runnerUpRoster: getRosterForTeam(finalsCheck.runnerUpName),
+    thirdPlaceRoster: getRosterForTeam(finalsCheck.thirdPlaceName),
   };
 }
 

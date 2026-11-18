@@ -28,7 +28,7 @@ import {
   X,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
-import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso, formatWibDateTime } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso, formatWibDateTime, extractTournamentPodium } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { ShareButton } from "@/components/share-button";
 import { DualWingBracketView } from "@/components/events-board";
@@ -57,6 +57,7 @@ type TournamentData = {
   rules?: string | null;
   status: string;
   eventDate?: string | Date;
+  completedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   teams?: TournamentTeam[];
@@ -732,6 +733,8 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
       )
     : null;
 
+  const podium = extractTournamentPodium(tournament);
+
   const isRegistrationOpen = tournament.status === "OPEN" || tournament.status === "REGISTRATION";
   const shareUrl = `/events/turnamen/${tournament.id}`;
   const shareTitle = `🏆 ${tournament.title} - Turnamen LogHorizon`;
@@ -855,6 +858,127 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           </div>
         </div>
       </div>
+
+      {/* BANNER PODIUM KEJUARAAN (KHUSUS TURNAMEN SELESAI / COMPLETED) */}
+      {(tournament.status === "COMPLETED" || podium?.championTeam) && (
+        <div className="mb-8 p-6 sm:p-8 rounded-none border border-amber-500/40 bg-gradient-to-br from-amber-500/10 via-purple-950/30 to-[#130921] shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 transform translate-x-8 -translate-y-8 opacity-10 pointer-events-none">
+            <Trophy size={200} className="text-amber-400" />
+          </div>
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-amber-500/20">
+            <div>
+              <span className="font-mono text-xs font-extrabold uppercase tracking-widest text-amber-500 flex items-center gap-2 mb-1">
+                <Trophy size={16} className="text-amber-400" />
+                <span>OFFICIAL PODIUM // ARSIP KEJUARAAN RESMI</span>
+              </span>
+              <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">
+                Podium Pemenang Turnamen
+              </h2>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-mono mt-1">
+                Turnamen ini telah resmi selesai. Snapshot juara dan roster telah diabadikan di Hall of Winners.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link
+                href="/hall-of-winners"
+                className="px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-400 border border-amber-500/40 inline-flex items-center gap-2 transition"
+              >
+                <Medal size={14} />
+                <span>Buka Hall of Winners</span>
+              </Link>
+              {gfWinner && (
+                <button
+                  type="button"
+                  onClick={() => setShowCertificate(true)}
+                  className="px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider bg-amber-500 hover:bg-amber-400 text-black inline-flex items-center gap-2 transition cursor-pointer"
+                >
+                  <Trophy size={14} />
+                  <span>Unduh E-Sertifikat Juara 🖼️</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* 🥇 JUARA 1 */}
+            <div className="p-4 sm:p-5 rounded-none bg-amber-500/15 border-2 border-amber-500/50 relative flex flex-col justify-between">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="px-2 py-0.5 text-[10px] font-mono font-extrabold uppercase bg-amber-500 text-black">
+                  🥇 JUARA 1 (CHAMPION)
+                </span>
+                <Crown size={18} className="text-amber-400" />
+              </div>
+              <div>
+                <p className="font-display text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight truncate">
+                  {podium?.championTeam || "TBD"}
+                </p>
+                {podium?.championRoster && podium.championRoster.length > 0 && (
+                  <div className="mt-3 pt-2.5 border-t border-amber-500/30 space-y-1">
+                    <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-wider block">
+                      Roster Juara ({podium.championRoster.length} Pemain):
+                    </span>
+                    <p className="text-xs font-mono text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {podium.championRoster.map((p) => p.name).join(", ")}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 🥈 JUARA 2 */}
+            <div className="p-4 sm:p-5 rounded-none bg-slate-500/10 border border-slate-400/40 relative flex flex-col justify-between">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="px-2 py-0.5 text-[10px] font-mono font-extrabold uppercase bg-slate-400 text-black">
+                  🥈 JUARA 2 (RUNNER-UP)
+                </span>
+                <Medal size={18} className="text-slate-400" />
+              </div>
+              <div>
+                <p className="font-display text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight truncate">
+                  {podium?.runnerUpTeam || "TBD"}
+                </p>
+                {podium?.runnerUpRoster && podium.runnerUpRoster.length > 0 && (
+                  <div className="mt-3 pt-2.5 border-t border-slate-400/30 space-y-1">
+                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
+                      Roster Runner-Up ({podium.runnerUpRoster.length} Pemain):
+                    </span>
+                    <p className="text-xs font-mono text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {podium.runnerUpRoster.map((p) => p.name).join(", ")}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 🥉 JUARA 3 */}
+            <div className="p-4 sm:p-5 rounded-none bg-amber-700/10 border border-amber-700/40 relative flex flex-col justify-between">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="px-2 py-0.5 text-[10px] font-mono font-extrabold uppercase bg-amber-700 text-white">
+                  🥉 JUARA 3
+                </span>
+                <Medal size={18} className="text-amber-600" />
+              </div>
+              <div>
+                <p className="font-display text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight truncate">
+                  {podium?.thirdPlaceTeam || "TBD"}
+                </p>
+                {podium?.thirdPlaceRoster && podium.thirdPlaceRoster.length > 0 && (
+                  <div className="mt-3 pt-2.5 border-t border-amber-700/30 space-y-1">
+                    <span className="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block">
+                      Roster Juara 3 ({podium.thirdPlaceRoster.length} Pemain):
+                    </span>
+                    <p className="text-xs font-mono text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {podium.thirdPlaceRoster.map((p) => p.name).join(", ")}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PANEL BAR STAF (KHUSUS ADMIN & MODERATOR) */}
       {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && (

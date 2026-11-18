@@ -1,7 +1,7 @@
 import { Prisma, TournamentStatus } from "@prisma/client";
 import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { advanceMatchWinner, resetMatchResult, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES, updateMatchStatus, TournamentLossReason, evaluateAutoLiveMatches, checkAllFinalsFinished } from "@/lib/tournament";
+import { advanceMatchWinner, resetMatchResult, generateTemplateBracket, shuffleArray, TournamentMatch, TournamentRosterPlayer, TournamentTeam, DEFAULT_TOURNAMENT_RULES, updateMatchStatus, TournamentLossReason, evaluateAutoLiveMatches, checkAllFinalsFinished, extractTournamentPodium } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
 import { notifyTournamentChampion, notifyTournamentMatchLive } from "@/lib/discord-webhook";
 
@@ -69,6 +69,9 @@ export async function GET(_request: Request, { params }: RouteContext) {
     shouldPersist = true;
   }
 
+  const isCompletedNow = currentStatus === TournamentStatus.COMPLETED;
+  const completedAtDate = isCompletedNow ? (tournament.completedAt || new Date()) : tournament.completedAt;
+
   if (shouldPersist) {
     void prisma.tournament
       .update({
@@ -76,15 +79,57 @@ export async function GET(_request: Request, { params }: RouteContext) {
         data: {
           status: currentStatus,
           matches: matches as unknown as Prisma.InputJsonValue,
+          ...(isCompletedNow && !tournament.completedAt ? { completedAt: completedAtDate } : {}),
         },
       })
       .catch((err) => console.error("[api/tournaments/[id]] Failed to persist auto updates:", err));
+  }
+
+  // Auto-sync to HallOfWinner if tournament is completed
+  if (isCompletedNow) {
+    const podium = extractTournamentPodium({
+      matches,
+      teams: tournament.teams,
+      participants: tournament.participants,
+    });
+    if (podium && podium.championTeam) {
+      void prisma.hallOfWinner
+        .upsert({
+          where: { tournamentId: id },
+          create: {
+            tournamentId: id,
+            tournamentTitle: tournament.title,
+            game: tournament.game,
+            eventDate: tournament.eventDate,
+            prizePool: tournament.prizePool,
+            championTeam: podium.championTeam,
+            championRoster: (podium.championRoster || []) as unknown as Prisma.InputJsonValue,
+            runnerUpTeam: podium.runnerUpTeam || null,
+            runnerUpRoster: (podium.runnerUpRoster || []) as unknown as Prisma.InputJsonValue,
+            thirdPlaceTeam: podium.thirdPlaceTeam || null,
+            thirdPlaceRoster: (podium.thirdPlaceRoster || []) as unknown as Prisma.InputJsonValue,
+          },
+          update: {
+            tournamentTitle: tournament.title,
+            game: tournament.game,
+            prizePool: tournament.prizePool,
+            championTeam: podium.championTeam,
+            championRoster: (podium.championRoster || []) as unknown as Prisma.InputJsonValue,
+            runnerUpTeam: podium.runnerUpTeam || null,
+            runnerUpRoster: (podium.runnerUpRoster || []) as unknown as Prisma.InputJsonValue,
+            thirdPlaceTeam: podium.thirdPlaceTeam || null,
+            thirdPlaceRoster: (podium.thirdPlaceRoster || []) as unknown as Prisma.InputJsonValue,
+          },
+        })
+        .catch((err) => console.error("[api/tournaments/[id]] Failed to upsert hallOfWinner:", err));
+    }
   }
 
   return Response.json({
     success: true,
     tournament: {
       ...tournament,
+      completedAt: completedAtDate ? completedAtDate.toISOString() : null,
       matches,
       rules: tournament.rules || DEFAULT_TOURNAMENT_RULES,
       entryFee: tournament.entryFee ?? 0,
@@ -135,7 +180,16 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   // Wrap the entire bracket and tournament update in an atomic transaction to prevent race conditions
   return await prisma.$transaction(async (tx) => {
-    const liveTournament = await tx.tournament.findUnique({ where: { id } });
+    const liveTournament = await tx.tournament.findUnique({
+      where: { id },
+      include: {
+        participants: {
+          include: {
+            leader: { select: { id: true, username: true, discordId: true, name: true, image: true } },
+          },
+        },
+      },
+    });
     if (!liveTournament) return jsonError("Turnamen tidak ditemukan.", 404);
 
     let updatedMatches = (liveTournament.matches as unknown as TournamentMatch[]) || [];
@@ -387,37 +441,60 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         ...(nextMaxSlots !== liveTournament.maxSlots ? { maxSlots: nextMaxSlots } : {}),
         ...(nextFormat !== liveTournament.format ? { format: nextFormat } : {}),
         ...(nextStatus ? { status: nextStatus } : {}),
+        ...(nextStatus === TournamentStatus.COMPLETED && !liveTournament.completedAt
+          ? { completedAt: new Date() }
+          : {}),
         teams: updatedTeams as unknown as Prisma.InputJsonValue,
         matches: updatedMatches as unknown as Prisma.InputJsonValue,
       },
     });
 
-    if (nextStatus === TournamentStatus.COMPLETED && liveTournament.status !== TournamentStatus.COMPLETED) {
-      const gfMatch = updatedMatches.find(
-        (m) =>
-          m.matchId !== "BRONZE-01" &&
-          !m.roundName?.toLowerCase().includes("bronze") &&
-          !m.roundName?.toLowerCase().includes("juara 3") &&
-          (m.roundName?.toLowerCase().includes("grand final") ||
-            m.roundName?.toLowerCase() === "final" ||
-            m.round === Math.max(...updatedMatches.map((mx) => mx.round || 1)))
-      );
-      if (gfMatch && gfMatch.winner) {
-        const champ = gfMatch.winner;
-        const runnerUp = gfMatch.teamA.name === champ ? gfMatch.teamB.name : gfMatch.teamA.name;
-        const bronzeMatch = updatedMatches.find(
-          (m) =>
-            m.matchId === "BRONZE-01" ||
-            m.roundName?.toLowerCase().includes("juara 3") ||
-            m.roundName?.toLowerCase().includes("bronze")
-        );
-        const thirdPlace = bronzeMatch?.winner || null;
+    if (nextStatus === TournamentStatus.COMPLETED) {
+      const podium = extractTournamentPodium({
+        matches: updatedMatches,
+        teams: updatedTeams,
+        participants: liveTournament.participants,
+      });
+
+      if (podium && podium.championTeam) {
+        await tx.hallOfWinner
+          .upsert({
+            where: { tournamentId: id },
+            create: {
+              tournamentId: id,
+              tournamentTitle: updated.title,
+              game: updated.game,
+              eventDate: updated.eventDate,
+              prizePool: updated.prizePool,
+              championTeam: podium.championTeam,
+              championRoster: (podium.championRoster || []) as unknown as Prisma.InputJsonValue,
+              runnerUpTeam: podium.runnerUpTeam || null,
+              runnerUpRoster: (podium.runnerUpRoster || []) as unknown as Prisma.InputJsonValue,
+              thirdPlaceTeam: podium.thirdPlaceTeam || null,
+              thirdPlaceRoster: (podium.thirdPlaceRoster || []) as unknown as Prisma.InputJsonValue,
+            },
+            update: {
+              tournamentTitle: updated.title,
+              game: updated.game,
+              prizePool: updated.prizePool,
+              championTeam: podium.championTeam,
+              championRoster: (podium.championRoster || []) as unknown as Prisma.InputJsonValue,
+              runnerUpTeam: podium.runnerUpTeam || null,
+              runnerUpRoster: (podium.runnerUpRoster || []) as unknown as Prisma.InputJsonValue,
+              thirdPlaceTeam: podium.thirdPlaceTeam || null,
+              thirdPlaceRoster: (podium.thirdPlaceRoster || []) as unknown as Prisma.InputJsonValue,
+            },
+          })
+          .catch((e) => console.warn("[HallOfWinner] Upsert Error:", e));
+      }
+
+      if (liveTournament.status !== TournamentStatus.COMPLETED && podium && podium.championTeam) {
         notifyTournamentChampion({
           tournamentTitle: updated.title,
           game: updated.game,
-          championName: champ,
-          runnerUpName: runnerUp,
-          thirdPlaceName: thirdPlace,
+          championName: podium.championTeam,
+          runnerUpName: podium.runnerUpTeam || null,
+          thirdPlaceName: podium.thirdPlaceTeam || null,
           prizePool: updated.prizePool,
         }).catch((e) => console.warn("[Discord Webhook] Error:", e));
       }
