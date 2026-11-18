@@ -38,8 +38,10 @@ export function NotificationBell() {
       const res = await fetch("/api/notifications");
       if (res.ok) {
         const data = await res.json();
-        setNotifications(data.notifications ?? []);
-        setUnreadCount(data.unreadCount ?? 0);
+        const freshList = data.notifications ?? [];
+        const freshUnread = data.unreadCount ?? 0;
+        setNotifications((prev) => (JSON.stringify(prev) === JSON.stringify(freshList) ? prev : freshList));
+        setUnreadCount((prev) => (prev === freshUnread ? prev : freshUnread));
       }
     } catch {
       // ignore network errors

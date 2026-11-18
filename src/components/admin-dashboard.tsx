@@ -467,7 +467,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
       const res = await fetch("/api/tournaments");
       const list = await res.json();
       if (Array.isArray(list)) {
-        setTournamentsList(list);
+        setTournamentsList((prev) => (JSON.stringify(prev) === JSON.stringify(list) ? prev : list));
         if (!selectedTournamentId && list.length > 0) {
           setSelectedTournamentId(list[0].id);
         }
@@ -603,7 +603,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     fetch(`/api/admin/dashboard?${query}`)
       .then((response) => readApiResponse<DashboardData>(response, "Gagal memuat dashboard."))
       .then((result) => {
-        setData(result);
+        setData((prev) => (!prev || JSON.stringify(prev) !== JSON.stringify(result) ? result : prev));
       })
       .catch(() => {});
     fetchTournaments();

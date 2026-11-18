@@ -432,16 +432,27 @@ export function EventsBoard() {
         if (!res.ok) return;
         const fresh = await res.json();
         if (Array.isArray(fresh)) {
-          setTournaments(fresh);
+          setTournaments((prev) => (JSON.stringify(prev) === JSON.stringify(fresh) ? prev : fresh));
           setLastSyncTime(Date.now());
           setSyncSecondsAgo(0);
 
           if (managingTournament) {
             const current = fresh.find((t) => t.id === managingTournament.id);
             if (current) {
-              setManagingTournament((prev) => (prev ? { ...prev, ...current } : prev));
-              setManageMatches(current.matches || []);
-              setManageTeams(current.teams || []);
+              setManagingTournament((prev) => {
+                if (JSON.stringify(prev) === JSON.stringify(current)) return prev;
+                return prev ? { ...prev, ...current } : prev;
+              });
+              setManageMatches((prev) => {
+                const freshMatches = current.matches || [];
+                if (JSON.stringify(prev) === JSON.stringify(freshMatches)) return prev;
+                return freshMatches;
+              });
+              setManageTeams((prev) => {
+                const freshTeams = current.teams || [];
+                if (JSON.stringify(prev) === JSON.stringify(freshTeams)) return prev;
+                return freshTeams;
+              });
             }
           }
         }

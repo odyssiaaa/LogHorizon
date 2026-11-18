@@ -91,11 +91,16 @@ export function EscrowChatModal({
   const [sending, setSending] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const prevMsgCountRef = useRef<number>(0);
+  const detailRef = useRef<EscrowDetail | null>(detail);
+  useEffect(() => {
+    detailRef.current = detail;
+  }, [detail]);
 
   const currentUser = session?.user;
   const isStaff = currentUser?.role === "ADMIN" || currentUser?.role === "MODERATOR";
 
-  async function fetchDetail() {
+  async function fetchDetail(isBackground = false) {
     try {
       const res = await fetch(`/api/escrow/${escrowId}`);
       if (!res.ok) {
@@ -103,24 +108,35 @@ export function EscrowChatModal({
         throw new Error(err.error || "Gagal memuat ruang rekber.");
       }
       const data = await res.json();
-      setDetail(data);
+      const current = detailRef.current;
+      if (!isBackground || JSON.stringify(current) !== JSON.stringify(data)) {
+        setDetail(data);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal memuat data rekber.");
+      if (!isBackground) {
+        setError(err instanceof Error ? err.message : "Gagal memuat data rekber.");
+      }
     } finally {
-      setLoading(false);
+      if (!isBackground) {
+        setLoading(false);
+      }
     }
   }
 
   useEffect(() => {
-    void fetchDetail();
+    void fetchDetail(false);
   }, [escrowId]);
 
   useLiveSync(() => {
-    void fetchDetail();
+    void fetchDetail(true);
   }, { intervalMs: 3500, revalidateOnFocus: true });
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const currentCount = detail?.messages?.length || 0;
+    if (currentCount > prevMsgCountRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      prevMsgCountRef.current = currentCount;
+    }
   }, [detail?.messages]);
 
   async function handleSendMessage(e: FormEvent) {

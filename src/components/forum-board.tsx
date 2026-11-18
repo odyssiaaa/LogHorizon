@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { createRealtimeClient, type SealedLiveQuery } from "@neon/realtime/client";
-import { Flag, Loader2, MessageCircle, Pin, Plus, Search, Trash2, X } from "lucide-react";
+import { ArrowUp, Flag, Loader2, MessageCircle, Pin, Plus, Search, Trash2, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -38,6 +38,7 @@ function parsePostContent(content: string): { cleanText: string; imageUrl: strin
 export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [category, setCategory] = useState<Category>("GENERAL_CHAT");
   const [posts, setPosts] = useState<ForumPostRecord[]>([]);
+  const [pendingNewPosts, setPendingNewPosts] = useState<ForumPostRecord[]>([]);
   const [searchValue, setSearchValue] = useState("");
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState<string>("");
@@ -46,7 +47,6 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [compose, setCompose] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [loginAction, setLoginAction] = useState("");
   const [reportId, setReportId] = useState<string | null>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
@@ -55,6 +55,11 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const { data: session, status } = useSession();
   const user = session?.user;
   const activeCategory = categories.find((item) => item.id === category)!;
+
+  const postsRef = useRef<ForumPostRecord[]>(posts);
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
 
   // Baca parameter ?tag= dari URL saat pertama kali dimuat
   useEffect(() => {
@@ -103,37 +108,88 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
     return () => clearTimeout(handler);
   }, [searchValue]);
 
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    const query = new URLSearchParams({ category });
-    if (search) query.set("search", search);
-    if (selectedTag) query.set("tag", selectedTag);
+  // Fetch posts dengan pemisahan tegas antara loading awal vs background sync
+  const fetchPosts = useCallback(
+    async (isBackground = false) => {
+      if (!isBackground) {
+        setLoading(true);
+      }
+      const query = new URLSearchParams({ category });
+      if (search) query.set("search", search);
+      if (selectedTag) query.set("tag", selectedTag);
 
-    fetch(`/api/posts?${query}`)
-      .then(async (response) => {
-        const data = await readApiResponse<ForumPostRecord[]>(response, "Gagal memuat thread.");
-        if (active) {
-          setPosts(data);
+      try {
+        const response = await fetch(`/api/posts?${query}`);
+        const fresh = await readApiResponse<ForumPostRecord[]>(response, "Gagal memuat thread.");
+
+        if (!isBackground) {
+          setPosts(fresh);
+          setPendingNewPosts([]);
           setError("");
+        } else {
+          // Background sync: silent diffing & X-style pending pill
+          const currentPosts = postsRef.current;
+          const currentIds = new Set(currentPosts.map((p) => p.id));
+          const brandNew = fresh.filter((p) => !currentIds.has(p.id));
+
+          if (brandNew.length > 0) {
+            const isScrolledDown = typeof window !== "undefined" && window.scrollY >= 100;
+            if (isScrolledDown) {
+              // User sedang membaca di bawah: jangan geser scroll, simpan di pending pill!
+              setPendingNewPosts((prev) => {
+                const prevIds = new Set(prev.map((p) => p.id));
+                const additions = brandNew.filter((p) => !prevIds.has(p.id));
+                return additions.length > 0 ? [...additions, ...prev] : prev;
+              });
+              // Tetap perbarui statistik interaksi (likes/replies) pada postingan yang sudah tampil
+              setPosts((prev) =>
+                prev.map((existing) => fresh.find((f) => f.id === existing.id) ?? existing)
+              );
+            } else {
+              // User masih di paling atas: perbarui feed langsung secara mulus
+              setPosts(fresh);
+            }
+          } else {
+            // Cek apakah ada perubahan data pada postingan yang sudah ada
+            const hasDataChanged = JSON.stringify(currentPosts) !== JSON.stringify(fresh);
+            if (hasDataChanged) {
+              setPosts(fresh);
+            }
+          }
         }
-      })
-      .catch((reason: unknown) => {
-        if (active) setError(reason instanceof Error ? reason.message : "Gagal memuat thread.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+      } catch (reason) {
+        if (!isBackground) {
+          setError(reason instanceof Error ? reason.message : "Gagal memuat thread.");
+        }
+      } finally {
+        if (!isBackground) {
+          setLoading(false);
+        }
+      }
+    },
+    [category, search, selectedTag]
+  );
 
-    return () => {
-      active = false;
-    };
-  }, [category, refreshKey, search, selectedTag]);
+  useEffect(() => {
+    void fetchPosts(false);
+  }, [fetchPosts]);
 
-  // Smart Live Sync: Polling 12 detik dan langsung refresh saat tab kembali aktif
+  // Smart Live Sync: Polling 12 detik di latar belakang tanpa berkedip dan tanpa memicu skeleton
   useLiveSync(() => {
-    setRefreshKey((prev) => prev + 1);
+    void fetchPosts(true);
   }, { intervalMs: 12000, revalidateOnFocus: true });
+
+  const handleLoadPendingPosts = () => {
+    setPosts((prev) => {
+      const prevIds = new Set(prev.map((p) => p.id));
+      const unadded = pendingNewPosts.filter((p) => !prevIds.has(p.id));
+      return [...unadded, ...prev];
+    });
+    setPendingNewPosts([]);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   useEffect(() => {
     if (!realtimeUrl) return;
@@ -154,7 +210,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
         client = createRealtimeClient({ url: realtimeUrl });
         subscription = client.subscribe(sealedQuery);
         subscription.onUpdate((update) => {
-          if (update.type === "changes" && active) setRefreshKey((value) => value + 1);
+          if (update.type === "changes" && active) void fetchPosts(true);
         });
         subscription.onStateChange((state) => {
           if (!active) return;
@@ -417,6 +473,20 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
             )}
             {error && <div className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none" role="alert">{error}</div>}
 
+            {/* FLOATING NEW POSTS PILL (GAYA X / THREADS) */}
+            {pendingNewPosts.length > 0 && (
+              <div className="sticky top-20 z-40 flex justify-center py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                <button
+                  type="button"
+                  onClick={handleLoadPendingPosts}
+                  className="inline-flex items-center gap-2 bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-full shadow-2xl px-5 py-2.5 text-xs font-bold transition-transform hover:scale-105 cursor-pointer border border-white/20 animate-bounce"
+                >
+                  <ArrowUp size={14} />
+                  <span>↑ Ada {pendingNewPosts.length} Diskusi Baru — Klik untuk Muat</span>
+                </button>
+              </div>
+            )}
+
             {/* FORUM POSTS FEED & SKELETON LOADERS */}
             <section className="post-list space-y-3" aria-live="polite">
               {loading ? (
@@ -672,8 +742,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
           onClose={() => setCompose(false)}
           onCreated={() => {
             setCompose(false);
-            setLoading(true);
-            setRefreshKey((value) => value + 1);
+            void fetchPosts(false);
           }}
         />
       )}

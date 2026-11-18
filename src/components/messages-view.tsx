@@ -162,7 +162,8 @@ export function MessagesView() {
         res,
         "Gagal memuat daftar obrolan."
       );
-      setConversations(data.conversations || []);
+      const freshList = data.conversations || [];
+      setConversations((prev) => (JSON.stringify(prev) === JSON.stringify(freshList) ? prev : freshList));
     } catch (err) {
       console.error("Gagal memuat obrolan:", err);
     } finally {

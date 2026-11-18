@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { ArrowDownUp, Flag, Loader2, MessageSquare, Plus, Search, Shield, ShieldCheck, ShoppingBag, Trash2, X } from "lucide-react";
 import { isPublicMarketData } from "@/lib/market-data";
@@ -52,7 +52,6 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   }, [searchValue, search]);
   const [compose, setCompose] = useState(false);
   const [notice, setNotice] = useState("");
-  const [refreshKey, setRefreshKey] = useState(0);
   const [loginAction, setLoginAction] = useState("");
   const [reportId, setReportId] = useState<string | null>(null);
   const [contacts, setContacts] = useState<Record<string, { userId: string; contact: string; discordId?: string | null; sellerUsername?: string | null }>>({});
@@ -103,24 +102,48 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
     }
   }
 
+  const postsRef = useRef<MarketPost[]>(posts);
   useEffect(() => {
-    const query = new URLSearchParams({ category: "MARKETPLACE" });
-    if (type !== "ALL") query.set("type", type);
-    if (game.trim()) query.set("game", game.trim());
-    if (search.trim()) query.set("search", search.trim());
-    if (sort === "cheapest") query.set("sort", "asc");
-    if (sort === "expensive") query.set("sort", "desc");
-    fetch(`/api/posts?${query}`)
-      .then(async (response) => {
-        const data = await readApiResponse<MarketPost[]>(response, "Gagal memuat lapak.");
-        setPosts(data);
-      })
-      .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Gagal memuat lapak."))
-      .finally(() => setLoading(false));
-  }, [type, game, sort, search, refreshKey]);
+    postsRef.current = posts;
+  }, [posts]);
 
+  const fetchMarketListings = useCallback(
+    async (isBackground = false) => {
+      if (!isBackground) setLoading(true);
+      const query = new URLSearchParams({ category: "MARKETPLACE" });
+      if (type !== "ALL") query.set("type", type);
+      if (game.trim()) query.set("game", game.trim());
+      if (search.trim()) query.set("search", search.trim());
+      if (sort === "cheapest") query.set("sort", "asc");
+      if (sort === "expensive") query.set("sort", "desc");
+
+      try {
+        const response = await fetch(`/api/posts?${query}`);
+        const data = await readApiResponse<MarketPost[]>(response, "Gagal memuat lapak.");
+        const current = postsRef.current;
+        if (!isBackground || JSON.stringify(current) !== JSON.stringify(data)) {
+          setPosts(data);
+        }
+      } catch (reason) {
+        if (!isBackground) {
+          setError(reason instanceof Error ? reason.message : "Gagal memuat lapak.");
+        }
+      } finally {
+        if (!isBackground) {
+          setLoading(false);
+        }
+      }
+    },
+    [type, game, sort, search]
+  );
+
+  useEffect(() => {
+    void fetchMarketListings(false);
+  }, [fetchMarketListings]);
+
+  // Smart Live Sync: Polling 12 detik di latar belakang tanpa flicker
   useLiveSync(() => {
-    setRefreshKey((k) => k + 1);
+    void fetchMarketListings(true);
   }, { intervalMs: 12000, revalidateOnFocus: true });
 
   useEffect(() => {
@@ -136,7 +159,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
         client = createRealtimeClient({ url: realtimeUrl });
         subscription = client.subscribe(query);
         subscription.onUpdate((update) => {
-          if (update.type === "changes" && active) setRefreshKey((value) => value + 1);
+          if (update.type === "changes" && active) void fetchMarketListings(true);
         });
         subscription.onStateChange((state) => {
           if (active) setLiveState(state.status);
@@ -219,7 +242,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
       if (data.transaction?.id) {
         setActiveEscrowModalId(data.transaction.id);
       }
-      setRefreshKey((value) => value + 1);
+      void fetchMarketListings(true);
     } catch (reason) {
       setNotice(reason instanceof Error ? reason.message : "Transaksi escrow gagal dimulai.");
     } finally {
@@ -237,7 +260,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
       });
       const data = await readApiResponse<{ notice: string }>(response, "Konfirmasi transaksi gagal.");
       setNotice(data.notice);
-      setRefreshKey((value) => value + 1);
+      void fetchMarketListings(true);
     } catch (reason) {
       setNotice(reason instanceof Error ? reason.message : "Konfirmasi transaksi gagal.");
     } finally {
@@ -605,12 +628,12 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
       />
     )}
   </div>
-    {compose && <MarketModal canPin={Boolean(user?.isPremium || user?.role === "ADMIN" || user?.username === ".odyssia")} onClose={() => setCompose(false)} onCreated={() => { setCompose(false); setRefreshKey((value) => value + 1); }} />}
+    {compose && <MarketModal canPin={Boolean(user?.isPremium || user?.role === "ADMIN" || user?.username === ".odyssia")} onClose={() => setCompose(false)} onCreated={() => { setCompose(false); void fetchMarketListings(false); }} />}
     {activeEscrowModalId && (
       <EscrowChatModal
         escrowId={activeEscrowModalId}
         onClose={() => setActiveEscrowModalId(null)}
-        onStatusChange={() => setRefreshKey((value) => value + 1)}
+        onStatusChange={() => void fetchMarketListings(true)}
       />
     )}
     <LoginPrompt open={Boolean(loginAction)} action={loginAction} onClose={() => setLoginAction("")} />

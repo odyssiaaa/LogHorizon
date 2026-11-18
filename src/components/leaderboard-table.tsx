@@ -46,8 +46,12 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
       if (!res.ok) return;
       const data = await res.json();
       if (data.success) {
-        if (Array.isArray(data.topXpMembers)) setCurrentMembers(data.topXpMembers);
-        if (Array.isArray(data.topBenefactors)) setCurrentBenefactors(data.topBenefactors);
+        if (Array.isArray(data.topXpMembers)) {
+          setCurrentMembers((prev) => (JSON.stringify(prev) === JSON.stringify(data.topXpMembers) ? prev : data.topXpMembers));
+        }
+        if (Array.isArray(data.topBenefactors)) {
+          setCurrentBenefactors((prev) => (JSON.stringify(prev) === JSON.stringify(data.topBenefactors) ? prev : data.topBenefactors));
+        }
       }
     } catch {
       // Background revalidation silently skips

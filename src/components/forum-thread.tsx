@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, Flag, MessageCircle, Pin, Send, Trash2, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
@@ -180,39 +180,83 @@ export function ForumThread({ id }: { id: string }) {
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const [isSatpamTyping, setIsSatpamTyping] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [loginAction, setLoginAction] = useState("");
   const [reportOpen, setReportOpen] = useState(false);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const { data: session } = useSession();
   const user = session?.user;
 
+  const threadRef = useRef<ThreadRecord | null>(thread);
   useEffect(() => {
-    let active = true;
-    fetch(`/api/posts/${id}`)
-      .then(async (response) => {
-        const data = await readApiResponse<ThreadRecord>(response, "Thread tidak ditemukan.");
-        if (active) {
-          setThread(data);
-          setError("");
-          // Check if Satpam comment arrived to stop typing indicator
-          if (isSatpamTyping) {
-            const hasSatpam = data.comments.some(
-              (c) => (c.author.username === "satpam-horizon" || c.author.username === "Satpam Horizon") &&
-                     Date.now() - new Date(c.createdAt).getTime() < 30000
-            );
-            if (hasSatpam) setIsSatpamTyping(false);
-          }
-        }
-      })
-      .catch((reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : "Gagal memuat thread."); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [id, refreshKey, isSatpamTyping]);
+    threadRef.current = thread;
+  }, [thread]);
 
-  // Smart Live Sync: Refresh thread & komentar setiap 10 detik dan seketika saat tab kembali aktif
+  const syncThreadData = useCallback(
+    async (isBackground = false) => {
+      try {
+        const response = await fetch(`/api/posts/${id}`);
+        const fresh = await readApiResponse<ThreadRecord>(response, "Thread tidak ditemukan.");
+
+        const current = threadRef.current;
+        if (!isBackground || !current) {
+          setThread(fresh);
+          setError("");
+        } else {
+          // Background sync: Deep equality check on comments & thread properties
+          const currentComments = current.comments;
+          const freshComments = fresh.comments;
+
+          // Pertahankan komentar optimistik lokal yang sedang menunggu konfirmasi server
+          const pendingOptimistic = currentComments.filter((c) => c.id.startsWith("temp-"));
+          const freshIds = new Set(freshComments.map((c) => c.id));
+          const mergedComments = [...freshComments];
+          for (const opt of pendingOptimistic) {
+            if (!freshIds.has(opt.id)) {
+              mergedComments.push(opt);
+            }
+          }
+
+          const isContentSame =
+            current.likes === fresh.likes &&
+            current.dislikes === fresh.dislikes &&
+            current.isPinned === fresh.isPinned &&
+            JSON.stringify(currentComments) === JSON.stringify(mergedComments);
+
+          if (!isContentSame) {
+            setThread({
+              ...fresh,
+              comments: mergedComments,
+            });
+          }
+
+          // Matikan indikator typing jika balasan Satpam AI sudah tiba
+          const hasSatpam = freshComments.some(
+            (c) =>
+              (c.author.username === "satpam-horizon" || c.author.username === "Satpam Horizon") &&
+              Date.now() - new Date(c.createdAt).getTime() < 30000
+          );
+          if (hasSatpam) setIsSatpamTyping(false);
+        }
+      } catch (reason) {
+        if (!isBackground) {
+          setError(reason instanceof Error ? reason.message : "Gagal memuat thread.");
+        }
+      } finally {
+        if (!isBackground) {
+          setLoading(false);
+        }
+      }
+    },
+    [id]
+  );
+
+  useEffect(() => {
+    void syncThreadData(false);
+  }, [syncThreadData]);
+
+  // Smart Live Sync: Polling 10 detik di latar belakang tanpa berkedip dan tanpa menutup reply box
   useLiveSync(() => {
-    setRefreshKey((prev) => prev + 1);
+    void syncThreadData(true);
   }, { intervalMs: 10000, revalidateOnFocus: true });
 
   // Daftar member relevan untuk mention autocomplete
@@ -279,7 +323,7 @@ export function ForumThread({ id }: { id: string }) {
       await readApiResponse<unknown>(response, "Gagal menghapus komentar.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Gagal menghapus komentar.");
-      setRefreshKey((value) => value + 1);
+      void syncThreadData(true);
     }
   }
 
@@ -424,9 +468,9 @@ export function ForumThread({ id }: { id: string }) {
 
       // Poll for Satpam AI response if triggered
       if (willTriggerSatpam) {
-        setTimeout(() => setRefreshKey((v) => v + 1), 2500);
-        setTimeout(() => setRefreshKey((v) => v + 1), 5000);
-        setTimeout(() => setRefreshKey((v) => v + 1), 8000);
+        setTimeout(() => void syncThreadData(true), 2500);
+        setTimeout(() => void syncThreadData(true), 5000);
+        setTimeout(() => void syncThreadData(true), 8000);
         // Safety timeout to turn off typing indicator after 20 seconds
         setTimeout(() => setIsSatpamTyping(false), 20000);
       }

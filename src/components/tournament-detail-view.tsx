@@ -332,7 +332,11 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         if (!res.ok) return;
         const fresh = await res.json();
         if (fresh?.tournament) {
-          setTournament(fresh.tournament);
+          setTournament((prev) => {
+            if (!prev) return fresh.tournament;
+            if (JSON.stringify(prev) === JSON.stringify(fresh.tournament)) return prev;
+            return fresh.tournament;
+          });
           setLastSyncTime(Date.now());
           setSyncSecondsAgo(0);
         }
