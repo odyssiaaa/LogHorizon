@@ -111,9 +111,8 @@ export function NotificationBell() {
       >
         <Bell size={16} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#7C3AED] opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#7C3AED]" />
+          <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-rose-500 text-white rounded-full text-[9px] font-mono font-bold flex items-center justify-center shadow-xs">
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
@@ -125,30 +124,28 @@ export function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.96 }}
             transition={{ duration: 0.16, ease: "easeOut" }}
-            className="absolute right-0 mt-2 w-80 sm:w-96 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] p-3 shadow-2xl z-50 text-left"
+            className="fixed sm:absolute inset-x-3 sm:inset-x-auto sm:right-0 top-16 sm:top-full mt-1 sm:mt-2 w-auto sm:w-96 max-w-sm sm:max-w-none rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] p-3 shadow-2xl z-50 text-left"
             role="menu"
           >
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#2A1B42]">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200 dark:border-[#2A1B42]">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#F8FAFC] flex items-center gap-1.5">
-                  <Bell size={14} className="text-[#A78BFA]" /> Notifikasi Guild
+                <span className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] flex items-center gap-1.5 font-mono">
+                  <Bell size={14} className="text-[#7C3AED] dark:text-[#A78BFA]" /> Notifikasi Guild
                 </span>
                 {unreadCount > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#7C3AED]/20 text-[#A78BFA] font-bold border border-[#7C3AED]/40">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-rose-500/15 text-rose-500 font-bold border border-rose-500/30 font-mono">
                     {unreadCount} baru
                   </span>
                 )}
               </div>
-              {unreadCount > 0 && (
-                <button
-                  type="button"
-                  onClick={markAllAsRead}
-                  disabled={loading}
-                  className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 disabled:opacity-50"
-                >
-                  <CheckCheck size={12} /> Tandai semua dibaca
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={markAllAsRead}
+                disabled={loading || unreadCount === 0}
+                className="text-[11px] font-mono font-semibold text-[#7C3AED] dark:text-[#A78BFA] hover:underline flex items-center gap-1 disabled:opacity-40 disabled:hover:no-underline cursor-pointer"
+              >
+                <CheckCheck size={12} /> Tandai Semua Dibaca
+              </button>
             </div>
 
             <div className="max-h-72 overflow-y-auto space-y-1.5 scrollbar-thin">

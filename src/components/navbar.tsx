@@ -680,9 +680,9 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Mobile Actions (Pesan & Hamburger Menu) */}
+            {/* Mobile Actions (Pesan, Notifikasi & Hamburger Menu) */}
             <div className="flex md:hidden items-center gap-1.5">
-              {user && (
+              {user ? (
                 <Link
                   href="/messages"
                   className="relative w-10 h-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white flex items-center justify-center hover:border-[#7C3AED] transition-colors shrink-0 shadow-sm dark:shadow-none"
@@ -695,7 +695,17 @@ export function Navbar() {
                     </span>
                   )}
                 </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void signIn("discord")}
+                  className="px-2.5 h-10 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-[11px] font-mono font-bold border border-[#5865F2] shrink-0"
+                >
+                  Masuk
+                </button>
               )}
+
+              <NotificationBell />
 
               <button
                 type="button"

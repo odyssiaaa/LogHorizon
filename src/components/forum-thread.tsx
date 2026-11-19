@@ -594,29 +594,54 @@ export function ForumThread({ id }: { id: string }) {
               <span>•</span>
               <span>{new Date(thread.createdAt).toLocaleString("id-ID")}</span>
             </div>
-            <PostReactions postId={thread.id} likes={thread.likes} dislikes={thread.dislikes} reaction={thread.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} />
             <div className="thread-body break-words leading-relaxed text-sm sm:text-base my-5 text-slate-800 dark:text-[#F8FAFC]/90 font-sans">
               <FormattedPostContent text={thread.content} onImageClick={setLightboxImg} />
             </div>
-            <div className="thread-actions flex flex-wrap items-center gap-2 sm:gap-3 pt-3 border-t border-slate-200 dark:border-[#2E1E45]">
-              <ShareButton url={`/forum/${thread.id}`} title={thread.title} text={`Baca dan diskusikan di Forum LogHorizon: ${thread.title}`} label="Bagikan Diskusi 🔗" variant="outline" />
-              <button className="text-xs font-mono text-[#7C3AED] dark:text-[#A78BFA] hover:text-rose-400 inline-flex items-center gap-1.5" onClick={reportPost}>
-                <Flag size={14} /> Report
-              </button>
-              {user && (user.role === "ADMIN" || user.role === "MODERATOR") && (
+            <div className="thread-actions flex flex-wrap items-center justify-between gap-3 pt-3.5 border-t border-slate-200 dark:border-[#2E1E45]">
+              <PostReactions
+                postId={thread.id}
+                likes={thread.likes}
+                dislikes={thread.dislikes}
+                reaction={thread.votes?.[0]?.value ?? null}
+                onLoginRequired={() => setLoginAction("memberi reaksi")}
+              />
+
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <ShareButton
+                  url={`/forum/${thread.id}`}
+                  title={thread.title}
+                  text={`Baca dan diskusikan di Forum LogHorizon: ${thread.title}`}
+                  label="Bagikan Diskusi"
+                  variant="outline"
+                  className="h-8 px-2.5 text-xs rounded-md border border-slate-200 dark:border-[#2A1B42]"
+                />
                 <button
-                  className={`text-xs font-mono inline-flex items-center gap-1.5 ${thread.isPinned ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold" : "text-slate-500 dark:text-[#A78BFA]/70 hover:text-slate-900 dark:hover:text-[#F8FAFC]"}`}
-                  onClick={() => void togglePin()}
-                  title={thread.isPinned ? "Lepas Pin" : "Pin Thread"}
+                  type="button"
+                  className="text-xs font-mono text-slate-500 dark:text-[#A78BFA] hover:text-rose-400 inline-flex items-center gap-1.5 h-8 px-2 cursor-pointer transition-colors"
+                  onClick={reportPost}
                 >
-                  <Pin size={14} /> {thread.isPinned ? "Lepas Pin" : "Pin Thread"}
+                  <Flag size={14} /> Report
                 </button>
-              )}
-              {user && (user.role === "ADMIN" || user.role === "MODERATOR" || user.username === ".odyssia" || user.id === thread.author?.id || user.id === thread.authorId || user.username === thread.author?.username) && (
-                <button className="text-xs font-mono text-rose-500 hover:text-rose-400 inline-flex items-center gap-1.5 ml-auto" onClick={() => void deleteThread()}>
-                  <Trash2 size={14} /> Hapus
-                </button>
-              )}
+                {user && (user.role === "ADMIN" || user.role === "MODERATOR") && (
+                  <button
+                    type="button"
+                    className={`text-xs font-mono inline-flex items-center gap-1.5 h-8 px-2 cursor-pointer transition-colors ${thread.isPinned ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold" : "text-slate-500 dark:text-[#A78BFA]/70 hover:text-slate-900 dark:hover:text-[#F8FAFC]"}`}
+                    onClick={() => void togglePin()}
+                    title={thread.isPinned ? "Lepas Pin" : "Pin Thread"}
+                  >
+                    <Pin size={14} /> {thread.isPinned ? "Lepas Pin" : "Pin Thread"}
+                  </button>
+                )}
+                {user && (user.role === "ADMIN" || user.role === "MODERATOR" || user.username === ".odyssia" || user.id === thread.author?.id || user.id === thread.authorId || user.username === thread.author?.username) && (
+                  <button
+                    type="button"
+                    className="text-xs font-mono text-rose-500 hover:text-rose-400 inline-flex items-center gap-1.5 h-8 px-2 cursor-pointer transition-colors"
+                    onClick={() => void deleteThread()}
+                  >
+                    <Trash2 size={14} /> Hapus
+                  </button>
+                )}
+              </div>
             </div>
           </article>
 

@@ -498,7 +498,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
               ) : posts.length ? (
                 posts.map((post, index) => (
                   <motion.article
-                    className={`p-4 sm:p-5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#7C3AED] transition-all flex flex-col sm:flex-row gap-3 sm:gap-4 shadow-sm dark:shadow-none ${
+                    className={`p-4 sm:p-5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#7C3AED] transition-all flex flex-col gap-2.5 shadow-sm dark:shadow-none text-left ${
                       post.isPinned ? "border-l-4 border-l-[#7C3AED]" : ""
                     }`}
                     key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`}
@@ -506,8 +506,101 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}
                   >
-                    {/* OPTIMISTIC REACTION COMPONENT */}
-                    <div className="shrink-0 flex sm:flex-col items-center">
+                    {/* Header Info: Author, Badges, Date & Pinned Badge */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap text-xs text-slate-500 dark:text-[#A78BFA] font-mono">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <DiscordAvatar src={post.author.avatar} username={post.author.username} size={20} />
+                        <Link
+                          href={`/u/${post.author.username ?? "user"}`}
+                          className={`hover:underline ${(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") ? "premium-username" : "font-medium text-slate-900 dark:text-[#F8FAFC]"}`}
+                        >
+                          {post.author.username ?? "Gamer"}
+                        </Link>
+                        {post.author.username?.toLowerCase() === ".odyssia" || post.author.username?.toLowerCase() === "odyssia" ? (
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 shrink-0">
+                            👑 Emperor
+                          </span>
+                        ) : post.author.role === "ADMIN" ? (
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30 shrink-0">
+                            ✨ Prince
+                          </span>
+                        ) : post.author.role === "MODERATOR" ? (
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-blue-500/15 text-blue-400 border border-blue-500/30 shrink-0">
+                            ⚔️ Mod
+                          </span>
+                        ) : null}
+                        <span>•</span>
+                        <span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span>
+                      </div>
+                      {post.isPinned && (
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider shrink-0">
+                          <Pin size={11} className="text-[#7C3AED]" /> PINNED THREAD
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Thread Title */}
+                    <Link className="block text-base sm:text-lg font-display font-bold uppercase tracking-tight break-words text-slate-900 dark:text-[#F8FAFC] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] transition-colors leading-snug" href={`/forum/${post.id}`}>
+                      {post.title}
+                    </Link>
+
+                    {/* Hashtags */}
+                    {(() => {
+                      const tagsInPost = [...new Set(`${post.title} ${post.content}`.match(/#([a-zA-Z0-9_]+)/g) || [])];
+                      if (!tagsInPost.length) return null;
+                      return (
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {tagsInPost.slice(0, 4).map((t) => (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setSelectedTag(t.slice(1));
+                                setLoading(true);
+                              }}
+                              className="text-[11px] font-mono text-[#7C3AED] dark:text-[#A78BFA] hover:text-white bg-[#7C3AED]/10 hover:bg-[#7C3AED] px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                            >
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Body snippet & image */}
+                    {(() => {
+                      const { cleanText, imageUrl } = parsePostContent(post.content);
+                      return (
+                        <>
+                          {cleanText ? (
+                            <p className="text-xs sm:text-sm text-slate-600 dark:text-[#A78BFA] font-sans break-words leading-relaxed mt-1 line-clamp-2">
+                              {cleanText}
+                            </p>
+                          ) : null}
+                          {imageUrl && (
+                            <div className="mt-2.5">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={imageUrl}
+                                alt="Lampiran Forum"
+                                loading="lazy"
+                                className="max-h-60 sm:max-h-80 w-auto rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-slate-100 dark:bg-[#09040F] object-contain cursor-zoom-in hover:border-[#7C3AED] transition-all shadow-md"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setLightboxImg(imageUrl);
+                                }}
+                              />
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+
+                    {/* Baris Aksi Bawah: Like & Dislike Horizontal + Diskusi, Share, Laporkan & Moderasi */}
+                    <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 mt-2 border-t border-slate-200 dark:border-[#2A1B42]">
                       <PostReactions
                         postId={post.id}
                         likes={post.likes}
@@ -524,139 +617,63 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                           )
                         }
                       />
-                    </div>
-                    <div className="min-w-0 flex-1 text-left">
-                      {post.isPinned && (
-                        <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider mb-1.5">
-                          <Pin size={11} className="text-[#7C3AED]" /> PINNED THREAD
-                        </span>
-                      )}
-                      <Link className="block text-base sm:text-lg font-display font-bold uppercase tracking-tight break-words text-slate-900 dark:text-[#F8FAFC] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] transition-colors leading-snug" href={`/forum/${post.id}`}>
-                        {post.title}
-                      </Link>
-                      {(() => {
-                        const tagsInPost = [...new Set(`${post.title} ${post.content}`.match(/#([a-zA-Z0-9_]+)/g) || [])];
-                        if (!tagsInPost.length) return null;
-                        return (
-                          <div className="flex flex-wrap gap-1 mt-1.5">
-                            {tagsInPost.slice(0, 4).map((t) => (
-                              <button
-                                key={t}
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setSelectedTag(t.slice(1));
-                                  setLoading(true);
-                                }}
-                                className="text-[11px] font-mono text-[#7C3AED] dark:text-[#A78BFA] hover:text-white bg-[#7C3AED]/10 hover:bg-[#7C3AED] px-1.5 py-0.5 rounded transition-colors cursor-pointer"
-                              >
-                                {t}
-                              </button>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                      {(() => {
-                        const { cleanText, imageUrl } = parsePostContent(post.content);
-                        return (
-                          <>
-                            {cleanText ? (
-                              <p className="text-xs sm:text-sm text-slate-600 dark:text-[#A78BFA] font-sans break-words leading-relaxed mt-1.5 line-clamp-2">
-                                {cleanText}
-                              </p>
-                            ) : null}
-                            {imageUrl && (
-                              <div className="mt-2.5">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={imageUrl}
-                                  alt="Lampiran Forum"
-                                  loading="lazy"
-                                  className="max-h-60 sm:max-h-80 w-auto rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-slate-100 dark:bg-[#09040F] object-contain cursor-zoom-in hover:border-[#7C3AED] transition-all shadow-md"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setLightboxImg(imageUrl);
-                                  }}
-                                />
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-slate-500 dark:text-[#A78BFA] font-mono mt-3 pt-2.5 border-t border-slate-200 dark:border-[#2E1E45]">
-                        <span className="flex items-center gap-1.5">
-                          <DiscordAvatar src={post.author.avatar} username={post.author.username} size={20} />
-                          <Link
-                            href={`/u/${post.author.username ?? "user"}`}
-                            className={`hover:underline ${(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") ? "premium-username" : "font-medium text-slate-900 dark:text-[#F8FAFC]"}`}
-                          >
-                            {post.author.username ?? "Gamer"}
-                          </Link>
-                          {post.author.username?.toLowerCase() === ".odyssia" || post.author.username?.toLowerCase() === "odyssia" ? (
-                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 shrink-0">
-                              👑 Emperor
-                            </span>
-                          ) : post.author.role === "ADMIN" ? (
-                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#7C3AED]/15 text-[#A78BFA] border border-[#7C3AED]/30 shrink-0">
-                              ✨ Prince
-                            </span>
-                          ) : post.author.role === "MODERATOR" ? (
-                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-blue-500/15 text-blue-400 border border-blue-500/30 shrink-0">
-                              ⚔️ Mod
-                            </span>
-                          ) : null}
-                        </span>
-                        <span>•</span>
-                        <span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span>
-                        <span>•</span>
-                        <Link href={`/forum/${post.id}`} className="hover:text-[#F8FAFC] inline-flex items-center gap-1">
+
+                      <div className="flex items-center gap-2 sm:gap-2.5 text-xs font-mono text-slate-500 dark:text-[#A78BFA] flex-wrap">
+                        <Link
+                          href={`/forum/${post.id}`}
+                          className="h-8 px-2.5 rounded-md border border-slate-200 dark:border-[#2A1B42] bg-slate-50 dark:bg-[#1A0E2E]/60 hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:border-[#7C3AED]/40 inline-flex items-center gap-1.5 transition-colors font-bold"
+                        >
                           <MessageCircle size={13} />
-                          <span>DISKUSI</span>
+                          <span>Diskusi</span>
                         </Link>
-                        <span>•</span>
                         <ShareButton
                           url={`/forum/${post.id}`}
                           title={`[Forum] ${post.title}`}
                           text={`Cek diskusi di Forum LogHorizon: ${post.title}`}
                           label="Share"
                           variant="ghost"
+                          className="h-8 px-2.5 text-xs rounded-md border border-slate-200 dark:border-[#2A1B42] bg-slate-50 dark:bg-[#1A0E2E]/60 hover:border-[#7C3AED]/40"
                         />
-                        <button className="text-[#A78BFA]/70 hover:text-rose-400 inline-flex items-center gap-1" onClick={() => handleReportPost(post.id)}>
-                          <Flag size={12} /> Laporkan
+                        <button
+                          type="button"
+                          className="h-8 px-2 rounded-md hover:text-rose-400 inline-flex items-center gap-1 text-slate-400 dark:text-[#A78BFA]/70 transition-colors cursor-pointer"
+                          onClick={() => handleReportPost(post.id)}
+                          title="Laporkan postingan"
+                        >
+                          <Flag size={12} />
+                          <span className="hidden sm:inline">Laporkan</span>
                         </button>
 
                         {/* Tombol Hapus Pemilik Thread Biasa */}
                         {user && !(user.role === "ADMIN" || user.role === "MODERATOR") && (user.id === post.author.id || user.username === post.author.username) && (
                           <button
-                            className="text-rose-400 hover:text-rose-300 inline-flex items-center gap-1 text-xs font-mono ml-auto"
+                            type="button"
+                            className="h-8 px-2 rounded-md text-rose-400 hover:text-rose-300 inline-flex items-center gap-1 text-xs font-mono transition-colors cursor-pointer"
                             onClick={() => void handleDeletePost(post.id)}
                             title="Hapus postingan saya"
                           >
-                            <Trash2 size={12} /> Hapus
+                            <Trash2 size={12} />
+                            <span className="hidden sm:inline">Hapus</span>
                           </button>
                         )}
 
                         {/* Menu Moderasi Staf (Admin & Moderator) */}
                         {(user?.role === "ADMIN" || user?.role === "MODERATOR") && (
-                          <div className="ml-auto">
-                            <StaffCardModerationMenu
-                              actions={[
-                                {
-                                  label: post.isPinned ? "Lepas Sematan (Unpin)" : "Sematkan Thread (Pin)",
-                                  icon: <Pin size={13} />,
-                                  onClick: () => handleTogglePin(post.id, post.isPinned),
-                                },
-                                {
-                                  label: "Hapus Paksa Thread",
-                                  icon: <Trash2 size={13} />,
-                                  danger: true,
-                                  onClick: () => handleDeletePost(post.id),
-                                },
-                              ]}
-                            />
-                          </div>
+                          <StaffCardModerationMenu
+                            actions={[
+                              {
+                                label: post.isPinned ? "Lepas Sematan (Unpin)" : "Sematkan Thread (Pin)",
+                                icon: <Pin size={13} />,
+                                onClick: () => handleTogglePin(post.id, post.isPinned),
+                              },
+                              {
+                                label: "Hapus Paksa Thread",
+                                icon: <Trash2 size={13} />,
+                                danger: true,
+                                onClick: () => handleDeletePost(post.id),
+                              },
+                            ]}
+                          />
                         )}
                       </div>
                     </div>

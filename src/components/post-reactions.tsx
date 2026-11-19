@@ -14,9 +14,10 @@ type Props = {
   reaction: PostReaction;
   onLoginRequired: () => void;
   onChange?: (result: { likes: number; dislikes: number; reaction: PostReaction }) => void;
+  className?: string;
 };
 
-export function PostReactions({ postId, likes, dislikes, reaction, onLoginRequired, onChange }: Props) {
+export function PostReactions({ postId, likes, dislikes, reaction, onLoginRequired, onChange, className }: Props) {
   const { data: session } = useSession();
   const [counts, setCounts] = useState({ likes, dislikes, reaction });
   const [pending, setPending] = useState(false);
@@ -85,30 +86,38 @@ export function PostReactions({ postId, likes, dislikes, reaction, onLoginRequir
   }
 
   return (
-    <div className="post-reactions" aria-label="Reaksi postingan">
+    <div className={`post-reactions inline-flex items-center gap-1.5 ${className ?? ""}`} aria-label="Reaksi postingan">
       <button
         type="button"
-        className={`reaction-button like-button${counts.reaction === "LIKE" ? " active" : ""}`}
+        className={`reaction-button like-button h-8 px-2.5 rounded-md border border-slate-200 dark:border-[#2A1B42] text-xs inline-flex items-center gap-1.5 transition-all font-mono font-bold cursor-pointer ${
+          counts.reaction === "LIKE"
+            ? "active bg-purple-500/15 text-[#7C3AED] dark:text-[#A78BFA] border-[#7C3AED]/50"
+            : "bg-slate-50 dark:bg-[#1A0E2E]/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-[#7C3AED]/40"
+        }`}
         aria-label={`Suka, ${counts.likes}`}
         aria-pressed={counts.reaction === "LIKE"}
         disabled={pending}
         onClick={() => void react("LIKE")}
       >
-        <ThumbsUp size={20} strokeWidth={2.25} />
-        <span>{counts.likes.toLocaleString("id-ID")}</span>
+        <ThumbsUp size={14} strokeWidth={2} />
+        <span className="tabular-nums font-mono text-xs">{counts.likes.toLocaleString("id-ID")}</span>
       </button>
       <button
         type="button"
-        className={`reaction-button dislike-button${counts.reaction === "DISLIKE" ? " active" : ""}`}
+        className={`reaction-button dislike-button h-8 px-2.5 rounded-md border border-slate-200 dark:border-[#2A1B42] text-xs inline-flex items-center gap-1.5 transition-all font-mono font-bold cursor-pointer ${
+          counts.reaction === "DISLIKE"
+            ? "active bg-rose-500/15 text-rose-500 dark:text-rose-400 border-rose-500/50"
+            : "bg-slate-50 dark:bg-[#1A0E2E]/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-rose-500/40"
+        }`}
         aria-label={`Tidak suka, ${counts.dislikes}`}
         aria-pressed={counts.reaction === "DISLIKE"}
         disabled={pending}
         onClick={() => void react("DISLIKE")}
       >
-        <ThumbsDown size={20} strokeWidth={2.25} />
-        <span>{counts.dislikes.toLocaleString("id-ID")}</span>
+        <ThumbsDown size={14} strokeWidth={2} />
+        <span className="tabular-nums font-mono text-xs">{counts.dislikes.toLocaleString("id-ID")}</span>
       </button>
-      {error && <span className="reaction-error" role="status">{error}</span>}
+      {error && <span className="text-[11px] text-rose-500 font-mono ml-1" role="status">{error}</span>}
     </div>
   );
 }
