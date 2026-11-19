@@ -7,15 +7,20 @@ import { useSession } from "next-auth/react";
 import {
   ArrowLeft,
   Check,
+  CheckCheck,
   Crown,
   LogOut,
   MessageSquare,
+  MoreVertical,
   Plus,
   RefreshCw,
+  Reply,
   Search,
   Send,
   Shield,
+  Smile,
   Sparkles,
+  Trash2,
   UserPlus,
   Users,
   X,
@@ -46,6 +51,21 @@ type MessageItem = {
   conversationId?: string;
   senderId: string;
   content: string;
+  imageUrl?: string | null;
+  isDeleted?: boolean;
+  replyToId?: string | null;
+  replyTo?: {
+    id: string;
+    content: string;
+    imageUrl?: string | null;
+    isDeleted?: boolean;
+    sender: {
+      id: string;
+      name?: string | null;
+      username?: string | null;
+    };
+  } | null;
+  reactions?: Record<string, string[]> | null;
   createdAt: string;
   sender?: UserSummary;
 };
@@ -74,7 +94,13 @@ type ConversationDetail = {
   creator?: UserSummary | null;
 };
 
-function FormattedChatMessage({ text }: { text: string }) {
+const EMOJI_OPTIONS = ["👍", "❤️", "😂", "🔥"];
+
+function FormattedChatMessage({ text, isDeleted }: { text: string; isDeleted?: boolean }) {
+  if (isDeleted) {
+    return <span className="italic text-gray-400 text-xs sm:text-sm">🚫 Pesan ini telah dihapus</span>;
+  }
+
   const imageRegex = /!\[(.*?)\]\(((?:data:image\/[^)]+|https?:\/\/[^)]+|\/[^)]+))\)/g;
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -132,6 +158,12 @@ export function MessagesView() {
   const [searchFilter, setSearchFilter] = useState("");
   const [error, setError] = useState("");
 
+  // WhatsApp-style reply
+  const [replyingTo, setReplyingTo] = useState<MessageItem | null>(null);
+
+  // 3-dots Conversation Menu
+  const [showConvMenu, setShowConvMenu] = useState(false);
+
   // Modals
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [groupNameInput, setGroupNameInput] = useState("");
@@ -145,6 +177,7 @@ export function MessagesView() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageTimestampRef = useRef<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const me = session?.user;
 
@@ -154,6 +187,19 @@ export function MessagesView() {
       behavior: smooth ? "smooth" : "auto",
     });
   }, []);
+
+  // Close 3-dots menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowConvMenu(false);
+      }
+    }
+    if (showConvMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showConvMenu]);
 
   // Fetch conversations list
   const fetchConversations = useCallback(async () => {
@@ -213,6 +259,8 @@ export function MessagesView() {
   const loadConversationDetail = useCallback(async (convId: string) => {
     setLoadingChat(true);
     setError("");
+    setReplyingTo(null);
+    setShowConvMenu(false);
     try {
       const res = await fetch(`/api/conversations/${convId}`);
       const data = await readApiResponse<{ conversation: ConversationDetail }>(
@@ -222,7 +270,7 @@ export function MessagesView() {
       setActiveDetail(data.conversation);
       setMessages(data.conversation.messages || []);
 
-      if (data.conversation.messages.length > 0) {
+      if (data.conversation.messages && data.conversation.messages.length > 0) {
         const last = data.conversation.messages[data.conversation.messages.length - 1];
         lastMessageTimestampRef.current = last.createdAt;
       } else {
@@ -249,11 +297,12 @@ export function MessagesView() {
     } else {
       setActiveDetail(null);
       setMessages([]);
+      setReplyingTo(null);
       lastMessageTimestampRef.current = null;
     }
   }, [activeConvId, loadConversationDetail]);
 
-  // Efficient Polling Mechanism via useLiveSync
+  // Polling via useLiveSync
   useLiveSync(
     async () => {
       if (!activeConvId) return;
@@ -283,10 +332,10 @@ export function MessagesView() {
         // Silently catch background polling errors
       }
     },
-    { intervalMs: 4000, enabled: Boolean(activeConvId), revalidateOnFocus: true }
+    { intervalMs: 3500, enabled: Boolean(activeConvId), revalidateOnFocus: true }
   );
 
-  // Send message
+  // Send message with replyToId
   async function handleSendMessage(e: FormEvent) {
     e.preventDefault();
     const text = messageInput.trim();
@@ -297,14 +346,22 @@ export function MessagesView() {
     if (chatAttachment) {
       content = content ? `${content}\n\n![Gambar](${chatAttachment})` : `![Gambar](${chatAttachment})`;
     }
+
+    const payload: { content: string; replyToId?: string } = { content };
+    if (replyingTo) {
+      payload.replyToId = replyingTo.id;
+    }
+
     setMessageInput("");
     setChatAttachment(null);
+    const targetReply = replyingTo;
+    setReplyingTo(null);
 
     try {
       const res = await fetch(`/api/conversations/${activeConvId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify(payload),
       });
       const data = await readApiResponse<{ message: MessageItem }>(res, "Gagal mengirim pesan.");
       if (data.message) {
@@ -312,7 +369,6 @@ export function MessagesView() {
         lastMessageTimestampRef.current = data.message.createdAt;
         scrollToBottom(true);
 
-        // Update lastMessage in conversation list
         setConversations((prev) =>
           prev.map((c) =>
             c.id === activeConvId
@@ -323,12 +379,84 @@ export function MessagesView() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal mengirim pesan.");
+      if (targetReply) setReplyingTo(targetReply);
     } finally {
       setSending(false);
     }
   }
 
-  // Member search for group creation & adding
+  // Delete single message
+  async function handleDeleteMessage(messageId: string) {
+    if (!confirm("Hapus pesan ini untuk semua orang?")) return;
+    try {
+      const res = await fetch(`/api/messages/message/${messageId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Gagal menghapus pesan.");
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId ? { ...m, isDeleted: true, content: "🚫 Pesan ini telah dihapus" } : m
+        )
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menghapus pesan.");
+    }
+  }
+
+  // Toggle quick emoji reaction
+  async function handleReaction(messageId: string, emoji: string) {
+    try {
+      const res = await fetch("/api/messages/reaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId, emoji }),
+      });
+      const data = await res.json();
+      if (data.reactions) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === messageId ? { ...m, reactions: data.reactions } : m))
+        );
+      }
+    } catch (err) {
+      console.error("Gagal mengirim reaksi:", err);
+    }
+  }
+
+  // Clear all messages in conversation
+  async function handleClearChat() {
+    if (!activeConvId) return;
+    if (!confirm("Bersihkan seluruh isi chat dalam percakapan ini? Pesan yang dihapus tidak dapat dipulihkan.")) return;
+    try {
+      const res = await fetch(`/api/messages/conversation/${activeConvId}?action=clear`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Gagal membersihkan isi chat.");
+      setMessages([]);
+      setConversations((prev) =>
+        prev.map((c) => (c.id === activeConvId ? { ...c, lastMessage: null } : c))
+      );
+      setShowConvMenu(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal membersihkan chat.");
+    }
+  }
+
+  // Delete entire conversation
+  async function handleDeleteConversation() {
+    if (!activeConvId) return;
+    if (!confirm("Hapus percakapan ini beserta seluruh riwayat pesannya secara permanen?")) return;
+    try {
+      const res = await fetch(`/api/messages/conversation/${activeConvId}?action=delete`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Gagal menghapus percakapan.");
+      setActiveConvId(null);
+      setShowConvMenu(false);
+      void fetchConversations();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menghapus percakapan.");
+    }
+  }
+
+  // Search users for group creation & adding
   useEffect(() => {
     if (!memberSearchQuery.trim() || memberSearchQuery.length < 2) {
       setMemberSearchResults([]);
@@ -418,7 +546,7 @@ export function MessagesView() {
   // Leave Group
   async function handleLeaveGroup() {
     if (!activeConvId) return;
-    if (!confirm("Apakah kamu yakin ingin keluar dari obrolan ini?")) return;
+    if (!confirm("Keluar dari grup obrolan ini?")) return;
 
     try {
       await fetch(`/api/conversations/${activeConvId}`, { method: "DELETE" });
@@ -439,7 +567,6 @@ export function MessagesView() {
         user: null,
       };
     }
-    // 1-on-1: find the other participant
     const other = conv.participants?.find((p) => p.userId !== me?.id)?.user;
     return {
       title: other?.username || other?.name || "Petualang",
@@ -456,14 +583,14 @@ export function MessagesView() {
   });
 
   return (
-    <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12">
+    <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 min-w-0 overflow-x-hidden">
       {/* Top Header */}
-      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div>
           <span className="text-[11px] font-mono text-[#9D4EDD] uppercase tracking-widest font-bold block">
             Direct Messaging &amp; Party Lounge
           </span>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+          <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2">
             <MessageSquare size={24} className="text-[#9D4EDD]" />
             <span>Pesan &amp; Obrolan Komunitas</span>
           </h1>
@@ -476,30 +603,32 @@ export function MessagesView() {
             setGroupSelectedUsers([]);
             setMemberSearchQuery("");
           }}
-          className="button button-primary text-xs font-bold inline-flex items-center gap-1.5 shadow-md"
+          className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold inline-flex items-center justify-center gap-2 transition-colors shadow-md shadow-[#7C3AED]/20"
         >
-          <Plus size={15} />
+          <Plus size={16} />
           <span>Buat Grup Chat</span>
         </button>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-none border border-red-500/30 bg-red-950/20 text-red-300 text-xs flex items-center justify-between">
+        <div className="mb-4 p-3.5 rounded-xl border border-red-500/30 bg-red-950/20 text-red-300 text-xs flex items-center justify-between">
           <span>{error}</span>
-          <button onClick={() => setError("")}><X size={14} /></button>
+          <button onClick={() => setError("")} className="text-red-400 hover:text-white">
+            <X size={14} />
+          </button>
         </div>
       )}
 
-      {/* Main Dual-Column Panel */}
-      <div className="h-[76vh] min-h-[520px] rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl overflow-hidden flex">
-        {/* LEFT COLUMN: CONVERSATION LIST */}
+      {/* Main Dual-Column Panel (Mobile Master-Detail) */}
+      <div className="h-[80vh] min-h-[580px] rounded-2xl border border-[#2A1B42] bg-[#120B1E]/90 shadow-2xl overflow-hidden flex flex-col md:flex-row">
+        {/* LEFT COLUMN: CONVERSATION LIST (Hidden on mobile when chat is open) */}
         <aside
-          className={`w-full md:w-80 lg:w-96 border-r border-gray-200 dark:border-[#2E1E45] flex flex-col bg-gray-50/50 dark:bg-[#100D16] ${
-            activeConvId ? "hidden md:flex" : "flex"
+          className={`w-full md:w-80 lg:w-96 border-r border-[#2A1B42] flex flex-col bg-[#0A0612]/70 ${
+            activeConvId ? "hidden md:flex" : "flex flex-1 md:flex-none"
           }`}
         >
           {/* Search Box */}
-          <div className="p-3.5 border-b border-gray-200 dark:border-[#2E1E45]">
+          <div className="p-3.5 border-b border-[#2A1B42]">
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -507,7 +636,7 @@ export function MessagesView() {
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 placeholder="Cari obrolan / teman..."
-                className="w-full h-9 pl-8 pr-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E] text-xs placeholder:text-gray-400 focus:border-[#9D4EDD] focus:outline-none"
+                className="w-full h-10 pl-9 pr-8 rounded-lg border border-[#2A1B42] bg-[#161024] text-xs text-white placeholder:text-gray-500 focus:border-[#7C3AED] focus:outline-none"
               />
               {searchFilter && (
                 <button
@@ -521,7 +650,7 @@ export function MessagesView() {
           </div>
 
           {/* Conversations Scroll List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-white/5">
+          <div className="flex-1 overflow-y-auto divide-y divide-[#2A1B42]/50 no-scrollbar">
             {loadingList ? (
               <div className="p-8 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
                 <RefreshCw size={14} className="animate-spin text-[#9D4EDD]" />
@@ -545,8 +674,8 @@ export function MessagesView() {
                     onClick={() => setActiveConvId(conv.id)}
                     className={`w-full p-3.5 text-left flex items-start gap-3 transition-colors ${
                       isActive
-                        ? "bg-[#9D4EDD]/10 border-l-4 border-[#9D4EDD]"
-                        : "hover:bg-gray-100/70 dark:hover:bg-white/5"
+                        ? "bg-[#7C3AED]/20 border-l-4 border-[#7C3AED]"
+                        : "hover:bg-purple-950/20"
                     }`}
                   >
                     {disp.isGroup ? (
@@ -564,11 +693,11 @@ export function MessagesView() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1 mb-1">
-                        <span className="font-bold text-xs text-gray-900 dark:text-white truncate">
+                        <span className="font-bold text-xs text-white truncate">
                           {disp.title}
                         </span>
                         {conv.lastMessage && (
-                          <span className="text-[10px] text-gray-400 shrink-0">
+                          <span className="text-[10px] text-gray-400 shrink-0 font-mono">
                             {new Date(conv.lastMessage.createdAt).toLocaleDateString("id-ID", {
                               hour: "2-digit",
                               minute: "2-digit",
@@ -578,11 +707,13 @@ export function MessagesView() {
                       </div>
 
                       <div className="flex items-center justify-between gap-1">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {conv.lastMessage?.content || "Belum ada pesan"}
+                        <p className="text-xs text-gray-400 truncate">
+                          {conv.lastMessage?.isDeleted
+                            ? "🚫 Pesan ini telah dihapus"
+                            : conv.lastMessage?.content || "Belum ada pesan"}
                         </p>
                         {conv.unreadCount > 0 && (
-                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#9D4EDD] text-white shrink-0">
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#7C3AED] text-white shrink-0">
                             {conv.unreadCount}
                           </span>
                         )}
@@ -597,19 +728,19 @@ export function MessagesView() {
 
         {/* RIGHT COLUMN: ACTIVE CHAT PANE */}
         <section
-          className={`flex-1 flex flex-col bg-white dark:bg-[#130921] ${
+          className={`flex-1 flex flex-col bg-[#120B1E]/95 ${
             !activeConvId ? "hidden md:flex" : "flex"
           }`}
         >
           {activeConvId && activeDetail ? (
             <>
               {/* Chat Header */}
-              <div className="px-4 py-3 border-b border-gray-200 dark:border-[#2E1E45] flex items-center justify-between gap-3 bg-white dark:bg-[#130921]">
+              <div className="px-4 py-3 border-b border-[#2A1B42] flex items-center justify-between gap-3 bg-[#161024]">
                 <div className="flex items-center gap-3 min-w-0">
-                  {/* Mobile Back Button */}
+                  {/* Mobile Back Button (Returns to conversation list) */}
                   <button
                     onClick={() => setActiveConvId(null)}
-                    className="md:hidden p-1.5 rounded text-gray-400 hover:text-white hover:bg-white/5"
+                    className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 shrink-0"
                     title="Kembali ke daftar pesan"
                   >
                     <ArrowLeft size={18} />
@@ -630,13 +761,13 @@ export function MessagesView() {
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h2 className="font-extrabold text-sm text-gray-900 dark:text-white truncate">
+                      <h2 className="font-extrabold text-sm text-white truncate">
                         {getConvDisplay(activeDetail).title}
                       </h2>
                       {!activeDetail.isGroup && getConvDisplay(activeDetail).user?.username && (
                         <Link
                           href={`/u/${encodeURIComponent(getConvDisplay(activeDetail).user!.username!)}`}
-                          className="text-[10px] font-semibold text-[#9D4EDD] hover:underline shrink-0"
+                          className="text-[10px] font-semibold text-[#C77DFF] hover:underline shrink-0"
                         >
                           Lihat Profil
                         </Link>
@@ -651,44 +782,75 @@ export function MessagesView() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* Chat Action Header Tools */}
+                <div className="flex items-center gap-1.5 shrink-0 relative" ref={menuRef}>
                   {activeDetail.isGroup && (
-                    <>
+                    <button
+                      onClick={() => {
+                        setShowAddMembersModal(true);
+                        setAddMembersSelected([]);
+                        setMemberSearchQuery("");
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg border border-[#2A1B42] bg-[#0A0612] text-xs font-semibold text-gray-300 hover:text-white hover:border-[#7C3AED] inline-flex items-center gap-1.5 transition-colors"
+                      title="Tambah anggota baru"
+                    >
+                      <UserPlus size={13} />
+                      <span className="hidden sm:inline">Tambah Anggota</span>
+                    </button>
+                  )}
+
+                  {/* 3-Dots Menu Dropdown */}
+                  <button
+                    onClick={() => setShowConvMenu((prev) => !prev)}
+                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                    title="Menu opsi obrolan"
+                  >
+                    <MoreVertical size={16} />
+                  </button>
+
+                  {showConvMenu && (
+                    <div className="absolute right-0 top-11 w-56 rounded-xl border border-[#2A1B42] bg-[#161024] shadow-2xl p-1.5 z-30 text-xs">
                       <button
-                        onClick={() => {
-                          setShowAddMembersModal(true);
-                          setAddMembersSelected([]);
-                          setMemberSearchQuery("");
-                        }}
-                        className="button button-quiet text-xs font-semibold inline-flex items-center gap-1 py-1 px-2.5"
-                        title="Tambah anggota baru"
+                        onClick={handleClearChat}
+                        className="w-full text-left px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-purple-950/30 flex items-center gap-2 transition-colors"
                       >
-                        <UserPlus size={13} />
-                        <span className="hidden sm:inline">Tambah Anggota</span>
+                        <RefreshCw size={14} className="text-amber-400" />
+                        <span>Bersihkan Isi Chat</span>
                       </button>
-                      <button
-                        onClick={handleLeaveGroup}
-                        className="p-1.5 rounded text-red-400 hover:bg-red-950/20"
-                        title="Keluar dari grup"
-                      >
-                        <LogOut size={16} />
-                      </button>
-                    </>
+
+                      {activeDetail.isGroup ? (
+                        <button
+                          onClick={handleLeaveGroup}
+                          className="w-full text-left px-3 py-2 rounded-lg text-red-400 hover:bg-red-950/20 flex items-center gap-2 transition-colors"
+                        >
+                          <LogOut size={14} />
+                          <span>Keluar dari Grup</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleDeleteConversation}
+                          className="w-full text-left px-3 py-2 rounded-lg text-red-400 hover:bg-red-950/20 flex items-center gap-2 transition-colors"
+                        >
+                          <Trash2 size={14} />
+                          <span>Hapus Percakapan</span>
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* Messages Body */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 no-scrollbar">
                 {loadingChat ? (
                   <div className="h-full flex items-center justify-center text-xs text-gray-400 gap-2">
                     <RefreshCw size={14} className="animate-spin text-[#9D4EDD]" />
-                    <span>Memuat obrolan...</span>
+                    <span>Memuat percakapan...</span>
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 space-y-1">
                     <p className="text-xs font-bold text-gray-300">Belum ada percakapan.</p>
-                    <p className="text-[11px] text-gray-500">Kirim pesan pertama untuk memulai obrolan!</p>
+                    <p className="text-[11px] text-gray-500">Kirim pesan pertama atau panggil @satpam untuk bantuan!</p>
                   </div>
                 ) : (
                   messages.map((msg, index) => {
@@ -698,8 +860,9 @@ export function MessagesView() {
 
                     return (
                       <div
+                        id={`msg-${msg.id}`}
                         key={msg.id}
-                        className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                        className={`flex flex-col group relative ${isMe ? "items-end" : "items-start"}`}
                       >
                         {showSender && msg.sender && (
                           <div className="flex items-center gap-1.5 mb-1 ml-1 text-[11px] text-gray-400">
@@ -707,31 +870,131 @@ export function MessagesView() {
                               {msg.sender.username || "Petualang"}
                             </span>
                             {msg.sender.role === "ADMIN" && (
-                              <span className="text-[9px] px-1 rounded bg-purple-500/20 text-purple-300">
+                              <span className="text-[9px] px-1 rounded bg-purple-500/20 text-purple-300 font-bold">
                                 Prince
                               </span>
                             )}
                           </div>
                         )}
 
-                        <div
-                          className={`max-w-[85%] sm:max-w-[70%] px-4 py-2.5 rounded-none text-xs sm:text-sm break-words leading-relaxed shadow-sm ${
-                            isMe
-                              ? "bg-gradient-to-r from-[#8338ec] to-[#9D4EDD] text-white rounded-br-xs"
-                              : "bg-gray-100 dark:bg-[#1C1726] text-gray-900 dark:text-gray-100 rounded-bl-xs border border-gray-200/50 dark:border-white/5"
-                          }`}
-                        >
-                          <div><FormattedChatMessage text={msg.content} /></div>
-                          <span
-                            className={`text-[10px] block mt-1 text-right ${
-                              isMe ? "text-purple-200/80" : "text-gray-400"
+                        <div className="relative max-w-[88%] sm:max-w-[72%]">
+                          {/* Message Bubble */}
+                          <div
+                            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm break-words leading-relaxed shadow-sm transition-all ${
+                              isMe
+                                ? "bg-gradient-to-r from-[#7C3AED] to-[#9D4EDD] text-white rounded-br-xs"
+                                : "bg-[#1C152B] text-gray-100 rounded-bl-xs border border-[#2A1B42]"
                             }`}
                           >
-                            {new Date(msg.createdAt).toLocaleTimeString("id-ID", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
+                            {/* Quoted Message (WhatsApp Style) */}
+                            {msg.replyTo && (
+                              <div
+                                onClick={() => {
+                                  const el = document.getElementById(`msg-${msg.replyTo?.id}`);
+                                  el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                                }}
+                                className="mb-2 p-2 rounded-lg bg-black/30 border-l-3 border-[#C77DFF] text-xs cursor-pointer hover:bg-black/40 transition-colors"
+                              >
+                                <span className="font-bold text-[#C77DFF] text-[11px] block truncate">
+                                  {msg.replyTo.sender?.username ?? msg.replyTo.sender?.name ?? "Petualang"}
+                                </span>
+                                <span className="text-gray-300 text-[11px] block truncate">
+                                  {msg.replyTo.isDeleted
+                                    ? "🚫 Pesan ini telah dihapus"
+                                    : msg.replyTo.content}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Message Content */}
+                            <div>
+                              <FormattedChatMessage text={msg.content} isDeleted={msg.isDeleted} />
+                            </div>
+
+                            {/* Footer: Timestamp & Sent Checkmarks */}
+                            <div className="flex items-center justify-end gap-1 mt-1 text-[10px]">
+                              <span className={isMe ? "text-purple-200/80 font-mono" : "text-gray-400 font-mono"}>
+                                {new Date(msg.createdAt).toLocaleTimeString("id-ID", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                              {isMe && !msg.isDeleted && (
+                                <CheckCheck size={12} className="text-purple-200 shrink-0" />
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action Toolbar on Hover / Mobile */}
+                          {!msg.isDeleted && (
+                            <div
+                              className={`absolute -top-3 ${
+                                isMe ? "left-0 -translate-x-full pr-2" : "right-0 translate-x-full pl-2"
+                              } hidden group-hover:flex items-center gap-1 z-10`}
+                            >
+                              {/* Reply Button */}
+                              <button
+                                type="button"
+                                onClick={() => setReplyingTo(msg)}
+                                className="p-1 rounded bg-[#161024] border border-[#2A1B42] text-gray-300 hover:text-white shadow-md hover:border-[#7C3AED]"
+                                title="Balas pesan"
+                              >
+                                <Reply size={12} />
+                              </button>
+
+                              {/* Emoji Reactions */}
+                              <div className="flex items-center bg-[#161024] border border-[#2A1B42] rounded-lg p-0.5 shadow-md">
+                                {EMOJI_OPTIONS.map((emoji) => (
+                                  <button
+                                    key={emoji}
+                                    type="button"
+                                    onClick={() => void handleReaction(msg.id, emoji)}
+                                    className="px-1 py-0.5 hover:scale-125 transition-transform text-xs"
+                                    title={`Reaksi ${emoji}`}
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+
+                              {/* Delete (Own messages only) */}
+                              {isMe && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDeleteMessage(msg.id)}
+                                  className="p-1 rounded bg-[#161024] border border-[#2A1B42] text-gray-400 hover:text-red-400 shadow-md hover:border-red-500/50"
+                                  title="Hapus pesan"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Existing Emoji Reaction Counts Display */}
+                          {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {Object.entries(msg.reactions).map(([emoji, userIds]) => {
+                                if (!userIds || userIds.length === 0) return null;
+                                const hasReacted = me?.id ? userIds.includes(me.id) : false;
+                                return (
+                                  <button
+                                    key={emoji}
+                                    type="button"
+                                    onClick={() => void handleReaction(msg.id, emoji)}
+                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold border transition-colors ${
+                                      hasReacted
+                                        ? "bg-[#7C3AED]/30 border-[#7C3AED] text-purple-200"
+                                        : "bg-[#161024] border-[#2A1B42] text-gray-400 hover:text-white"
+                                    }`}
+                                  >
+                                    <span>{emoji}</span>
+                                    <span>{userIds.length}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -740,56 +1003,84 @@ export function MessagesView() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Chat Send Form */}
-              <form
-                onSubmit={handleSendMessage}
-                className="p-3 border-t border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col gap-2"
-              >
-                {chatAttachment && (
-                  <div className="flex items-center gap-2 p-1.5 px-3 bg-[#9D4EDD]/15 border border-[#9D4EDD]/30 rounded-none w-fit max-w-full">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={chatAttachment} alt="Lampiran" className="w-10 h-10 object-cover rounded border border-purple-500/40" />
-                    <span className="text-[11px] text-purple-300 font-medium truncate max-w-[180px]">Foto siap dikirim</span>
+              {/* Chat Input Section */}
+              <div className="border-t border-[#2A1B42] bg-[#161024]">
+                {/* Replying Preview Banner */}
+                {replyingTo && (
+                  <div className="flex items-center justify-between px-4 py-2 bg-[#1C152B] border-l-4 border-[#7C3AED] text-xs">
+                    <div className="min-w-0 flex-1 pr-2">
+                      <span className="font-bold text-[#C77DFF] block truncate">
+                        Membalas @{replyingTo.sender?.username ?? replyingTo.sender?.name ?? "Petualang"}
+                      </span>
+                      <span className="text-gray-400 block truncate text-[11px]">
+                        {replyingTo.isDeleted ? "🚫 Pesan ini telah dihapus" : replyingTo.content}
+                      </span>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => setChatAttachment(null)}
-                      className="p-1 hover:text-white text-gray-400"
-                      aria-label="Hapus Lampiran"
+                      onClick={() => setReplyingTo(null)}
+                      className="text-gray-400 hover:text-white p-1"
+                      title="Batal balas"
                     >
-                      <X size={14} />
+                      <X size={15} />
                     </button>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
-                  <ImageUploader compact onAttachment={(b64) => setChatAttachment(b64)} />
-                  <input
-                    type="text"
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    placeholder="Ketik pesan..."
-                    className="flex-1 h-10 px-3.5 rounded-none border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#16121E] text-xs sm:text-sm focus:border-[#9D4EDD] focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={(!messageInput.trim() && !chatAttachment) || sending}
-                    className="button button-primary h-10 px-4 rounded-none font-bold inline-flex items-center gap-1.5"
-                  >
-                    <Send size={15} />
-                    <span className="hidden sm:inline">Kirim</span>
-                  </button>
-                </div>
-              </form>
+
+                {/* Chat Send Form */}
+                <form onSubmit={handleSendMessage} className="p-3 flex flex-col gap-2">
+                  {chatAttachment && (
+                    <div className="flex items-center gap-2 p-1.5 px-3 bg-[#7C3AED]/15 border border-[#7C3AED]/30 rounded-lg w-fit max-w-full">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={chatAttachment}
+                        alt="Lampiran"
+                        className="w-10 h-10 object-cover rounded border border-purple-500/40"
+                      />
+                      <span className="text-[11px] text-purple-300 font-medium truncate max-w-[180px]">
+                        Foto siap dikirim
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setChatAttachment(null)}
+                        className="p-1 hover:text-white text-gray-400"
+                        aria-label="Hapus Lampiran"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <ImageUploader compact onAttachment={(b64) => setChatAttachment(b64)} />
+                    <input
+                      type="text"
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      placeholder="Ketik pesan atau mention @satpam..."
+                      className="flex-1 h-10 px-3.5 rounded-lg border border-[#2A1B42] bg-[#0A0612] text-xs sm:text-sm text-white placeholder:text-gray-500 focus:border-[#7C3AED] focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      disabled={(!messageInput.trim() && !chatAttachment) || sending}
+                      className="h-10 px-4 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold inline-flex items-center gap-1.5 transition-colors disabled:opacity-40"
+                    >
+                      <Send size={15} />
+                      <span className="hidden sm:inline text-xs">Kirim</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
             </>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-8 text-gray-400 space-y-3">
-              <div className="w-14 h-14 rounded-none bg-purple-500/10 border border-purple-500/20 text-[#9D4EDD] flex items-center justify-center">
-                <MessageSquare size={28} />
+              <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-[#9D4EDD] flex items-center justify-center">
+                <MessageSquare size={32} />
               </div>
-              <h3 className="font-bold text-base text-gray-900 dark:text-white">
+              <h3 className="font-bold text-base text-white">
                 Pilih atau Mulai Obrolan
               </h3>
               <p className="text-xs text-gray-500 max-w-sm">
-                Pilih obrolan dari daftar sebelah kiri, atau buat grup obrolan baru untuk bermain bersama rekan guild.
+                Pilih percakapan dari daftar di sebelah kiri, atau buat grup obrolan baru untuk mabar bersama rekan guild.
               </p>
             </div>
           )}
@@ -798,10 +1089,10 @@ export function MessagesView() {
 
       {/* MODAL: BUAT GRUP CHAT */}
       {showCreateGroup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#2A1B42] pb-3">
-              <h3 className="font-extrabold text-base text-gray-900 dark:text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-2xl border border-[#2A1B42] bg-[#161024] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#2A1B42] pb-3">
+              <h3 className="font-extrabold text-base text-white flex items-center gap-2">
                 <Users size={18} className="text-[#9D4EDD]" />
                 <span>Buat Grup Obrolan Komunitas</span>
               </h3>
@@ -812,25 +1103,25 @@ export function MessagesView() {
 
             <form onSubmit={handleCreateGroup} className="space-y-4 text-xs">
               <div>
-                <label className="font-bold block mb-1">Nama Grup *</label>
+                <label className="font-bold block mb-1 text-gray-300">Nama Grup *</label>
                 <input
                   required
                   type="text"
                   value={groupNameInput}
                   onChange={(e) => setGroupNameInput(e.target.value)}
                   placeholder="Contoh: Party Rank Mythic"
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E]"
+                  className="w-full h-10 px-3 rounded-lg border border-[#2A1B42] bg-[#0A0612] text-white placeholder:text-gray-500 focus:border-[#7C3AED] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="font-bold block mb-1">Undang Anggota (Cari Username)</label>
+                <label className="font-bold block mb-1 text-gray-300">Undang Anggota (Cari Username)</label>
                 <input
                   type="text"
                   value={memberSearchQuery}
                   onChange={(e) => setMemberSearchQuery(e.target.value)}
                   placeholder="Ketik minimal 2 huruf username..."
-                  className="w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E]"
+                  className="w-full h-9 px-3 rounded-lg border border-[#2A1B42] bg-[#0A0612] text-white placeholder:text-gray-500 focus:border-[#7C3AED] focus:outline-none"
                 />
 
                 {/* Selected members pills */}
@@ -855,7 +1146,7 @@ export function MessagesView() {
 
                 {/* Search result dropdown */}
                 {memberSearchResults.length > 0 && (
-                  <div className="mt-2 max-h-36 overflow-y-auto border border-gray-200 dark:border-white/10 rounded-lg p-1 bg-white dark:bg-[#16121E] space-y-1">
+                  <div className="mt-2 max-h-36 overflow-y-auto border border-[#2A1B42] rounded-lg p-1 bg-[#0A0612] space-y-1">
                     {memberSearchResults.map((u) => {
                       const isAdded = groupSelectedUsers.some((x) => x.id === u.id);
                       return (
@@ -874,7 +1165,7 @@ export function MessagesView() {
                         >
                           <div className="flex items-center gap-2">
                             <DiscordAvatar src={u.avatar ?? null} username={u.username ?? null} size={24} />
-                            <span className="font-semibold text-gray-900 dark:text-white">
+                            <span className="font-semibold text-white">
                               {u.username}
                             </span>
                           </div>
@@ -890,11 +1181,19 @@ export function MessagesView() {
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-[#2E1E45]">
-                <button type="button" onClick={() => setShowCreateGroup(false)} className="button button-quiet">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#2A1B42]">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateGroup(false)}
+                  className="px-4 py-2 rounded-lg border border-[#2A1B42] bg-[#0A0612] text-gray-300 hover:text-white"
+                >
                   Batal
                 </button>
-                <button type="submit" disabled={!groupNameInput.trim()} className="button button-primary font-bold">
+                <button
+                  type="submit"
+                  disabled={!groupNameInput.trim()}
+                  className="px-4 py-2 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold transition-colors disabled:opacity-50"
+                >
                   Buat Grup
                 </button>
               </div>
@@ -905,10 +1204,10 @@ export function MessagesView() {
 
       {/* MODAL: TAMBAH ANGGOTA GRUP */}
       {showAddMembersModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#2A1B42] pb-3">
-              <h3 className="font-extrabold text-base text-gray-900 dark:text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-2xl border border-[#2A1B42] bg-[#161024] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#2A1B42] pb-3">
+              <h3 className="font-extrabold text-base text-white flex items-center gap-2">
                 <UserPlus size={18} className="text-[#9D4EDD]" />
                 <span>Tambah Anggota ke Grup</span>
               </h3>
@@ -919,13 +1218,13 @@ export function MessagesView() {
 
             <form onSubmit={handleAddMembers} className="space-y-4 text-xs">
               <div>
-                <label className="font-bold block mb-1">Cari Anggota Guild</label>
+                <label className="font-bold block mb-1 text-gray-300">Cari Anggota Guild</label>
                 <input
                   type="text"
                   value={memberSearchQuery}
                   onChange={(e) => setMemberSearchQuery(e.target.value)}
                   placeholder="Ketik minimal 2 huruf username..."
-                  className="w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E]"
+                  className="w-full h-9 px-3 rounded-lg border border-[#2A1B42] bg-[#0A0612] text-white placeholder:text-gray-500 focus:border-[#7C3AED] focus:outline-none"
                 />
 
                 {addMembersSelected.length > 0 && (
@@ -948,7 +1247,7 @@ export function MessagesView() {
                 )}
 
                 {memberSearchResults.length > 0 && (
-                  <div className="mt-2 max-h-36 overflow-y-auto border border-gray-200 dark:border-white/10 rounded-lg p-1 bg-white dark:bg-[#16121E] space-y-1">
+                  <div className="mt-2 max-h-36 overflow-y-auto border border-[#2A1B42] rounded-lg p-1 bg-[#0A0612] space-y-1">
                     {memberSearchResults.map((u) => {
                       const alreadyInGroup = activeDetail?.participants.some((p) => p.userId === u.id);
                       const isAdded = addMembersSelected.some((x) => x.id === u.id);
@@ -971,7 +1270,7 @@ export function MessagesView() {
                         >
                           <div className="flex items-center gap-2">
                             <DiscordAvatar src={u.avatar ?? null} username={u.username ?? null} size={24} />
-                            <span className="font-semibold text-gray-900 dark:text-white">
+                            <span className="font-semibold text-white">
                               {u.username}
                             </span>
                           </div>
@@ -985,11 +1284,19 @@ export function MessagesView() {
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-[#2E1E45]">
-                <button type="button" onClick={() => setShowAddMembersModal(false)} className="button button-quiet">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#2A1B42]">
+                <button
+                  type="button"
+                  onClick={() => setShowAddMembersModal(false)}
+                  className="px-4 py-2 rounded-lg border border-[#2A1B42] bg-[#0A0612] text-gray-300 hover:text-white"
+                >
                   Batal
                 </button>
-                <button type="submit" disabled={addMembersSelected.length === 0} className="button button-primary font-bold">
+                <button
+                  type="submit"
+                  disabled={addMembersSelected.length === 0}
+                  className="px-4 py-2 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold transition-colors disabled:opacity-50"
+                >
                   Tambahkan ({addMembersSelected.length})
                 </button>
               </div>

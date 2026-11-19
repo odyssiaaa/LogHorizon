@@ -2,22 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { useSession, signIn } from "next-auth/react";
+import Link from "next/link";
 import {
   Award,
   BadgeCheck,
   Bell,
+  Calendar,
   Check,
   Crown,
   ExternalLink,
+  Flame,
   Gamepad2,
   RefreshCw,
   Shield,
   Sparkles,
   SunMoon,
-  Sword,
+  Swords,
   Trophy,
   Type,
-  UserCheck,
+  User,
+  Zap,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -30,6 +34,15 @@ type Achievement = {
   unlocked: boolean;
 };
 
+type ActivityItem = {
+  id: string;
+  type: "POST" | "TOURNAMENT" | "ESCROW";
+  title: string;
+  detail: string;
+  createdAt: string;
+  href: string;
+};
+
 type Profile = {
   id: string;
   discordId: string | null;
@@ -38,6 +51,10 @@ type Profile = {
   level: number;
   xp: number;
   role: string;
+  badges?: string[];
+  checkInStreak?: number;
+  postsCount?: number;
+  tournamentsCount?: number;
   isPremium: boolean;
   favoriteGames?: string[];
   gender?: string | null;
@@ -47,7 +64,9 @@ type Profile = {
   highestRank?: string;
   primaryRole?: string;
   achievements?: Achievement[];
+  recentActivity?: ActivityItem[];
 };
+
 type Listing = {
   id: string;
   title: string;
@@ -56,6 +75,7 @@ type Listing = {
   createdAt: string;
   reports: { pending: number; resolved: number };
 };
+
 type PreferenceState = { dark: boolean; largeFont: boolean; animations: boolean; notifications: boolean };
 const initialPreferences: PreferenceState = { dark: true, largeFont: false, animations: true, notifications: false };
 
@@ -78,6 +98,22 @@ function listingStatus(value: unknown) {
   return status === "AVAILABLE" || status === "SOLD" || status === "IN_ESCROW" ? status : null;
 }
 
+function getCasteBadge(role?: string, username?: string, discordId?: string, isPremium?: boolean) {
+  if (username === ".odyssia" || username === "odyssia" || discordId === "706661230835925042") {
+    return { title: "👑 Emperor (Owner)", color: "border-amber-500/40 bg-amber-500/10 text-amber-400" };
+  }
+  if (role === "ADMIN") {
+    return { title: "✨ Prince / Princess (Admin)", color: "border-purple-500/40 bg-purple-500/10 text-purple-300" };
+  }
+  if (role === "MODERATOR") {
+    return { title: "⚔️ Lord Commander (Mod)", color: "border-cyan-500/40 bg-cyan-500/10 text-cyan-300" };
+  }
+  if (isPremium) {
+    return { title: "💎 Elite Adventurer (VIP)", color: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" };
+  }
+  return { title: "🛡️ Adventurer", color: "border-zinc-700 bg-zinc-800/60 text-zinc-300" };
+}
+
 export function SettingsDashboard() {
   const { data: session, status, update } = useSession();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -90,7 +126,10 @@ export function SettingsDashboard() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  // Gamer Profile & Identity Form
+  // Sub-tabs: "profile" | "badges" | "settings"
+  const [activeTab, setActiveTab] = useState<"profile" | "badges" | "settings">("profile");
+
+  // Gamer Profile Form
   const [favoriteGames, setFavoriteGames] = useState<string[]>([]);
   const [customGameInput, setCustomGameInput] = useState("");
   const [gender, setGender] = useState("");
@@ -148,21 +187,26 @@ export function SettingsDashboard() {
     Promise.all([
       fetch("/api/settings/profile").then((response) => readApiResponse<Profile>(response, "Profil gagal dimuat.")),
       fetch("/api/settings/listings").then((response) => readApiResponse<Listing[]>(response, "Riwayat lapak gagal dimuat.")),
-    ]).then(([nextProfile, nextListings]) => {
-      if (!active) return;
-      setProfile(nextProfile);
-      setFavoriteGames(nextProfile.favoriteGames ?? []);
-      setGender(nextProfile.gender ?? "");
-      setBirthDate(nextProfile.birthDate ?? "");
-      setShowBirthDate(Boolean(nextProfile.showBirthDate));
-      setListings(nextListings);
-      setError("");
-    }).catch((reason: unknown) => {
-      if (active) setError(reason instanceof Error ? reason.message : "Pengaturan gagal dimuat.");
-    }).finally(() => {
-      if (active) setLoading(false);
-    });
-    return () => { active = false; };
+    ])
+      .then(([nextProfile, nextListings]) => {
+        if (!active) return;
+        setProfile(nextProfile);
+        setFavoriteGames(nextProfile.favoriteGames ?? []);
+        setGender(nextProfile.gender ?? "");
+        setBirthDate(nextProfile.birthDate ?? "");
+        setShowBirthDate(Boolean(nextProfile.showBirthDate));
+        setListings(nextListings);
+        setError("");
+      })
+      .catch((reason: unknown) => {
+        if (active) setError(reason instanceof Error ? reason.message : "Pengaturan gagal dimuat.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [status]);
 
   function updatePreference<K extends keyof PreferenceState>(key: K, value: PreferenceState[K]) {
@@ -176,7 +220,7 @@ export function SettingsDashboard() {
     try {
       const response = await fetch("/api/settings/profile", { method: "POST" });
       const result = await readApiResponse<{ profile: Profile; notice: string }>(response, "Sinkronisasi Discord gagal.");
-      setProfile(result.profile);
+      setProfile((prev) => (prev ? { ...prev, ...result.profile } : result.profile));
       setMessage(result.notice);
       await update();
     } catch (reason) {
@@ -203,7 +247,7 @@ export function SettingsDashboard() {
         }),
       });
       const result = await readApiResponse<{ profile: Profile; message: string }>(response, "Gagal menyimpan profil gamer.");
-      setProfile((current) => current ? { ...current, ...result.profile } : result.profile);
+      setProfile((current) => (current ? { ...current, ...result.profile } : result.profile));
       setMessage(result.message || "Profil gamer berhasil disimpan!");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Gagal menyimpan profil gamer.");
@@ -245,9 +289,13 @@ export function SettingsDashboard() {
         body: JSON.stringify({ status: nextStatus }),
       });
       await readApiResponse<unknown>(response, "Status lapak gagal diperbarui.");
-      setListings((current) => current.map((entry) => entry.id === listing.id && entry.marketData && typeof entry.marketData === "object"
-        ? { ...entry, marketData: { ...entry.marketData, status: nextStatus } }
-        : entry));
+      setListings((current) =>
+        current.map((entry) =>
+          entry.id === listing.id && entry.marketData && typeof entry.marketData === "object"
+            ? { ...entry, marketData: { ...entry.marketData, status: nextStatus } }
+            : entry
+        )
+      );
       setMessage("Status lapak berhasil diperbarui.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Status lapak gagal diperbarui.");
@@ -256,272 +304,743 @@ export function SettingsDashboard() {
     }
   }
 
-  if (status === "loading" || (status === "authenticated" && loading)) return <main className="community-page"><div className="empty-state">Memuat pengaturan…</div></main>;
-  if (!session?.user) return <main className="community-page page-shell settings-page"><p className="section-kicker">ACCOUNT / SETTINGS</p><h1>Pengaturan <span>Akun</span></h1><p className="muted-copy">Hubungkan Discord untuk mengelola profil dan preferensi.</p><button className="button button-discord" onClick={() => void signIn("discord", { callbackUrl: "/settings" })}>Login dengan Discord</button></main>;
+  if (status === "loading" || (status === "authenticated" && loading)) {
+    return (
+      <main className="w-full max-w-[1200px] mx-auto px-4 py-16 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-purple-400 text-sm">
+          <RefreshCw size={18} className="animate-spin" />
+          <span>Memuat data profil &amp; pengaturan…</span>
+        </div>
+      </main>
+    );
+  }
 
-  return <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 overflow-x-hidden">
-    <header className="settings-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"><div><p className="section-kicker text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-1">ACCOUNT / CONTROL CENTER</p><h1 className="page-title text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white break-words">Pengaturan <span className="text-[#9D4EDD] dark:text-[#C77DFF]">Akun</span></h1><p className="muted-copy text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Profil, preferensi antarmuka, dan aktivitas komunitas.</p></div><div className="settings-account-chip self-start sm:self-auto"><DiscordAvatar className="settings-avatar" src={profile?.avatar ?? session.user.avatar} username={profile?.username ?? session.user.username} size={40} />{profile?.username ?? session.user.name ?? "Adventurer"}<span>{profile?.role ?? session.user.role}</span></div></header>
-    <DailyCheckInWidget />
-    {error && <div className="inline-error" role="alert">{error}</div>}
-    {message && <div className="inline-notice" role="status">{message}</div>}
-    <div className="settings-layout">
-      <nav className="settings-nav" aria-label="Menu pengaturan">
-        <a href="#profile-settings"><Shield size={16} /> Profil Discord</a>
-        <a href="#gamer-settings"><Gamepad2 size={16} /> Identitas Gamer</a>
-        <a href="#achievement-settings"><Trophy size={16} /> Pencapaian (Achievements)</a>
-        <a href="#preference-settings"><SunMoon size={16} /> Preferensi UI</a>
-        <a href="#listing-settings"><BadgeCheck size={16} /> Lapak &amp; Notifikasi</a>
-      </nav>
-      <div className="settings-content space-y-6">
-        {/* 01 / PROFILE SYNC */}
-        <section className="settings-panel" id="profile-settings">
-          <div className="settings-panel-heading">
-            <div>
-              <p className="section-kicker">01 / PROFILE SYNC</p>
-              <h2>Profil Discord</h2>
-            </div>
-            <button className="button button-quiet" onClick={() => void syncProfile()} disabled={syncing}>
-              <RefreshCw size={15} className={syncing ? "spin-icon" : ""} /> {syncing ? "Sinkronisasi…" : "Sync Discord Profile"}
-            </button>
-          </div>
-          <dl className="settings-profile-grid">
-            <div><dt>Discord ID</dt><dd>{profile?.discordId ?? "Belum tersedia"}</dd></div>
-            <div><dt>Username</dt><dd>{profile?.username ?? "Gamer"}</dd></div>
-            <div><dt>Role komunitas</dt><dd>{(profile?.username === ".odyssia" || profile?.username === "odyssia") ? "👑 Emperor (Owner)" : (profile?.role === "ADMIN" || session.user.role === "ADMIN") ? "✨ Prince / Princess (Admin)" : (profile?.role === "MODERATOR" || session.user.role === "MODERATOR") ? "⚔️ Lord Commander (Moderator)" : (profile?.role ?? session.user.role)}</dd></div>
-            <div><dt>Level / XP</dt><dd>Lv. {profile?.level ?? 1} · {profile?.xp ?? 0} XP</dd></div>
-            <div><dt>Benefit</dt><dd>{(profile?.username === ".odyssia" || profile?.username === "odyssia") ? "👑 Guild Emperor / Noble Patron (Full Perks)" : (profile?.role === "ADMIN" || session.user.role === "ADMIN") ? "✨ Prince / Princess (Admin Privileges)" : profile?.isPremium ? "Elite Party Member (Premium)" : "Adventurer"}</dd></div>
-          </dl>
-        </section>
-
-        {/* 02 / IDENTITAS & GAME YANG DIMAINKAN */}
-        <section className="settings-panel" id="gamer-settings">
-          <div className="settings-panel-heading">
-            <div>
-              <p className="section-kicker">02 / PROFIL GAMER</p>
-              <h2>Identitas &amp; Game yang Dimainkan</h2>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-            Pilih game yang aktif kamu mainkan dan sesuaikan identitas profilmu untuk komunitas LogHorizon.
+  if (!session?.user) {
+    return (
+      <main className="w-full max-w-[600px] mx-auto px-4 py-20 text-center">
+        <div className="p-8 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
+          <Shield size={48} className="mx-auto text-[#9D4EDD] mb-4" />
+          <h1 className="text-2xl font-black text-white mb-2">Profil &amp; Pengaturan Akun</h1>
+          <p className="text-sm text-gray-400 mb-6">
+            Masuk dengan akun Discord untuk mengelola profil, lencana, dan preferensi antarmuka LogHorizon.
           </p>
-          <form onSubmit={(e) => void saveGamerProfile(e)} className="space-y-5">
-            {/* 1. Game yang Dimainkan */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
-                Game yang Dimainkan (Pilih Cepat atau Tambah Kustom)
-              </label>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {COMMON_GAMES.map((g) => {
-                  const isSelected = favoriteGames.includes(g);
-                  return (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => toggleGame(g)}
-                      className={`px-3 py-1.5 rounded-none text-xs font-bold border transition-colors ${
-                        isSelected
-                          ? "bg-[#7C3AED] text-white border-[#7C3AED]"
-                          : "border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-700 dark:text-gray-300 hover:border-[#7C3AED]"
-                      }`}
-                    >
-                      {isSelected ? `✓ ${g}` : `+ ${g}`}
-                    </button>
-                  );
-                })}
-              </div>
+          <button
+            onClick={() => void signIn("discord", { callbackUrl: "/profile" })}
+            className="w-full py-3 px-6 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] font-bold text-white text-sm transition-colors shadow-lg shadow-[#5865F2]/20"
+          >
+            Login dengan Discord
+          </button>
+        </div>
+      </main>
+    );
+  }
 
-              {/* Tambah game kustom */}
-              <div className="flex items-center gap-2 max-w-md">
-                <input
-                  type="text"
-                  maxLength={40}
-                  value={customGameInput}
-                  onChange={(e) => setCustomGameInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addCustomGame();
-                    }
-                  }}
-                  placeholder="Tambah Game Lainnya..."
-                  className="flex-1 px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED]"
+  const caste = getCasteBadge(
+    profile?.role ?? session.user.role,
+    profile?.username ?? session.user.username ?? undefined,
+    profile?.discordId ?? undefined,
+    profile?.isPremium ?? session.user.isPremium
+  );
+
+  const currentLevel = profile?.level ?? 1;
+  const currentXp = profile?.xp ?? 0;
+  const xpInLevel = currentXp % 100;
+  const xpPercent = Math.min(100, Math.max(0, Math.round((xpInLevel / 100) * 100)));
+
+  return (
+    <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 min-w-0 overflow-x-hidden">
+      {/* Page Title & Sub-tabs Header */}
+      <div className="mb-6">
+        <p className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-1">LOGHORIZON / CITADEL</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white break-words">
+          Profil &amp; Pengaturan
+        </h1>
+        <p className="text-xs sm:text-sm text-gray-400 mt-1">
+          Pusat kendali akun, riwayat kontribusi, dan preferensi petualang.
+        </p>
+      </div>
+
+      {/* 3 Sub-Tabs Navigation */}
+      <div className="flex overflow-x-auto gap-2 border-b border-[#2A1B42] pb-2 mb-6 no-scrollbar">
+        <button
+          type="button"
+          onClick={() => setActiveTab("profile")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
+            activeTab === "profile"
+              ? "bg-[#7C3AED] text-white shadow-md shadow-[#7C3AED]/25"
+              : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-[#7C3AED]/50"
+          }`}
+        >
+          <User size={16} />
+          <span>Ringkasan Profil</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("badges")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
+            activeTab === "badges"
+              ? "bg-[#7C3AED] text-white shadow-md shadow-[#7C3AED]/25"
+              : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-[#7C3AED]/50"
+          }`}
+        >
+          <Trophy size={16} />
+          <span>Lencana &amp; Riwayat Aktivitas</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("settings")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
+            activeTab === "settings"
+              ? "bg-[#7C3AED] text-white shadow-md shadow-[#7C3AED]/25"
+              : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-[#7C3AED]/50"
+          }`}
+        >
+          <Shield size={16} />
+          <span>Pengaturan Akun</span>
+        </button>
+      </div>
+
+      {/* Global Alerts */}
+      {error && (
+        <div className="mb-6 p-4 rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 text-xs sm:text-sm">
+          {error}
+        </div>
+      )}
+      {message && (
+        <div className="mb-6 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs sm:text-sm">
+          {message}
+        </div>
+      )}
+
+      {/* TAB 1: RINGKASAN PROFIL */}
+      {activeTab === "profile" && (
+        <div className="space-y-6">
+          {/* Hero Identitas Rapi */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left min-w-0">
+              <div className="relative shrink-0">
+                <DiscordAvatar
+                  src={profile?.avatar ?? session.user.avatar}
+                  username={profile?.username ?? session.user.username}
+                  size={84}
+                  className="rounded-2xl border-2 border-[#7C3AED]/50 shadow-lg shadow-[#7C3AED]/20"
                 />
-                <button
-                  type="button"
-                  onClick={addCustomGame}
-                  className="px-3 py-2 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold transition-colors shrink-0"
-                >
-                  + Tambah
-                </button>
+                <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md bg-[#7C3AED] text-white text-[10px] font-black uppercase">
+                  Lv.{currentLevel}
+                </span>
               </div>
 
-              {/* Daftar game terpilih */}
-              {favoriteGames.length > 0 && (
-                <div className="mt-3">
-                  <span className="text-[11px] font-bold text-gray-400 block mb-1.5 uppercase">
-                    Game Terpilih ({favoriteGames.length}/20):
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {favoriteGames.map((g) => (
-                      <span
-                        key={g}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none border border-[#7C3AED]/40 bg-[#7C3AED]/10 text-purple-300 text-xs font-medium"
-                      >
-                        {g}
-                        <button
-                          type="button"
-                          onClick={() => removeGame(g)}
-                          className="hover:text-red-400 font-bold ml-0.5 text-sm leading-none"
-                          title="Hapus"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
+              <div className="flex-1 min-w-0 w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                  <div className="min-w-0">
+                    <h2 className="text-xl sm:text-2xl font-black text-white truncate">
+                      {profile?.username ?? session.user.name ?? "Petualang"}
+                    </h2>
+                    <p className="text-xs text-gray-400 font-mono">
+                      Discord ID: {profile?.discordId ?? "Tidak terhubung"}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-center sm:justify-end gap-2 shrink-0">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border ${caste.color}`}
+                    >
+                      {caste.title}
+                    </span>
                   </div>
                 </div>
-              )}
+
+                {/* Progress Bar XP & Level Proposional */}
+                <div className="mt-4 p-3.5 rounded-xl border border-[#2A1B42] bg-[#0A0612]/70">
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="font-bold text-gray-300 flex items-center gap-1.5">
+                      <Zap size={14} className="text-[#9D4EDD]" /> Progres Pengalaman (XP)
+                    </span>
+                    <span className="font-mono text-purple-300 font-bold">
+                      {xpInLevel} / 100 XP ({currentXp} Total)
+                    </span>
+                  </div>
+                  <div className="w-full h-3 bg-[#1A102E] rounded-full overflow-hidden p-0.5 border border-purple-900/30">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#7C3AED] via-[#9D4EDD] to-[#C77DFF] rounded-full transition-all duration-500 shadow-sm shadow-purple-500/50"
+                      style={{ width: `${xpPercent}%` }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-1.5">
+                    Raih {100 - xpInLevel} XP lagi dari forum, turnamen, atau absen harian untuk mencapai Level{" "}
+                    {currentLevel + 1}.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Grid Statistik 2x2 di HP (grid-cols-2 sm:grid-cols-4 gap-3) */}
+          <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-4 rounded-xl border border-[#2A1B42] bg-[#120B1E]/60 flex flex-col justify-between min-w-0">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block truncate">
+                Level &amp; XP
+              </span>
+              <div className="mt-2">
+                <span className="text-xl sm:text-2xl font-black text-white block">Lv. {currentLevel}</span>
+                <span className="text-xs text-purple-400 font-mono font-medium truncate block">{currentXp} XP</span>
+              </div>
             </div>
 
-            {/* 2. Gender & 3. Tanggal Lahir (Opsional) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-[#2E1E45]">
+            <div className="p-4 rounded-xl border border-[#2A1B42] bg-[#120B1E]/60 flex flex-col justify-between min-w-0">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block truncate">
+                Streak Absen
+              </span>
+              <div className="mt-2 flex items-baseline gap-1.5">
+                <span className="text-xl sm:text-2xl font-black text-amber-400 block">
+                  {profile?.checkInStreak ?? 0}
+                </span>
+                <span className="text-xs text-gray-400">Hari</span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-[#2A1B42] bg-[#120B1E]/60 flex flex-col justify-between min-w-0">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block truncate">
+                Thread Forum
+              </span>
+              <div className="mt-2 flex items-baseline gap-1.5">
+                <span className="text-xl sm:text-2xl font-black text-cyan-400 block">
+                  {profile?.postsCount ?? 0}
+                </span>
+                <span className="text-xs text-gray-400">Dibuat</span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-[#2A1B42] bg-[#120B1E]/60 flex flex-col justify-between min-w-0">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block truncate">
+                Turnamen Diikuti
+              </span>
+              <div className="mt-2 flex items-baseline gap-1.5">
+                <span className="text-xl sm:text-2xl font-black text-emerald-400 block">
+                  {profile?.tournamentsCount ?? 0}
+                </span>
+                <span className="text-xs text-gray-400">Turnamen</span>
+              </div>
+            </div>
+          </section>
+
+          {/* Tombol Klaim Absen Harian XP */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  Gender (Opsional)
-                </label>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-                >
-                  <option value="">Pilih gender (Opsional)</option>
-                  <option value="Laki-laki">Laki-laki</option>
-                  <option value="Perempuan">Perempuan</option>
-                  <option value="Privasi / Tidak disebutkan">Privasi / Tidak disebutkan</option>
-                </select>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
-                  Pilihan identitas gender untuk komunitas.
+                <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                  <Flame size={20} className="text-amber-400" />
+                  Klaim Absen Harian XP
+                </h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Check-in setiap hari untuk mempertahankan streak dan meningkatkan Level petualang.
                 </p>
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  Tanggal Lahir (Opsional)
-                </label>
-                <input
-                  type="date"
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#7C3AED]"
-                />
-                <label className="flex items-center gap-2 mt-2 cursor-pointer text-xs text-gray-600 dark:text-gray-300">
-                  <input
-                    type="checkbox"
-                    checked={showBirthDate}
-                    onChange={(e) => setShowBirthDate(e.target.checked)}
-                    className="rounded-none border-gray-300 dark:border-[#2E1E45] text-[#7C3AED] focus:ring-0"
-                  />
-                  <span>Tampilkan tanggal lahir / usia di profil publik</span>
-                </label>
-              </div>
             </div>
+            <DailyCheckInWidget />
+          </section>
 
-            <div className="pt-2">
+          {/* Gamer Info Ringkas */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <Gamepad2 size={16} className="text-[#9D4EDD]" />
+                Game yang Aktif Dimainkan
+              </h3>
               <button
-                type="submit"
-                disabled={savingGamer}
-                className="button button-primary px-5 py-2.5 rounded-none text-xs font-bold inline-flex items-center gap-2"
+                type="button"
+                onClick={() => setActiveTab("settings")}
+                className="text-xs text-purple-400 hover:text-purple-300 font-bold"
               >
-                {savingGamer ? "Menyimpan…" : "Simpan Profil Gamer"}
+                Ubah di Pengaturan &rarr;
               </button>
             </div>
-          </form>
-        </section>
+            {favoriteGames.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {favoriteGames.map((game) => (
+                  <span
+                    key={game}
+                    className="px-3 py-1.5 rounded-lg border border-[#7C3AED]/40 bg-[#7C3AED]/10 text-purple-300 text-xs font-semibold"
+                  >
+                    {game}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 italic">
+                Belum ada game yang dipilih. Tambahkan game favoritmu di tab Pengaturan Akun.
+              </p>
+            )}
+          </section>
+        </div>
+      )}
 
-        {/* 03 / PENCAPAIAN GUILD (ACHIEVEMENTS) */}
-        <section className="settings-panel" id="achievement-settings">
-          <div className="settings-panel-heading">
-            <div>
-              <p className="section-kicker">03 / GUILD BADGES</p>
-              <h2>Pencapaian Petualang (Achievements)</h2>
+      {/* TAB 2: LENCANA & RIWAYAT AKTIVITAS */}
+      {activeTab === "badges" && (
+        <div className="space-y-6">
+          {/* Lencana & Gelar Milik Petualang */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
+            <div className="mb-4">
+              <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+                <Trophy size={20} className="text-amber-400" />
+                Pencapaian &amp; Lencana Petualang
+              </h2>
+              <p className="text-xs text-gray-400 mt-1">
+                Lencana otomatis terbuka saat kamu mencapai tonggak prestasi di LogHorizon.
+              </p>
             </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-            Lencana pencapaian otomatis diberikan sistem berdasarkan kontribusi nyata di komunitas.
-          </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {profile?.achievements?.map((ach) => (
-              <div
-                key={ach.id}
-                className={`p-3.5 rounded-none border flex items-start gap-3 transition-colors ${
-                  ach.unlocked
-                    ? "bg-purple-500/10 border-purple-500/30 text-gray-900 dark:text-white"
-                    : "bg-gray-50 dark:bg-[#08060B]/50 border-gray-200 dark:border-[#2E1E45] opacity-60 text-gray-400"
-                }`}
-              >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {profile?.achievements?.map((ach) => (
                 <div
-                  className={`w-9 h-9 rounded-none flex items-center justify-center shrink-0 text-base ${
-                    ach.unlocked ? "bg-[#9D4EDD]/20 text-[#9D4EDD]" : "bg-gray-200 dark:bg-gray-800 text-gray-400"
+                  key={ach.id}
+                  className={`p-4 rounded-xl border flex items-start gap-3.5 transition-colors min-w-0 ${
+                    ach.unlocked
+                      ? "bg-purple-950/20 border-purple-500/30 text-white"
+                      : "bg-[#0A0612]/60 border-[#2A1B42] opacity-60 text-gray-400"
                   }`}
                 >
-                  {ach.unlocked ? <Award size={18} /> : "🔒"}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <strong className="text-xs font-bold block">{ach.title}</strong>
-                    {ach.unlocked && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded font-extrabold bg-emerald-500/15 text-emerald-400">
-                        TERBUKA
-                      </span>
-                    )}
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      ach.unlocked ? "bg-[#7C3AED]/20 text-[#C77DFF]" : "bg-zinc-800 text-zinc-500"
+                    }`}
+                  >
+                    {ach.unlocked ? <Award size={20} /> : <span className="text-sm">🔒</span>}
                   </div>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">{ach.desc}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <strong className="text-xs sm:text-sm font-bold block truncate">{ach.title}</strong>
+                      {ach.unlocked ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-black bg-emerald-500/20 text-emerald-400 shrink-0">
+                          TERBUKA
+                        </span>
+                      ) : (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-black bg-zinc-800 text-zinc-400 shrink-0">
+                          TERKUNCI
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1 break-words">{ach.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Riwayat Aktivitas Terkini (Forum, Turnamen, Rekber) */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
+            <div className="mb-4">
+              <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+                <Calendar size={20} className="text-[#9D4EDD]" />
+                Riwayat Aktivitas Terkini
+              </h2>
+              <p className="text-xs text-gray-400 mt-1">
+                Catatan partisipasi terbarumu di forum diskusi, turnamen komunitas, dan transaksi lapak.
+              </p>
+            </div>
+
+            {profile?.recentActivity && profile.recentActivity.length > 0 ? (
+              <div className="divide-y divide-[#2A1B42] -mx-2 sm:mx-0">
+                {profile.recentActivity.map((act) => (
+                  <div key={act.id} className="py-3 px-2 sm:px-3 flex items-start justify-between gap-3 min-w-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded font-black uppercase shrink-0 ${
+                            act.type === "TOURNAMENT"
+                              ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                              : act.type === "ESCROW"
+                              ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                              : "bg-purple-500/15 text-purple-300 border border-purple-500/30"
+                          }`}
+                        >
+                          {act.type}
+                        </span>
+                        <Link
+                          href={act.href}
+                          className="text-xs sm:text-sm font-bold text-white hover:text-purple-300 transition-colors break-words min-w-0"
+                        >
+                          {act.title}
+                        </Link>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1 break-words">{act.detail}</p>
+                    </div>
+                    <span className="text-[11px] text-gray-500 font-mono whitespace-nowrap shrink-0 mt-0.5">
+                      {new Date(act.createdAt).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-xs text-gray-500">
+                Belum ada catatan aktivitas. Ikuti turnamen, buka thread di forum, atau bertransaksi via Rekber!
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+
+      {/* TAB 3: PENGATURAN AKUN */}
+      {activeTab === "settings" && (
+        <div className="space-y-6">
+          {/* 1. Profil Discord Sync */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                  <Shield size={18} className="text-[#9D4EDD]" />
+                  Sinkronisasi Profil Discord
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Perbarui avatar, username, dan kasta dari akun Discord yang terhubung.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void syncProfile()}
+                disabled={syncing}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-[#2A1B42] bg-[#1A102E] hover:border-[#7C3AED] text-xs font-bold text-white inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+                <span>{syncing ? "Sinkronisasi…" : "Sync Akun Discord"}</span>
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3 rounded-lg border border-[#2A1B42] bg-[#0A0612]/50">
+                <span className="text-gray-400 block font-semibold mb-0.5">Discord ID</span>
+                <span className="font-mono text-white break-all">{profile?.discordId ?? "-"}</span>
+              </div>
+              <div className="p-3 rounded-lg border border-[#2A1B42] bg-[#0A0612]/50">
+                <span className="text-gray-400 block font-semibold mb-0.5">Username</span>
+                <span className="text-white font-bold">{profile?.username ?? "-"}</span>
+              </div>
+            </div>
+          </section>
+
+          {/* 2. Form Identitas Gamer */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
+            <div className="mb-4">
+              <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                <Gamepad2 size={18} className="text-[#9D4EDD]" />
+                Identitas Gamer &amp; Game yang Dimainkan
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Sesuaikan game favorit dan informasi profil yang tampil bagi anggota komunitas.
+              </p>
+            </div>
+
+            <form onSubmit={(e) => void saveGamerProfile(e)} className="space-y-4 w-full">
+              {/* Game Tag Buttons */}
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-2">
+                  Game yang Dimainkan (Pilih Cepat atau Tambah Kustom)
+                </label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {COMMON_GAMES.map((g) => {
+                    const isSelected = favoriteGames.includes(g);
+                    return (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => toggleGame(g)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                          isSelected
+                            ? "bg-[#7C3AED] text-white border-[#7C3AED]"
+                            : "border-[#2A1B42] bg-[#0A0612] text-gray-300 hover:border-[#7C3AED]"
+                        }`}
+                      >
+                        {isSelected ? `✓ ${g}` : `+ ${g}`}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Input Game Kustom */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-md">
+                  <input
+                    type="text"
+                    maxLength={40}
+                    value={customGameInput}
+                    onChange={(e) => setCustomGameInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addCustomGame();
+                      }
+                    }}
+                    placeholder="Tambah game lainnya…"
+                    className="w-full max-w-full box-border h-11 px-3.5 rounded-lg border border-[#2A1B42] bg-[#0A0612] text-xs text-white placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED]"
+                  />
+                  <button
+                    type="button"
+                    onClick={addCustomGame}
+                    className="h-11 px-4 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold transition-colors shrink-0 flex items-center justify-center"
+                  >
+                    Tambah
+                  </button>
+                </div>
+
+                {/* Selected Games Pill List */}
+                {favoriteGames.length > 0 && (
+                  <div className="mt-3">
+                    <span className="text-[11px] font-bold text-gray-400 block mb-1.5 uppercase">
+                      Game Terpilih ({favoriteGames.length}/20):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {favoriteGames.map((g) => (
+                        <span
+                          key={g}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#7C3AED]/40 bg-[#7C3AED]/10 text-purple-300 text-xs font-medium"
+                        >
+                          {g}
+                          <button
+                            type="button"
+                            onClick={() => removeGame(g)}
+                            className="hover:text-red-400 font-bold ml-0.5 text-sm leading-none"
+                            title="Hapus"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Gender & Tanggal Lahir */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#2A1B42]">
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1.5">
+                    Gender (Opsional)
+                  </label>
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                    className="w-full max-w-full box-border h-11 px-3 rounded-lg border border-[#2A1B42] bg-[#0A0612] text-xs text-white focus:outline-none focus:border-[#7C3AED]"
+                  >
+                    <option value="">Pilih gender (Opsional)</option>
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                    <option value="Privasi / Tidak disebutkan">Privasi / Tidak disebutkan</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1.5">
+                    Tanggal Lahir (Opsional)
+                  </label>
+                  <input
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    className="w-full max-w-full box-border h-11 px-3 rounded-lg border border-[#2A1B42] bg-[#0A0612] text-xs text-white focus:outline-none focus:border-[#7C3AED]"
+                  />
+                  <label className="flex items-center gap-2 mt-2 cursor-pointer text-xs text-gray-400">
+                    <input
+                      type="checkbox"
+                      checked={showBirthDate}
+                      onChange={(e) => setShowBirthDate(e.target.checked)}
+                      className="rounded border-[#2A1B42] text-[#7C3AED] focus:ring-0"
+                    />
+                    <span>Tampilkan tanggal lahir / usia di profil publik</span>
+                  </label>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
 
-        {/* 04 / INTERFACE */}
-        <section className="settings-panel" id="preference-settings">
-          <div className="settings-panel-heading">
-            <div>
-              <p className="section-kicker">04 / INTERFACE</p>
-              <h2>Preferensi Antarmuka</h2>
-            </div>
-          </div>
-          <label className="settings-toggle"><span><SunMoon size={17} /><span><strong>Mode gelap</strong><small>Gunakan tema taktis gelap sebagai tampilan utama.</small></span></span><input type="checkbox" checked={preferences.dark} onChange={(event) => updatePreference("dark", event.target.checked)} /></label>
-          <label className="settings-toggle"><span><Type size={17} /><span><strong>Ukuran artikel besar</strong><small>Perbesar teks isi thread dan komentar.</small></span></span><input type="checkbox" checked={preferences.largeFont} onChange={(event) => updatePreference("largeFont", event.target.checked)} /></label>
-          <label className="settings-toggle"><span><RefreshCw size={17} /><span><strong>Animasi antarmuka</strong><small>Matikan untuk mengurangi gerakan dan beban perangkat.</small></span></span><input type="checkbox" checked={preferences.animations} onChange={(event) => updatePreference("animations", event.target.checked)} /></label>
-          <p className="settings-footnote">Preferensi ini disimpan di browser perangkat ini.</p>
-        </section>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={savingGamer}
+                  className="w-full sm:w-auto px-6 h-11 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold transition-colors shadow-md shadow-[#7C3AED]/20 disabled:opacity-50"
+                >
+                  {savingGamer ? "Menyimpan…" : "Simpan Profil Gamer"}
+                </button>
+              </div>
+            </form>
+          </section>
 
-        {/* 05 / ACTIVITY */}
-        <section className="settings-panel" id="listing-settings">
-          <div className="settings-panel-heading">
-            <div>
-              <p className="section-kicker">05 / ACTIVITY</p>
-              <h2>Lapak &amp; Notifikasi</h2>
+          {/* 3. Preferensi Antarmuka & Notifikasi (Anti-Tabrakan & Anti-Keluar Layar) */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
+            <div className="mb-4">
+              <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                <SunMoon size={18} className="text-[#9D4EDD]" />
+                Preferensi Antarmuka &amp; Notifikasi
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Konfigurasi tampilan visual dan pengaturan pemberitahuan akun.
+              </p>
             </div>
-            <a className="text-link" href="/marketplace">Buka marketplace <ExternalLink size={14} /></a>
-          </div>
-          <label className="settings-toggle"><span><Bell size={17} /><span><strong>Notifikasi balasan &amp; transaksi</strong><small>Simpan preferensi untuk pemberitahuan thread dan aktivitas lapak.</small></span></span><input type="checkbox" checked={preferences.notifications} onChange={(event) => updatePreference("notifications", event.target.checked)} /></label>
-          <p className="settings-footnote">Preferensi notifikasi tersimpan di profil akun kamu.</p>
-          <div className="settings-listings-wrap w-full overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
-            <table className="settings-listings min-w-[550px] w-full">
-              <thead><tr><th>Postingan</th><th>Tanggal</th><th>Laporan</th><th>Status lapak</th></tr></thead>
-              <tbody>
-                {listings.map((listing) => {
-                  const status = listingStatus(listing.marketData);
-                  return <tr key={listing.id}><td><a href={status ? "/marketplace" : `/forum/${listing.id}`}>{listing.title}</a><small>{listing.category.replaceAll("_", " ")}</small></td><td>{new Date(listing.createdAt).toLocaleDateString("id-ID")}</td><td>{listing.reports.pending} pending · {listing.reports.resolved} selesai</td><td>{status ? <select aria-label={`Status ${listing.title}`} value={status === "IN_ESCROW" ? "AVAILABLE" : status} disabled={status === "IN_ESCROW" || savingStatus === listing.id} onChange={(event) => void changeListingStatus(listing, event.target.value as "AVAILABLE" | "SOLD")}><option value="AVAILABLE">AVAILABLE</option><option value="SOLD">SOLD</option></select> : "Thread Forum"}</td></tr>;
-                })}
-                {!listings.length && <tr><td colSpan={4}>Belum ada postingan atau lapak.</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-    </div>
-  </main>;
+
+            <div className="space-y-3">
+              {/* Mode Gelap */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[#2A1B42] bg-[#0A0612]/60">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <SunMoon size={16} className="text-[#9D4EDD] shrink-0" />
+                    <h3 className="text-xs sm:text-sm font-bold text-white break-words">Mode Gelap</h3>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5 break-words">
+                    Gunakan tema taktis gelap sebagai tampilan antarmuka utama.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  aria-label="Mode Gelap"
+                  checked={preferences.dark}
+                  onChange={(e) => updatePreference("dark", e.target.checked)}
+                  className="h-5 w-9 shrink-0 cursor-pointer accent-[#7C3AED]"
+                />
+              </div>
+
+              {/* Ukuran Teks Besar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[#2A1B42] bg-[#0A0612]/60">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <Type size={16} className="text-[#9D4EDD] shrink-0" />
+                    <h3 className="text-xs sm:text-sm font-bold text-white break-words">Ukuran Font Besar</h3>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5 break-words">
+                    Perbesar teks bacaan di thread forum dan ruang diskusi.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  aria-label="Ukuran Font Besar"
+                  checked={preferences.largeFont}
+                  onChange={(e) => updatePreference("largeFont", e.target.checked)}
+                  className="h-5 w-9 shrink-0 cursor-pointer accent-[#7C3AED]"
+                />
+              </div>
+
+              {/* Animasi */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[#2A1B42] bg-[#0A0612]/60">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw size={16} className="text-[#9D4EDD] shrink-0" />
+                    <h3 className="text-xs sm:text-sm font-bold text-white break-words">Efek Animasi Antarmuka</h3>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5 break-words">
+                    Nonaktifkan animasi untuk menghemat baterai dan mempercepat rendering.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  aria-label="Efek Animasi Antarmuka"
+                  checked={preferences.animations}
+                  onChange={(e) => updatePreference("animations", e.target.checked)}
+                  className="h-5 w-9 shrink-0 cursor-pointer accent-[#7C3AED]"
+                />
+              </div>
+
+              {/* Notifikasi */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[#2A1B42] bg-[#0A0612]/60">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <Bell size={16} className="text-[#9D4EDD] shrink-0" />
+                    <h3 className="text-xs sm:text-sm font-bold text-white break-words">Notifikasi Balasan &amp; Transaksi</h3>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5 break-words">
+                    Terima peringatan saat pesan dibalas atau status lapak berubah.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  aria-label="Notifikasi Balasan & Transaksi"
+                  checked={preferences.notifications}
+                  onChange={(e) => updatePreference("notifications", e.target.checked)}
+                  className="h-5 w-9 shrink-0 cursor-pointer accent-[#7C3AED]"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* 4. Lapak & Transaksi */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                  <BadgeCheck size={18} className="text-[#9D4EDD]" />
+                  Status Lapak Marketplace Saya
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Kelola status barang yang kamu daftarkan di Marketplace Guild.
+                </p>
+              </div>
+              <Link
+                href="/marketplace"
+                className="text-xs text-purple-400 hover:text-purple-300 font-bold inline-flex items-center gap-1 self-start sm:self-auto"
+              >
+                <span>Buka Marketplace</span>
+                <ExternalLink size={13} />
+              </Link>
+            </div>
+
+            <div className="w-full overflow-x-auto no-scrollbar">
+              <table className="min-w-[500px] w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-[#2A1B42] text-gray-400">
+                    <th className="py-2.5 px-3 font-bold">Postingan</th>
+                    <th className="py-2.5 px-3 font-bold">Tanggal</th>
+                    <th className="py-2.5 px-3 font-bold">Status Lapak</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#2A1B42]">
+                  {listings.map((listing) => {
+                    const statusVal = listingStatus(listing.marketData);
+                    return (
+                      <tr key={listing.id} className="hover:bg-purple-950/20">
+                        <td className="py-3 px-3">
+                          <Link
+                            href={statusVal ? "/marketplace" : `/forum/${listing.id}`}
+                            className="font-bold text-white hover:text-purple-300 block truncate max-w-xs"
+                          >
+                            {listing.title}
+                          </Link>
+                          <span className="text-[10px] text-gray-500 uppercase">
+                            {listing.category.replaceAll("_", " ")}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-gray-400 whitespace-nowrap">
+                          {new Date(listing.createdAt).toLocaleDateString("id-ID")}
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          {statusVal ? (
+                            <select
+                              aria-label={`Status ${listing.title}`}
+                              value={statusVal === "IN_ESCROW" ? "AVAILABLE" : statusVal}
+                              disabled={statusVal === "IN_ESCROW" || savingStatus === listing.id}
+                              onChange={(e) =>
+                                void changeListingStatus(listing, e.target.value as "AVAILABLE" | "SOLD")
+                              }
+                              className="px-2 py-1 rounded bg-[#0A0612] border border-[#2A1B42] text-xs text-white"
+                            >
+                              <option value="AVAILABLE">AVAILABLE</option>
+                              <option value="SOLD">SOLD</option>
+                            </select>
+                          ) : (
+                            <span className="text-gray-500">Thread Forum</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {!listings.length && (
+                    <tr>
+                      <td colSpan={3} className="py-6 text-center text-gray-500">
+                        Belum ada postingan lapak marketplace.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      )}
+    </main>
+  );
 }

@@ -13,8 +13,18 @@ export async function GET() {
   const user = await authenticatedUser();
   if (!user) return jsonError("Login diperlukan.", 401);
 
-  const [postsCount, successfulTrades, donationsCount, lfgCount] = await Promise.all([
+  const [
+    postsCount,
+    tournamentsCount,
+    successfulTrades,
+    donationsCount,
+    lfgCount,
+    recentPosts,
+    recentTournaments,
+    recentTrades,
+  ] = await Promise.all([
     prisma.post.count({ where: { authorId: user.id, category: { not: "MARKETPLACE" } } }),
+    prisma.participant.count({ where: { leaderId: user.id } }),
     prisma.escrowTransaction.count({
       where: {
         OR: [{ buyerId: user.id }, { sellerId: user.id }],
@@ -25,6 +35,35 @@ export async function GET() {
       where: { userId: user.id, status: { in: ["APPROVED", "SUCCEEDED"] } },
     }),
     prisma.lfgPost.count({ where: { authorId: user.id } }),
+    prisma.post.findMany({
+      where: { authorId: user.id },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      select: { id: true, title: true, category: true, createdAt: true },
+    }),
+    prisma.participant.findMany({
+      where: { leaderId: user.id },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        teamName: true,
+        createdAt: true,
+        tournament: { select: { id: true, title: true, game: true, status: true } },
+      },
+    }),
+    prisma.escrowTransaction.findMany({
+      where: { OR: [{ buyerId: user.id }, { sellerId: user.id }] },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        amount: true,
+        status: true,
+        createdAt: true,
+        post: { select: { id: true, title: true } },
+      },
+    }),
   ]);
 
   const isOwner = user.username === ".odyssia" || user.role === "ADMIN" || user.discordId === "706661230835925042";
@@ -67,6 +106,42 @@ export async function GET() {
     },
   ];
 
+  type ActivityItem = {
+    id: string;
+    type: "POST" | "TOURNAMENT" | "ESCROW";
+    title: string;
+    detail: string;
+    createdAt: string;
+    href: string;
+  };
+
+  const activityList: ActivityItem[] = [
+    ...recentPosts.map((p) => ({
+      id: `post-${p.id}`,
+      type: "POST" as const,
+      title: p.title,
+      detail: `Thread Forum (${p.category.replaceAll("_", " ")})`,
+      createdAt: p.createdAt.toISOString(),
+      href: p.category === "MARKETPLACE" ? "/marketplace" : `/forum/${p.id}`,
+    })),
+    ...recentTournaments.map((t) => ({
+      id: `tour-${t.id}`,
+      type: "TOURNAMENT" as const,
+      title: t.tournament?.title || "Turnamen Komunitas",
+      detail: `Tim: ${t.teamName} · Game: ${t.tournament?.game || "-"}`,
+      createdAt: t.createdAt.toISOString(),
+      href: `/events/turnamen/${t.tournament?.id || ""}`,
+    })),
+    ...recentTrades.map((e) => ({
+      id: `escrow-${e.id}`,
+      type: "ESCROW" as const,
+      title: e.post?.title || `Transaksi Rekber #${e.id.slice(0, 8)}`,
+      detail: `Nominal Rp ${e.amount.toLocaleString("id-ID")} · Status: ${e.status}`,
+      createdAt: e.createdAt.toISOString(),
+      href: `/marketplace/${e.post?.id || ""}`,
+    })),
+  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
   return Response.json({
     id: user.id,
     discordId: user.discordId,
@@ -75,6 +150,11 @@ export async function GET() {
     level: user.level,
     xp: user.xp,
     role: user.role,
+    badges: user.badges ?? [],
+    checkInStreak: user.checkInStreak ?? 0,
+    lastCheckInAt: user.lastCheckInAt?.toISOString() ?? null,
+    postsCount,
+    tournamentsCount,
     isPremium: isOwner || user.isPremium,
     favoriteGames: user.favoriteGames ?? [],
     inGameName: user.inGameName ?? "",
@@ -84,6 +164,7 @@ export async function GET() {
     birthDate: user.birthDate ?? null,
     showBirthDate: user.showBirthDate ?? false,
     achievements,
+    recentActivity: activityList.slice(0, 10),
   });
 }
 

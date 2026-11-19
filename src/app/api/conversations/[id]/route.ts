@@ -63,6 +63,21 @@ export async function GET(request: Request, { params }: RouteContext) {
               role: true,
             },
           },
+          replyTo: {
+            select: {
+              id: true,
+              content: true,
+              imageUrl: true,
+              isDeleted: true,
+              sender: {
+                select: {
+                  id: true,
+                  name: true,
+                  username: true,
+                },
+              },
+            },
+          },
         },
       },
     },

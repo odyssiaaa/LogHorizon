@@ -64,6 +64,21 @@ export async function GET(request: Request, { params }: RouteContext) {
           role: true,
         },
       },
+      replyTo: {
+        select: {
+          id: true,
+          content: true,
+          imageUrl: true,
+          isDeleted: true,
+          sender: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -118,11 +133,16 @@ export async function POST(request: Request, { params }: RouteContext) {
     }
   }
 
+  const rawReplyToId = typeof body.replyToId === "string" && body.replyToId.trim() ? body.replyToId.trim() : null;
+  const rawImageUrl = typeof body.imageUrl === "string" && body.imageUrl.trim() ? body.imageUrl.trim() : null;
+
   const message = await prisma.directMessage.create({
     data: {
       conversationId: id,
       senderId: me.id,
       content,
+      replyToId: rawReplyToId,
+      imageUrl: rawImageUrl,
     },
     include: {
       sender: {
@@ -133,6 +153,21 @@ export async function POST(request: Request, { params }: RouteContext) {
           avatar: true,
           isPremium: true,
           role: true,
+        },
+      },
+      replyTo: {
+        select: {
+          id: true,
+          content: true,
+          imageUrl: true,
+          isDeleted: true,
+          sender: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+            },
+          },
         },
       },
     },
