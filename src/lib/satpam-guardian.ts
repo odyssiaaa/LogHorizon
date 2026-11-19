@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 const GEMINI_MODELS = [
   "gemini-3.5-flash-lite",
@@ -13,11 +14,11 @@ const GEMINI_ENDPOINTS = GEMINI_MODELS.map(
   (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
 );
 
-// Anti-spam tracker: 15 detik cooldown per user untuk mention @satpam
+// Anti-spam tracker: Cooldown minimal 10 detik & batas 6 request per menit untuk mention @satpam
 const satpamCooldowns = new Map<string, number>();
 
 /**
- * Memeriksa apakah user sedang dalam masa cooldown 15 detik untuk memanggil @satpam.
+ * Memeriksa apakah user sedang dalam masa cooldown 10 detik atau melebihi 6 req/menit untuk @satpam.
  * Owner (.odyssia) dan Admin/Moderator bebas cooldown (0 detik).
  */
 export function checkSatpamCooldown(userId: string, isOwnerOrStaff: boolean): { allowed: boolean; remainingSec: number } {
@@ -25,11 +26,17 @@ export function checkSatpamCooldown(userId: string, isOwnerOrStaff: boolean): { 
   const now = Date.now();
   const lastCall = satpamCooldowns.get(userId) || 0;
   const elapsed = now - lastCall;
-  const COOLDOWN_MS = 15_000;
+  const COOLDOWN_MS = 10_000;
 
   if (elapsed < COOLDOWN_MS) {
     const remainingSec = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
     return { allowed: false, remainingSec };
+  }
+
+  // Rate limit: Maksimal 6 request per menit
+  const minuteLimit = checkRateLimit(`satpam:mention:user:${userId}`, 6, 60_000);
+  if (!minuteLimit.allowed) {
+    return { allowed: false, remainingSec: minuteLimit.remainingSec };
   }
 
   satpamCooldowns.set(userId, now);

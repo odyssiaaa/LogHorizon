@@ -18,16 +18,16 @@ export async function POST(request: Request, { params }: RouteContext) {
   const rawContent = typeof data.content === "string" ? data.content.trim() : "";
   const content = sanitizeText(rawContent);
   const parentId = typeof data.parentId === "string" ? data.parentId : null;
-  if (!content || content.length > 250000) return jsonError("Komentar wajib diisi (maksimal 250.000 karakter).", 400);
+  if (!content || content.length > 2_000) return jsonError("Komentar wajib diisi (maksimal 2.000 karakter).", 400);
 
   const ip = getClientIp(request);
   const isStaff = user.role === "ADMIN" || user.role === "MODERATOR";
   if (!isStaff) {
-    const userLimit = checkRateLimit(`comment:user:${user.id}`, 10, 30_000);
+    const userLimit = checkRateLimit(`comment:user:${user.id}`, 15, 60_000);
     if (!userLimit.allowed) {
-      return jsonError(`Terlalu cepat berkomentar. Harap tunggu ${userLimit.remainingSec} detik.`, 429);
+      return jsonError(`Terlalu cepat berkomentar (maksimal 15 komentar/menit). Harap tunggu ${userLimit.remainingSec} detik.`, 429);
     }
-    const ipLimit = checkRateLimit(`comment:ip:${ip}`, 20, 30_000);
+    const ipLimit = checkRateLimit(`comment:ip:${ip}`, 25, 60_000);
     if (!ipLimit.allowed) {
       return jsonError(`Batas komentar per IP tercapai. Harap tunggu ${ipLimit.remainingSec} detik.`, 429);
     }

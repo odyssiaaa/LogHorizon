@@ -164,7 +164,11 @@ export async function POST(request: Request) {
 
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
-  const title = sanitizePlainText(typeof data.title === "string" && data.title.trim() ? data.title.trim() : "LogHorizon Tournament Cup");
+  const rawTitle = typeof data.title === "string" ? data.title.trim() : "";
+  const title = sanitizePlainText(rawTitle || "LogHorizon Tournament Cup");
+  if (!title || title.length > 150) {
+    return jsonError("Judul turnamen wajib diisi (maksimal 150 karakter).", 400);
+  }
   const game = sanitizePlainText(typeof data.game === "string" ? data.game.trim() : "");
   const prizePool = sanitizePlainText(typeof data.prizePool === "string" && data.prizePool.trim() ? data.prizePool.trim() : "Prizepool Komunitas");
   const prize1st = typeof data.prize1st === "string" && data.prize1st.trim() ? sanitizePlainText(data.prize1st.trim()) : null;
@@ -180,8 +184,12 @@ export async function POST(request: Request) {
   const mainPlayersCount = typeof data.mainPlayersCount === "number" ? Math.max(1, Math.min(10, data.mainPlayersCount)) : 5;
   const subPlayersCount = typeof data.subPlayersCount === "number" ? Math.max(0, Math.min(5, data.subPlayersCount)) : 2;
 
-  const isFreeEntry = typeof data.isFreeEntry === "boolean" ? data.isFreeEntry : (Number(data.entryFee || 0) <= 0);
-  const entryFee = isFreeEntry ? 0 : Math.max(0, Math.min(100_000_000, Number(data.entryFee || 0)));
+  const rawFee = Number(data.entryFee ?? 0);
+  if (!Number.isSafeInteger(rawFee) || rawFee < 0 || rawFee > 100_000_000) {
+    return jsonError("Biaya pendaftaran tidak valid (harus berupa bilangan bulat antara Rp 0 - Rp 100.000.000).", 400);
+  }
+  const isFreeEntry = typeof data.isFreeEntry === "boolean" ? data.isFreeEntry : (rawFee === 0);
+  const entryFee = isFreeEntry ? 0 : rawFee;
   const rules = typeof data.rules === "string" && data.rules.trim() ? data.rules.trim() : DEFAULT_TOURNAMENT_RULES;
 
   const eventDate = typeof data.eventDate === "string" ? new Date(data.eventDate) : new Date(Date.now() + 86400000 * 3);

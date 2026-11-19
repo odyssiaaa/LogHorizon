@@ -5,6 +5,7 @@ import { NotificationType, Prisma } from "@prisma/client";
 import { createNotification } from "@/lib/notifications";
 import { sendDiscordNotice, notifyTournamentMatchLive } from "@/lib/discord-webhook";
 import { checkSatpamCooldown, handleMatchLobbyMention } from "@/lib/satpam-guardian";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -387,11 +388,22 @@ export async function POST(request: Request, { params }: RouteContext) {
   }
 
   // REGULAR MESSAGE OR IMAGE ATTACHMENT
+  if (!isStaff) {
+    const limit = checkRateLimit(`match-chat:user:${user.id}`, 15, 60_000);
+    if (!limit.allowed) {
+      return jsonError(`Terlalu cepat mengirim pesan (maksimal 15 pesan/menit). Harap tunggu ${limit.remainingSec} detik.`, 429);
+    }
+  }
+
   const rawContent = typeof data.content === "string" ? data.content.trim() : "";
   const imageUrl = typeof data.imageUrl === "string" ? data.imageUrl.trim() : null;
 
   if (!rawContent && !imageUrl) {
     return jsonError("Pesan tidak boleh kosong.", 400);
+  }
+
+  if (rawContent.length > 2_000) {
+    return jsonError("Pesan maksimal 2.000 karakter.", 400);
   }
 
   let fullContent = rawContent;

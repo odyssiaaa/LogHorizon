@@ -174,6 +174,13 @@ export async function requireStaff(roles: Role[] = ["ADMIN", "MODERATOR"]) {
 }
 
 /**
+ * Admin-only route guard (Admin/Owner)
+ */
+export async function requireAdmin() {
+  return requireStaff(["ADMIN"]);
+}
+
+/**
  * Emperor / Owner-only route guard
  */
 export async function requireOwner() {

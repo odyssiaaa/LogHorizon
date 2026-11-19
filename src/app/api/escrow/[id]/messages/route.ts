@@ -1,5 +1,6 @@
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limiter";
 import { checkSatpamCooldown, processEscrowGuardian } from "@/lib/satpam-guardian";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -7,6 +8,14 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function POST(request: Request, { params }: RouteContext) {
   const user = await activeUser();
   if (!user) return jsonError("Login diperlukan untuk mengirim pesan rekber.", 401);
+
+  const isStaff = user.role === "ADMIN" || user.role === "MODERATOR";
+  if (!isStaff) {
+    const limit = checkRateLimit(`escrow:chat:user:${user.id}`, 15, 60_000);
+    if (!limit.allowed) {
+      return jsonError(`Terlalu cepat mengirim pesan rekber (maksimal 15 pesan/menit). Harap tunggu ${limit.remainingSec} detik.`, 429);
+    }
+  }
 
   const { id } = await params;
   const payload: unknown = await request.json();
@@ -16,8 +25,8 @@ export async function POST(request: Request, { params }: RouteContext) {
     ? ((payload as Record<string, unknown>).message as string).trim()
     : "";
 
-  if (!message || message.length > 250000) {
-    return jsonError("Pesan wajib diisi (maksimal 250.000 karakter).", 400);
+  if (!message || message.length > 2_000) {
+    return jsonError("Pesan wajib diisi (maksimal 2.000 karakter).", 400);
   }
 
   const escrow = await prisma.escrowTransaction.findUnique({
@@ -38,7 +47,6 @@ export async function POST(request: Request, { params }: RouteContext) {
     return jsonError("Ruang chat rekber ini telah dikunci karena transaksi sudah selesai atau dibatalkan.", 400);
   }
 
-  const isStaff = user.role === "ADMIN" || user.role === "MODERATOR";
   const isParticipant =
     user.id === escrow.buyerId ||
     user.id === escrow.sellerId ||

@@ -124,11 +124,11 @@ export async function POST(request: Request) {
   const ip = getClientIp(request);
   const isStaff = user.role === "ADMIN" || user.role === "MODERATOR";
   if (!isStaff) {
-    const userLimit = checkRateLimit(`post:user:${user.id}`, 6, 60_000);
+    const userLimit = checkRateLimit(`post:user:${user.id}`, 15, 60_000);
     if (!userLimit.allowed) {
-      return jsonError(`Terlalu cepat membuat postingan. Harap tunggu ${userLimit.remainingSec} detik sebelum memposting kembali.`, 429);
+      return jsonError(`Terlalu cepat membuat postingan (maksimal 15 postingan/menit). Harap tunggu ${userLimit.remainingSec} detik sebelum memposting kembali.`, 429);
     }
-    const ipLimit = checkRateLimit(`post:ip:${ip}`, 12, 60_000);
+    const ipLimit = checkRateLimit(`post:ip:${ip}`, 20, 60_000);
     if (!ipLimit.allowed) {
       return jsonError(`Batas postingan per IP tercapai. Harap tunggu ${ipLimit.remainingSec} detik.`, 429);
     }
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
   const content = sanitizeText(typeof data.content === "string" ? data.content.trim() : "");
   const category = data.category;
 
-  if (!title || title.length > 180) return jsonError("Judul wajib diisi (maksimal 180 karakter).", 400);
+  if (!title || title.length > 150) return jsonError("Judul wajib diisi (maksimal 150 karakter).", 400);
   const isPinned = data.isPinned === true;
   const isOwner = user.role === "ADMIN" || user.username === ".odyssia" || user.discordId === "706661230835925042";
   const hasPremiumPerks = user.isPremium || isOwner;
@@ -162,12 +162,13 @@ export async function POST(request: Request) {
       typeof market.game !== "string" ||
       !market.game.trim() ||
       typeof market.price !== "number" ||
-      !Number.isInteger(market.price) ||
-      Number.isNaN(market.price) ||
+      !Number.isSafeInteger(market.price) ||
       market.price <= 0 ||
+      market.price > 100_000_000 ||
       (market.imageUrl != null && (typeof market.imageUrl !== "string" || !isValidUrl(market.imageUrl))) ||
-      !content
-    ) return jsonError("Data lapak tidak valid. Harga harus berupa nominal positif di atas 0.", 400);
+      !content ||
+      content.length > 10_000
+    ) return jsonError("Data lapak tidak valid. Harga harus berupa bilangan bulat antara Rp 1 - Rp 100.000.000 dan deskripsi maksimal 10.000 karakter.", 400);
 
     const contact = typeof market.contact === "string" && market.contact.trim()
       ? market.contact.trim()
@@ -199,7 +200,7 @@ export async function POST(request: Request) {
   }
 
   if (typeof category !== "string" || !isPostCategory(category) || category === PostCategory.MARKETPLACE) return jsonError("Kategori tidak valid.", 400);
-  if (!content || content.length > 250000) return jsonError("Isi thread wajib diisi (maksimal 250.000 karakter).", 400);
+  if (!content || content.length > 10_000) return jsonError("Isi thread wajib diisi (maksimal 10.000 karakter).", 400);
   const post = await prisma.$transaction(async (tx) => {
     const created = await tx.post.create({ data: { authorId: user.id, category, title, content, isPinned } });
     await addXpInTransaction(tx, user.id, 10);

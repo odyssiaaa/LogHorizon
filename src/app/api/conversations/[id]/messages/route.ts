@@ -1,6 +1,7 @@
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sanitizeText } from "@/lib/sanitize";
+import { checkRateLimit } from "@/lib/rate-limiter";
 import {
   checkContentSafety,
   checkSatpamCooldown,
@@ -105,6 +106,14 @@ export async function POST(request: Request, { params }: RouteContext) {
     return jsonError("Anda bukan anggota percakapan ini.", 403);
   }
 
+  const isStaff = me.role === "ADMIN" || me.role === "MODERATOR";
+  if (!isStaff) {
+    const limit = checkRateLimit(`chat:user:${me.id}`, 15, 60_000);
+    if (!limit.allowed) {
+      return jsonError(`Terlalu cepat mengirim pesan (maksimal 15 pesan/menit). Harap tunggu ${limit.remainingSec} detik.`, 429);
+    }
+  }
+
   const body = await request.json().catch(() => ({}));
   const rawContent = typeof body.content === "string" ? body.content.trim() : "";
   const content = sanitizeText(rawContent);
@@ -113,8 +122,8 @@ export async function POST(request: Request, { params }: RouteContext) {
     return jsonError("Pesan tidak boleh kosong.", 400);
   }
 
-  if (content.length > 250000) {
-    return jsonError("Pesan maksimal 250.000 karakter.", 400);
+  if (content.length > 2_000) {
+    return jsonError("Pesan maksimal 2.000 karakter.", 400);
   }
 
   // 1. Content Safety Check
