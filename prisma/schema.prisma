@@ -116,6 +116,9 @@ model Tournament {
   title            String           @default("LogHorizon Community Cup")
   game             String
   prizePool        String?          @default("Prizepool Komunitas")
+  prize1st         String?
+  prize2nd         String?
+  prize3rd         String?
   format           String           @default("8 Tim")
   maxSlots         Int              @default(8)
   mainPlayersCount Int              @default(5)

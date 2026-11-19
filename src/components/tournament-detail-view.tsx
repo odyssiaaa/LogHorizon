@@ -5,19 +5,25 @@ import Image from "next/image";
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import {
+  AlertTriangle,
   ArrowLeft,
+  Award,
   Calendar,
   CheckCircle2,
+  Clock,
   Crown,
   Dices,
   Edit3,
   ExternalLink,
+  FileText,
   Flame,
   Gamepad2,
+  Info,
   Medal,
   Plus,
   QrCode,
   RefreshCw,
+  Scale,
   Search,
   Settings,
   Shield,
@@ -49,6 +55,9 @@ type TournamentData = {
   title: string;
   game: string;
   prizePool?: string | null;
+  prize1st?: string | null;
+  prize2nd?: string | null;
+  prize3rd?: string | null;
   format?: string | null;
   maxSlots: number;
   mainPlayersCount?: number;
@@ -84,6 +93,13 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   // Tournament Rules Gate Modal state
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [showEditTournamentModal, setShowEditTournamentModal] = useState(false);
+  const [activeDetailTab, setActiveDetailTab] = useState<"summary" | "rules" | "bracket" | "teams">("summary");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash === "#bracket-section") {
+      setActiveDetailTab("bracket");
+    }
+  }, []);
 
   // Registration modal state
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -1023,251 +1039,594 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         </div>
       )}
 
-      {/* PANEL BAR STAF (KHUSUS ADMIN & MODERATOR) */}
-      {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && (
-        <div className="mb-8 p-3.5 rounded-lg bg-slate-100 dark:bg-[#11091D] border border-[#7C3AED]/30 shadow-md">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#7C3AED] dark:text-[#A78BFA] flex items-center gap-1.5">
-                <span>🛡️</span>
-                <span>PANEL OPERASIONAL STAF</span>
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/30">
-                {session?.user?.role}
-              </span>
+      {/* 2-COLUMN FASTUR-INSPIRED LAYOUT: LEFT COLUMN TABS (8 cols) + RIGHT STICKY SIDEBAR (4 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mb-12">
+        {/* KOLOM KIRI (lg:col-span-8): SUB-TABS (Ringkasan, Aturan, Bagan, Tim) */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* TAB BAR NAVIGATION */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar border-b border-slate-200 dark:border-[#2A1B42]">
+            <button
+              type="button"
+              onClick={() => setActiveDetailTab("summary")}
+              className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider border-b-2 transition flex items-center gap-2 shrink-0 ${
+                activeDetailTab === "summary"
+                  ? "border-[#7C3AED] text-[#7C3AED] dark:text-[#A78BFA] bg-purple-500/5 dark:bg-[#7C3AED]/10"
+                  : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <FileText size={15} />
+              <span>📋 Ringkasan</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveDetailTab("rules")}
+              className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider border-b-2 transition flex items-center gap-2 shrink-0 ${
+                activeDetailTab === "rules"
+                  ? "border-[#7C3AED] text-[#7C3AED] dark:text-[#A78BFA] bg-purple-500/5 dark:bg-[#7C3AED]/10"
+                  : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Scale size={15} />
+              <span>⚖️ Aturan &amp; Sanksi</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveDetailTab("bracket")}
+              className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider border-b-2 transition flex items-center gap-2 shrink-0 ${
+                activeDetailTab === "bracket"
+                  ? "border-[#7C3AED] text-[#7C3AED] dark:text-[#A78BFA] bg-purple-500/5 dark:bg-[#7C3AED]/10"
+                  : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Trophy size={15} />
+              <span>🏆 Bagan (Bracket)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveDetailTab("teams")}
+              className={`px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider border-b-2 transition flex items-center gap-2 shrink-0 ${
+                activeDetailTab === "teams"
+                  ? "border-[#7C3AED] text-[#7C3AED] dark:text-[#A78BFA] bg-purple-500/5 dark:bg-[#7C3AED]/10"
+                  : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Users size={15} />
+              <span>👥 Tim Terdaftar ({registeredSlotsCount})</span>
+            </button>
+          </div>
+
+          {/* TAB 1: 📋 RINGKASAN */}
+          {activeDetailTab === "summary" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              {/* GRID INFO UTAMA */}
+              <div className="p-6 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl space-y-6">
+                <div>
+                  <h3 className="font-display text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
+                    <Info size={18} className="text-[#7C3AED]" />
+                    <span>Informasi &amp; Format Turnamen</span>
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-[#A78BFA] mt-1 font-sans">
+                    Detail teknis pelaksanaan turnamen resmi yang diselenggarakan oleh LogHorizon Guild.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-3.5 rounded-none bg-slate-50 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45]">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-[#A78BFA] block mb-1">
+                      🎮 Cabang Game
+                    </span>
+                    <span className="font-display font-bold text-sm text-slate-900 dark:text-white uppercase">
+                      {tournament.game}
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-none bg-slate-50 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45]">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-[#A78BFA] block mb-1">
+                      📅 Jadwal Mulai (WIB)
+                    </span>
+                    <span className="font-mono font-bold text-xs text-slate-900 dark:text-white">
+                      {tournament.eventDate
+                        ? formatWibDateTime(
+                            typeof tournament.eventDate === "string"
+                              ? tournament.eventDate
+                              : tournament.eventDate.toISOString()
+                          )
+                        : "Belum dijadwalkan"}
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-none bg-slate-50 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45]">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-[#A78BFA] block mb-1">
+                      ⚔️ Format Kompetisi
+                    </span>
+                    <span className="font-mono font-bold text-xs text-slate-900 dark:text-white">
+                      {tournament.format || `${tournament.maxSlots} Tim Single Elimination`}
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-none bg-slate-50 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45]">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-[#A78BFA] block mb-1">
+                      👥 Kuota &amp; Roster Pemain
+                    </span>
+                    <span className="font-mono font-bold text-xs text-slate-900 dark:text-white">
+                      {registeredSlotsCount}/{tournament.maxSlots} Tim ({mainCount} Inti + {subCount} Cadangan)
+                    </span>
+                  </div>
+                </div>
+
+                {/* SKEMA PEMBAGIAN HADIAH (PRIZE BREAKDOWN) */}
+                <div className="p-4 sm:p-5 rounded-none bg-slate-50 dark:bg-[#1A0E2E] border border-amber-500/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-extrabold uppercase tracking-wider text-amber-500 flex items-center gap-1.5">
+                      <Award size={15} />
+                      <span>Skema Alokasi Hadiah (Prize Pool)</span>
+                    </span>
+                    <span className="text-xs font-mono font-black text-slate-900 dark:text-white">
+                      {tournament.prizePool || "Prizepool Resmi"}
+                    </span>
+                  </div>
+
+                  {tournament.prize1st || tournament.prize2nd || tournament.prize3rd ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                      <div className="p-3 rounded-none bg-amber-500/10 border border-amber-500/40">
+                        <span className="text-[10px] font-mono font-bold text-amber-500 block uppercase">
+                          🥇 Juara 1 (Champion)
+                        </span>
+                        <p className="font-mono font-black text-sm text-amber-400 mt-1">
+                          {tournament.prize1st || "-"}
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-none bg-slate-400/10 border border-slate-400/30">
+                        <span className="text-[10px] font-mono font-bold text-slate-400 block uppercase">
+                          🥈 Juara 2 (Runner-Up)
+                        </span>
+                        <p className="font-mono font-black text-sm text-slate-300 mt-1">
+                          {tournament.prize2nd || "-"}
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-none bg-amber-700/10 border border-amber-700/30">
+                        <span className="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400 block uppercase">
+                          🥉 Juara 3 (Bronze)
+                        </span>
+                        <p className="font-mono font-black text-sm text-amber-600 dark:text-amber-400 mt-1">
+                          {tournament.prize3rd || "-"}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] leading-relaxed">
+                      Total hadiah turnamen sebesar <strong>{tournament.prizePool || "Prizepool Resmi Guild"}</strong> akan didistribusikan kepada para pemenang podium setelah babak Grand Final selesai diverifikasi oleh High Council.
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
+          )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setShowEditTournamentModal(true)}
-                className="w-full sm:w-auto h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#1A0E2E] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition cursor-pointer shadow-sm"
-                title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
-              >
-                <Edit3 size={14} className="text-slate-500 dark:text-[#A78BFA]" />
-                <span>Edit Info &amp; Waktu Mulai</span>
-              </button>
+          {/* TAB 2: ⚖️ ATURAN & SANKSI */}
+          {activeDetailTab === "rules" && (
+            <div className="p-6 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl space-y-6 animate-in fade-in duration-200">
+              <div>
+                <h3 className="font-display text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
+                  <Scale size={18} className="text-[#7C3AED]" />
+                  <span>Aturan Resmi, Sanksi &amp; Prosedur Sengketa</span>
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-[#A78BFA] mt-1 font-sans">
+                  Seluruh kapten dan pemain yang terdaftar dianggap telah membaca, memahami, dan menyetujui pakta integritas kompetisi berikut:
+                </p>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => document.getElementById("bracket-section")?.scrollIntoView({ behavior: "smooth" })}
-                className="w-full sm:w-auto h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition cursor-pointer shadow-sm"
-                title="Langsung kelola tim & skor di bagan pertandingan"
-              >
-                <Settings size={14} className="text-indigo-500" />
-                <span>Kelola Tim &amp; Skor</span>
-              </button>
+              {/* 3 PILAR KEBIJAKAN */}
+              <div className="space-y-4">
+                <div className="p-4 rounded-none border border-rose-500/30 bg-rose-500/5 space-y-1.5">
+                  <h4 className="text-xs font-mono font-bold text-rose-500 uppercase tracking-wider flex items-center gap-2">
+                    <AlertTriangle size={15} />
+                    <span>1. Pelanggaran Fatal &amp; Cheat (Permanent DQ)</span>
+                  </h4>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
+                    Penggunaan program ilegal, script, cheat engine, map hack, joki akun luar, maupun perilaku bug abuse yang disengaja akan mengakibatkan <strong>Diskualifikasi (DQ) permanen</strong> untuk seluruh anggota tim, pembatalan seluruh kemenangan/hadiah, dan sanksi blacklist permanen dari turnamen LogHorizon Guild.
+                  </p>
+                </div>
 
-              {tournament.status !== "COMPLETED" && (
-                <button
-                  type="button"
-                  onClick={handleDetailGachaBracket}
-                  className="w-full sm:w-auto h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-[#F59E0B]/50 bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 text-[#F59E0B] transition cursor-pointer shadow-sm"
-                  title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
-                >
-                  <Dices size={14} className="text-[#F59E0B]" />
-                  <span>Gacha Bagan</span>
-                </button>
+                <div className="p-4 rounded-none border border-amber-500/30 bg-amber-500/5 space-y-1.5">
+                  <h4 className="text-xs font-mono font-bold text-amber-500 uppercase tracking-wider flex items-center gap-2">
+                    <Shield size={15} />
+                    <span>2. Tata Tertib, Etika &amp; Sportivitas</span>
+                  </h4>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
+                    Taunting dan recall wajar in-game diperbolehkan sebagai dinamika pertandingan mental. Namun ujaran kebencian, pelecehan, rasisme, provokasi berlebihan, atau SARA di chat all/voice room akan dikenakan kartu kuning, pengurangan skor, atau diskualifikasi langsung sesuai keputusan juri.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-none border border-indigo-500/30 bg-indigo-500/5 space-y-1.5">
+                  <h4 className="text-xs font-mono font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+                    <Clock size={15} />
+                    <span>3. Kehadiran, Waktu Tunggu &amp; WO (12 Menit)</span>
+                  </h4>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
+                    Seluruh anggota tim wajib masuk ke lobby custom room maksimal <strong>12 menit</strong> setelah jadwal pertandingan atau panggilan wasit. Keterlambatan melebihi 12 menit tanpa konfirmasi resmi berakibat <strong>Kalah Walk Out (WO)</strong> dan lawan otomatis melaju ke babak berikutnya.
+                  </p>
+                </div>
+              </div>
+
+              {/* KETENTUAN SENGKETA & BUKTI */}
+              <div className="p-4 rounded-none border border-purple-500/30 bg-purple-500/5 space-y-2">
+                <h4 className="text-xs font-mono font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider flex items-center gap-2">
+                  <CheckCircle2 size={15} />
+                  <span>⚖️ Batas Lapor Sengketa (Dispute Window: 10 Menit)</span>
+                </h4>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
+                  Laporan sengketa hasil pertandingan (perbedaan skor, dugaan pelanggaran aturan, atau ketidaksesuaian roster) wajib diajukan maksimal <strong>10 menit</strong> setelah pertandingan berakhir dengan melampirkan screenshot papan skor lobby dan rekaman layar yang valid. Lewat dari 10 menit, hasil skor dianggap sah dan final.
+                </p>
+              </div>
+
+              {/* ATURAN KHUSUS TAMBAHAN PENYELENGGARA */}
+              {tournament.rules ? (
+                <div className="p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] space-y-2">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-[#A78BFA]">
+                    Catatan Aturan Khusus Penyelenggara:
+                  </span>
+                  <div className="text-xs font-mono text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
+                    {tournament.rules}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs font-mono text-slate-500 dark:text-slate-400 italic">
+                  ℹ️ Tidak ada aturan khusus tambahan dari penyelenggara. Aturan standar kompetisi LogHorizon di atas berlaku penuh.
+                </p>
               )}
-
-              <TournamentBackupDropdown
-                tournament={tournament}
-                triggerClassName="w-full sm:w-auto h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition cursor-pointer shadow-sm"
-              />
-
-              <button
-                type="button"
-                disabled={deletingTournament}
-                onClick={handleDeleteTournament}
-                className="w-full sm:w-auto h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition cursor-pointer disabled:opacity-50 shadow-sm"
-                title="Hapus turnamen ini secara permanen"
-              >
-                <Trash2 size={14} className="text-rose-500" />
-                <span>{deletingTournament ? "Menghapus..." : "Hapus"}</span>
-              </button>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Bracket Tree Section */}
-      <section id="bracket-section" className="p-5 sm:p-7 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl mb-10">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2 border-b border-slate-200 dark:border-[#2E1E45] pb-4">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <Flame size={20} className="text-[#7C3AED]" />
-            <h2 className="font-display text-base sm:text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC]">
-              Pohon Bagan Pertandingan (Bracket Tree Simetris)
-            </h2>
-            {/* 🔴 LIVE SYNC AKTIF BADGE */}
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-none text-[10px] font-mono font-bold bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981]">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-[#10B981] opacity-75"></span>
-                <span className="relative inline-flex rounded-none h-2 w-2 bg-[#10B981]"></span>
-              </span>
-              LIVE SYNC AKTIF
-              <span className="text-[#10B981]/70 font-normal">
-                ({syncSecondsAgo <= 1 ? "baru saja" : `${syncSecondsAgo}d lalu`})
-              </span>
-            </span>
-          </div>
-          <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
-            {/* INSTANT SEARCH BAR DI POHON BAGAN */}
-            <div className="relative w-full sm:w-72">
-              <div className="flex items-center gap-2 px-3 h-9 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] focus-within:border-[#7C3AED] transition-all">
-                <Search size={13} className="text-slate-400 dark:text-[#A78BFA] shrink-0" />
-                <input
-                  type="text"
-                  value={bracketSearchQuery}
-                  onChange={(e) => setBracketSearchQuery(e.target.value)}
-                  placeholder="Cari nama tim..."
-                  className="w-full bg-transparent text-xs text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#A78BFA]/50 focus:outline-none font-sans"
-                />
-                {bracketSearchQuery && (
+          {/* TAB 3: 🏆 BAGAN (BRACKET) */}
+          {activeDetailTab === "bracket" && (
+            <div id="bracket-section" className="p-5 sm:p-7 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl animate-in fade-in duration-200 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3 border-b border-slate-200 dark:border-[#2E1E45] pb-4">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <Flame size={20} className="text-[#7C3AED]" />
+                  <h2 className="font-display text-base sm:text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC]">
+                    Pohon Bagan Pertandingan (Bracket Tree Simetris)
+                  </h2>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-none text-[10px] font-mono font-bold bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981]">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-[#10B981] opacity-75"></span>
+                      <span className="relative inline-flex rounded-none h-2 w-2 bg-[#10B981]"></span>
+                    </span>
+                    LIVE SYNC AKTIF
+                    <span className="text-[#10B981]/70 font-normal">
+                      ({syncSecondsAgo <= 1 ? "baru saja" : `${syncSecondsAgo}d lalu`})
+                    </span>
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
+                  <div className="relative w-full sm:w-64">
+                    <div className="flex items-center gap-2 px-3 h-9 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] focus-within:border-[#7C3AED] transition-all">
+                      <Search size={13} className="text-slate-400 dark:text-[#A78BFA] shrink-0" />
+                      <input
+                        type="text"
+                        value={bracketSearchQuery}
+                        onChange={(e) => setBracketSearchQuery(e.target.value)}
+                        placeholder="Cari nama tim..."
+                        className="w-full bg-transparent text-xs text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#A78BFA]/50 focus:outline-none font-sans"
+                      />
+                      {bracketSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setBracketSearchQuery("")}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none text-[10px] font-mono font-medium text-slate-600 dark:text-[#A78BFA] bg-slate-200 dark:bg-[#2E1E45] hover:text-slate-900 dark:hover:text-[#F8FAFC] transition shrink-0"
+                          title="Reset pencarian"
+                        >
+                          <X size={11} />
+                          <span>Reset</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <BracketZoomControl
+                    zoom={bracketZoomLevel}
+                    onZoomChange={setBracketZoomLevel}
+                  />
+                </div>
+              </div>
+
+              {matches.length > 0 ? (
+                <div
+                  onTouchStart={handleBracketTouchStart}
+                  onTouchMove={handleBracketTouchMove}
+                  onTouchEnd={handleBracketTouchEnd}
+                  style={{ touchAction: "pan-x pan-y" }}
+                >
+                  <DragScrollContainer
+                    buttonPosition="top"
+                    label={
+                      <>
+                        <span className="sm:hidden">👆 Usap 1 jari / Cubit 2 jari untuk zoom</span>
+                        <span className="hidden sm:inline">🖱️ Drag mouse / tombol ◀ ▶: Sayap Kiri ➔ GRAND FINAL 🏆 ⬅ Sayap Kanan</span>
+                      </>
+                    }
+                    className="pt-2 pb-4"
+                  >
+                    <div
+                      style={{
+                        transform: `scale(${bracketZoomLevel})`,
+                        transformOrigin: "top center",
+                        transition: pinchStartDistanceRef.current ? "none" : "transform 0.15s ease-out",
+                      }}
+                      className="w-fit min-w-full"
+                    >
+                      <DualWingBracketView
+                        sortedRoundNumbers={sortedRoundNumbers}
+                        roundsMap={roundsMap}
+                        teams={teams}
+                        onTeamClick={(team) => setViewingRoster(team)}
+                        isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
+                        onAdminQuickUpdate={handleAdminQuickUpdate}
+                        searchQuery={bracketSearchQuery}
+                        onOpenLobby={(m) => setActiveLobbyMatch(m)}
+                        currentUserId={session?.user?.id}
+                        currentUsername={session?.user?.username || session?.user?.name || undefined}
+                        tournamentEventDate={tournament.eventDate}
+                      />
+                    </div>
+                  </DragScrollContainer>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 text-center py-10 font-mono">
+                  Bagan pertandingan belum dibuat atau sedang dipersiapkan oleh panitia.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: 👥 TIM TERDAFTAR */}
+          {activeDetailTab === "teams" && (
+            <div className="p-5 sm:p-7 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl space-y-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between flex-wrap gap-3 border-b border-slate-200 dark:border-[#2E1E45] pb-4">
+                <div>
+                  <h2 className="font-display text-base sm:text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
+                    <Shield size={18} className="text-[#7C3AED]" />
+                    <span>Daftar Tim Terdaftar ({registeredSlotsCount} TIM)</span>
+                  </h2>
+                  <p className="text-xs text-slate-600 dark:text-[#A78BFA] mt-0.5 font-sans">
+                    Klik kartu tim untuk memeriksa komposisi roster pemain inti dan cadangan.
+                  </p>
+                </div>
+
+                {isRegistrationOpen && (
                   <button
                     type="button"
-                    onClick={() => setBracketSearchQuery("")}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none text-[10px] font-mono font-medium text-slate-600 dark:text-[#A78BFA] bg-slate-200 dark:bg-[#2E1E45] hover:text-slate-900 dark:hover:text-[#F8FAFC] transition shrink-0"
-                    title="Reset pencarian"
+                    onClick={handleOpenRegister}
+                    className="px-4 py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center gap-1.5"
                   >
-                    <X size={11} />
-                    <span>Reset</span>
+                    <Plus size={14} />
+                    <span>Tambah Tim</span>
                   </button>
                 )}
               </div>
+
+              {realTeams.length === 0 ? (
+                <div className="text-center py-12 text-xs font-mono text-slate-500 dark:text-[#A78BFA] border border-dashed border-slate-200 dark:border-[#2E1E45] rounded-none bg-slate-50 dark:bg-[#1A0E2E]">
+                  Belum ada tim yang mendaftar. Jadilah tim pertama yang mendaftar dan rebut gelarnya!
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {realTeams.map((team, idx) => {
+                    const roster = (team.roster as TournamentRosterPlayer[]) || [];
+                    const mainPlayers = roster.filter((r) => r.role !== "SUB");
+                    const subPlayers = roster.filter((r) => r.role === "SUB");
+
+                    return (
+                      <div
+                        key={team.id || idx}
+                        onClick={() => setViewingRoster(team)}
+                        className="p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] hover:border-[#7C3AED] transition cursor-pointer space-y-3 text-left"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="w-6 h-6 rounded-none bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] text-purple-600 dark:text-[#A78BFA] text-xs font-mono font-bold flex items-center justify-center shrink-0">
+                            #{idx + 1}
+                          </span>
+                          <span className="text-[10px] font-mono uppercase text-slate-500 dark:text-[#A78BFA]">
+                            {mainPlayers.length} INTI {subPlayers.length > 0 ? `+ ${subPlayers.length} CAD` : ""}
+                          </span>
+                        </div>
+
+                        <div>
+                          <h3 className="font-display font-bold text-sm text-slate-900 dark:text-[#F8FAFC] uppercase tracking-tight truncate">
+                            {team.teamName}
+                          </h3>
+                          {team.captainName && (
+                            <p className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] truncate mt-0.5">
+                              👑 Kapten: {team.captainName}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-200 dark:border-[#2E1E45] flex items-center justify-between text-[11px] font-mono text-slate-600 dark:text-[#A78BFA]">
+                          <span>Lihat Susunan Roster</span>
+                          <span className="text-[#7C3AED] font-bold">➔</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-
-            {/* KONTROL ZOOM IN / ZOOM OUT ARSITEKTURAL */}
-            <BracketZoomControl
-              zoom={bracketZoomLevel}
-              onZoomChange={setBracketZoomLevel}
-            />
-
-            <span className="text-xs font-mono text-gray-400 hidden xl:inline">
-              💡 Drag mouse / tombol ◀ ▶ untuk navigasi
-            </span>
-          </div>
-        </div>
-
-        {matches.length > 0 ? (
-          <div
-            onTouchStart={handleBracketTouchStart}
-            onTouchMove={handleBracketTouchMove}
-            onTouchEnd={handleBracketTouchEnd}
-            style={{ touchAction: "pan-x pan-y" }}
-          >
-            <DragScrollContainer
-              buttonPosition="top"
-              label={
-                <>
-                  <span className="sm:hidden">👆 Usap 1 jari / Cubit 2 jari untuk zoom</span>
-                  <span className="hidden sm:inline">🖱️ Drag mouse / tombol ◀ ▶: Sayap Kiri ➔ GRAND FINAL 🏆 ⬅ Sayap Kanan</span>
-                </>
-              }
-              className="pt-2 pb-4"
-            >
-              <div
-                style={{
-                  transform: `scale(${bracketZoomLevel})`,
-                  transformOrigin: "top center",
-                  transition: pinchStartDistanceRef.current ? "none" : "transform 0.15s ease-out",
-                }}
-                className="w-fit min-w-full"
-              >
-                <DualWingBracketView
-                  sortedRoundNumbers={sortedRoundNumbers}
-                  roundsMap={roundsMap}
-                  teams={teams}
-                  onTeamClick={(team) => setViewingRoster(team)}
-                  isAdminOrMod={session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR"}
-                  onAdminQuickUpdate={handleAdminQuickUpdate}
-                  searchQuery={bracketSearchQuery}
-                  onOpenLobby={(m) => setActiveLobbyMatch(m)}
-                  currentUserId={session?.user?.id}
-                  currentUsername={session?.user?.username || session?.user?.name || undefined}
-                  tournamentEventDate={tournament.eventDate}
-                />
-              </div>
-            </DragScrollContainer>
-          </div>
-        ) : (
-          <p className="text-xs text-gray-500 text-center py-10">
-            Bagan pertandingan belum dibuat atau sedang dipersiapkan oleh panitia.
-          </p>
-        )}
-      </section>
-
-      {/* Teams & Roster Section */}
-      <section className="p-5 sm:p-7 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-xl">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3 border-b border-slate-200 dark:border-[#2E1E45] pb-4">
-          <div>
-            <h2 className="font-display text-base sm:text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
-              <Shield size={18} className="text-[#7C3AED]" />
-              <span>Daftar Tim Terdaftar ({registeredSlotsCount} TIM)</span>
-            </h2>
-            <p className="text-xs text-slate-600 dark:text-[#A78BFA] mt-0.5 font-sans">
-              Klik kartu tim untuk memeriksa komposisi roster pemain inti dan cadangan.
-            </p>
-          </div>
-
-          {isRegistrationOpen && (
-            <button
-              type="button"
-              onClick={handleOpenRegister}
-              className="px-4 py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center gap-1.5"
-            >
-              <Plus size={14} />
-              <span>Tambah Tim</span>
-            </button>
           )}
         </div>
 
-        {realTeams.length === 0 ? (
-          <div className="text-center py-12 text-xs font-mono text-slate-500 dark:text-[#A78BFA] border border-dashed border-slate-200 dark:border-[#2E1E45] rounded-none bg-slate-50 dark:bg-[#1A0E2E]">
-            Belum ada tim yang mendaftar. Jadilah tim pertama yang mendaftar dan rebut gelarnya!
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {realTeams.map((team, idx) => {
-              const roster = (team.roster as TournamentRosterPlayer[]) || [];
-              const mainPlayers = roster.filter((r) => r.role !== "SUB");
-              const subPlayers = roster.filter((r) => r.role === "SUB");
+        {/* KOLOM KANAN (lg:col-span-4 lg:sticky lg:top-24 h-fit): STICKY REGISTRATION & ACTIONS CARD */}
+        <div className="lg:col-span-4 lg:sticky lg:top-24 h-fit space-y-6">
+          <div className="p-6 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-2xl space-y-5">
+            {/* SISA KUOTA SLOT PROGRESS BAR */}
+            <div>
+              <div className="flex items-center justify-between text-xs font-mono mb-2">
+                <span className="font-bold text-slate-900 dark:text-white uppercase flex items-center gap-1.5">
+                  <Users size={14} className="text-[#7C3AED]" />
+                  <span>Kuota Peserta</span>
+                </span>
+                <span className="font-extrabold text-[#7C3AED] dark:text-[#A78BFA]">
+                  {registeredSlotsCount} / {tournament.maxSlots} Tim
+                </span>
+              </div>
 
-              return (
+              {/* Visual Progress Bar */}
+              <div className="w-full h-2.5 rounded-full bg-slate-100 dark:bg-[#1A0E2E] overflow-hidden border border-slate-200 dark:border-[#2E1E45]">
                 <div
-                  key={team.id || idx}
-                  onClick={() => setViewingRoster(team)}
-                  className="p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] hover:border-[#7C3AED] transition cursor-pointer space-y-3 text-left"
+                  className="h-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, Math.round((registeredSlotsCount / tournament.maxSlots) * 100))}%`,
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]/80 mt-1.5">
+                <span>{Math.max(0, tournament.maxSlots - registeredSlotsCount)} slot tersisa</span>
+                <span>{Math.min(100, Math.round((registeredSlotsCount / tournament.maxSlots) * 100))}% terisi</span>
+              </div>
+            </div>
+
+            {/* RINGKASAN BIAYA & PRIZE POOL */}
+            <div className="grid grid-cols-2 gap-3 p-3.5 rounded-none bg-slate-50 dark:bg-[#0A0512] border border-slate-200 dark:border-[#2A1B42]">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-[#A78BFA] block">
+                  BIAYA DAFTAR
+                </span>
+                <span className="font-mono font-black text-xs sm:text-sm text-slate-900 dark:text-white">
+                  {tournament.isFreeEntry || !tournament.entryFee
+                    ? "GRATIS"
+                    : `Rp ${tournament.entryFee.toLocaleString("id-ID")}`}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-amber-500 block">
+                  PRIZE POOL
+                </span>
+                <span className="font-mono font-black text-xs sm:text-sm text-amber-400 truncate block">
+                  {tournament.prizePool || "Resmi Guild"}
+                </span>
+              </div>
+            </div>
+
+            {/* ACTION BUTTONS */}
+            <div className="space-y-2.5">
+              {isRegistrationOpen ? (
+                <button
+                  type="button"
+                  onClick={handleOpenRegister}
+                  className="w-full py-3 px-4 rounded-none font-mono font-bold text-xs uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-purple-500/25 transition cursor-pointer"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="w-6 h-6 rounded-none bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] text-purple-600 dark:text-[#A78BFA] text-xs font-mono font-bold flex items-center justify-center shrink-0">
-                      #{idx + 1}
-                    </span>
-                    <span className="text-[10px] font-mono uppercase text-slate-500 dark:text-[#A78BFA]">
-                      {mainPlayers.length} INTI {subPlayers.length > 0 ? `+ ${subPlayers.length} CAD` : ""}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h3 className="font-display font-bold text-sm text-slate-900 dark:text-[#F8FAFC] uppercase tracking-tight truncate">
-                      {team.teamName}
-                    </h3>
-                    {team.captainName && (
-                      <p className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] truncate mt-0.5">
-                        👑 Kapten: {team.captainName}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-200 dark:border-[#2E1E45] flex items-center justify-between text-[11px] font-mono text-slate-600 dark:text-[#A78BFA]">
-                    <span>Lihat Susunan Roster</span>
-                    <span className="text-[#7C3AED] font-bold">➔</span>
-                  </div>
+                  <Plus size={16} />
+                  <span>+ DAFTAR TIM SEKARANG</span>
+                </button>
+              ) : (
+                <div className="w-full py-3 px-4 text-center rounded-none font-mono font-bold text-xs uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-[#2E1E45]">
+                  {tournament.status === "COMPLETED" ? "Turnamen Telah Selesai" : "Pendaftaran Telah Ditutup"}
                 </div>
-              );
-            })}
+              )}
+
+              <ShareButton
+                url={shareUrl}
+                title={shareTitle}
+                text={shareText}
+                label="Bagikan Link Turnamen 🔗"
+                variant="secondary"
+                className="w-full justify-center text-xs py-2.5"
+              />
+
+              {gfWinner && (
+                <button
+                  type="button"
+                  onClick={() => setShowCertificate(true)}
+                  className="w-full py-2.5 px-4 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-amber-500 text-black hover:bg-amber-400 transition inline-flex items-center justify-center gap-2"
+                >
+                  <Trophy size={14} />
+                  <span>Unduh Kartu Juara 🖼️</span>
+                </button>
+              )}
+            </div>
+
+            {/* TRUST BADGE GUILD */}
+            <div className="pt-3 border-t border-slate-200 dark:border-[#2A1B42] flex items-center gap-2 text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]">
+              <Shield size={14} className="text-[#10B981] shrink-0" />
+              <span>Garansi Fairplay &amp; Pengawalan Hadiah oleh High Council</span>
+            </div>
           </div>
-        )}
-      </section>
+
+          {/* PANEL OPERASIONAL STAF (ADMIN & MODERATOR) */}
+          {(session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR") && (
+            <div className="p-4 sm:p-5 rounded-none border border-[#7C3AED]/40 bg-slate-100 dark:bg-[#11091D] shadow-xl space-y-3">
+              <div className="flex items-center justify-between gap-2 border-b border-[#7C3AED]/20 pb-2.5">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#7C3AED] dark:text-[#A78BFA] flex items-center gap-1.5">
+                  <span>🛡️</span>
+                  <span>Panel Operasional Staf</span>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/30">
+                  {session?.user?.role}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditTournamentModal(true)}
+                  className="w-full h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#1A0E2E] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition cursor-pointer shadow-sm"
+                  title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
+                >
+                  <Edit3 size={14} className="text-slate-500 dark:text-[#A78BFA]" />
+                  <span>Edit Info Turnamen</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveDetailTab("bracket");
+                    setTimeout(() => {
+                      document.getElementById("bracket-section")?.scrollIntoView({ behavior: "smooth" });
+                    }, 50);
+                  }}
+                  className="w-full h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition cursor-pointer shadow-sm"
+                  title="Langsung kelola tim & skor di bagan pertandingan"
+                >
+                  <Settings size={14} className="text-indigo-500" />
+                  <span>Kelola Tim &amp; Skor</span>
+                </button>
+
+                {tournament.status !== "COMPLETED" && (
+                  <button
+                    type="button"
+                    onClick={handleDetailGachaBracket}
+                    className="w-full h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-[#F59E0B]/50 bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 text-[#F59E0B] transition cursor-pointer shadow-sm"
+                    title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
+                  >
+                    <Dices size={14} className="text-[#F59E0B]" />
+                    <span>Gacha Bagan</span>
+                  </button>
+                )}
+
+                <TournamentBackupDropdown
+                  tournament={tournament}
+                  triggerClassName="w-full h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition cursor-pointer shadow-sm"
+                />
+
+                <button
+                  type="button"
+                  disabled={deletingTournament}
+                  onClick={handleDeleteTournament}
+                  className="w-full sm:col-span-2 h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition cursor-pointer disabled:opacity-50 shadow-sm"
+                  title="Hapus turnamen ini secara permanen"
+                >
+                  <Trash2 size={14} className="text-rose-500" />
+                  <span>{deletingTournament ? "Menghapus..." : "Hapus Turnamen"}</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* MODAL: VIEW ROSTER */}
       {viewingRoster && (

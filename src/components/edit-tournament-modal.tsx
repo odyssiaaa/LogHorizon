@@ -9,6 +9,9 @@ export type EditableTournamentData = {
   title: string;
   game: string;
   prizePool?: string | null;
+  prize1st?: string | null;
+  prize2nd?: string | null;
+  prize3rd?: string | null;
   format?: string | null;
   maxSlots?: number;
   mainPlayersCount?: number;
@@ -48,6 +51,9 @@ export function EditTournamentModal({
   const [game, setGame] = useState("");
   const [eventDateLocal, setEventDateLocal] = useState("");
   const [prizePool, setPrizePool] = useState("");
+  const [prize1st, setPrize1st] = useState("");
+  const [prize2nd, setPrize2nd] = useState("");
+  const [prize3rd, setPrize3rd] = useState("");
   const [isFreeEntry, setIsFreeEntry] = useState(true);
   const [entryFee, setEntryFee] = useState<number>(0);
   const [mainPlayersCount, setMainPlayersCount] = useState<number>(5);
@@ -73,6 +79,9 @@ export function EditTournamentModal({
       setEventDateLocal(isoToDateTimeLocal(rawDate));
 
       setPrizePool(tournament.prizePool || "");
+      setPrize1st(tournament.prize1st || "");
+      setPrize2nd(tournament.prize2nd || "");
+      setPrize3rd(tournament.prize3rd || "");
       const free = tournament.isFreeEntry ?? (tournament.entryFee === 0 || !tournament.entryFee);
       setIsFreeEntry(free);
       setEntryFee(tournament.entryFee || 0);
@@ -108,6 +117,9 @@ export function EditTournamentModal({
         title: title.trim(),
         game: game.trim(),
         prizePool: prizePool.trim(),
+        prize1st: prize1st.trim() || null,
+        prize2nd: prize2nd.trim() || null,
+        prize3rd: prize3rd.trim() || null,
         isFreeEntry,
         entryFee: isFreeEntry ? 0 : Number(entryFee) || 0,
         mainPlayersCount: Number(mainPlayersCount) || 5,
@@ -256,7 +268,7 @@ export function EditTournamentModal({
             />
           </div>
 
-          {/* 4. Total Hadiah (Prize Pool) */}
+          {/* 4. Total Hadiah (Prize Pool) & Rincian Opsional */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-bold text-[#A78BFA] uppercase tracking-wider flex items-center gap-1.5">
               <Trophy size={13} className="text-[#F59E0B]" />
@@ -269,6 +281,44 @@ export function EditTournamentModal({
               placeholder="Contoh: Rp 2.500.000 + Discord Role Juara & Sertifikat"
               className="w-full h-10 px-3 rounded-none border border-[#2A1B42] bg-[#160B27] text-white focus:outline-none focus:border-[#7C3AED] transition-colors"
             />
+            {/* Rincian Juara 1, 2, 3 Opsional */}
+            <div className="pt-2 p-3 bg-[#0E061A] border border-[#2A1B42] space-y-2">
+              <span className="text-[10px] font-mono text-[#A78BFA] uppercase tracking-wider block font-bold">
+                🎁 Rincian Hadiah Juara (Opsional — Boleh Dikosongkan)
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[10px] text-amber-400 font-semibold block mb-0.5">🥇 Juara 1</label>
+                  <input
+                    type="text"
+                    value={prize1st}
+                    onChange={(e) => setPrize1st(e.target.value)}
+                    placeholder="Contoh: Rp 1.500.000"
+                    className="w-full h-8 px-2.5 text-xs bg-[#160B27] border border-[#2A1B42] text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-300 font-semibold block mb-0.5">🥈 Juara 2</label>
+                  <input
+                    type="text"
+                    value={prize2nd}
+                    onChange={(e) => setPrize2nd(e.target.value)}
+                    placeholder="Contoh: Rp 700.000"
+                    className="w-full h-8 px-2.5 text-xs bg-[#160B27] border border-[#2A1B42] text-white focus:outline-none focus:border-slate-300"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-amber-600 font-semibold block mb-0.5">🥉 Juara 3</label>
+                  <input
+                    type="text"
+                    value={prize3rd}
+                    onChange={(e) => setPrize3rd(e.target.value)}
+                    placeholder="Contoh: Rp 300.000"
+                    className="w-full h-8 px-2.5 text-xs bg-[#160B27] border border-[#2A1B42] text-white focus:outline-none focus:border-amber-600"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* 5. Mode & Biaya Pendaftaran */}

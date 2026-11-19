@@ -465,6 +465,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         ...(typeof data.title === "string" ? { title: data.title.trim() } : {}),
         ...(typeof data.game === "string" ? { game: data.game.trim() } : {}),
         ...(typeof data.prizePool === "string" ? { prizePool: data.prizePool.trim() } : {}),
+        ...(data.prize1st !== undefined ? { prize1st: typeof data.prize1st === "string" && data.prize1st.trim() ? data.prize1st.trim() : null } : {}),
+        ...(data.prize2nd !== undefined ? { prize2nd: typeof data.prize2nd === "string" && data.prize2nd.trim() ? data.prize2nd.trim() : null } : {}),
+        ...(data.prize3rd !== undefined ? { prize3rd: typeof data.prize3rd === "string" && data.prize3rd.trim() ? data.prize3rd.trim() : null } : {}),
         ...(typeof data.rules === "string" ? { rules: data.rules.trim() } : {}),
         ...(typeof data.eventDate === "string" && !isNaN(new Date(data.eventDate).getTime())
           ? { eventDate: new Date(data.eventDate) }

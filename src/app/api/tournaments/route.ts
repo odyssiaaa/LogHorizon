@@ -167,6 +167,9 @@ export async function POST(request: Request) {
   const title = sanitizePlainText(typeof data.title === "string" && data.title.trim() ? data.title.trim() : "LogHorizon Tournament Cup");
   const game = sanitizePlainText(typeof data.game === "string" ? data.game.trim() : "");
   const prizePool = sanitizePlainText(typeof data.prizePool === "string" && data.prizePool.trim() ? data.prizePool.trim() : "Prizepool Komunitas");
+  const prize1st = typeof data.prize1st === "string" && data.prize1st.trim() ? sanitizePlainText(data.prize1st.trim()) : null;
+  const prize2nd = typeof data.prize2nd === "string" && data.prize2nd.trim() ? sanitizePlainText(data.prize2nd.trim()) : null;
+  const prize3rd = typeof data.prize3rd === "string" && data.prize3rd.trim() ? sanitizePlainText(data.prize3rd.trim()) : null;
 
   let teamCount = typeof data.teamCount === "number" ? data.teamCount : parseInt(String(data.format || "8").replace(/\D/g, ""), 10);
   if (isNaN(teamCount) || teamCount < 2) teamCount = 8;
@@ -207,6 +210,9 @@ export async function POST(request: Request) {
       title,
       game,
       prizePool,
+      prize1st,
+      prize2nd,
+      prize3rd,
       format,
       maxSlots,
       mainPlayersCount,

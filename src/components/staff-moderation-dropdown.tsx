@@ -63,7 +63,7 @@ export function StaffCardModerationMenu({
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-0 top-full mt-1 min-w-[220px] w-max whitespace-nowrap rounded-none bg-white dark:bg-[#11091D] border border-[#7C3AED]/60 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-150 text-left"
+          className="absolute right-0 top-full mt-1 min-w-[260px] w-max whitespace-nowrap rounded-none bg-white dark:bg-[#11091D] border border-[#7C3AED]/60 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-150 text-left"
         >
           <div className="px-3 py-1.5 border-b border-slate-100 dark:border-[#1F1430] text-[10px] font-mono uppercase text-[#7C3AED] dark:text-[#A78BFA] font-bold flex items-center gap-1">
             <Shield size={11} />
