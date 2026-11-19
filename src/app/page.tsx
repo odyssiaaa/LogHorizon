@@ -9,8 +9,10 @@ import {
   Compass,
   Gamepad2,
   Globe2,
+  MessageSquare,
   Radio,
   ShieldCheck,
+  Store,
   Swords,
   Trophy,
   UsersRound,
@@ -89,19 +91,52 @@ const roleGroups = [
   },
 ];
 
+type TournamentSummary = {
+  id: string;
+  title: string;
+  game: string;
+  status: string;
+  format: string | null;
+  prizePool: string | null;
+  maxSlots: number;
+};
+
+type LfgSummary = {
+  id: string;
+  game: string;
+  targetRank: string | null;
+  maxSlots: number;
+  description: string;
+  _count?: { joins: number };
+};
+
+type ForumPostSummary = {
+  id: string;
+  title: string;
+  category: string;
+  author: { username: string | null; name: string | null };
+  _count?: { comments: number };
+};
+
+type MarketSummary = {
+  id: string;
+  title: string;
+  marketData: any;
+};
+
 export default async function Home() {
   await connection();
   const now = new Date();
   const [
     config,
-    sponsors,
+    sponsorsData,
     totalMembers,
-    activeTournaments,
-    latestTournament,
+    activeTournamentsData,
+    rawTournamentsData,
     activeLfgCount,
-    latestLfg,
-    approvedDonationsSum,
-    escrowCount,
+    latestLfgListData,
+    latestForumPostsData,
+    latestMarketplaceData,
   ] = await Promise.all([
     prisma.siteConfig.findUnique({ where: { id: "default" } }).catch(() => null),
     prisma.sponsor.findMany({ orderBy: { createdAt: "desc" } }).catch(() => []),
@@ -110,39 +145,79 @@ export default async function Home() {
       where: { status: { in: ["REGISTRATION", "ONGOING", "OPEN"] } },
       select: { prizePool: true },
     }).catch(() => []),
-    prisma.tournament.findFirst({
+    prisma.tournament.findMany({
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
-      select: { id: true, title: true, game: true, status: true, format: true },
-    }).catch(() => null),
+      take: 2,
+      select: {
+        id: true,
+        title: true,
+        game: true,
+        status: true,
+        format: true,
+        prizePool: true,
+        maxSlots: true,
+      },
+    }).catch(() => []),
     prisma.lfgPost.count({
       where: { status: "OPEN", expiresAt: { gt: now } },
     }).catch(() => 0),
-    prisma.lfgPost.findFirst({
+    prisma.lfgPost.findMany({
       where: { status: "OPEN", expiresAt: { gt: now } },
       orderBy: { createdAt: "desc" },
-      select: { id: true, game: true, targetRank: true, maxSlots: true, description: true },
-    }).catch(() => null),
-    prisma.donation.aggregate({
-      where: { status: { in: ["APPROVED", "SUCCEEDED"] } },
-      _sum: { amount: true },
-    }).catch(() => ({ _sum: { amount: 0 } })),
-    prisma.escrowTransaction.count().catch(() => 0),
+      take: 3,
+      select: {
+        id: true,
+        game: true,
+        targetRank: true,
+        maxSlots: true,
+        description: true,
+        _count: { select: { joins: true } },
+      },
+    }).catch(() => []),
+    prisma.post.findMany({
+      where: { category: { not: "MARKETPLACE" } },
+      orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+      take: 2,
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        author: { select: { username: true, name: true } },
+        _count: { select: { comments: true } },
+      },
+    }).catch(() => []),
+    prisma.post.findMany({
+      where: { category: "MARKETPLACE" },
+      orderBy: { createdAt: "desc" },
+      take: 1,
+      select: {
+        id: true,
+        title: true,
+        marketData: true,
+      },
+    }).catch(() => []),
   ]);
 
-  const totalPrizePool = activeTournaments.reduce((acc, t) => acc + parsePrizePool(t.prizePool), 0);
+  const sponsors = sponsorsData as any[];
+  const activeTournaments = activeTournamentsData as { prizePool: string | null }[];
+  const rawTournaments = rawTournamentsData as TournamentSummary[];
+  const latestLfgList = latestLfgListData as LfgSummary[];
+  const latestForumPosts = latestForumPostsData as ForumPostSummary[];
+  const latestMarketplaceItems = latestMarketplaceData as MarketSummary[];
+
+  const totalPrizePool = activeTournaments.reduce((acc: number, t: { prizePool: string | null }) => acc + parsePrizePool(t.prizePool), 0);
   const activeTournamentCount = activeTournaments.length;
-  const verifiedKas = approvedDonationsSum._sum.amount ?? 0;
   const discordInviteUrl = config?.discordInviteUrl || "https://discord.gg/aJvbVyTxNb";
 
   return (
     <main className="w-full max-w-full overflow-x-hidden bg-[#F8FAFC] dark:bg-[#09040F] text-[#0F172A] dark:text-[#F8FAFC] transition-colors duration-300">
       {/* ===================================================================== */}
-      {/* 3. HERO SECTION (Asymmetric 12-Column Grid: 7 Left : 5 Right)          */}
+      {/* HERO SECTION (Terstruktur, Lega, Simetris)                             */}
       {/* ===================================================================== */}
-      <section className="relative py-10 sm:py-14 md:py-18 lg:py-20 border-b border-slate-200 dark:border-[#2E1E45]">
+      <section className="relative py-12 lg:py-20 border-b border-slate-200 dark:border-[#2E1E45]">
         <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-            {/* KOLOM KIRI (7 Kolom): Headline, Deskripsi, CTA, dan 4 Metrik Statistik */}
+            {/* KOLOM KIRI (7 Kolom): Headline, 2 Tombol Aksi Utama, & 3 Metrik Simetris */}
             <div className="lg:col-span-7 text-left space-y-6">
               {/* Badge Mono di Atas */}
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] font-mono text-xs select-none">
@@ -154,7 +229,7 @@ export default async function Home() {
 
               {/* Headline & Sub-headline */}
               <div className="space-y-2">
-                <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-slate-900 dark:text-[#F8FAFC] uppercase leading-none select-none">
+                <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-[#F8FAFC] uppercase leading-none select-none">
                   LOG<span className="text-[#7C3AED] dark:text-[#A78BFA]">HORIZON</span>
                 </h1>
                 <p className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-tight leading-snug">
@@ -163,67 +238,81 @@ export default async function Home() {
                 </p>
               </div>
 
-              {/* Deskripsi Asli */}
+              {/* Deskripsi */}
               <p className="font-sans text-sm sm:text-base md:text-lg text-slate-600 dark:text-[#A78BFA] max-w-xl leading-relaxed">
                 Satu guild untuk semua petualang. Temukan rekan mabar sefrekuensi di PC, konsol, dan mobile, apa pun genre dan game favoritmu.
               </p>
 
-              {/* CTA Buttons (Strict rounded-none) */}
+              {/* 2 TOMBOL AKSI UTAMA YANG JELAS */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+                <Link
+                  href="/events?view=turnamen"
+                  className="px-6 py-3.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-sans font-bold text-sm inline-flex items-center justify-center gap-2 border border-[#7C3AED] transition-colors shadow-lg hover:shadow-purple-500/25"
+                >
+                  <Trophy size={17} className="text-[#FDE68A]" />
+                  <span>Jelajahi Turnamen</span>
+                </Link>
+                <Link
+                  href="/events?view=mabar"
+                  className="px-6 py-3.5 rounded-none bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:bg-slate-50 dark:hover:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] font-sans font-semibold text-sm inline-flex items-center justify-center gap-2 transition-colors shadow-sm dark:shadow-none"
+                >
+                  <Gamepad2 size={17} className="text-[#7C3AED]" />
+                  <span>Cari Teman Mabar</span>
+                </Link>
+              </div>
+
+              {/* Tautan Server Discord Komunitas */}
+              <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-[#A78BFA] pt-1">
+                <span>Komunitas resmi Discord:</span>
                 <a
-                  className="px-6 py-3.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-sans font-bold text-sm inline-flex items-center justify-center gap-2 border border-[#7C3AED] transition-colors shadow-sm"
                   href={discordInviteUrl}
                   target="_blank"
                   rel="noreferrer"
+                  className="text-[#7C3AED] dark:text-[#A78BFA] hover:underline font-bold inline-flex items-center gap-1"
                 >
-                  <span>Masuk Guild (Join Discord)</span>
-                  <ArrowUpRight size={17} />
-                </a>
-                <a
-                  className="px-6 py-3.5 rounded-none bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:bg-slate-50 dark:hover:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] font-sans font-semibold text-sm inline-flex items-center justify-center transition-colors shadow-sm dark:shadow-none"
-                  href="#flight-board"
-                >
-                  Jelajahi Komunitas
+                  <span>Gabung Server Discord</span>
+                  <ArrowUpRight size={13} />
                 </a>
               </div>
 
-              {/* Baris 4 Metrik Statistik (Data-Dense JetBrains Mono - 100% Real DB Data) */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-slate-200 dark:border-[#2E1E45]">
-                <div className="p-3 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none min-w-0">
-                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase block truncate">TOTAL PETUALANG</span>
-                  <strong className="font-mono text-base sm:text-lg lg:text-xl font-bold text-slate-900 dark:text-[#F8FAFC] block mt-0.5 whitespace-nowrap truncate">
-                    {totalMembers} Petualang
+              {/* BARIS 3 METRIK STATISTIK SIMETRIS REAL-TIME (grid-cols-2 lg:grid-cols-3 gap-4) */}
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 pt-6 border-t border-slate-200 dark:border-[#2E1E45]">
+                {/* 1. Total Petualang */}
+                <div className="p-4 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none min-w-0">
+                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase tracking-wider block truncate">
+                    TOTAL PETUALANG
+                  </span>
+                  <strong className="font-mono text-xl sm:text-2xl font-black text-slate-900 dark:text-[#F8FAFC] block mt-1 whitespace-nowrap truncate">
+                    {totalMembers.toLocaleString("id-ID")}
                   </strong>
-                  <span className="font-mono text-[10px] text-emerald-600 dark:text-[#10B981] mt-0.5 block truncate">● 100% Akun Terdaftar</span>
-                </div>
-
-                <div className="p-3 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none min-w-0">
-                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase block truncate">PRIZE POOL AKTIF</span>
-                  <strong className="font-mono text-base sm:text-lg lg:text-xl font-bold text-amber-600 dark:text-[#F59E0B] block mt-0.5 whitespace-nowrap truncate">
-                    {formatRupiah(totalPrizePool)}
-                  </strong>
-                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] mt-0.5 block truncate">
-                    {activeTournamentCount} Turnamen Aktif
+                  <span className="font-mono text-[10px] text-emerald-600 dark:text-[#10B981] mt-1 block whitespace-nowrap">
+                    ● Akun Terdaftar
                   </span>
                 </div>
 
-                <div className="p-3 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none min-w-0">
-                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase block truncate">ACTIVE PARTY LFG</span>
-                  <strong className="font-mono text-base sm:text-lg lg:text-xl font-bold text-slate-900 dark:text-[#F8FAFC] block mt-0.5 whitespace-nowrap truncate">
+                {/* 2. Turnamen Aktif */}
+                <div className="p-4 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none min-w-0">
+                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase tracking-wider block truncate">
+                    TURNAMEN AKTIF
+                  </span>
+                  <strong className="font-mono text-xl sm:text-2xl font-black text-amber-500 block mt-1 whitespace-nowrap truncate">
+                    {activeTournamentCount} Turnamen
+                  </strong>
+                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] mt-1 block truncate">
+                    Hadiah: {formatRupiah(totalPrizePool)}
+                  </span>
+                </div>
+
+                {/* 3. Party Mabar Aktif */}
+                <div className="p-4 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none min-w-0 col-span-2 lg:col-span-1">
+                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase tracking-wider block truncate">
+                    PARTY MABAR AKTIF
+                  </span>
+                  <strong className="font-mono text-xl sm:text-2xl font-black text-slate-900 dark:text-[#F8FAFC] block mt-1 whitespace-nowrap truncate">
                     {activeLfgCount} Party
                   </strong>
-                  <span className="font-mono text-[10px] text-emerald-600 dark:text-[#10B981] mt-0.5 block truncate">
-                    {activeLfgCount > 0 ? "Mabar Siap Tempur" : "Belum Ada Mabar"}
-                  </span>
-                </div>
-
-                <div className="p-3 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] shadow-sm dark:shadow-none min-w-0">
-                  <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] uppercase block truncate">ESCROW &amp; REKBER</span>
-                  <strong className="font-mono text-base sm:text-lg lg:text-xl font-bold text-emerald-600 dark:text-[#10B981] block mt-0.5 whitespace-nowrap truncate">
-                    {escrowCount > 0 ? `${escrowCount} Transaksi` : "100% Aman"}
-                  </strong>
-                  <span className="font-mono text-[10px] text-emerald-600 dark:text-[#10B981] mt-0.5 block truncate">
-                    ● Kas Guild Terlindungi
+                  <span className="font-mono text-[10px] text-emerald-600 dark:text-[#10B981] mt-1 block truncate">
+                    {activeLfgCount > 0 ? "● Siap Tempur 24/7" : "● Cari Teman Baru"}
                   </span>
                 </div>
               </div>
@@ -248,7 +337,7 @@ export default async function Home() {
                 </div>
               </div>
 
-              {/* LIVE GUILD FLIGHT BOARD (Data-Dense Airport Schedule Style - Real Time) */}
+              {/* LIVE GUILD FLIGHT BOARD */}
               <div className="bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] divide-y divide-slate-100 dark:divide-[#2E1E45] rounded-none shadow-sm dark:shadow-none">
                 <div className="p-3.5 bg-slate-100 dark:bg-[#09040F] flex items-center justify-between font-mono text-xs text-slate-900 dark:text-[#F8FAFC]">
                   <span className="font-bold flex items-center gap-2">
@@ -258,23 +347,23 @@ export default async function Home() {
                   <span className="text-[10px] text-emerald-600 dark:text-[#10B981] font-bold">● DISPATCH AKTIF</span>
                 </div>
 
-                {/* Match Turnamen LIVE / Real Time */}
+                {/* Match Turnamen LIVE */}
                 <div className="p-3.5 hover:bg-slate-50 dark:hover:bg-[#1A0E2E] transition-colors">
                   <div className="flex items-center justify-between text-[11px] font-mono">
                     <span className="text-[#7C3AED] dark:text-[#A78BFA] font-bold">TURNAMEN LOGHORIZON</span>
-                    {latestTournament ? (
+                    {rawTournaments[0] ? (
                       <span className={`font-bold px-1.5 py-0.2 border ${
-                        latestTournament.status === "ONGOING"
+                        rawTournaments[0].status === "ONGOING"
                           ? "text-[#10B981] bg-[#10B981]/10 border-[#10B981]/30 animate-pulse"
-                          : latestTournament.status === "REGISTRATION" || latestTournament.status === "OPEN"
+                          : rawTournaments[0].status === "REGISTRATION" || rawTournaments[0].status === "OPEN"
                             ? "text-[#F59E0B] bg-[#F59E0B]/10 border-[#F59E0B]/30"
                             : "text-[#A78BFA] bg-[#A78BFA]/10 border-[#A78BFA]/30"
                       }`}>
-                        {latestTournament.status === "ONGOING"
+                        {rawTournaments[0].status === "ONGOING"
                           ? "LIVE MATCH"
-                          : latestTournament.status === "REGISTRATION" || latestTournament.status === "OPEN"
+                          : rawTournaments[0].status === "REGISTRATION" || rawTournaments[0].status === "OPEN"
                             ? "REGISTRASI BUKA"
-                            : latestTournament.status}
+                            : rawTournaments[0].status}
                       </span>
                     ) : (
                       <span className="text-gray-500 font-bold px-1.5 py-0.2 bg-gray-500/10 border border-gray-500/30">
@@ -283,16 +372,16 @@ export default async function Home() {
                     )}
                   </div>
                   <div className="font-display font-bold text-sm text-slate-900 dark:text-[#F8FAFC] mt-1">
-                    {latestTournament ? latestTournament.title : "Belum ada turnamen aktif"}
+                    {rawTournaments[0] ? rawTournaments[0].title : "Belum ada turnamen aktif"}
                   </div>
                   <div className="flex items-center justify-between font-mono text-[11px] text-slate-500 dark:text-[#A78BFA] mt-1">
                     <span>
-                      {latestTournament
-                        ? `Divisi: ${latestTournament.game} (${latestTournament.format})`
+                      {rawTournaments[0]
+                        ? `Divisi: ${rawTournaments[0].game} (${rawTournaments[0].format})`
                         : "Tunggu pengumuman turnamen season berikutnya"}
                     </span>
                     <Link href="/events?view=turnamen" className="text-[#7C3AED] hover:underline font-bold">
-                      {latestTournament ? "Bagan Turnamen ➔" : "Lihat Jadwal ➔"}
+                      {rawTournaments[0] ? "Bagan Turnamen ➔" : "Lihat Jadwal ➔"}
                     </Link>
                   </div>
                 </div>
@@ -301,7 +390,7 @@ export default async function Home() {
                 <div className="p-3.5 hover:bg-slate-50 dark:hover:bg-[#1A0E2E] transition-colors">
                   <div className="flex items-center justify-between text-[11px] font-mono">
                     <span className="text-[#7C3AED] dark:text-[#A78BFA] font-bold">CARI TEMAN MABAR (LFG)</span>
-                    {latestLfg ? (
+                    {latestLfgList[0] ? (
                       <span className="text-amber-600 dark:text-[#F59E0B] font-bold px-1.5 py-0.2 bg-amber-500/10 border border-amber-500/30">
                         SLOT TERBUKA
                       </span>
@@ -312,23 +401,23 @@ export default async function Home() {
                     )}
                   </div>
                   <div className="font-display font-bold text-sm text-slate-900 dark:text-[#F8FAFC] mt-1">
-                    {latestLfg
-                      ? `${latestLfg.game} // ${latestLfg.description}`
+                    {latestLfgList[0]
+                      ? `${latestLfgList[0].game} // ${latestLfgList[0].description}`
                       : "Belum ada party mabar aktif • Buat Party Sekarang"}
                   </div>
                   <div className="flex items-center justify-between font-mono text-[11px] text-slate-500 dark:text-[#A78BFA] mt-1">
                     <span>
-                      {latestLfg
-                        ? `Target: ${latestLfg.targetRank || "Bebas"} (${latestLfg.maxSlots} Slot)`
+                      {latestLfgList[0]
+                        ? `Target: ${latestLfgList[0].targetRank || "Bebas"} (${latestLfgList[0].maxSlots} Slot)`
                         : "Jadilah pelopor party pertamamu di komunitas"}
                     </span>
                     <Link href="/events?view=mabar" className="text-[#7C3AED] hover:underline font-bold">
-                      {latestLfg ? "Gabung Party ➔" : "Buat Party ➔"}
+                      {latestLfgList[0] ? "Gabung Party ➔" : "Buat Party ➔"}
                     </Link>
                   </div>
                 </div>
 
-                {/* Status Antrean Rekber Escrow */}
+                {/* Status Marketplace Rekber */}
                 <div className="p-3.5 hover:bg-slate-50 dark:hover:bg-[#1A0E2E] transition-colors">
                   <div className="flex items-center justify-between text-[11px] font-mono">
                     <span className="text-[#7C3AED] dark:text-[#A78BFA] font-bold">REKBER / ESCROW GUILD</span>
@@ -340,7 +429,7 @@ export default async function Home() {
                     Transaksi Jual-Beli Akun &amp; Item Dijamin Kas Guild
                   </div>
                   <div className="flex items-center justify-between font-mono text-[11px] text-slate-500 dark:text-[#A78BFA] mt-1">
-                    <span>{escrowCount > 0 ? `${escrowCount} Transaksi Terlindungi` : "Kas Guild Siap Mengawal Transaksi Pertama"}</span>
+                    <span>Transaksi aman terkawal tanpa khawatir tertipu</span>
                     <Link href="/marketplace" className="text-[#7C3AED] hover:underline font-bold">
                       Buka Lapak Rekber ➔
                     </Link>
@@ -354,6 +443,225 @@ export default async function Home() {
 
       {/* OFFICIAL GUILD ANNOUNCEMENT BOARD (PROMINENT FULL-WIDTH CARD) */}
       <GuildAnnouncementCard />
+
+      {/* ===================================================================== */}
+      {/* LIVE ACTIVITY SHOWCASE (3 BLOK SOROTAN EKOSISTEM)                     */}
+      {/* ===================================================================== */}
+      <section className="py-12 border-b border-slate-200 dark:border-[#2E1E45] bg-slate-50/50 dark:bg-[#09040F]/80">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
+            <div className="text-left">
+              <div className="font-mono text-xs font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-[#10B981] animate-pulse" />
+                <span>LIVE ACTIVITY SHOWCASE // SOROTAN EKOSISTEM</span>
+              </div>
+              <h2 className="font-display text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC]">
+                Aktivitas Terkini Komunitas
+              </h2>
+            </div>
+            <span className="font-mono text-xs text-slate-500 dark:text-[#A78BFA] self-start sm:self-auto">
+              Real-time update dari database guild
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* BLOK 1: TURNAMEN TERDEKAT / SEDANG BERLANGSUNG */}
+            <div className="p-5 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] rounded-none shadow-sm flex flex-col justify-between space-y-4 text-left">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#2E1E45]">
+                  <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#F8FAFC] uppercase flex items-center gap-2">
+                    <Trophy size={18} className="text-[#F59E0B]" />
+                    <span>Turnamen Guild</span>
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30">
+                    KOMPETISI
+                  </span>
+                </div>
+
+                {rawTournaments.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {rawTournaments.map((t: TournamentSummary) => (
+                      <Link
+                        key={t.id}
+                        href={`/events/turnamen/${t.id}`}
+                        className="block p-3 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] hover:border-[#7C3AED] transition group"
+                      >
+                        <div className="flex items-center justify-between text-[10px] font-mono mb-1">
+                          <span className="font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase">{t.game}</span>
+                          <span
+                            className={`px-1.5 py-0.2 font-bold ${
+                              t.status === "ONGOING"
+                                ? "text-emerald-500 bg-emerald-500/10"
+                                : t.status === "COMPLETED"
+                                ? "text-slate-400 bg-slate-400/10"
+                                : "text-amber-500 bg-amber-500/10"
+                            }`}
+                          >
+                            ● {t.status}
+                          </span>
+                        </div>
+                        <h4 className="font-display font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate group-hover:text-[#7C3AED] transition-colors">
+                          {t.title}
+                        </h4>
+                        <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]/80 mt-1.5">
+                          <span>{t.format || `${t.maxSlots} Tim`}</span>
+                          <span className="text-amber-500 font-bold">{t.prizePool || "Prizepool Resmi"}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-xs font-mono text-slate-500 dark:text-[#A78BFA]">
+                    Belum ada turnamen aktif. Nantikan turnamen season berikutnya!
+                  </div>
+                )}
+              </div>
+
+              <Link
+                href="/events?view=turnamen"
+                className="w-full py-2.5 px-4 rounded-none font-mono text-xs font-bold text-center border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] hover:border-[#7C3AED] hover:text-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition inline-flex items-center justify-center gap-1.5 mt-2"
+              >
+                <span>Lihat Semua Turnamen →</span>
+              </Link>
+            </div>
+
+            {/* BLOK 2: AJAKAN MABAR LFG AKTIF */}
+            <div className="p-5 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] rounded-none shadow-sm flex flex-col justify-between space-y-4 text-left">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#2E1E45]">
+                  <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#F8FAFC] uppercase flex items-center gap-2">
+                    <Swords size={18} className="text-[#7C3AED]" />
+                    <span>Ajakan Mabar (LFG)</span>
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/30">
+                    PARTY AKTIF
+                  </span>
+                </div>
+
+                {latestLfgList.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {latestLfgList.map((lfg: LfgSummary) => {
+                      const joinsCount = lfg._count?.joins ?? 0;
+                      const membersCount = joinsCount + 1;
+                      return (
+                        <Link
+                          key={lfg.id}
+                          href="/events?view=mabar"
+                          className="block p-3 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] hover:border-[#7C3AED] transition group"
+                        >
+                          <div className="flex items-center justify-between text-[10px] font-mono mb-1">
+                            <span className="font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase">{lfg.game}</span>
+                            <span className="text-emerald-600 dark:text-[#10B981] font-bold">
+                              {membersCount}/{lfg.maxSlots} SLOT
+                            </span>
+                          </div>
+                          <h4 className="font-display font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate group-hover:text-[#7C3AED] transition-colors">
+                            {lfg.description}
+                          </h4>
+                          <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]/80 mt-1.5">
+                            <span>Rank: {lfg.targetRank || "Bebas"}</span>
+                            <span className="text-[#7C3AED] font-bold">Gabung ➔</span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-xs font-mono text-slate-500 dark:text-[#A78BFA]">
+                    Belum ada party mabar yang terbuka. Jadilah yang pertama membuat party!
+                  </div>
+                )}
+              </div>
+
+              <Link
+                href="/events?view=mabar"
+                className="w-full py-2.5 px-4 rounded-none font-mono text-xs font-bold text-center border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] hover:border-[#7C3AED] hover:text-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition inline-flex items-center justify-center gap-1.5 mt-2"
+              >
+                <span>Cari Party Mabar →</span>
+              </Link>
+            </div>
+
+            {/* BLOK 3: DISKUSI FORUM TERHANGAT & LAPAK TERBARU */}
+            <div className="p-5 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] rounded-none shadow-sm flex flex-col justify-between space-y-4 text-left">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#2E1E45]">
+                  <h3 className="font-display text-base font-bold text-slate-900 dark:text-[#F8FAFC] uppercase flex items-center gap-2">
+                    <MessageSquare size={18} className="text-[#10B981]" />
+                    <span>Forum &amp; Rekber</span>
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold bg-purple-500/10 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/30">
+                    KOMUNITAS
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {/* Latest Forum Discussions */}
+                  {latestForumPosts.map((post: ForumPostSummary) => (
+                    <Link
+                      key={post.id}
+                      href={`/forum/${post.id}`}
+                      className="block p-3 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] hover:border-[#7C3AED] transition group"
+                    >
+                      <div className="flex items-center justify-between text-[10px] font-mono mb-1">
+                        <span className="font-bold text-emerald-600 dark:text-[#10B981] uppercase">💬 FORUM DISKUSI</span>
+                        <span className="text-slate-500 dark:text-[#A78BFA]">{post._count?.comments ?? 0} balasan</span>
+                      </div>
+                      <h4 className="font-display font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate group-hover:text-[#7C3AED] transition-colors">
+                        {post.title}
+                      </h4>
+                      <p className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]/80 mt-1 truncate">
+                        Oleh @{post.author?.username || post.author?.name || "Petualang"} • Kategori: {post.category || "Umum"}
+                      </p>
+                    </Link>
+                  ))}
+
+                  {/* Latest Marketplace Listing */}
+                  {latestMarketplaceItems.slice(0, 1).map((item: MarketSummary) => {
+                    const md = item.marketData as { price?: number; game?: string } | null;
+                    const price = typeof md?.price === "number" ? md.price : 0;
+                    const game = md?.game || "Multi-Game";
+                    return (
+                      <Link
+                        key={item.id}
+                        href="/marketplace"
+                        className="block p-3 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] hover:border-[#7C3AED] transition group"
+                      >
+                        <div className="flex items-center justify-between text-[10px] font-mono mb-1">
+                          <span className="font-bold text-amber-500 uppercase">🛒 LAPAK REKBER</span>
+                          <span className="text-emerald-500 font-bold">
+                            {price > 0 ? `Rp ${price.toLocaleString("id-ID")}` : "Rekber Kas"}
+                          </span>
+                        </div>
+                        <h4 className="font-display font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate group-hover:text-[#7C3AED] transition-colors">
+                          {item.title}
+                        </h4>
+                        <p className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]/80 mt-1 truncate">
+                          Game: {game} • Dijamin Escrow Guild
+                        </p>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <Link
+                  href="/forum"
+                  className="py-2.5 px-3 rounded-none font-mono text-[11px] font-bold text-center border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] hover:border-[#7C3AED] hover:text-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition truncate"
+                >
+                  Buka Forum →
+                </Link>
+                <Link
+                  href="/marketplace"
+                  className="py-2.5 px-3 rounded-none font-mono text-[11px] font-bold text-center border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] hover:border-[#7C3AED] hover:text-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition truncate"
+                >
+                  Buka Market →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ===================================================================== */}
       {/* 01 / TENTANG GUILD (Clean Editorial Block)                             */}
@@ -560,7 +868,7 @@ export default async function Home() {
 
           {sponsors.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-              {sponsors.map((sp) => {
+              {sponsors.map((sp: any) => {
                 const linkHref = sp.websiteUrl || "#";
                 return (
                   <a
@@ -571,7 +879,6 @@ export default async function Home() {
                     className="group relative flex items-center justify-center min-h-[140px] sm:min-h-[170px] p-6 sm:p-8 rounded-none bg-white dark:bg-[#11091D] border-2 border-slate-200 dark:border-[#2A1B42] hover:border-[#9D4EDD] shadow-sm dark:shadow-none hover:shadow-[0_0_30px_rgba(157,78,221,0.25)] transition-all duration-300"
                     title={sp.websiteUrl ? `Kunjungi ${sp.name}` : sp.name}
                   >
-                    {/* Ikon panah pojok kecil (↗) sebagai penanda visual link klik */}
                     <span className="absolute top-3.5 right-3.5 p-1 text-slate-400 dark:text-[#A78BFA]/50 group-hover:text-[#7C3AED] dark:group-hover:text-[#C77DFF] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200">
                       <ArrowUpRight size={18} />
                     </span>

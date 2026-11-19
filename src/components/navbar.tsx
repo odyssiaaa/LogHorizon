@@ -989,6 +989,106 @@ export function Navbar() {
           </>
         )}
       </AnimatePresence>
+
+      {/* ===================================================================== */}
+      {/* MOBILE FLOATING BOTTOM DOCK (< 768px / md:hidden)                     */}
+      {/* ===================================================================== */}
+      <nav
+        aria-label="Navigasi Bawah Layar Mobile"
+        className="fixed bottom-3 inset-x-3 z-40 md:hidden bg-[#11091D]/95 dark:bg-[#11091D]/95 bg-white/95 backdrop-blur-md border border-[#7C3AED]/40 shadow-[0_8px_30px_rgba(0,0,0,0.45)] rounded-2xl px-2 py-1.5 transition-all select-none"
+      >
+        <div className="grid grid-cols-5 items-center text-center gap-1">
+          {/* 1. Home */}
+          <Link
+            href="/"
+            onClick={() => setMobileOpen(false)}
+            className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-colors ${
+              isHomeActive
+                ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Home size={18} className={isHomeActive ? "text-[#7C3AED] dark:text-[#A78BFA]" : ""} />
+            <span className="text-[10px] font-medium mt-1 leading-none">Home</span>
+          </Link>
+
+          {/* 2. Forum */}
+          <Link
+            href="/forum"
+            onClick={() => setMobileOpen(false)}
+            className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-colors ${
+              pathname.startsWith("/forum")
+                ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <MessageSquare size={18} className={pathname.startsWith("/forum") ? "text-[#7C3AED] dark:text-[#A78BFA]" : ""} />
+            <span className="text-[10px] font-medium mt-1 leading-none">Forum</span>
+          </Link>
+
+          {/* 3. Arena (Tombol Tengah Menonjol Beraksen Ungu) */}
+          <Link
+            href="/events"
+            onClick={() => setMobileOpen(false)}
+            className="flex flex-col items-center justify-center -mt-3.5"
+            aria-label="Buka Arena Turnamen & Mabar"
+          >
+            <div className={`size-12 rounded-xl flex items-center justify-center shadow-lg border transition-transform active:scale-95 ${
+              isArenaActive
+                ? "bg-[#7C3AED] text-white border-[#C4B5FD] shadow-[0_0_20px_rgba(124,58,237,0.5)]"
+                : "bg-[#7C3AED] text-white border-[#7C3AED]/60 shadow-md"
+            }`}>
+              <Swords size={20} />
+            </div>
+            <span className="text-[10px] font-bold text-[#7C3AED] dark:text-[#A78BFA] mt-0.5 leading-none">Arena</span>
+          </Link>
+
+          {/* 4. Market */}
+          <Link
+            href="/marketplace"
+            onClick={() => setMobileOpen(false)}
+            className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-colors ${
+              isMarketplaceActive
+                ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Store size={18} className={isMarketplaceActive ? "text-[#7C3AED] dark:text-[#A78BFA]" : ""} />
+            <span className="text-[10px] font-medium mt-1 leading-none">Market</span>
+          </Link>
+
+          {/* 5. Menu / Profil (Buka Laci Drawer) */}
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="flex flex-col items-center justify-center py-1 px-1 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors relative"
+            aria-label="Buka Menu Lengkap & Profil"
+          >
+            {user ? (
+              <div className="relative size-[22px] rounded-full overflow-hidden border border-[#7C3AED] shrink-0">
+                {user.avatar ? (
+                  <Image src={user.avatar} alt="Avatar" fill className="object-cover" unoptimized />
+                ) : (
+                  <span className="grid place-items-center h-full text-[10px] font-bold text-[#7C3AED]">
+                    {(user.username ?? user.name ?? "U").slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <Menu size={18} />
+            )}
+
+            {/* Notification dot if unread messages or admin pending */}
+            {(unreadMessages > 0 || adminPendingCount > 0) && (
+              <span className="absolute top-1 right-3 size-2 rounded-full bg-rose-500 animate-pulse" />
+            )}
+
+            <span className="text-[10px] font-medium mt-1 leading-none">
+              {user ? "Profil" : "Menu"}
+            </span>
+          </button>
+        </div>
+      </nav>
     </>
   );
 }

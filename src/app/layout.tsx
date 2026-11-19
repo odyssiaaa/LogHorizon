@@ -70,7 +70,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Providers>
           <Navbar />
           <WelcomeOnboardingModal />
-          <div className="flex-1 w-full max-w-full overflow-x-hidden pb-24 lg:pb-12">
+          <div className="flex-1 w-full max-w-full overflow-x-hidden pb-28 md:pb-12">
             {children}
           </div>
           <footer className="border-t border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#09040F] py-8 mt-auto rounded-none transition-colors duration-300">
