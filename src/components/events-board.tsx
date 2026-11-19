@@ -1599,7 +1599,7 @@ export function EventsBoard() {
                           className="h-10 px-4 whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center justify-center gap-2 transition-all shadow-sm"
                         >
                           <Trophy size={14} />
-                          <span>🏆 Lihat Turnamen &amp; Bagan</span>
+                          <span>Lihat Turnamen &amp; Bagan</span>
                         </Link>
 
                         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -1610,43 +1610,43 @@ export function EventsBoard() {
                               className="h-10 px-4 flex-1 sm:flex-initial whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-600 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
                             >
                               <Plus size={14} />
-                              <span>+ Daftar Tim</span>
+                              <span>Daftar Tim</span>
                             </button>
                           )}
 
                           {isAdminOrMod && (
                             <StaffCardModerationMenu
-                              label="⚙️ Opsi Staf"
+                              label="Opsi Staf"
                               buttonClassName="h-10 px-3.5 w-full sm:w-auto justify-center rounded-none font-mono text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 border border-[#7C3AED]/40 bg-purple-500/15 hover:bg-[#7C3AED]/25 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-sm shrink-0 whitespace-nowrap"
                               actions={[
                                 {
-                                  label: "⚙️ Kelola Tim, Jadwal & Skor",
+                                  label: "Kelola Tim, Jadwal & Skor",
                                   icon: <Settings size={13} />,
                                   onClick: () => { window.location.href = `/events/turnamen/${tournament.id}#bracket-section`; },
                                 },
                                 {
-                                  label: "✏️ Edit Info & Waktu Mulai",
+                                  label: "Edit Info & Waktu Mulai",
                                   icon: <Edit3 size={13} />,
                                   onClick: () => setEditingTournament(tournament),
                                 },
                                 {
-                                  label: "🎲 Gacha / Acak Bagan",
+                                  label: "Gacha / Acak Bagan",
                                   icon: <Dices size={13} />,
                                   disabled: tournament.status === "COMPLETED",
                                   onClick: () => handleGachaBracket(tournament),
                                 },
                                 {
-                                  label: "💾 Unduh Laporan Excel (.CSV)",
+                                  label: "Unduh Laporan Excel (.CSV)",
                                   icon: <FileSpreadsheet size={13} />,
                                   onClick: () => exportTournamentToCsv(tournament),
                                 },
                                 {
-                                  label: "📦 Unduh Backup (.JSON)",
+                                  label: "Unduh Backup (.JSON)",
                                   icon: <FileCode size={13} />,
                                   onClick: () => exportTournamentToJson(tournament),
                                 },
                                 {
-                                  label: "🗑️ Hapus Turnamen",
+                                  label: "Hapus Turnamen",
                                   icon: <Trash2 size={13} />,
                                   danger: true,
                                   onClick: () => handleDeleteTournament(tournament.id, tournament.title),
@@ -2461,7 +2461,7 @@ export function EventsBoard() {
                   title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
                 >
                   <Dices size={13} className="text-amber-400" />
-                  <span>🎲 Gacha Bagan (Acak Lawan)</span>
+                  <span>Gacha Bagan (Acak Lawan)</span>
                 </button>
               )}
             </div>
@@ -4633,7 +4633,7 @@ export function ChampionCelebrationCard({
       </div>
       <div>
         <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-extrabold block">
-          🏆 JUARA 1 TURNAMEN 🏆
+          JUARA 1 TURNAMEN
         </span>
         <h4 className="text-base sm:text-lg font-black text-amber-200 mt-0.5 tracking-wide drop-shadow-[0_2px_10px_rgba(234,179,8,0.5)] truncate">
           {winnerName}
@@ -4668,7 +4668,7 @@ export function ChampionCelebrationCard({
           href="/hall-of-winners"
           className="inline-flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-lg text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition shadow-xs"
         >
-          <span>Lihat &amp; Unduh Kartu Juara 🖼️</span>
+          <span>Lihat &amp; Unduh Kartu Juara</span>
         </Link>
       </div>
     </div>
@@ -4888,7 +4888,7 @@ export function DualWingBracketView({
           </span>
           <p className="text-xs sm:text-sm font-display font-bold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-tight flex items-center justify-center gap-1.5 mt-0.5">
             <Crown size={15} className="text-[#F59E0B]" />
-            <span>GRAND FINAL 🏆</span>
+            <span>GRAND FINAL</span>
           </p>
         </div>
 
@@ -4922,7 +4922,7 @@ export function DualWingBracketView({
               <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[#F59E0B] px-1">
                 <span className="flex items-center gap-1 uppercase tracking-wider">
                   <Award size={13} className="text-[#F59E0B]" />
-                  <span>🥉 BRONZE MATCH (PEREBUTAN JUARA 3)</span>
+                  <span>BRONZE MATCH (PEREBUTAN JUARA 3)</span>
                 </span>
                 <span className="px-1.5 py-0.2 rounded-none bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-[#F59E0B] text-[9px]">
                   3RD PLACE

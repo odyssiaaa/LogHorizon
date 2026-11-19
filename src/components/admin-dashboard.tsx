@@ -17,6 +17,7 @@ import {
   Dices,
   DollarSign,
   Download,
+  Edit3,
   ExternalLink,
   Flag,
   ImageIcon,
@@ -2282,7 +2283,7 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                       className="button button-primary text-xs font-bold inline-flex items-center gap-1.5"
                     >
                       <Plus size={14} />
-                      <span>+ Buat Turnamen Baru</span>
+                      <span>Buat Turnamen Baru</span>
                     </button>
                     {(() => {
                       const cur = tournamentsList.find((t) => t.id === selectedTournamentId) || tournamentsList[0];
@@ -2294,7 +2295,7 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                           title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
                         >
                           <Dices size={13} className="text-amber-400" />
-                          <span>🎲 Gacha Bagan (Acak Lawan)</span>
+                          <span>Gacha Bagan (Acak Lawan)</span>
                         </button>
                       ) : null;
                     })()}
@@ -2408,7 +2409,8 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                                 className="px-3 py-2 rounded-none text-xs font-bold border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] flex items-center gap-1.5 transition font-mono"
                                 title="Edit Info Turnamen (Judul, Tanggal, Hadiah, dll)"
                               >
-                                <span>✏️ Edit Turnamen</span>
+                                <Edit3 size={13} className="text-slate-500 dark:text-[#A78BFA]" />
+                                <span>Edit Turnamen</span>
                               </button>
                               <TournamentBackupDropdown tournament={curTournament} />
                               <button
@@ -2460,7 +2462,7 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                                   title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
                                 >
                                   <Dices size={15} className="text-amber-400" />
-                                  <span>🎲 Gacha Bagan (Acak Lawan)</span>
+                                  <span>Gacha Bagan (Acak Lawan)</span>
                                 </button>
                               )}
                               <div className="text-right">
@@ -2726,7 +2728,7 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                       className="button button-primary text-xs font-bold inline-flex items-center gap-1.5"
                     >
                       <Plus size={14} />
-                      <span>+ Tambah Arsip Season Manual</span>
+                      <span>Tambah Arsip Season Manual</span>
                     </button>
                     <Link
                       href="/hall-of-winners"
@@ -3627,7 +3629,8 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                                 onClick={() => void handleEditXpLevel(member)}
                                 className="h-9 px-3 text-xs font-bold border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 rounded-md flex items-center justify-center gap-1 transition shadow-sm"
                               >
-                                <span>✏️ Edit XP</span>
+                                <Edit3 size={13} className="text-purple-400" />
+                                <span>Edit XP</span>
                               </button>
                             )}
                             {isOwnerMember ? (

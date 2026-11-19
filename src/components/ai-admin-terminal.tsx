@@ -401,7 +401,7 @@ export function AiAdminTerminal({
                           <div className="flex items-center gap-1.5">
                             <Crown size={13} className="text-amber-500 shrink-0" />
                             <span className="text-[11px] font-bold uppercase tracking-wider text-[#7C3AED] dark:text-[#A78BFA] flex items-center gap-1.5">
-                              <span>👑 ADMIN COMMAND BOT</span>
+                              <span>ADMIN COMMAND BOT</span>
                               {item.response?.toolResult && (
                                 <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[10px]">
                                   • EKSEKUSI DATABASE

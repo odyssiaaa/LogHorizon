@@ -210,7 +210,7 @@ export function HallOfWinnersBoard({ initialItems }: HallOfWinnersBoardProps) {
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <span className="text-[10px] font-mono font-bold text-[#F59E0B] uppercase tracking-widest flex items-center gap-1.5">
                           <Crown size={14} className="text-[#F59E0B]" />
-                          <span>👑 JUARA 1 (GRAND CHAMPION)</span>
+                          <span>JUARA 1 (GRAND CHAMPION)</span>
                         </span>
                         <span className="px-2 py-0.5 rounded-none text-[9px] font-mono font-bold bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/40 uppercase">
                           GOLD MEDAL
@@ -267,7 +267,7 @@ export function HallOfWinnersBoard({ initialItems }: HallOfWinnersBoardProps) {
                         className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-none text-xs font-bold uppercase tracking-wider bg-[#F59E0B] text-black hover:bg-amber-400 transition"
                       >
                         <FileText size={15} />
-                        <span>Lihat &amp; Unduh Kartu Juara 🖼️</span>
+                        <span>Lihat &amp; Unduh Kartu Juara</span>
                       </button>
                     </div>
                   </div>
@@ -280,7 +280,7 @@ export function HallOfWinnersBoard({ initialItems }: HallOfWinnersBoardProps) {
                         <div className="flex items-center justify-between gap-2 mb-1.5">
                           <span className="text-[10px] font-bold text-slate-700 dark:text-[#A78BFA] uppercase tracking-widest flex items-center gap-1.5">
                             <Medal size={14} className="text-slate-400" />
-                            <span>🥈 JUARA 2 (RUNNER-UP)</span>
+                            <span>JUARA 2 (RUNNER-UP)</span>
                           </span>
                           <span className="px-2 py-0.5 rounded-none text-[9px] font-bold bg-white dark:bg-[#130921] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] uppercase">
                             SILVER MEDAL
@@ -314,7 +314,7 @@ export function HallOfWinnersBoard({ initialItems }: HallOfWinnersBoardProps) {
                         <div className="flex items-center justify-between gap-2 mb-1.5">
                           <span className="text-[10px] font-bold text-[#F59E0B] uppercase tracking-widest flex items-center gap-1.5">
                             <Award size={14} className="text-[#F59E0B]" />
-                            <span>🥉 JUARA 3 (BRONZE PLACE)</span>
+                            <span>JUARA 3 (BRONZE PLACE)</span>
                           </span>
                           <span className="px-2 py-0.5 rounded-none text-[9px] font-bold bg-white dark:bg-[#130921] text-[#F59E0B] border border-slate-200 dark:border-[#2E1E45] uppercase">
                             BRONZE MEDAL

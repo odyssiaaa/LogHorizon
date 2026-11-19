@@ -619,7 +619,7 @@ export function Navbar() {
                               >
                                 <div className="flex items-center gap-2">
                                   <ShieldAlert size={14} className="shrink-0 text-[#7C3AED] dark:text-[#C4B5FD] group-hover:scale-110 transition-transform" />
-                                  <span>🛡️ Dashboard Admin</span>
+                                  <span>Dashboard Admin</span>
                                 </div>
                                 {adminPendingCount > 0 ? (
                                   <span className="flex items-center gap-1">
@@ -827,7 +827,7 @@ export function Navbar() {
                       >
                         <div className="flex items-center gap-2">
                           <ShieldAlert size={14} className="text-[#7C3AED] dark:text-[#A78BFA]" />
-                          <span>🛡️ ADMIN COMMAND CENTER</span>
+                          <span>ADMIN COMMAND CENTER</span>
                         </div>
                         {adminPendingCount > 0 ? (
                           <span className="px-1.5 py-0.5 rounded-none text-[10px] font-bold bg-rose-500 text-white animate-pulse">

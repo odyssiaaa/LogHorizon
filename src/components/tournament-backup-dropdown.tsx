@@ -37,7 +37,7 @@ export function TournamentBackupDropdown({
         title="Simpan dan unduh cadangan data turnamen (.CSV / .JSON)"
       >
         <Download size={13} className="text-[#10B981]" />
-        <span>💾 Backup Data</span>
+        <span>Backup Data</span>
         <ChevronDown size={12} className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
       </button>
 

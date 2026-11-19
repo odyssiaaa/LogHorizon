@@ -174,7 +174,7 @@ export function EditTournamentModal({
                 id="edit-tournament-title"
                 className="font-display font-extrabold text-base sm:text-lg uppercase tracking-tight text-[#F8FAFC]"
               >
-                ✏️ Edit Info Turnamen
+                Edit Info Turnamen
               </h2>
               <p className="font-mono text-[11px] text-[#A78BFA]">
                 Perbarui detail turnamen tanpa mengubah susunan bagan &amp; skor berjalan

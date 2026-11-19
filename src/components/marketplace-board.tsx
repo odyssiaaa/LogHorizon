@@ -509,7 +509,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                   title="Reputasi Transaksi Rekber Terverifikasi"
                 >
                   <ShieldCheck size={12} className="text-emerald-600 dark:text-[#10B981] shrink-0" />
-                  <span>🛡️ {post.author.successfulSales} REKBER SUKSES</span>
+                  <span>{post.author.successfulSales} REKBER SUKSES</span>
                 </span>
               ) : (
                 <span
@@ -517,7 +517,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                   title="Penjual baru di LogHorizon"
                 >
                   <Shield size={12} className="text-[#7C3AED] dark:text-[#A78BFA] shrink-0" />
-                  <span>🛡️ PENJUAL BARU</span>
+                  <span>PENJUAL BARU</span>
                 </span>
               )}
             </div>

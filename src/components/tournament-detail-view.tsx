@@ -888,7 +888,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                 onClick={() => setShowCertificate(true)}
                 className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-none text-xs font-bold uppercase tracking-wider bg-[#F59E0B] text-black hover:bg-amber-400 transition"
               >
-                <span>Lihat &amp; Unduh Kartu Juara 🖼️</span>
+                <span>Lihat &amp; Unduh Kartu Juara</span>
               </button>
             )}
 
@@ -909,7 +909,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                 url={shareUrl}
                 title={shareTitle}
                 text={shareText}
-                label="Bagikan Turnamen 🔗"
+                label="Bagikan Turnamen"
                 variant="secondary"
                 className="w-full sm:w-auto justify-center"
               />
@@ -954,7 +954,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                   className="px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider bg-amber-500 hover:bg-amber-400 text-black inline-flex items-center gap-2 transition cursor-pointer"
                 >
                   <Trophy size={14} />
-                  <span>Unduh E-Sertifikat Juara 🖼️</span>
+                  <span>Unduh E-Sertifikat Juara</span>
                 </button>
               )}
             </div>
@@ -965,7 +965,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             <div className="p-4 sm:p-5 rounded-none bg-amber-500/15 border-2 border-amber-500/50 relative flex flex-col justify-between">
               <div className="flex items-center justify-between gap-2 mb-3">
                 <span className="px-2 py-0.5 text-[10px] font-mono font-extrabold uppercase bg-amber-500 text-black">
-                  🥇 JUARA 1 (CHAMPION)
+                  JUARA 1 (CHAMPION)
                 </span>
                 <Crown size={18} className="text-amber-400" />
               </div>
@@ -990,7 +990,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             <div className="p-4 sm:p-5 rounded-none bg-slate-500/10 border border-slate-400/40 relative flex flex-col justify-between">
               <div className="flex items-center justify-between gap-2 mb-3">
                 <span className="px-2 py-0.5 text-[10px] font-mono font-extrabold uppercase bg-slate-400 text-black">
-                  🥈 JUARA 2 (RUNNER-UP)
+                  JUARA 2 (RUNNER-UP)
                 </span>
                 <Medal size={18} className="text-slate-400" />
               </div>
@@ -1015,7 +1015,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             <div className="p-4 sm:p-5 rounded-none bg-amber-700/10 border border-amber-700/40 relative flex flex-col justify-between">
               <div className="flex items-center justify-between gap-2 mb-3">
                 <span className="px-2 py-0.5 text-[10px] font-mono font-extrabold uppercase bg-amber-700 text-white">
-                  🥉 JUARA 3
+                  JUARA 3 (BRONZE PLACE)
                 </span>
                 <Medal size={18} className="text-amber-600" />
               </div>
@@ -1055,7 +1055,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               }`}
             >
               <FileText size={15} />
-              <span>📋 Ringkasan</span>
+              <span>Ringkasan</span>
             </button>
             <button
               type="button"
@@ -1067,7 +1067,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               }`}
             >
               <Scale size={15} />
-              <span>⚖️ Aturan &amp; Sanksi</span>
+              <span>Aturan &amp; Sanksi</span>
             </button>
             <button
               type="button"
@@ -1079,7 +1079,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               }`}
             >
               <Trophy size={15} />
-              <span>🏆 Bagan (Bracket)</span>
+              <span>Bagan (Bracket)</span>
             </button>
             <button
               type="button"
@@ -1091,7 +1091,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               }`}
             >
               <Users size={15} />
-              <span>👥 Tim Terdaftar ({registeredSlotsCount})</span>
+              <span>Tim Terdaftar ({registeredSlotsCount})</span>
             </button>
           </div>
 
@@ -1255,7 +1255,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               <div className="p-4 rounded-none border border-purple-500/30 bg-purple-500/5 space-y-2">
                 <h4 className="text-xs font-mono font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider flex items-center gap-2">
                   <CheckCircle2 size={15} />
-                  <span>⚖️ Batas Lapor Sengketa (Dispute Window: 10 Menit)</span>
+                  <span>Batas Lapor Sengketa (Dispute Window: 10 Menit)</span>
                 </h4>
                 <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
                   Laporan sengketa hasil pertandingan (perbedaan skor, dugaan pelanggaran aturan, atau ketidaksesuaian roster) wajib diajukan maksimal <strong>10 menit</strong> setelah pertandingan berakhir dengan melampirkan screenshot papan skor lobby dan rekaman layar yang valid. Lewat dari 10 menit, hasil skor dianggap sah dan final.
@@ -1490,9 +1490,9 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             </div>
 
             {/* RINGKASAN BIAYA & PRIZE POOL */}
-            <div className="grid grid-cols-2 gap-3 p-3.5 rounded-none bg-slate-50 dark:bg-[#0A0512] border border-slate-200 dark:border-[#2A1B42]">
-              <div>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-[#A78BFA] block">
+            <div className="space-y-2.5 p-3.5 rounded-none bg-slate-50 dark:bg-[#0A0512] border border-slate-200 dark:border-[#2A1B42]">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-[#A78BFA]">
                   BIAYA DAFTAR
                 </span>
                 <span className="font-mono font-black text-xs sm:text-sm text-slate-900 dark:text-white">
@@ -1501,11 +1501,11 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                     : `Rp ${tournament.entryFee.toLocaleString("id-ID")}`}
                 </span>
               </div>
-              <div className="text-right">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-amber-500 block">
+              <div className="pt-2 border-t border-slate-200/60 dark:border-[#2A1B42]/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-amber-500 shrink-0">
                   PRIZE POOL
                 </span>
-                <span className="font-mono font-black text-xs sm:text-sm text-amber-400 truncate block">
+                <span className="font-mono font-black text-xs sm:text-sm text-amber-400 break-words text-left sm:text-right">
                   {tournament.prizePool || "Resmi Guild"}
                 </span>
               </div>
@@ -1520,7 +1520,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                   className="w-full py-3 px-4 rounded-none font-mono font-bold text-xs uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-purple-500/25 transition cursor-pointer"
                 >
                   <Plus size={16} />
-                  <span>+ DAFTAR TIM SEKARANG</span>
+                  <span>DAFTAR TIM SEKARANG</span>
                 </button>
               ) : (
                 <div className="w-full py-3 px-4 text-center rounded-none font-mono font-bold text-xs uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-[#2E1E45]">
@@ -1532,7 +1532,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                 url={shareUrl}
                 title={shareTitle}
                 text={shareText}
-                label="Bagikan Link Turnamen 🔗"
+                label="Bagikan Link Turnamen"
                 variant="secondary"
                 className="w-full justify-center text-xs py-2.5"
               />
@@ -1544,7 +1544,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                   className="w-full py-2.5 px-4 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-amber-500 text-black hover:bg-amber-400 transition inline-flex items-center justify-center gap-2"
                 >
                   <Trophy size={14} />
-                  <span>Unduh Kartu Juara 🖼️</span>
+                  <span>Unduh Kartu Juara</span>
                 </button>
               )}
             </div>
@@ -1561,7 +1561,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             <div className="p-4 sm:p-5 rounded-none border border-[#7C3AED]/40 bg-slate-100 dark:bg-[#11091D] shadow-xl space-y-3">
               <div className="flex items-center justify-between gap-2 border-b border-[#7C3AED]/20 pb-2.5">
                 <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#7C3AED] dark:text-[#A78BFA] flex items-center gap-1.5">
-                  <span>🛡️</span>
+                  <Shield size={14} className="text-[#7C3AED]" />
                   <span>Panel Operasional Staf</span>
                 </span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/30">
@@ -1569,11 +1569,11 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <button
                   type="button"
                   onClick={() => setShowEditTournamentModal(true)}
-                  className="w-full h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#1A0E2E] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition cursor-pointer shadow-sm"
+                  className="w-full h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#1A0E2E] hover:border-[#7C3AED] text-slate-800 dark:text-[#F8FAFC] transition cursor-pointer shadow-sm"
                   title="Edit Judul, Tanggal, Hadiah, dan Info Turnamen"
                 >
                   <Edit3 size={14} className="text-slate-500 dark:text-[#A78BFA]" />
@@ -1588,7 +1588,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                       document.getElementById("bracket-section")?.scrollIntoView({ behavior: "smooth" });
                     }, 50);
                   }}
-                  className="w-full h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition cursor-pointer shadow-sm"
+                  className="w-full h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 transition cursor-pointer shadow-sm"
                   title="Langsung kelola tim & skor di bagan pertandingan"
                 >
                   <Settings size={14} className="text-indigo-500" />
@@ -1599,24 +1599,24 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                   <button
                     type="button"
                     onClick={handleDetailGachaBracket}
-                    className="w-full h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-[#F59E0B]/50 bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 text-[#F59E0B] transition cursor-pointer shadow-sm"
+                    className="w-full h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-[#F59E0B]/50 bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 text-[#F59E0B] transition cursor-pointer shadow-sm"
                     title="Gacha / Acak Susunan Lawan Bagan (Fisher-Yates)"
                   >
                     <Dices size={14} className="text-[#F59E0B]" />
-                    <span>Gacha Bagan</span>
+                    <span>Gacha / Acak Bagan</span>
                   </button>
                 )}
 
                 <TournamentBackupDropdown
                   tournament={tournament}
-                  triggerClassName="w-full h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition cursor-pointer shadow-sm"
+                  triggerClassName="w-full h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition cursor-pointer shadow-sm"
                 />
 
                 <button
                   type="button"
                   disabled={deletingTournament}
                   onClick={handleDeleteTournament}
-                  className="w-full sm:col-span-2 h-auto min-h-[38px] py-2 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition cursor-pointer disabled:opacity-50 shadow-sm"
+                  className="w-full h-9 px-3 text-xs whitespace-nowrap rounded font-mono font-bold inline-flex items-center justify-center gap-1.5 border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition cursor-pointer disabled:opacity-50 shadow-sm"
                   title="Hapus turnamen ini secara permanen"
                 >
                   <Trash2 size={14} className="text-rose-500" />
@@ -1864,7 +1864,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                   <div className="flex items-center justify-between mb-2">
                     <label className="font-bold text-xs text-amber-500 dark:text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
                       <Shield size={14} className="text-amber-400" />
-                      <span>🛡️ Pemain Cadangan (Opsional, Maks {subCount} Pemain):</span>
+                      <span>Pemain Cadangan (Opsional, Maks {subCount} Pemain):</span>
                     </label>
                     <span className="text-[10px] font-mono text-amber-400">Substitute</span>
                   </div>
