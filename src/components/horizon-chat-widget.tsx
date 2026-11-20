@@ -128,7 +128,10 @@ export function HorizonChatWidget() {
 
   useEffect(() => {
     try {
-      const dismissed = typeof window !== "undefined" ? localStorage.getItem("satpam_bubble_dismissed") : null;
+      const dismissed =
+        typeof window !== "undefined"
+          ? localStorage.getItem("satpam_bubble_dismissed") || localStorage.getItem("satpam_greeting_dismissed")
+          : null;
       if (!dismissed) {
         const timer = setTimeout(() => {
           setShowBubble(true);
@@ -140,11 +143,12 @@ export function HorizonChatWidget() {
     }
   }, []);
 
-  const dismissBubble = (e: React.MouseEvent) => {
+  const dismissBubble = (e: React.MouseEvent | React.PointerEvent) => {
     e.stopPropagation();
     setShowBubble(false);
     try {
       localStorage.setItem("satpam_bubble_dismissed", "true");
+      localStorage.setItem("satpam_greeting_dismissed", "true");
     } catch {}
   };
 
@@ -440,63 +444,65 @@ export function HorizonChatWidget() {
           !position ? "bottom-24 right-3 sm:bottom-6 sm:right-6" : ""
         }`}
       >
-        <div
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          style={{
-            transformOrigin: "50% 8%",
-            transform: isDragging
-              ? `scaleX(0.95) scaleY(1.06) rotate(${dragAngle}deg)`
-              : isBouncing
-              ? "translateY(0px) rotate(0deg) scale(1)"
-              : undefined,
-          }}
-          className={`relative group cursor-grab active:cursor-grabbing ${
-            isDragging
-              ? "cursor-grabbing drop-shadow-[0_0_25px_rgba(157,78,221,0.7)]"
-              : isBouncing
-              ? "animate-satpam-bounce"
-              : !isOpen
-              ? "animate-satpam-idle hover:scale-105 transition-transform duration-200"
-              : ""
-          }`}
-          title={isOpen ? "Tutup Chat Satpam AI" : "Tarik untuk memindahkan, klik untuk ngobrol dengan Satpam AI"}
-        >
-          {/* Medieval Royal Knight Mascot */}
-          <div className="relative flex flex-col items-center">
-            {/* Gelembung Lucu Saat Diseret (Dangling Physics Reaction) */}
+        <div className="relative flex flex-col items-center">
+          {/* 1. Interactive Greeting Speech Bubble (STABIL & TERPISAH: Bebas dari animasi lompat/drag ksatria) */}
+          {showBubble && !isOpen && !isDragging && (
+            <div
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen(true);
+                setShowBubble(false);
+              }}
+              className="absolute -top-16 right-0 sm:right-auto sm:-left-36 w-52 sm:w-60 p-2.5 rounded-xl bg-white dark:bg-[#1A0F2E] border-2 border-[#7C3AED] shadow-2xl text-slate-800 dark:text-slate-100 text-xs font-semibold flex items-start gap-1.5 cursor-pointer z-40 select-none transition-all"
+            >
+              <span className="flex-1 text-[11px] leading-tight">
+                👋 Bingung mulai dari mana? <span className="text-[#7C3AED] dark:text-[#A78BFA] underline font-bold">Klik aku</span> untuk panduan cepat!
+              </span>
+              <button
+                type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={dismissBubble}
+                className="w-7 h-7 -mr-1 -mt-1 rounded-md text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center shrink-0 cursor-pointer z-30 transition-colors"
+                title="Tutup Balon Sapaan"
+                aria-label="Tutup Balon Sapaan"
+              >
+                <X size={15} />
+              </button>
+              <div className="absolute -bottom-2 right-6 sm:left-40 size-3 rotate-45 bg-white dark:bg-[#1A0F2E] border-r-2 border-b-2 border-[#7C3AED]" />
+            </div>
+          )}
+
+          {/* 2. Drag & Knight Element (HANYA BAGIAN INI YANG MEMILIKI DRAG PHYSICS & ANIMASI MELAYANG/MEMBAL) */}
+          <div
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            style={{
+              transformOrigin: "50% 8%",
+              transform: isDragging
+                ? `scaleX(0.95) scaleY(1.06) rotate(${dragAngle}deg)`
+                : isBouncing
+                ? "translateY(0px) rotate(0deg) scale(1)"
+                : undefined,
+            }}
+            className={`relative group cursor-grab active:cursor-grabbing flex flex-col items-center ${
+              isDragging
+                ? "cursor-grabbing drop-shadow-[0_0_25px_rgba(157,78,221,0.7)]"
+                : isBouncing
+                ? "animate-satpam-bounce"
+                : !isOpen
+                ? "animate-satpam-idle hover:scale-105 transition-transform duration-200"
+                : ""
+            }`}
+            title={isOpen ? "Tutup Chat Satpam AI" : "Tarik untuk memindahkan, klik untuk ngobrol dengan Satpam AI"}
+          >
+            {/* Gelembung Lucu Saat Diseret (Hanya muncul saat dragging) */}
             {isDragging && (
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap px-2.5 py-1 rounded-full bg-[#11091D]/95 border border-[#F59E0B] shadow-[0_0_15px_rgba(245,158,11,0.5)] text-amber-300 text-[10px] font-bold tracking-tight animate-pulse flex items-center gap-1 pointer-events-none z-50">
                 <span>😵</span>
                 <span>Woyy pelan-pelan diseretnya!</span>
-              </div>
-            )}
-
-            {/* Interactive Greeting Speech Bubble (1-Click Dismissable) */}
-            {showBubble && !isOpen && !isDragging && (
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsOpen(true);
-                  setShowBubble(false);
-                }}
-                className="absolute -top-16 right-0 sm:right-auto sm:-left-36 w-52 sm:w-60 p-2.5 rounded-xl bg-white dark:bg-[#1A0F2E] border-2 border-[#7C3AED] shadow-2xl text-slate-800 dark:text-slate-100 text-xs font-semibold flex items-start gap-1.5 cursor-pointer z-40 animate-bounce transition-all select-none"
-              >
-                <span className="flex-1 text-[11px] leading-tight">
-                  👋 Bingung mulai dari mana? <span className="text-[#7C3AED] dark:text-[#A78BFA] underline font-bold">Klik aku</span> untuk panduan cepat!
-                </span>
-                <button
-                  type="button"
-                  onClick={dismissBubble}
-                  className="p-0.5 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white shrink-0"
-                  title="Tutup Balon Sapaan"
-                  aria-label="Tutup Balon Sapaan"
-                >
-                  <X size={12} />
-                </button>
-                <div className="absolute -bottom-2 right-6 sm:left-40 size-3 rotate-45 bg-white dark:bg-[#1A0F2E] border-r-2 border-b-2 border-[#7C3AED]" />
               </div>
             )}
 
