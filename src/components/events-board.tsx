@@ -45,6 +45,7 @@ import Image from "next/image";
 import { readApiResponse } from "@/lib/api-response";
 import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, DEFAULT_TOURNAMENT_RULES, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso, formatWibDateTime, formatLiveCountdown, extractTournamentPodium } from "@/lib/tournament";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
+import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 import { ShareButton } from "@/components/share-button";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
@@ -1437,7 +1438,7 @@ export function EventsBoard() {
           {/* BAR FILTER GAME & STATUS INTERAKTIF (HORIZONTAL SCROLL) */}
           <div className="mb-6 space-y-3 text-left">
             {/* Filter Status */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            <DraggableScrollRow className="flex items-center gap-2 pb-1">
               <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 shrink-0 uppercase font-bold mr-1">
                 Status:
               </span>
@@ -1455,10 +1456,10 @@ export function EventsBoard() {
                   {st.label}
                 </button>
               ))}
-            </div>
+            </DraggableScrollRow>
 
             {/* Filter Game */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            <DraggableScrollRow className="flex items-center gap-2 pb-1">
               <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 shrink-0 uppercase font-bold mr-1">
                 Game:
               </span>
@@ -1476,7 +1477,7 @@ export function EventsBoard() {
                   {gm.label}
                 </button>
               ))}
-            </div>
+            </DraggableScrollRow>
           </div>
 
           {/* LIST TURNAMEN DIREKTORI BERSTRUKTUR BERSIH */}

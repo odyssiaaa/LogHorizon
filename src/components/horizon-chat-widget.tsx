@@ -21,6 +21,7 @@ import {
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { UniversalTextRenderer } from "@/lib/text-parser";
 import { RoyalKnightMascot } from "@/components/royal-knight-mascot";
+import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 
 export type MessageAction = {
   type: "navigate" | "party_created" | "thread_created" | "require_login" | "broadcast_preview" | "tournament_created" | string;
@@ -262,8 +263,8 @@ export function HorizonChatWidget() {
       return {}; // Handled by responsive Tailwind classes: inset-x-3 top-16 bottom-24 w-auto h-auto max-h-[75vh]
     }
     if (!position || typeof window === "undefined") return {};
-    const popupWidth = 384;
-    const popupHeight = 520;
+    const popupWidth = 390;
+    const popupHeight = 540;
     let left = position.x - popupWidth + 70;
     if (left < 16) left = 16;
     if (left + popupWidth > window.innerWidth - 16) left = window.innerWidth - popupWidth - 16;
@@ -542,16 +543,16 @@ export function HorizonChatWidget() {
           role="dialog"
           aria-label="Jendela Chat Satpam Horizon"
           style={getPopupStyle()}
-          className={`fixed z-[50] rounded-xl border-2 border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 inset-x-3 top-16 bottom-24 w-auto h-auto max-h-[75vh] sm:inset-auto sm:w-96 sm:h-[520px] sm:max-h-[82vh] ${
-            !position ? "sm:bottom-6 sm:right-6" : ""
+          className={`fixed z-[50] rounded-xl border-2 border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 inset-x-3 top-16 bottom-24 w-auto h-auto max-h-[75vh] sm:inset-auto sm:bottom-24 sm:right-6 sm:w-[390px] sm:h-[540px] sm:max-h-[540px] ${
+            !position ? "sm:bottom-24 sm:right-6" : ""
           }`}
         >
           {/* Header */}
           <div className="px-4 py-3 bg-slate-50 dark:bg-[#1A0F2E] border-b border-slate-200 dark:border-[#2A1B42] flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="relative w-8 h-8 rounded-full bg-[#9D4EDD]/20 text-[#9D4EDD] dark:text-[#C77DFF] flex items-center justify-center border border-[#9D4EDD]/40 shrink-0">
-                <Bot size={17} />
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#130921]" />
+              <div className="relative w-8 h-8 p-1 rounded-full bg-[#9D4EDD]/20 text-[#9D4EDD] dark:text-[#C77DFF] flex items-center justify-center border border-[#9D4EDD]/40 shrink-0">
+                <RoyalKnightMascot className="w-full h-full" isDragging={false} isOpen={true} />
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#130921] z-10" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -731,20 +732,20 @@ export function HorizonChatWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Contextual Quick Guide Chips */}
-          <div className="px-3.5 py-2 border-t border-slate-200 dark:border-[#2A1B42] bg-slate-100/90 dark:bg-[#150D24]/90 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          {/* Contextual Quick Guide Chips with Mouse Click-and-Drag & Wheel Horizontal Scroll */}
+          <DraggableScrollRow className="px-3.5 py-2 border-t border-slate-200 dark:border-[#2A1B42] bg-slate-100/90 dark:bg-[#150D24]/90 flex items-center gap-1.5">
             {currentSuggestions.map((chip) => (
               <button
                 key={chip}
                 type="button"
                 disabled={loading}
                 onClick={() => void sendMessage(chip)}
-                className="px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap bg-white dark:bg-[#1F1433] border border-slate-300 dark:border-[#2A1B42] text-slate-700 dark:text-slate-300 hover:border-[#7C3AED] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] transition shadow-xs cursor-pointer shrink-0"
+                className="px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap bg-white dark:bg-[#1F1433] border border-slate-300 dark:border-[#2A1B42] text-slate-700 dark:text-slate-300 hover:border-[#7C3AED] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] transition shadow-xs cursor-pointer shrink-0 select-none"
               >
                 {chip}
               </button>
             ))}
-          </div>
+          </DraggableScrollRow>
 
           {/* Input Footer */}
           <form
