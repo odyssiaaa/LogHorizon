@@ -2236,3 +2236,28 @@ body {
   scrollbar-width: none;
 }
 
+/* ========================================================================= */
+/* SATPAM AI MEDIEVAL ROYAL KNIGHT FLOATING & DRAG PHYSICS                   */
+/* ========================================================================= */
+
+@keyframes satpam-knight-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
+.animate-satpam-idle {
+  animation: satpam-knight-float 3.2s ease-in-out infinite;
+  transform-origin: 50% 90%;
+  will-change: transform;
+}
+
+.animate-satpam-bounce {
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  will-change: transform;
+}
+
+

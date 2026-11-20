@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { UniversalTextRenderer } from "@/lib/text-parser";
+import { RoyalKnightMascot } from "@/components/royal-knight-mascot";
 
 export type MessageAction = {
   type: "navigate" | "party_created" | "thread_created" | "require_login" | "broadcast_preview" | "tournament_created" | string;
@@ -108,7 +109,20 @@ export function HorizonChatWidget() {
   const [errorMsg, setErrorMsg] = useState("");
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const dragInfo = useRef<{ startX: number; startY: number; initialX: number; initialY: number; moved: boolean } | null>(null);
+  const [dragAngle, setDragAngle] = useState(0);
+  const [isBouncing, setIsBouncing] = useState(false);
+  const bounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const dragInfo = useRef<{
+    startX: number;
+    startY: number;
+    initialX: number;
+    initialY: number;
+    lastX: number;
+    lastY: number;
+    lastTime: number;
+    vx: number;
+    moved: boolean;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -154,33 +168,67 @@ export function HorizonChatWidget() {
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
+    if (bounceTimerRef.current) {
+      clearTimeout(bounceTimerRef.current);
+      bounceTimerRef.current = null;
+    }
+    setIsBouncing(false);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     const rect = e.currentTarget.getBoundingClientRect();
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
     dragInfo.current = {
       startX: e.clientX,
       startY: e.clientY,
       initialX: rect.left,
       initialY: rect.top,
+      lastX: e.clientX,
+      lastY: e.clientY,
+      lastTime: now,
+      vx: 0,
       moved: false,
     };
-    setIsDragging(true);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragInfo.current) return;
     const dx = e.clientX - dragInfo.current.startX;
     const dy = e.clientY - dragInfo.current.startY;
-    if (Math.hypot(dx, dy) > 5) {
+    const dist = Math.hypot(dx, dy);
+
+    // Click-guard: hanya anggap diseret jika berpindah > 6px
+    if (dist > 6) {
       dragInfo.current.moved = true;
+      if (!isDragging) {
+        setIsDragging(true);
+      }
     }
-    const targetX = dragInfo.current.initialX + dx;
-    const targetY = dragInfo.current.initialY + dy;
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
-    const maxX = Math.max(12, (typeof window !== "undefined" ? window.innerWidth : 800) - 76);
-    const maxY = Math.max(64, (typeof window !== "undefined" ? window.innerHeight : 600) - (isMobile ? 120 : 80));
-    const clampedX = Math.max(12, Math.min(maxX, targetX));
-    const clampedY = Math.max(isMobile ? 64 : 12, Math.min(maxY, targetY));
-    setPosition({ x: clampedX, y: clampedY });
+
+    if (dragInfo.current.moved) {
+      const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+      const dt = Math.max(10, now - dragInfo.current.lastTime);
+      const frameDx = e.clientX - dragInfo.current.lastX;
+      const instantVx = (frameDx / dt) * 16; // Kecepatan horizontal piksel per frame ~16ms
+      const smoothedVx = dragInfo.current.vx * 0.4 + instantVx * 0.6;
+
+      dragInfo.current.vx = smoothedVx;
+      dragInfo.current.lastX = e.clientX;
+      dragInfo.current.lastY = e.clientY;
+      dragInfo.current.lastTime = now;
+
+      // Hanging Physics: Berayun miring berlawanan arah tarikan clamp(-28deg, -smoothedVx * 1.4, 28deg)
+      const targetAngle = Math.max(-28, Math.min(28, -smoothedVx * 1.4));
+      setDragAngle(targetAngle);
+
+      const targetX = dragInfo.current.initialX + dx;
+      const targetY = dragInfo.current.initialY + dy;
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+      // Batas aman layar (safe padding 12px dari tepi layar HP/PC)
+      const maxX = Math.max(12, (typeof window !== "undefined" ? window.innerWidth : 800) - 80);
+      const maxY = Math.max(64, (typeof window !== "undefined" ? window.innerHeight : 600) - (isMobile ? 120 : 88));
+      const clampedX = Math.max(12, Math.min(maxX, targetX));
+      const clampedY = Math.max(isMobile ? 64 : 12, Math.min(maxY, targetY));
+      setPosition({ x: clampedX, y: clampedY });
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -191,7 +239,16 @@ export function HorizonChatWidget() {
     const didMove = dragInfo.current.moved;
     dragInfo.current = null;
     setIsDragging(false);
-    if (!didMove) {
+    setDragAngle(0);
+
+    if (didMove) {
+      // Efek mendarat membal lembut (Spring Bounce) saat dilepas
+      setIsBouncing(true);
+      bounceTimerRef.current = setTimeout(() => {
+        setIsBouncing(false);
+      }, 450);
+    } else {
+      // Klik biasa membuka/menutup chat tanpa terseret
       setIsOpen((prev) => !prev);
     }
   };
@@ -388,15 +445,37 @@ export function HorizonChatWidget() {
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          className={`relative group cursor-grab active:cursor-grabbing transition-transform duration-200 ease-out ${
-            isDragging ? "scale-110 rotate-3 shadow-[0_0_25px_rgba(157,78,221,0.6)]" : "hover:scale-105"
+          style={{
+            transformOrigin: "50% 8%",
+            transform: isDragging
+              ? `scaleX(0.95) scaleY(1.06) rotate(${dragAngle}deg)`
+              : isBouncing
+              ? "translateY(0px) rotate(0deg) scale(1)"
+              : undefined,
+          }}
+          className={`relative group cursor-grab active:cursor-grabbing ${
+            isDragging
+              ? "cursor-grabbing drop-shadow-[0_0_25px_rgba(157,78,221,0.7)]"
+              : isBouncing
+              ? "animate-satpam-bounce"
+              : !isOpen
+              ? "animate-satpam-idle hover:scale-105 transition-transform duration-200"
+              : ""
           }`}
           title={isOpen ? "Tutup Chat Satpam AI" : "Tarik untuk memindahkan, klik untuk ngobrol dengan Satpam AI"}
         >
-          {/* Chibi Tactical Guardian Mascot */}
+          {/* Medieval Royal Knight Mascot */}
           <div className="relative flex flex-col items-center">
+            {/* Gelembung Lucu Saat Diseret (Dangling Physics Reaction) */}
+            {isDragging && (
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap px-2.5 py-1 rounded-full bg-[#11091D]/95 border border-[#F59E0B] shadow-[0_0_15px_rgba(245,158,11,0.5)] text-amber-300 text-[10px] font-bold tracking-tight animate-pulse flex items-center gap-1 pointer-events-none z-50">
+                <span>😵</span>
+                <span>Woyy pelan-pelan diseretnya!</span>
+              </div>
+            )}
+
             {/* Interactive Greeting Speech Bubble (1-Click Dismissable) */}
-            {showBubble && !isOpen && (
+            {showBubble && !isOpen && !isDragging && (
               <div
                 onClick={(e) => {
                   e.stopPropagation();
@@ -424,41 +503,10 @@ export function HorizonChatWidget() {
             {/* Halo / Status indicator */}
             <div className="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center">
               {/* Glow ambient background */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#7C3AED] via-[#9D4EDD] to-[#4C1D95] opacity-90 blur-xs shadow-lg shadow-[#7C3AED]/40" />
+              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#7C3AED] via-[#9D4EDD] to-[#4C1D95] opacity-80 blur-xs shadow-lg shadow-[#7C3AED]/40" />
 
-              {/* Mascot SVG */}
-              <svg
-                viewBox="0 0 64 64"
-                className="w-12 h-12 sm:w-14 sm:h-14 relative z-10 drop-shadow-md"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                {/* Tactical Helmet Horns / Antennas */}
-                <path d="M14 26L18 32H12L14 26Z" fill="#7C3AED" stroke="#C4B5FD" strokeWidth="1.5" />
-                <path d="M50 26L46 32H52L50 26Z" fill="#7C3AED" stroke="#C4B5FD" strokeWidth="1.5" />
-
-                {/* Commander Crest Top */}
-                <path d="M26 8H38L34 16H30L26 8Z" fill="#F59E0B" stroke="#FDE68A" strokeWidth="1" />
-                <path d="M32 16V22" stroke="#A78BFA" strokeWidth="2" strokeLinecap="round" />
-
-                {/* Helmet Base Head */}
-                <rect x="16" y="18" width="32" height="30" rx="10" fill="#180E29" stroke="#7C3AED" strokeWidth="2" />
-
-                {/* Visor Background */}
-                <rect x="20" y="27" width="24" height="12" rx="4" fill="#09040F" stroke="#2E1E45" strokeWidth="1.5" />
-
-                {/* Glowing Cyber Visor / Eyes */}
-                <rect x="22" y="29" width="20" height="8" rx="2" fill="#10B981" />
-                <line x1="25" y1="33" x2="31" y2="33" stroke="#ECFDF5" strokeWidth="2" strokeLinecap="round" />
-                <line x1="33" y1="33" x2="39" y2="33" stroke="#ECFDF5" strokeWidth="2" strokeLinecap="round" />
-
-                {/* Tactical Cheek Guard */}
-                <path d="M18 38L22 43H42L46 38" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" />
-
-                {/* Chest Pauldrons / Mantle */}
-                <path d="M12 50C12 48 18 46 32 46C46 46 52 48 52 50L54 58H10L12 50Z" fill="#2E1052" stroke="#7C3AED" strokeWidth="1.5" />
-                <circle cx="32" cy="52" r="3" fill="#10B981" />
-              </svg>
+              {/* Medieval Royal Knight Mascot Illustration */}
+              <RoyalKnightMascot isDragging={isDragging} isOpen={isOpen} />
 
               {/* Online pulse badge */}
               <span className="absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#11091D] shadow-sm animate-pulse z-20" />
@@ -471,8 +519,8 @@ export function HorizonChatWidget() {
               )}
             </div>
 
-            {/* SATPAM AI Badge */}
-            <div className="mt-1 px-2 py-0.5 rounded-none bg-white dark:bg-[#11091D] border border-[#7C3AED] shadow-md flex items-center gap-1 z-20 pointer-events-none">
+            {/* SATPAM AI Compact Badge */}
+            <div className="mt-1 px-2.5 py-0.5 rounded-full bg-white dark:bg-[#11091D] border border-[#7C3AED] shadow-md flex items-center gap-1.5 z-20 pointer-events-none">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
               <span className="text-[9px] font-mono font-bold tracking-wider text-[#7C3AED] dark:text-[#A78BFA] uppercase whitespace-nowrap">
                 SATPAM AI
