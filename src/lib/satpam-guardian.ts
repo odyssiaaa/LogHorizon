@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { notifyStaffAlert } from "@/lib/discord-webhook";
 
 const GEMINI_MODELS = [
   "gemini-3.5-flash-lite",
@@ -307,6 +308,22 @@ export async function logSecurityIncident(data: {
         flagged: data.flagged || null,
         severity: data.severity || "HIGH",
       },
+    });
+
+    const severityMap: Record<string, "INFO" | "WARNING" | "CRITICAL"> = {
+      CRITICAL: "CRITICAL",
+      HIGH: "CRITICAL",
+      MEDIUM: "WARNING",
+      LOW: "INFO",
+    };
+
+    void notifyStaffAlert({
+      title: `Pemblokiran Keamanan: ${data.action}`,
+      type: "SECURITY_BLOCK",
+      severity: severityMap[data.severity || "HIGH"] || "WARNING",
+      actorName: data.username || "Anonymous",
+      description: data.reason,
+      details: `Konten yang diblokir: "${data.content.slice(0, 200)}..."${data.flagged ? `\nKata/Pola terdeteksi: \`${data.flagged}\`` : ""}`,
     });
   } catch (err) {
     console.error("[satpam-guardian] Gagal menyimpan log keamanan:", err);

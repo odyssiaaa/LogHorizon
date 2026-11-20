@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { jsonError } from "@/lib/http";
 import { isGuildOwner } from "@/lib/caste";
-import { notifyNewLfgParty, sendDiscordNotice, DISCORD_CHANNELS, DiscordChannelKey, sendDiscordChannelMessage, resolveDiscordChannelKey, notifyPartnership } from "@/lib/discord-webhook";
+import { notifyNewLfgParty, sendDiscordNotice, DISCORD_CHANNELS, DiscordChannelKey, sendDiscordChannelMessage, resolveDiscordChannelKey, notifyPartnership, notifyAdminCommandAudit } from "@/lib/discord-webhook";
 import { createNotification } from "@/lib/notifications";
 import { logSecurityIncident } from "@/lib/satpam-guardian";
 import { generateTemplateBracket, shuffleArray, advanceMatchWinner, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentLossReason } from "@/lib/tournament";
@@ -384,6 +384,14 @@ export async function POST(request: Request) {
   if (body.confirmedPayload && typeof body.confirmedPayload === "object") {
     const cp = body.confirmedPayload as { tool: string; args: ToolArgs; confirmed?: boolean };
     const result = await executeToolAction(cp.tool, cp.args, currentUser, true);
+    if (result.success && !result.requiresConfirmation && result.toolResult) {
+      void notifyAdminCommandAudit({
+        adminName: currentUser.username ?? currentUser.name ?? "Admin",
+        toolName: cp.tool,
+        summary: result.toolResult.summary || result.reply,
+        details: result.toolResult.details,
+      });
+    }
     return Response.json(result);
   }
 
@@ -592,6 +600,14 @@ ${contextPrompt}`;
       if (part?.functionCall) {
         const { name, args } = part.functionCall;
         const toolResult = await executeToolAction(name, args as ToolArgs, currentUser, false);
+        if (toolResult.success && !toolResult.requiresConfirmation && toolResult.toolResult) {
+          void notifyAdminCommandAudit({
+            adminName: currentUser.username ?? currentUser.name ?? "Admin",
+            toolName: name,
+            summary: toolResult.toolResult.summary || toolResult.reply,
+            details: toolResult.toolResult.details,
+          });
+        }
         return Response.json(toolResult);
       }
 

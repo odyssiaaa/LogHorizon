@@ -1,7 +1,7 @@
 import { DonationStatus } from "@prisma/client";
 import { requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { sendDiscordNotice } from "@/lib/discord-webhook";
+import { notifyDonationDecision, sendDiscordNotice } from "@/lib/discord-webhook";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -79,20 +79,14 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return donation;
   });
 
-  const formattedAmount = `Rp ${existing.amount.toLocaleString("id-ID")}`;
-  if (isApproved) {
-    void sendDiscordNotice(
-      "treasury",
-      `Donasi Disetujui: ${formattedAmount}`,
-      `Donasi dari ${existing.user?.username ?? "Gamer"} telah diverifikasi dan DISETUJUI oleh ${access.user.username ?? "Admin"}.`
-    );
-  } else {
-    void sendDiscordNotice(
-      "treasury",
-      `Donasi Ditolak: ${formattedAmount}`,
-      `Konfirmasi donasi dari ${existing.user?.username ?? "Gamer"} DITOLAK oleh ${access.user.username ?? "Admin"}.`
-    );
-  }
+  void notifyDonationDecision({
+    adminName: access.user.username ?? "Admin",
+    senderName: existing.senderName ?? "Donatur",
+    username: existing.user?.username ?? "Gamer",
+    amount: existing.amount,
+    isApproved,
+    tierLabel: existing.amount >= 100_000 ? "Noble Patron (Tier 03)" : existing.amount >= 50_000 ? "High Merchant (Tier 02)" : "Knight (Tier 01)",
+  });
 
   return Response.json(updated);
 }

@@ -10,6 +10,7 @@ export async function GET() {
 
   const tournaments = await prisma.tournament.findMany({
     orderBy: [{ eventDate: "asc" }, { createdAt: "desc" }],
+    take: 20,
     include: {
       participants: {
         orderBy: { createdAt: "asc" },

@@ -679,3 +679,244 @@ export async function sendDiscordNotice(
 
   return result.success;
 }
+
+/**
+ * 8. Channel #🛡️・mod-logs (Dedicated Mod & Security Audit Functions)
+ */
+
+/**
+ * Log Antrean Donasi QRIS Baru
+ */
+export async function notifyDonationQueue(data: {
+  donationId: string;
+  senderName: string;
+  username: string;
+  amount: number;
+  tierLabel: string;
+  notes?: string;
+}): Promise<void> {
+  const baseUrl = getBaseAppUrl();
+  const embed: DiscordEmbed = {
+    title: "💰 ANTREAN DONASI QRIS BARU",
+    description: `Ada petualang yang mengajukan donasi kas guild dan mengunggah bukti transfer via QRIS. Segera verifikasi mutasi di panel admin.`,
+    color: 0xeab308, // Kuning amber
+    fields: [
+      { name: "👤 Pengirim Transfer (Rekening/E-Wallet)", value: `\`${data.senderName}\``, inline: true },
+      { name: "🎮 Akun Guild Petualang", value: `@${data.username}`, inline: true },
+      { name: "💎 Nominal & Kasta Role", value: `**Rp ${data.amount.toLocaleString("id-ID")}**\n${data.tierLabel}`, inline: false },
+      { name: "📝 Catatan Petualang", value: data.notes || "-", inline: true },
+      { name: "🔗 Tindakan Staf", value: `[Buka Panel Admin untuk ACC / Tolak](${baseUrl}/admin)`, inline: false },
+    ],
+    footer: { text: "LogHorizon Treasury Audit • #mod-logs" },
+    timestamp: new Date().toISOString(),
+  };
+
+  await sendDiscordChannelMessage("mod_logs", {
+    content: "📢 **ANTREAN KAS DONASI BARU MENUNGGU VERIFIKASI ADMIN!**",
+    embeds: [embed],
+  }).catch((err) => console.warn("[Discord Bot] notifyDonationQueue error:", err));
+}
+
+/**
+ * Log Keputusan Donasi (ACC / Ditolak)
+ */
+export async function notifyDonationDecision(data: {
+  adminName: string;
+  senderName: string;
+  username: string;
+  amount: number;
+  isApproved: boolean;
+  tierLabel?: string;
+}): Promise<void> {
+  const isAcc = data.isApproved;
+  const embed: DiscordEmbed = {
+    title: isAcc ? "✅ DONASI QRIS DI-ACC OLEH ADMIN" : "❌ DONASI QRIS DITOLAK OLEH ADMIN",
+    description: isAcc
+      ? `Donasi sebesar **Rp ${data.amount.toLocaleString("id-ID")}** telah diverifikasi dan disetujui. Badge kasta role guild otomatis aktif di profil petualang.`
+      : `Pengajuan bukti transfer donasi sebesar **Rp ${data.amount.toLocaleString("id-ID")}** ditolak oleh staf.`,
+    color: isAcc ? 0x10b981 : 0xef4444,
+    fields: [
+      { name: "🛡️ Admin Pengeksekusi", value: `@${data.adminName}`, inline: true },
+      { name: "👤 Donatur (Pengirim)", value: `${data.senderName} (@${data.username})`, inline: true },
+      { name: "💵 Nominal", value: `Rp ${data.amount.toLocaleString("id-ID")}`, inline: true },
+      { name: "🎖️ Status Akhir", value: isAcc ? `DISETUJUI (${data.tierLabel || "Role Aktif"})` : "DITOLAK (Bukti Tidak Sesuai)", inline: false },
+    ],
+    footer: { text: "LogHorizon Treasury Audit • #mod-logs" },
+    timestamp: new Date().toISOString(),
+  };
+
+  await sendDiscordChannelMessage("mod_logs", {
+    embeds: [embed],
+  }).catch((err) => console.warn("[Discord Bot] notifyDonationDecision error:", err));
+}
+
+/**
+ * Log Pendaftaran Turnamen Berbayar
+ */
+export async function notifyPaidTournamentRegistration(data: {
+  tournamentId: string;
+  tournamentTitle: string;
+  teamName: string;
+  senderName: string;
+  contactPhone: string;
+  entryFee: number;
+  captainUsername: string;
+}): Promise<void> {
+  const baseUrl = getBaseAppUrl();
+  const embed: DiscordEmbed = {
+    title: "🏆 PENDAFTARAN TURNAMEN BERBAYAR",
+    description: `Tim baru telah mendaftar ke turnamen berbayar dan mengunggah bukti pembayaran. Harap panitia memeriksa kesesuaian mutasi rekening/QRIS sebelum memasukkan tim ke bagan bracket.`,
+    color: 0x8b5cf6, // Ungu
+    fields: [
+      { name: "⚔️ Nama Tim / Party", value: `**${data.teamName}**`, inline: true },
+      { name: "🎮 Turnamen", value: data.tournamentTitle, inline: true },
+      { name: "💰 Biaya Pendaftaran", value: `Rp ${data.entryFee.toLocaleString("id-ID")}`, inline: true },
+      { name: "👤 Nama Pengirim Transfer", value: `\`${data.senderName}\``, inline: true },
+      { name: "👑 Kapten Tim", value: `@${data.captainUsername}`, inline: true },
+      { name: "📱 Kontak WhatsApp", value: data.contactPhone ? `\`${data.contactPhone}\`` : "-", inline: true },
+      { name: "🔗 Panel Panitia", value: `[Review & ACC Tim di Panel Admin](${baseUrl}/admin)`, inline: false },
+    ],
+    footer: { text: "LogHorizon Tournament Audit • #mod-logs" },
+    timestamp: new Date().toISOString(),
+  };
+
+  await sendDiscordChannelMessage("mod_logs", {
+    content: "📢 **PENDAFTARAN TIM TURNAMEN BERBAYAR MASUK!**",
+    embeds: [embed],
+  }).catch((err) => console.warn("[Discord Bot] notifyPaidTournamentRegistration error:", err));
+}
+
+/**
+ * Log Keputusan Tim Turnamen (ACC / Ditolak)
+ */
+export async function notifyTournamentTeamDecision(data: {
+  adminName: string;
+  tournamentTitle: string;
+  teamName: string;
+  isApproved: boolean;
+  reason?: string;
+}): Promise<void> {
+  const isAcc = data.isApproved;
+  const embed: DiscordEmbed = {
+    title: isAcc ? "✅ TIM TURNAMEN DI-ACC MASUK BAGAN" : "❌ TIM TURNAMEN DITOLAK OLEH WASIT",
+    description: isAcc
+      ? `Tim **${data.teamName}** resmi disetujui untuk bertanding di turnamen **"${data.tournamentTitle}"** dan telah ditempatkan pada bagan bracket.`
+      : `Pendaftaran tim **${data.teamName}** di turnamen **"${data.tournamentTitle}"** telah ditolak oleh panitia/wasit. Kuota slot dikembalikan.`,
+    color: isAcc ? 0x10b981 : 0xef4444,
+    fields: [
+      { name: "🛡️ Wasit / Panitia", value: `@${data.adminName}`, inline: true },
+      { name: "⚔️ Nama Tim", value: data.teamName, inline: true },
+      { name: "🎮 Turnamen", value: data.tournamentTitle, inline: true },
+      { name: "📝 Keterangan / Alasan", value: isAcc ? "Lolos Verifikasi Administrasi" : (data.reason || "Bukti pembayaran tidak sesuai"), inline: false },
+    ],
+    footer: { text: "LogHorizon Tournament Audit • #mod-logs" },
+    timestamp: new Date().toISOString(),
+  };
+
+  await sendDiscordChannelMessage("mod_logs", {
+    embeds: [embed],
+  }).catch((err) => console.warn("[Discord Bot] notifyTournamentTeamDecision error:", err));
+}
+
+/**
+ * Log Siklus Transaksi Rekber 3-Pihak Marketplace
+ */
+export async function notifyEscrowStage(data: {
+  stage: "NEW_TICKET" | "HANDLER_CLAIMED" | "COMPLETED" | "CANCELLED" | "DISPUTE_OR_SCAM";
+  escrowId: string;
+  postTitle: string;
+  amount: number;
+  buyerName: string;
+  sellerName: string;
+  handlerName?: string | null;
+  details?: string;
+}): Promise<void> {
+  const baseUrl = getBaseAppUrl();
+  const stageMeta = {
+    NEW_TICKET: {
+      title: "🤝 TIKET REKBER 3-PIHAK DIBUAT",
+      desc: "Pembeli telah mengajukan transaksi aman via Rekber Guild. Menunggu admin/moderator mengklaim tiket sebagai wasit penengah.",
+      color: 0x3b82f6,
+      alert: "📢 **TIKET REKBER BARU MENUNGGU CLAIM WASIT DI #mod-logs!**",
+    },
+    HANDLER_CLAIMED: {
+      title: "🛡️ REKBER RESMI DIKLAIM WASIT",
+      desc: "Staf guild telah mengambil alih ruang transaksi rekber untuk memandu pembeli dan penjual secara langsung.",
+      color: 0x8b5cf6,
+      alert: undefined,
+    },
+    COMPLETED: {
+      title: "💰 REKBER SELESAI (DANA DICAIRKAN)",
+      desc: "Transaksi sukses tuntas 100%! Barang/akun telah diterima pembeli dan dana telah dicairkan ke penjual.",
+      color: 0x10b981,
+      alert: undefined,
+    },
+    CANCELLED: {
+      title: "❌ REKBER DIBATALKAN / DANA DIREFUND",
+      desc: "Transaksi rekber telah dibatalkan secara aman. Lapak marketplace dikembalikan ke status tersedia.",
+      color: 0xef4444,
+      alert: undefined,
+    },
+    DISPUTE_OR_SCAM: {
+      title: "🚨 PERINGATAN REKBER / SENGKETA TERDETEKSI",
+      desc: "Terdeteksi indikasi ajakan transaksi di luar sistem rekber atau sengketa dalam ruang chat.",
+      color: 0xd97706,
+      alert: "⚠️ **PERHATIAN STAF: SENGKETA / INDIKASI TRANSAKSI LUAR SISTEM DI REKBER!**",
+    },
+  }[data.stage];
+
+  const embed: DiscordEmbed = {
+    title: stageMeta.title,
+    description: stageMeta.desc,
+    color: stageMeta.color,
+    fields: [
+      { name: "🛒 Lapak Marketplace", value: `**${data.postTitle}**`, inline: false },
+      { name: "💵 Nilai Transaksi", value: `**Rp ${data.amount.toLocaleString("id-ID")}**`, inline: true },
+      { name: "🛡️ Wasit Penengah", value: data.handlerName ? `@${data.handlerName}` : "*Menunggu Claim Staf*", inline: true },
+      { name: "👤 Pembeli (Buyer)", value: `@${data.buyerName}`, inline: true },
+      { name: "🏪 Penjual (Seller)", value: `@${data.sellerName}`, inline: true },
+      { name: "ℹ️ Keterangan", value: data.details || "-", inline: false },
+      { name: "🔗 Ruang Chat Rekber", value: `[Buka Tiket Rekber di Website](${baseUrl}/marketplace)`, inline: false },
+    ],
+    footer: { text: "LogHorizon Escrow Audit • #mod-logs" },
+    timestamp: new Date().toISOString(),
+  };
+
+  await sendDiscordChannelMessage("mod_logs", {
+    content: stageMeta.alert,
+    embeds: [embed],
+  }).catch((err) => console.warn("[Discord Bot] notifyEscrowStage error:", err));
+}
+
+/**
+ * Log Eksekusi AI Admin Command & Aksi Sensitif
+ */
+export async function notifyAdminCommandAudit(data: {
+  adminName: string;
+  toolName: string;
+  summary: string;
+  details?: string;
+  before?: Record<string, unknown> | null;
+  after?: Record<string, unknown> | null;
+}): Promise<void> {
+  const embed: DiscordEmbed = {
+    title: "⚡ AUDIT AI ADMIN COMMAND EXECUTED",
+    description: `Perintah administratif telah berhasil dieksekusi melalui **LogHorizon Admin Command Bot** oleh **@${data.adminName}**.`,
+    color: 0x6366f1, // Indigo
+    fields: [
+      { name: "👑 Admin Pengeksekusi", value: `@${data.adminName}`, inline: true },
+      { name: "🛠️ Tool / Modul", value: `\`${data.toolName}\``, inline: true },
+      { name: "📋 Ringkasan Aksi", value: data.summary, inline: false },
+    ],
+    footer: { text: "LogHorizon Admin Command Audit • #mod-logs" },
+    timestamp: new Date().toISOString(),
+  };
+
+  if (data.details) {
+    embed.fields?.push({ name: "🔍 Detail Perubahan", value: data.details, inline: false });
+  }
+
+  await sendDiscordChannelMessage("mod_logs", {
+    embeds: [embed],
+  }).catch((err) => console.warn("[Discord Bot] notifyAdminCommandAudit error:", err));
+}

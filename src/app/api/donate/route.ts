@@ -2,7 +2,7 @@ import { DonationStatus } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { sendDiscordNotice } from "@/lib/discord-webhook";
+import { notifyDonationQueue, sendDiscordNotice } from "@/lib/discord-webhook";
 import { sanitizePlainText, isValidSafeImage } from "@/lib/sanitize";
 
 export async function GET() {
@@ -82,12 +82,14 @@ export async function POST(request: Request) {
     },
   });
 
-  const formattedAmount = `Rp ${amount.toLocaleString("id-ID")}`;
-  void sendDiscordNotice(
-    "treasury",
-    `Permintaan Verifikasi Donasi Baru: ${formattedAmount}`,
-    `Pengirim: ${senderName} (Akun: ${user.username ?? "Gamer"})\nTier: ${tierLabel}\nCatatan: ${notes || "-"}\nStatus: PENDING (Menunggu approval Admin di /admin)`
-  );
+  void notifyDonationQueue({
+    donationId: donation.id,
+    senderName,
+    username: user.username ?? "Gamer",
+    amount,
+    tierLabel,
+    notes: notes || undefined,
+  });
 
   return Response.json(
     {

@@ -31,7 +31,7 @@ export function useLiveSync(
   options: UseLiveSyncOptions = {}
 ) {
   const {
-    intervalMs = 12000,
+    intervalMs = 10000,
     enabled = true,
     revalidateOnFocus = true,
   } = options;
@@ -46,7 +46,7 @@ export function useLiveSync(
 
   const triggerSync = useCallback(async () => {
     if (isSyncingRef.current) return;
-    if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+    if (typeof document !== "undefined" && (document.hidden || document.visibilityState !== "visible")) return;
 
     try {
       isSyncingRef.current = true;
@@ -58,12 +58,12 @@ export function useLiveSync(
     }
   }, []);
 
-  // Interval-based polling (runs only when tab is visible)
+  // Interval-based polling (runs only when tab is active and visible)
   useEffect(() => {
     if (!enabled || intervalMs <= 0) return;
 
     const intervalId = setInterval(() => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+      if (typeof document !== "undefined" && !document.hidden && document.visibilityState === "visible") {
         void triggerSync();
       }
     }, intervalMs);

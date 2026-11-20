@@ -4,6 +4,7 @@ import { isMarketData, marketJson } from "@/lib/market-data";
 import { prisma } from "@/lib/prisma";
 import { addXpInTransaction } from "@/lib/xp";
 import { createNotification } from "@/lib/notifications";
+import { notifyEscrowStage } from "@/lib/discord-webhook";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -76,7 +77,14 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   if (action === "claim") {
     if (!isStaff) return jsonError("Hanya Admin / Moderator yang dapat mengklaim tiket Rekber.", 403);
-    const existing = await prisma.escrowTransaction.findUnique({ where: { id } });
+    const existing = await prisma.escrowTransaction.findUnique({
+      where: { id },
+      include: {
+        post: { select: { title: true } },
+        buyer: { select: { username: true } },
+        seller: { select: { username: true } },
+      },
+    });
     if (!existing) return jsonError("Tiket rekber tidak ditemukan.", 404);
     if (existing.claimedById) return jsonError("Tiket rekber ini sudah diklaim oleh staff lain.", 409);
 
@@ -95,6 +103,17 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       },
     });
 
+    void notifyEscrowStage({
+      stage: "HANDLER_CLAIMED",
+      escrowId: id,
+      postTitle: existing.post.title,
+      amount: existing.amount,
+      buyerName: existing.buyer.username ?? "Buyer",
+      sellerName: existing.seller.username ?? "Seller",
+      handlerName: user.username ?? "Staff",
+      details: `Staf @${user.username} resmi mengambil alih penanganan tiket rekber sebagai wasit penengah.`,
+    });
+
     return Response.json({
       success: true,
       transaction: updated,
@@ -103,7 +122,14 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   if (action === "cancel") {
-    const escrow = await prisma.escrowTransaction.findUnique({ where: { id }, include: { post: true } });
+    const escrow = await prisma.escrowTransaction.findUnique({
+      where: { id },
+      include: {
+        post: true,
+        buyer: { select: { username: true } },
+        seller: { select: { username: true } },
+      },
+    });
     if (!escrow || escrow.status !== EscrowStatus.IN_ESCROW) return jsonError("Transaksi tidak aktif.", 404);
     if (user.id !== escrow.sellerId && user.id !== escrow.buyerId && !isStaff) {
       return jsonError("Tidak memiliki wewenang membatalkan transaksi.", 403);
@@ -127,11 +153,29 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       },
     });
 
+    void notifyEscrowStage({
+      stage: "CANCELLED",
+      escrowId: id,
+      postTitle: escrow.post.title,
+      amount: escrow.amount,
+      buyerName: escrow.buyer.username ?? "Buyer",
+      sellerName: escrow.seller.username ?? "Seller",
+      handlerName: user.username,
+      details: `Transaksi rekber telah dibatalkan oleh @${user.username}. Lapak kembali berstatus AVAILABLE.`,
+    });
+
     return Response.json({ success: true, transaction: updated, notice: "Transaksi Rekber dibatalkan." });
   }
 
   if (action === "complete") {
-    const escrow = await prisma.escrowTransaction.findUnique({ where: { id }, include: { post: true } });
+    const escrow = await prisma.escrowTransaction.findUnique({
+      where: { id },
+      include: {
+        post: true,
+        buyer: { select: { username: true } },
+        seller: { select: { username: true } },
+      },
+    });
     if (!escrow || escrow.status !== EscrowStatus.IN_ESCROW) return jsonError("Transaksi escrow tidak aktif.", 404);
     if (user.id !== escrow.sellerId && !isStaff) {
       return jsonError("Hanya penjual atau moderator/admin yang dapat mengonfirmasi transaksi selesai.", 403);
@@ -163,6 +207,17 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       type: "ESCROW",
       message: `Transaksi lapak "${escrow.post.title.slice(0, 40)}" telah diselesaikan! Terima kasih telah bertransaksi aman via Rekber Guild.`,
       link: `/marketplace`,
+    });
+
+    void notifyEscrowStage({
+      stage: "COMPLETED",
+      escrowId: id,
+      postTitle: escrow.post.title,
+      amount: escrow.amount,
+      buyerName: escrow.buyer.username ?? "Buyer",
+      sellerName: escrow.seller.username ?? "Seller",
+      handlerName: user.username,
+      details: `Transaksi rekber sukses diselesaikan dan dana telah dicairkan ke penjual!`,
     });
 
     return Response.json({

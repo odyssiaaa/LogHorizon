@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import {
+  ArrowUp,
   Award,
   BookOpen,
   ChevronDown,
@@ -133,6 +134,7 @@ export function Navbar() {
   });
   const [isDark, setIsDark] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Poll unread messages count for active user
   useEffect(() => {
@@ -179,6 +181,7 @@ export function Navbar() {
   useEffect(() => {
     function handleScroll() {
       setScrolled(window.scrollY > 15);
+      setShowScrollTop(window.scrollY > 250);
     }
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
@@ -1001,6 +1004,21 @@ export function Navbar() {
       </AnimatePresence>
 
       {/* ===================================================================== */}
+      {/* MOBILE SCROLL-TO-TOP BUTTON (↑) PADA KIRI BAWAH LAYAR                 */}
+      {/* ===================================================================== */}
+      {showScrollTop && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-24 left-3.5 z-40 md:hidden size-11 rounded-full bg-[#11091D]/90 dark:bg-[#11091D]/90 bg-white/90 backdrop-blur-md border-2 border-[#7C3AED] shadow-xl text-[#7C3AED] dark:text-[#A78BFA] hover:bg-[#7C3AED] hover:text-white flex items-center justify-center transition-all active:scale-90 animate-in fade-in zoom-in-75 duration-200 cursor-pointer"
+          aria-label="Kembali ke atas layar"
+          title="Kembali ke atas layar"
+        >
+          <ArrowUp size={20} strokeWidth={2.5} />
+        </button>
+      )}
+
+      {/* ===================================================================== */}
       {/* MOBILE FLOATING BOTTOM DOCK (< 768px / md:hidden)                     */}
       {/* ===================================================================== */}
       <nav
@@ -1012,28 +1030,28 @@ export function Navbar() {
           <Link
             href="/"
             onClick={() => setMobileOpen(false)}
-            className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-colors ${
+            className={`flex flex-col items-center justify-center min-h-[44px] py-1 px-1 rounded-xl transition-colors ${
               isHomeActive
                 ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Home size={18} className={isHomeActive ? "text-[#7C3AED] dark:text-[#A78BFA]" : ""} />
-            <span className="text-[10px] font-medium mt-1 leading-none">Home</span>
+            <Home size={19} className={isHomeActive ? "text-[#7C3AED] dark:text-[#A78BFA]" : ""} />
+            <span className="text-[11px] font-medium mt-1 leading-none">Home</span>
           </Link>
 
           {/* 2. Forum */}
           <Link
             href="/forum"
             onClick={() => setMobileOpen(false)}
-            className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-colors ${
+            className={`flex flex-col items-center justify-center min-h-[44px] py-1 px-1 rounded-xl transition-colors ${
               pathname.startsWith("/forum")
                 ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <MessageSquare size={18} className={pathname.startsWith("/forum") ? "text-[#7C3AED] dark:text-[#A78BFA]" : ""} />
-            <span className="text-[10px] font-medium mt-1 leading-none">Forum</span>
+            <MessageSquare size={19} className={pathname.startsWith("/forum") ? "text-[#7C3AED] dark:text-[#A78BFA]" : ""} />
+            <span className="text-[11px] font-medium mt-1 leading-none">Forum</span>
           </Link>
 
           {/* 3. Arena (Tombol Tengah Menonjol Beraksen Ungu) */}
@@ -1050,28 +1068,28 @@ export function Navbar() {
             }`}>
               <Swords size={20} />
             </div>
-            <span className="text-[10px] font-bold text-[#7C3AED] dark:text-[#A78BFA] mt-0.5 leading-none">Arena</span>
+            <span className="text-[11px] font-bold text-[#7C3AED] dark:text-[#A78BFA] mt-0.5 leading-none">Arena</span>
           </Link>
 
           {/* 4. Market */}
           <Link
             href="/marketplace"
             onClick={() => setMobileOpen(false)}
-            className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-colors ${
+            className={`flex flex-col items-center justify-center min-h-[44px] py-1 px-1 rounded-xl transition-colors ${
               isMarketplaceActive
                 ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <Store size={18} className={isMarketplaceActive ? "text-[#7C3AED] dark:text-[#A78BFA]" : ""} />
-            <span className="text-[10px] font-medium mt-1 leading-none">Market</span>
+            <Store size={19} className={isMarketplaceActive ? "text-[#7C3AED] dark:text-[#A78BFA]" : ""} />
+            <span className="text-[11px] font-medium mt-1 leading-none">Market</span>
           </Link>
 
           {/* 5. Menu / Profil (Buka Laci Drawer) */}
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="flex flex-col items-center justify-center py-1 px-1 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors relative"
+            className="flex flex-col items-center justify-center min-h-[44px] py-1 px-1 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors relative"
             aria-label="Buka Menu Lengkap & Profil"
           >
             {user ? (
@@ -1085,15 +1103,17 @@ export function Navbar() {
                 )}
               </div>
             ) : (
-              <Menu size={18} />
+              <Menu size={19} />
             )}
 
-            {/* Notification dot if unread messages or admin pending */}
+            {/* Notification badge with count if unread messages or admin pending */}
             {(unreadMessages > 0 || adminPendingCount > 0) && (
-              <span className="absolute top-1 right-3 size-2 rounded-full bg-rose-500 animate-pulse" />
+              <span className="absolute top-1 right-2 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-md animate-pulse">
+                {unreadMessages + adminPendingCount > 9 ? "9+" : unreadMessages + adminPendingCount}
+              </span>
             )}
 
-            <span className="text-[10px] font-medium mt-1 leading-none">
+            <span className="text-[11px] font-medium mt-1 leading-none">
               {user ? "Profil" : "Menu"}
             </span>
           </button>

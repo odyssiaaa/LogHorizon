@@ -3,6 +3,7 @@ import { activeUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { createSingleEliminationBracket, TournamentTeam, TournamentMatch, TournamentRosterPlayer } from "@/lib/tournament";
 import { sanitizePlainText, isValidSafeImage } from "@/lib/sanitize";
+import { notifyPaidTournamentRegistration, notifyTournamentTeamDecision } from "@/lib/discord-webhook";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -163,6 +164,8 @@ export async function POST(request: Request, { params }: RouteContext) {
           status: "PENDING_PAYMENT",
           message: "Pendaftaran & bukti pembayaran terkirim! Menunggu verifikasi Admin sebelum tim resmi masuk ke dalam bagan.",
           participant: created,
+          tournamentTitle: tournament.title,
+          entryFee: tournament.entryFee,
         };
       }
 
@@ -234,8 +237,22 @@ export async function POST(request: Request, { params }: RouteContext) {
         status: "APPROVED",
         message: "Tim berhasil didaftarkan ke turnamen!",
         participant: created,
+        tournamentTitle: tournament.title,
+        entryFee: tournament.entryFee,
       };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+    if (result.status === "PENDING_PAYMENT") {
+      void notifyPaidTournamentRegistration({
+        tournamentId: id,
+        tournamentTitle: result.tournamentTitle || "Turnamen LogHorizon",
+        teamName,
+        senderName: senderName || "Pengirim",
+        contactPhone: rawPhone,
+        entryFee: Number(result.entryFee || 0),
+        captainUsername: user.username ?? "Gamer",
+      });
+    }
 
     return Response.json(result, { status: 201 });
   } catch (error) {
@@ -358,7 +375,13 @@ export async function PATCH(request: Request, { params }: RouteContext) {
           },
         });
 
-        return { success: true, message: `Tim "${participant.teamName}" berhasil di-ACC dan masuk ke bagan turnamen!` };
+        return {
+          success: true,
+          message: `Tim "${participant.teamName}" berhasil di-ACC dan masuk ke bagan turnamen!`,
+          tournamentTitle: tournament.title,
+          teamName: participant.teamName,
+          isApproved: true,
+        };
       } else {
         // REJECT
         await tx.participant.update({
@@ -439,9 +462,26 @@ export async function PATCH(request: Request, { params }: RouteContext) {
           },
         });
 
-        return { success: true, message: `Pendaftaran tim "${participant.teamName}" telah ditolak.` };
+        return {
+          success: true,
+          message: `Pendaftaran tim "${participant.teamName}" telah ditolak.`,
+          tournamentTitle: tournament.title,
+          teamName: participant.teamName,
+          isApproved: false,
+          reason,
+        };
       }
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+    if (result.tournamentTitle) {
+      void notifyTournamentTeamDecision({
+        adminName: access.user.username ?? "Admin",
+        tournamentTitle: result.tournamentTitle,
+        teamName: result.teamName || "Tim",
+        isApproved: Boolean(result.isApproved),
+        reason: result.reason,
+      });
+    }
 
     return Response.json(result);
   } catch (error) {

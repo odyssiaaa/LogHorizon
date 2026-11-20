@@ -3,7 +3,7 @@ import { activeUser, jsonError } from "@/lib/http";
 import { isMarketData, marketJson } from "@/lib/market-data";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
-import { notifyStaffAlert } from "@/lib/discord-webhook";
+import { notifyEscrowStage } from "@/lib/discord-webhook";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -44,12 +44,14 @@ export async function POST(_request: Request, { params }: RouteContext) {
         link: `/marketplace`,
       });
 
-      void notifyStaffAlert({
-        type: "ESCROW",
-        title: result.postTitle,
-        actorName: buyer.username ?? "Pembeli",
-        amountOrTarget: `Rp ${result.marketData.price.toLocaleString("id-ID")}`,
-        details: `Pembeli @${buyer.username} mengajukan rekber untuk lapak "${result.postTitle}". Transaksi dipantau oleh pengurus guild.`,
+      void notifyEscrowStage({
+        stage: "NEW_TICKET",
+        escrowId: result.transaction.id,
+        postTitle: result.postTitle,
+        amount: result.marketData.price,
+        buyerName: buyer.username ?? "Pembeli",
+        sellerName: "Penjual",
+        details: `Pembeli @${buyer.username} mengajukan rekber untuk lapak "${result.postTitle}". Menunggu wasit staf mengklaim tiket.`,
       });
     }
 

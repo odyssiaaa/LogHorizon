@@ -66,8 +66,11 @@ export async function GET(request: Request) {
     const where: Prisma.PostWhereInput = filters.length ? { AND: filters } : {};
     const viewer = await authenticatedUser().catch(() => null);
     const priceOrder = sort === "asc" || sort === "desc";
+    const rawLimit = Number(url.searchParams.get("limit") || 25);
+    const take = Number.isSafeInteger(rawLimit) && rawLimit > 0 ? Math.min(50, rawLimit) : 25;
     const posts = await prisma.post.findMany({
       where,
+      take,
       include: {
         author: { select: { id: true, username: true, avatar: true, role: true, isPremium: true, discordId: true } },
         votes: { where: { userId: viewer?.id ?? "" }, select: { value: true } },

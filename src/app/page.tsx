@@ -3,6 +3,7 @@ import Image from "next/image";
 import { HeroLogo } from "@/components/hero-logo";
 import { GuildAnnouncementCard } from "@/components/guild-announcement-card";
 import { AnnouncementPopupModal } from "@/components/announcement-popup-modal";
+import { StarterGuideCard } from "@/components/starter-guide-card";
 import {
   ArrowUpRight,
   AudioLines,
@@ -443,6 +444,11 @@ export default async function Home() {
 
       {/* OFFICIAL GUILD ANNOUNCEMENT BOARD (PROMINENT FULL-WIDTH CARD) */}
       <GuildAnnouncementCard />
+
+      {/* STARTER GUIDE CARD (PANDUAN KILAT 3 LANGKAH PETUALANG BARU) */}
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
+        <StarterGuideCard />
+      </div>
 
       {/* ===================================================================== */}
       {/* LIVE ACTIVITY SHOWCASE (3 BLOK SOROTAN EKOSISTEM)                     */}

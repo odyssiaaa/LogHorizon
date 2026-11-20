@@ -12,26 +12,28 @@ export const metadata: Metadata = {
 export const instant = false;
 
 export default async function HallOfWinnersPage() {
-  // 1. Fetch manual records
-  const manualRecords = await prisma.hallOfWinner.findMany({
-    orderBy: { eventDate: "desc" },
-  });
+  // 1 & 2. Fetch manual records and completed tournaments in parallel
+  const [manualRecords, tournaments] = await Promise.all([
+    prisma.hallOfWinner.findMany({
+      orderBy: { eventDate: "desc" },
+      take: 20,
+    }),
+    prisma.tournament.findMany({
+      orderBy: { eventDate: "desc" },
+      take: 20,
+      include: {
+        participants: {
+          include: {
+            leader: { select: { id: true, username: true } },
+          },
+        },
+      },
+    }),
+  ]);
 
   const manualTournamentIds = new Set(
     manualRecords.map((r) => r.tournamentId).filter(Boolean) as string[]
   );
-
-  // 2. Fetch tournaments
-  const tournaments = await prisma.tournament.findMany({
-    orderBy: { eventDate: "desc" },
-    include: {
-      participants: {
-        include: {
-          leader: { select: { id: true, username: true } },
-        },
-      },
-    },
-  });
 
   const automatedRecords: HallOfWinnerItem[] = [];
 
