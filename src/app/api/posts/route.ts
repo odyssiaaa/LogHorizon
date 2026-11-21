@@ -72,7 +72,7 @@ export async function GET(request: Request) {
       where,
       take,
       include: {
-        author: { select: { id: true, username: true, avatar: true, role: true, isPremium: true, discordId: true } },
+        author: { select: { id: true, username: true, avatar: true, role: true, isPremium: true, discordId: true, tempTitle: true, tempTitleExpiresAt: true } },
         votes: { where: { userId: viewer?.id ?? "" }, select: { value: true } },
         escrowTransactions: { where: { status: "IN_ESCROW" }, select: { id: true, buyerId: true, sellerId: true, status: true } },
       },

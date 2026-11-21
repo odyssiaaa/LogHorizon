@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import { Navbar } from "@/components/navbar";
 import { Providers } from "@/components/providers";
 import { HorizonChatWidget } from "@/components/horizon-chat-widget";
 import { WelcomeOnboardingModal } from "@/components/welcome-onboarding-modal";
+import { ReferralTracker } from "@/components/referral-tracker";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -127,6 +129,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </div>
             </div>
           </footer>
+          <Suspense fallback={null}>
+            <ReferralTracker />
+          </Suspense>
           <HorizonChatWidget />
         </Providers>
       </body>

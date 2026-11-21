@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
+import { sanitizeBadges } from "@/lib/caste";
 
 export async function GET() {
-  const [members, donorTotals] = await Promise.all([
+  const [rawMembers, donorTotals] = await Promise.all([
     prisma.user.findMany({
       where: {
         isBanned: false,
@@ -19,6 +20,8 @@ export async function GET() {
         role: true,
         badges: true,
         isPremium: true,
+        tempTitle: true,
+        tempTitleExpiresAt: true,
       },
       orderBy: [{ level: "desc" }, { xp: "desc" }, { joinedAt: "asc" }],
       take: 5,
@@ -37,6 +40,16 @@ export async function GET() {
       LIMIT 10
     `,
   ]);
+
+  const members = rawMembers.map((m) => ({
+    id: m.id,
+    username: m.username,
+    level: m.level,
+    xp: m.xp,
+    role: m.role,
+    badges: sanitizeBadges(m, m.badges),
+    isPremium: m.isPremium,
+  }));
 
   const benefactors = donorTotals.map((donor) => ({
     id: donor.id,

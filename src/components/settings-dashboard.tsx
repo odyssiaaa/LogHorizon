@@ -26,6 +26,9 @@ import {
 import { readApiResponse } from "@/lib/api-response";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { DailyCheckInWidget } from "@/components/daily-check-in-widget";
+import { DailyQuestsWidget } from "@/components/daily-quests-widget";
+import { RoyalChestWidget } from "@/components/royal-chest-widget";
+import { ReferralInviteCard } from "@/components/referral-invite-card";
 
 type Achievement = {
   id: string;
@@ -524,8 +527,8 @@ export function SettingsDashboard() {
           </section>
 
           {/* Tombol Klaim Absen Harian XP */}
-          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
                   <Flame size={20} className="text-amber-400" />
@@ -537,7 +540,15 @@ export function SettingsDashboard() {
               </div>
             </div>
             <DailyCheckInWidget />
+            {/* Peti Harta Kerajaan Harian (Terbuka setelah absen) */}
+            <RoyalChestWidget />
           </section>
+
+          {/* Misi Petualang Harian */}
+          <DailyQuestsWidget />
+
+          {/* Kartu Undang Teman & Dapatkan +200 XP */}
+          <ReferralInviteCard />
 
           {/* Gamer Info Ringkas */}
           <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">

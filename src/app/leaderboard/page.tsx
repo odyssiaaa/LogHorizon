@@ -1,11 +1,12 @@
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { prisma } from "@/lib/prisma";
+import { sanitizeBadges } from "@/lib/caste";
 
 export const metadata = { title: "Guild Leaderboard | LogHorizon" };
 export const instant = false;
 
 export default async function LeaderboardPage() {
-  const [members, donorTotals] = await Promise.all([
+  const [rawMembers, donorTotals] = await Promise.all([
     prisma.user.findMany({
       where: {
         isBanned: false,
@@ -15,7 +16,17 @@ export default async function LeaderboardPage() {
           { badges: { has: "SATPAM_AI" } },
         ],
       },
-      select: { id: true, username: true, level: true, xp: true, role: true, badges: true, isPremium: true },
+      select: {
+        id: true,
+        username: true,
+        level: true,
+        xp: true,
+        role: true,
+        badges: true,
+        isPremium: true,
+        tempTitle: true,
+        tempTitleExpiresAt: true,
+      },
       orderBy: [{ level: "desc" }, { xp: "desc" }, { joinedAt: "asc" }],
       take: 5,
     }),
@@ -33,6 +44,16 @@ export default async function LeaderboardPage() {
       LIMIT 10
     `,
   ]);
+
+  const members = rawMembers.map((m) => ({
+    id: m.id,
+    username: m.username,
+    level: m.level,
+    xp: m.xp,
+    role: m.role,
+    badges: sanitizeBadges(m, m.badges),
+    isPremium: m.isPremium,
+  }));
 
   const benefactors = donorTotals.map((donor) => ({ ...donor, total: Number(donor.total) }));
   return <LeaderboardTable members={members} benefactors={benefactors} />;

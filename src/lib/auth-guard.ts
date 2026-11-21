@@ -12,6 +12,8 @@ export type CasteUserLike = {
   role?: string | null;
   isPremium?: boolean | null;
   badges?: string[] | null;
+  tempTitle?: string | null;
+  tempTitleExpiresAt?: Date | string | null;
 };
 
 /**

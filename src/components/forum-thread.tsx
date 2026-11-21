@@ -12,6 +12,7 @@ import { ShareButton } from "@/components/share-button";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
 import { MentionHashtagInput, type MentionUser } from "@/components/mention-hashtag-input";
+import { getActiveTempTitle } from "@/lib/caste";
 
 type CommentRecord = {
   id: string;
@@ -20,7 +21,15 @@ type CommentRecord = {
   parentId: string | null;
   content: string;
   createdAt: string;
-  author: { id: string; username: string | null; avatar: string | null; isPremium: boolean; role?: string };
+  author: {
+    id: string;
+    username: string | null;
+    avatar: string | null;
+    isPremium: boolean;
+    role?: string;
+    tempTitle?: string | null;
+    tempTitleExpiresAt?: string | Date | null;
+  };
 };
 
 type ThreadRecord = {
@@ -34,7 +43,15 @@ type ThreadRecord = {
   votes: { value: Exclude<PostReaction, null> }[];
   createdAt: string;
   authorId?: string;
-  author: { id?: string; username: string | null; avatar: string | null; isPremium: boolean; role?: string };
+  author: {
+    id?: string;
+    username: string | null;
+    avatar: string | null;
+    isPremium: boolean;
+    role?: string;
+    tempTitle?: string | null;
+    tempTitleExpiresAt?: string | Date | null;
+  };
   comments: CommentRecord[];
 };
 
@@ -448,6 +465,11 @@ export function ForumThread({ id }: { id: string }) {
               ) : item.author.role === "MODERATOR" ? (
                 <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-500 dark:text-blue-400 border border-blue-500/30 whitespace-nowrap">⚔️ Mod</span>
               ) : null}
+              {getActiveTempTitle(item.author) && (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 dark:text-amber-300 border border-amber-500/30 whitespace-nowrap">
+                  {getActiveTempTitle(item.author)}
+                </span>
+              )}
               <span className="text-slate-400 dark:text-[#A78BFA]/40 text-[10px]">•</span>
               <time className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]/70 whitespace-nowrap">{new Date(item.createdAt).toLocaleString("id-ID")}</time>
             </div>
@@ -589,6 +611,11 @@ export function ForumThread({ id }: { id: string }) {
                   ) : thread.author.role === "MODERATOR" ? (
                     <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-blue-500/15 text-blue-500 dark:text-blue-400 border border-blue-500/30 ml-1.5">⚔️ Lord Commander</span>
                   ) : null}
+                  {getActiveTempTitle(thread.author) && (
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-amber-500/15 text-amber-500 dark:text-amber-300 border border-amber-500/30 ml-1.5 whitespace-nowrap">
+                      {getActiveTempTitle(thread.author)}
+                    </span>
+                  )}
                 </span>
               </span>
               <span>•</span>

@@ -11,10 +11,32 @@ export async function GET(_request: Request, { params }: RouteContext) {
     const post = await prisma.post.findUnique({
       where: { id },
       include: {
-        author: { select: { id: true, username: true, avatar: true, role: true, isPremium: true } },
+        author: {
+          select: {
+            id: true,
+            username: true,
+            avatar: true,
+            role: true,
+            isPremium: true,
+            tempTitle: true,
+            tempTitleExpiresAt: true,
+          },
+        },
         comments: {
           orderBy: { createdAt: "asc" },
-          include: { author: { select: { id: true, username: true, avatar: true, isPremium: true } } },
+          include: {
+            author: {
+              select: {
+                id: true,
+                username: true,
+                avatar: true,
+                role: true,
+                isPremium: true,
+                tempTitle: true,
+                tempTitleExpiresAt: true,
+              },
+            },
+          },
         },
         votes: { where: { userId: viewer?.id ?? "" }, select: { value: true } },
       },

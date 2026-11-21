@@ -109,6 +109,20 @@ model User {
   conversationMemberships ConversationParticipant[]
   directMessages         DirectMessage[]
   matchMessages          MatchMessage[]
+
+  // Referral System (?ref=username)
+  referredById   String?
+  referredAt     DateTime?
+  referrer       User?                     @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referredUsers  User[]                    @relation("UserReferrals")
+
+  // Royal Daily Chest & Temporary Title
+  tempTitle          String?
+  tempTitleExpiresAt DateTime?
+
+  // Quests & Chest Claims
+  questClaims    DailyQuestClaim[]
+  chestClaims    DailyChestClaim[]
 }
 
 model Tournament {
@@ -510,5 +524,32 @@ model SecurityLog {
   @@index([createdAt])
   @@index([action, createdAt])
 }
+
+model DailyQuestClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  questId   String
+  dateKey   String
+  xpAwarded Int
+  claimedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questId, dateKey])
+  @@index([userId, dateKey])
+}
+
+model DailyChestClaim {
+  id          String   @id @default(cuid())
+  userId      String
+  dateKey     String
+  rewardType  String
+  rewardValue String
+  claimedAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dateKey])
+  @@index([userId, dateKey])
+}
+
 
 

@@ -7,23 +7,46 @@ export * from "@/lib/auth-guard";
 import { isGuildOwner, CasteUserLike } from "@/lib/auth-guard";
 
 /**
+ * Checks if the user currently holds an active 24h temporary title from Royal Daily Chest.
+ */
+export function getActiveTempTitle(user?: CasteUserLike | null): string | null {
+  if (!user?.tempTitle || !user?.tempTitleExpiresAt) return null;
+  const exp = new Date(user.tempTitleExpiresAt).getTime();
+  if (exp > Date.now()) {
+    return user.tempTitle;
+  }
+  return null;
+}
+
+/**
  * Sanitizes badges array so that "👑 Emperor" is NEVER granted to anyone except .odyssia.
+ * Also prepends any active temporary title from Royal Daily Chest.
  */
 export function sanitizeBadges(user?: CasteUserLike | null, badges: string[] = []): string[] {
   const isOwner = isGuildOwner(user);
+  const activeTempTitle = getActiveTempTitle(user);
+
+  let result: string[] = [];
   if (isOwner) {
     const list = badges.filter((b) => !b.includes("Emperor"));
-    return ["👑 Emperor", ...list];
+    result = ["👑 Emperor", ...list];
+  } else {
+    // Remove any Emperor badge if accidentally stored or inherited
+    const filtered = badges.filter((b) => !b.includes("Emperor"));
+    if (user?.role === "ADMIN" && !filtered.some((b) => b.includes("Prince"))) {
+      result = ["✨ Prince / Princess", ...filtered];
+    } else if (user?.role === "MODERATOR" && !filtered.some((b) => b.includes("Lord Commander"))) {
+      result = ["⚔️ Lord Commander", ...filtered];
+    } else {
+      result = filtered;
+    }
   }
-  // Remove any Emperor badge if accidentally stored or inherited
-  const filtered = badges.filter((b) => !b.includes("Emperor"));
-  if (user?.role === "ADMIN" && !filtered.some((b) => b.includes("Prince"))) {
-    return ["✨ Prince / Princess", ...filtered];
+
+  if (activeTempTitle && !result.includes(activeTempTitle)) {
+    result = [activeTempTitle, ...result];
   }
-  if (user?.role === "MODERATOR" && !filtered.some((b) => b.includes("Lord Commander"))) {
-    return ["⚔️ Lord Commander", ...filtered];
-  }
-  return filtered;
+
+  return result;
 }
 
 /**
