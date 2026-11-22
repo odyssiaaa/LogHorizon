@@ -1,0 +1,396 @@
+name: Discord Mod Logs Deployment Changelog
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify-discord:
+    name: Send Detailed Changelog to #mod-logs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Process Changelog & Send Discord Embed
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_MOD_LOG_WEBHOOK_URL: ${{ secrets.DISCORD_MOD_LOG_WEBHOOK_URL || secrets.DISCORD_WEBHOOK_URL }}
+          GITHUB_COMMIT_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_COMMIT_URL: "https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+          COMMITS_JSON: ${{ toJSON(github.event.commits) }}
+        run: |
+          node -e '
+          const https = require("https");
+          const { execSync } = require("child_process");
+
+          const CHANNEL_ID = "1547552557868777552";
+          const botToken = process.env.DISCORD_BOT_TOKEN;
+          const webhookUrl = process.env.DISCORD_MOD_LOG_WEBHOOK_URL;
+          const sha = process.env.GITHUB_COMMIT_SHA || "";
+          const shortSha = sha ? sha.slice(0, 7) : "HEAD";
+          const actor = process.env.GITHUB_ACTOR || "Developer";
+          const commitUrl = process.env.GITHUB_COMMIT_URL || "https://github.com";
+
+          if (!botToken && !webhookUrl) {
+            console.log("ℹ️ Neither DISCORD_BOT_TOKEN nor DISCORD_MOD_LOG_WEBHOOK_URL secret is configured. Skipping Discord mod-log dispatch.");
+            process.exit(0);
+          }
+
+          // 1. Parse commit event payloads or fallback to git log
+          let commits = [];
+          try {
+            if (process.env.COMMITS_JSON) {
+              const parsed = JSON.parse(process.env.COMMITS_JSON);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                commits = parsed;
+              }
+            }
+          } catch {
+            commits = [];
+          }
+
+          if (commits.length === 0) {
+            try {
+              const rawMsg = execSync("git log -1 --pretty=format:%B").toString().trim();
+              commits.push({
+                id: sha,
+                message: rawMsg || "Update and maintenance deployment",
+                author: { name: actor },
+                added: [],
+                modified: [],
+                removed: []
+              });
+            } catch {
+              commits.push({
+                id: sha,
+                message: "Update and maintenance deployment",
+                author: { name: actor },
+                added: [],
+                modified: [],
+                removed: []
+              });
+            }
+          }
+
+          // 2. Gather all modified/added/removed files
+          const allChangedFilesSet = new Set();
+          for (const c of commits) {
+            (c.added || []).forEach(f => allChangedFilesSet.add(f));
+            (c.modified || []).forEach(f => allChangedFilesSet.add(f));
+            (c.removed || []).forEach(f => allChangedFilesSet.add(f));
+          }
+
+          if (allChangedFilesSet.size === 0) {
+            try {
+              const diffOutput = execSync("git diff-tree --no-commit-id --name-only -r HEAD").toString().trim();
+              diffOutput.split("\n").filter(Boolean).forEach(f => allChangedFilesSet.add(f));
+            } catch {
+              try {
+                const diffOutput = execSync("git diff --name-only HEAD~1 HEAD").toString().trim();
+                diffOutput.split("\n").filter(Boolean).forEach(f => allChangedFilesSet.add(f));
+              } catch {}
+            }
+          }
+
+          const changedFiles = Array.from(allChangedFilesSet);
+
+          // 3. Classify Updates & Map Categories
+          const categoryGroups = {
+            feat: [],
+            fix: [],
+            security: [],
+            ui: [],
+            chore: []
+          };
+
+          for (const c of commits) {
+            const raw = c.message || "";
+            const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+            const first = lines[0] || "Pembaruan sistem";
+            const lower = first.toLowerCase();
+
+            let target = "chore";
+            if (lower.startsWith("feat:") || lower.includes("feat(")) {
+              target = "feat";
+            } else if (lower.startsWith("fix:") || lower.includes("fix(")) {
+              target = "fix";
+            } else if (lower.startsWith("security:") || lower.includes("security")) {
+              target = "security";
+            } else if (lower.startsWith("ui:") || lower.startsWith("perf:") || lower.includes("ui(")) {
+              target = "ui";
+            }
+
+            const cleanSubject = first.replace(/^(feat|fix|security|ui|perf|chore|ci|refactor|docs)(\([^)]+\))?:\s*/i, "").trim();
+            const details = lines.slice(1)
+              .filter(l => !l.toLowerCase().startsWith("co-authored-by") && l.length > 2)
+              .map(l => l.replace(/^[-*•]\s*/, "").trim());
+
+            categoryGroups[target].push({
+              subject: cleanSubject.charAt(0).toUpperCase() + cleanSubject.slice(1),
+              details: details.slice(0, 4)
+            });
+          }
+
+          // Determine primary badge color & update label
+          let primaryType = "🚀 Pembaruan Sistem & Fitur";
+          let embedColor = 0x7c3aed; // LogHorizon Purple
+
+          if (categoryGroups.security.length > 0) {
+            primaryType = "🛡️ Peningkatan Keamanan & Proteksi";
+            embedColor = 0xef4444; // Red
+          } else if (categoryGroups.feat.length > 0) {
+            primaryType = "✨ Fitur Baru Ditambahkan";
+            embedColor = 0x10b981; // Emerald
+          } else if (categoryGroups.fix.length > 0) {
+            primaryType = "🐛 Perbaikan Bug & Tampilan";
+            embedColor = 0x3b82f6; // Blue
+          } else if (categoryGroups.ui.length > 0) {
+            primaryType = "⚡ Peningkatan UI/UX & Kecepatan";
+            embedColor = 0x8b5cf6; // Purple
+          } else {
+            primaryType = "🔧 Maintenance & Pembersihan Sistem";
+            embedColor = 0xf59e0b; // Amber
+          }
+
+          // 4. Map Affected Modules by File Paths
+          const modulesSet = new Set();
+          for (const f of changedFiles) {
+            const p = f.toLowerCase();
+            if (p.includes("tournament") || p.includes("bracket")) {
+              modulesSet.add("Turnamen & Bracket");
+            }
+            if (p.includes("forum") || p.includes("poll")) {
+              modulesSet.add("Forum Diskusi");
+            }
+            if (p.includes("marketplace") || p.includes("escrow")) {
+              modulesSet.add("Marketplace & Rekber");
+            }
+            if (p.includes("message") || p.includes("conversation") || p.includes("chat")) {
+              modulesSet.add("Pesan & Obrolan");
+            }
+            if (p.includes("settings") || p.includes("profile") || p.includes("armory") || p.includes("/u/")) {
+              modulesSet.add("Profil, Lencana & Armory");
+            }
+            if (p.includes("admin") || p.includes("terminal")) {
+              modulesSet.add("Admin Command Center");
+            }
+            if (p.includes("party") || p.includes("parties")) {
+              modulesSet.add("Squad / Guild Party");
+            }
+            if (p.includes("ai") || p.includes("satpam") || p.includes("knight")) {
+              modulesSet.add("Satpam Horizon AI");
+            }
+            if (p.includes("prisma") || p.includes("schema")) {
+              modulesSet.add("Database PostgreSQL");
+            }
+            if (p.includes("locale") || p.includes("currency")) {
+              modulesSet.add("Multi-Bahasa & Mata Uang");
+            }
+            if (p.includes("navbar") || p.includes("page.tsx") || p.includes("layout.tsx")) {
+              modulesSet.add("Beranda & Navigasi");
+            }
+          }
+
+          const affectedModules = modulesSet.size > 0
+            ? Array.from(modulesSet).join(", ")
+            : "Core Platform & Infrastructure";
+
+          // 5. Build human-readable changelog bullet sections
+          const sections = [];
+
+          if (categoryGroups.feat.length > 0) {
+            let s = "**✨ Fitur Baru:**\n";
+            categoryGroups.feat.forEach(item => {
+              s += `• **${item.subject}**\n`;
+              item.details.forEach(d => s += `  ↳ ${d}\n`);
+            });
+            sections.push(s.trim());
+          }
+
+          if (categoryGroups.fix.length > 0) {
+            let s = "**🐛 Perbaikan Bug & Tampilan:**\n";
+            categoryGroups.fix.forEach(item => {
+              s += `• **${item.subject}**\n`;
+              item.details.forEach(d => s += `  ↳ ${d}\n`);
+            });
+            sections.push(s.trim());
+          }
+
+          if (categoryGroups.security.length > 0) {
+            let s = "**🛡️ Keamanan & Hardening:**\n";
+            categoryGroups.security.forEach(item => {
+              s += `• **${item.subject}**\n`;
+              item.details.forEach(d => s += `  ↳ ${d}\n`);
+            });
+            sections.push(s.trim());
+          }
+
+          if (categoryGroups.ui.length > 0) {
+            let s = "**⚡ UI/UX & Formatting:**\n";
+            categoryGroups.ui.forEach(item => {
+              s += `• **${item.subject}**\n`;
+              item.details.forEach(d => s += `  ↳ ${d}\n`);
+            });
+            sections.push(s.trim());
+          }
+
+          if (categoryGroups.chore.length > 0) {
+            let s = "**🔧 Maintenance & Optimasi:**\n";
+            categoryGroups.chore.forEach(item => {
+              s += `• **${item.subject}**\n`;
+              item.details.forEach(d => s += `  ↳ ${d}\n`);
+            });
+            sections.push(s.trim());
+          }
+
+          let summaryText = sections.join("\n\n");
+          if (!summaryText) {
+            summaryText = "• " + (commits[0]?.message?.split("\n")[0] || "Pembaruan sistem berkala selesai diterapkan.");
+          }
+          if (summaryText.length > 1024) {
+            summaryText = summaryText.slice(0, 1020) + "...";
+          }
+
+          // 6. WIB Timestamp calculation
+          const now = new Date();
+          const wibDate = new Intl.DateTimeFormat("id-ID", {
+            timeZone: "Asia/Jakarta",
+            dateStyle: "medium",
+            timeStyle: "short"
+          }).format(now) + " WIB";
+
+          // 7. Construct Discord Embed
+          const embed = {
+            title: "🚀 LOGHORIZON SYSTEM UPDATE // RINCIAN PERUBAHAN",
+            description: "Pembaruan sistem baru telah **berhasil dideploy ke produksi (branch `main`)**. Website telah aktif dan siap digunakan secara optimal oleh seluruh petualang guild.",
+            color: embedColor,
+            fields: [
+              {
+                name: "🏷️ Kategori Update",
+                value: `**${primaryType}**`,
+                inline: true
+              },
+              {
+                name: "📁 File Diperbarui",
+                value: `\`${changedFiles.length} file\` termodifikasi`,
+                inline: true
+              },
+              {
+                name: "🧩 Modul Terdampak",
+                value: `**${affectedModules}**`,
+                inline: false
+              },
+              {
+                name: "📝 Rincian Penjelasan Update",
+                value: summaryText,
+                inline: false
+              },
+              {
+                name: "👤 Dideploy Oleh",
+                value: `@${actor} • [\`${shortSha}\`](${commitUrl})`,
+                inline: true
+              },
+              {
+                name: "⏰ Waktu Deploy (WIB)",
+                value: wibDate,
+                inline: true
+              },
+              {
+                name: "🌐 Cek Website Live",
+                value: "[loghorizon.vercel.app](https://loghorizon.vercel.app/) • Status: Live & Ready",
+                inline: false
+              }
+            ],
+            footer: {
+              text: "LogHorizon Automated CI/CD • #mod-logs (1547552557868777552)"
+            },
+            timestamp: now.toISOString()
+          };
+
+          const payload = JSON.stringify({
+            content: "📢 **[SYSTEM UPDATE]** Laporan otomatis deployment terbaru telah mendarat di `#🛡️・mod-logs`:",
+            embeds: [embed]
+          });
+
+          // 8. Helper to send HTTP POST
+          function sendPost(targetUrl, headers, data) {
+            return new Promise((resolve, reject) => {
+              const parsed = new URL(targetUrl);
+              const req = https.request({
+                hostname: parsed.hostname,
+                port: parsed.port || 443,
+                path: parsed.pathname + parsed.search,
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Content-Length": Buffer.byteLength(data),
+                  ...headers
+                }
+              }, res => {
+                let body = "";
+                res.on("data", chunk => body += chunk);
+                res.on("end", () => resolve({ status: res.statusCode, body }));
+              });
+              req.on("error", reject);
+              req.write(data);
+              req.end();
+            });
+          }
+
+          async function dispatch() {
+            let sent = false;
+            if (botToken) {
+              try {
+                console.log("Sending embed via Discord Bot REST API to channel " + CHANNEL_ID + "...");
+                const res = await sendPost(
+                  `https://discord.com/api/v10/channels/${CHANNEL_ID}/messages`,
+                  { "Authorization": `Bot ${botToken}` },
+                  payload
+                );
+                if (res.status >= 200 && res.status < 300) {
+                  console.log("✅ Successfully sent update log via Discord Bot API!");
+                  sent = true;
+                } else {
+                  console.warn("⚠️ Bot API returned status " + res.status + ": " + res.body);
+                }
+              } catch (err) {
+                console.warn("⚠️ Error calling Discord Bot API:", err.message);
+              }
+            }
+
+            if (!sent && webhookUrl) {
+              try {
+                console.log("Falling back to Discord Webhook URL...");
+                const res = await sendPost(webhookUrl, {}, payload);
+                if (res.status >= 200 && res.status < 300) {
+                  console.log("✅ Successfully sent update log via Webhook URL!");
+                  sent = true;
+                } else {
+                  console.warn("⚠️ Webhook returned status " + res.status + ": " + res.body);
+                }
+              } catch (err) {
+                console.warn("⚠️ Error calling Discord Webhook:", err.message);
+              }
+            }
+
+            if (!sent) {
+              console.log("ℹ️ Dispatch finished without delivery confirmation (bot token or webhook may be restricted).");
+            }
+          }
+
+          dispatch().catch(err => {
+            console.error("Fatal dispatch error:", err);
+            process.exit(0);
+          });
+          '

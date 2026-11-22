@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { jsonError } from "@/lib/http";
 import { isGuildOwner } from "@/lib/caste";
-import { notifyNewLfgParty, sendDiscordNotice, DISCORD_CHANNELS, DiscordChannelKey, sendDiscordChannelMessage, resolveDiscordChannelKey, notifyPartnership, notifyAdminCommandAudit } from "@/lib/discord-webhook";
+import { notifyNewLfgParty, sendDiscordNotice, DISCORD_CHANNELS, DiscordChannelKey, sendDiscordChannelMessage, resolveDiscordChannelKey, notifyPartnership, notifyAdminCommandAudit, getBaseAppUrl, DiscordEmbed } from "@/lib/discord-webhook";
 import { createNotification } from "@/lib/notifications";
 import { logSecurityIncident } from "@/lib/satpam-guardian";
 import { generateTemplateBracket, shuffleArray, advanceMatchWinner, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentLossReason } from "@/lib/tournament";
@@ -335,6 +335,40 @@ const GEMINI_TOOLS = [
             }
           },
           required: ["title", "content"]
+        }
+      },
+      {
+        name: "sendSystemUpdateReport",
+        description: "Mengirim laporan rincian pembaruan sistem, changelog fitur, atau maintenance ke channel Discord staf (#🛡️・mod-logs) atau publik (#📢・announcements)",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            title: { type: "STRING", description: "Judul pembaruan/changelog (contoh: 'Pembaruan Sistem v1.4.0 & Perbaikan Parser Aturan Turnamen')" },
+            updateType: {
+              type: "STRING",
+              enum: ["feat", "fix", "security", "ui", "perf", "maintenance"],
+              description: "Jenis update: 'feat' (Fitur Baru), 'fix' (Perbaikan Bug), 'security' (Keamanan), 'ui' / 'perf' (UI/UX & Kecepatan), 'maintenance' (Pemeliharaan Sistem). Default: 'feat'"
+            },
+            versionTag: {
+              type: "STRING",
+              description: "Tag versi pembaruan (contoh: 'v1.4.0'). Default: 'v1.4.0'"
+            },
+            targetChannel: {
+              type: "STRING",
+              enum: ["mod_logs", "announcements"],
+              description: "Target channel: 'mod_logs' (#🛡️・mod-logs staf/audit) atau 'announcements' (#📢・announcements publik). Default: 'mod_logs'"
+            },
+            modules: {
+              type: "ARRAY",
+              items: { type: "STRING" },
+              description: "Daftar nama modul yang terpengaruh (contoh: ['Turnamen & Bracket', 'Forum Diskusi', 'Satpam Horizon AI'])"
+            },
+            details: {
+              type: "STRING",
+              description: "Rincian perubahan atau poin-poin changelog yang dikerjakan"
+            }
+          },
+          required: ["title", "details"]
         }
       }
     ]
@@ -1748,6 +1782,93 @@ async function executeToolAction(
           status: "Telah Dipublikasikan",
         },
         details: `Target: ${targetLabel} • Channel: ${channelMeta.name} • Konten: "${content.slice(0, 150)}..."`,
+      },
+      requiresConfirmation: false,
+    };
+  }
+
+  if (normalizedTool === "sendSystemUpdateReport") {
+    const title = String(args.title || "").trim();
+    const summary = String(args.details || args.summary || "").trim();
+    const updateType = String(args.updateType || "feat").toLowerCase().trim();
+    const targetChannel: DiscordChannelKey =
+      String(args.targetChannel || "mod_logs").toLowerCase() === "announcements" ? "announcements" : "mod_logs";
+    const versionTag = String(args.versionTag || "v1.4.0").trim();
+    let rawModules: string[] = [];
+    if (Array.isArray(args.modules)) {
+      rawModules = args.modules.map((m) => String(m).trim()).filter(Boolean);
+    } else if (typeof args.modules === "string" && args.modules.trim()) {
+      rawModules = args.modules.split(",").map((m) => m.trim()).filter(Boolean);
+    }
+    const affectedModules = rawModules.length > 0 ? rawModules.join(", ") : "Semua Modul Terkait";
+
+    if (!title || !summary) {
+      return { success: false, reply: "Judul dan rincian update wajib diisi.", toolResult: null };
+    }
+
+    const typeMeta: Record<string, { label: string; color: number }> = {
+      feat: { label: "✨ Fitur Baru Ditambahkan", color: 0x10b981 },
+      fix: { label: "🐛 Perbaikan Bug & Tampilan", color: 0x3b82f6 },
+      security: { label: "🛡️ Peningkatan Keamanan & Proteksi", color: 0xef4444 },
+      perf: { label: "⚡ Peningkatan UI/UX & Kecepatan", color: 0x8b5cf6 },
+      ui: { label: "⚡ Peningkatan UI/UX & Kecepatan", color: 0x8b5cf6 },
+      maintenance: { label: "🔧 Maintenance & Pembersihan Sistem", color: 0xf59e0b },
+    };
+    const selectedType = typeMeta[updateType] || typeMeta.feat;
+    const baseUrl = getBaseAppUrl();
+    const now = new Date();
+    const wibDate =
+      new Intl.DateTimeFormat("id-ID", {
+        timeZone: "Asia/Jakarta",
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(now) + " WIB";
+
+    const embed: DiscordEmbed = {
+      title: `🚀 LOGHORIZON SYSTEM UPDATE: ${title}`,
+      description: `Laporan rincian pembaruan sistem dan maintenance resmi dari manajemen komunitas **LogHorizon**.`,
+      color: selectedType.color,
+      fields: [
+        { name: "🏷️ Kategori Pembaruan", value: `**${selectedType.label}** (${versionTag})`, inline: true },
+        { name: "👑 Dilaporkan Oleh", value: `@${adminUser.username || "Admin"}`, inline: true },
+        { name: "🧩 Modul Terdampak", value: `**${affectedModules}**`, inline: false },
+        { name: "📝 Rincian Perubahan", value: summary.slice(0, 2048), inline: false },
+        { name: "⏰ Waktu Laporan (WIB)", value: wibDate, inline: true },
+        { name: "🌐 Status Website", value: `[Kunjungi loghorizon.vercel.app](${baseUrl}) • Status: Live & Ready`, inline: true },
+      ],
+      footer: {
+        text: `LogHorizon System Update • Disiarkan oleh @${adminUser.username || "Admin"} ke #${targetChannel === "mod_logs" ? "mod-logs" : "announcements"}`,
+      },
+      timestamp: now.toISOString(),
+    };
+
+    const discordResult = await sendDiscordChannelMessage(targetChannel, {
+      content:
+        targetChannel === "announcements"
+          ? `@everyone 📢 **[SYSTEM UPDATE & MAINTENANCE REPORT]**\n\n**${title}** telah selesai diterapkan!`
+          : `🛡️ **[SYSTEM UPDATE LOG]** Laporan pembaruan sistem baru telah dikirim oleh **@${adminUser.username}**:`,
+      embeds: [embed],
+      allowed_mentions: targetChannel === "announcements" ? { parse: ["everyone"] } : undefined,
+    });
+
+    await prisma.securityLog.create({
+      data: {
+        userId: adminUser.id,
+        username: adminUser.username || "Admin",
+        action: "SYSTEM_UPDATE_REPORT_DISPATCHED",
+        reason: "Broadcast Laporan Update Sistem ke Discord",
+        content: `Laporan update "${title}" disiarkan ke Discord #${targetChannel}. Status kirim: ${discordResult ? "Berhasil" : "Gagal/Token bot belum dipasang"}`,
+        severity: "INFO",
+      },
+    }).catch(() => null);
+
+    return {
+      success: true,
+      reply: `Laporan update sistem "${title}" berhasil disiarkan ke channel Discord #${targetChannel === "mod_logs" ? "mod-logs" : "announcements"}!`,
+      toolResult: {
+        action: "sendSystemUpdateReport",
+        summary: `Laporan Update Sistem: ${title}`,
+        details: `Target: #${targetChannel === "mod_logs" ? "mod-logs" : "announcements"} • Kategori: ${selectedType.label} • Modul: ${affectedModules}`,
       },
       requiresConfirmation: false,
     };

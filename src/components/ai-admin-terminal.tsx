@@ -96,6 +96,11 @@ const QUICK_PROMPTS = [
     icon: Sparkles,
     prompt: "Ubah total hadiah turnamen S1 menjadi Rp 2.500.000 + E-Certificate",
   },
+  {
+    label: "Lapor Update",
+    icon: Megaphone,
+    prompt: "Kirim laporan rincian update ke #mod-logs: Pembaruan sistem v1.4.0 dan perbaikan parsing rules turnamen telah selesai.",
+  },
 ];
 
 import { UniversalTextRenderer } from "@/lib/text-parser";

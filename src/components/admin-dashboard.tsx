@@ -2227,6 +2227,12 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                   onRefresh={loadDashboard}
                 />
 
+                {/* LAPORAN UPDATE SISTEM & MAINTENANCE KE DISCORD */}
+                <SystemUpdateReportSection
+                  onNotice={setNotice}
+                  onError={setError}
+                />
+
                 {/* FITUR KEBERSIHAN PRA-RILIS (OWNER EXCLUSIVE) */}
                 {isOwner && (
                   <div className="p-6 rounded-none border-2 border-red-500/50 bg-red-500/5 dark:bg-red-950/20">
@@ -4416,10 +4422,41 @@ function BroadcastSection({
   onError: (message: string) => void;
   onRefresh: () => void;
 }) {
+  const [targetChannel, setTargetChannel] = useState<"mod_logs" | "announcements">("mod_logs");
+  const [category, setCategory] = useState("✨ Fitur Baru Ditambahkan");
+  const [affectedModules, setAffectedModules] = useState("Turnamen, Forum, Satpam AI");
+  const [publishToWeb, setPublishToWeb] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const MODULE_SUGGESTIONS = [
+    "Turnamen & Bracket",
+    "Forum Diskusi",
+    "Marketplace & Rekber",
+    "Pesan & Obrolan",
+    "Profil & Armory",
+    "Admin Command Center",
+    "Squad / Guild Party",
+    "Satpam Horizon AI",
+    "Multi-Bahasa & Mata Uang",
+    "Beranda & Navigasi",
+  ];
+
+  function toggleModule(mod: string) {
+    const current = affectedModules
+      .split(",")
+      .map((m) => m.trim())
+      .filter(Boolean);
+    let next: string[];
+    if (current.includes(mod)) {
+      next = current.filter((m) => m !== mod);
+    } else {
+      next = [...current, mod];
+    }
+    setAffectedModules(next.join(", "));
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -4429,13 +4466,27 @@ function BroadcastSection({
       const response = await fetch("/api/admin/broadcast", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, imageUrl: imageUrl.trim() || undefined }),
+        body: JSON.stringify({
+          title,
+          content,
+          imageUrl: imageUrl.trim() || undefined,
+          targetChannel,
+          category,
+          affectedModules,
+          publishToWeb: targetChannel === "announcements" ? true : publishToWeb,
+        }),
       });
       const result = await readApiResponse<{ notificationSent: boolean; warning?: string }>(response, "Broadcast gagal.");
       setTitle("");
       setContent("");
       setImageUrl("");
-      onNotice(result.notificationSent ? "Warta berhasil disiarkan ke Beranda dan Discord." : result.warning ?? "Warta berhasil diterbitkan.");
+      onNotice(
+        result.notificationSent
+          ? targetChannel === "mod_logs"
+            ? "Laporan rincian update berhasil dikirim ke #🛡️・mod-logs."
+            : "Warta berhasil disiarkan ke Beranda dan Discord."
+          : result.warning ?? "Laporan/warta berhasil diproses."
+      );
       onRefresh();
     } catch (reason) {
       onError(reason instanceof Error ? reason.message : "Broadcast gagal.");
@@ -4449,19 +4500,140 @@ function BroadcastSection({
 
   return (
     <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] space-y-6">
-      <div>
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Megaphone size={18} className="text-[#9D4EDD]" /> Broadcast Pengumuman Resmi Guild (Tayang 24 Jam)
-        </h2>
-        <p className="text-xs text-gray-500 mt-0.5">
-          Pengumuman resmi akan tayang sebagai banner di Beranda website dan otomatis terkirim ke Discord webhook.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Megaphone size={18} className="text-[#9D4EDD]" /> Broadcast &amp; Laporan Update Sistem Discord
+          </h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Kirimkan warta publik guild atau laporan teknis rincian perubahan fitur &amp; maintenance ke Discord secara terpusat.
+          </p>
+        </div>
+
+        {/* Channel Selector Tab */}
+        <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45]">
+          <button
+            type="button"
+            onClick={() => {
+              setTargetChannel("mod_logs");
+              setPublishToWeb(false);
+            }}
+            className={`px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+              targetChannel === "mod_logs"
+                ? "bg-[#7C3AED] text-white shadow-xs"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            }`}
+          >
+            <Shield size={13} />
+            <span>🛡️ Laporan #mod-logs</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTargetChannel("announcements");
+              setPublishToWeb(true);
+            }}
+            className={`px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
+              targetChannel === "announcements"
+                ? "bg-[#7C3AED] text-white shadow-xs"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            }`}
+          >
+            <Megaphone size={13} />
+            <span>📢 Warta #announcements</span>
+          </button>
+        </div>
       </div>
 
       <form onSubmit={(e) => void submit(e)} className="space-y-4">
+        {/* Mod Logs Specific Fields */}
+        {targetChannel === "mod_logs" ? (
+          <div className="p-4 bg-purple-500/5 border border-purple-500/20 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider flex items-center gap-1.5">
+                <Shield size={14} /> Detail Audit #mod-logs (1547552557868777552)
+              </span>
+              <span className="text-[11px] font-mono text-gray-400">Target: Bot REST API v10</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Kategori Pembaruan <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                >
+                  <option value="✨ Fitur Baru Ditambahkan">✨ Fitur Baru Ditambahkan</option>
+                  <option value="🐛 Perbaikan Bug &amp; Tampilan">🐛 Perbaikan Bug &amp; Tampilan</option>
+                  <option value="🛡️ Peningkatan Keamanan">🛡️ Peningkatan Keamanan</option>
+                  <option value="⚡ Peningkatan UI/UX &amp; Kecepatan">⚡ Peningkatan UI/UX &amp; Kecepatan</option>
+                  <option value="🔧 Maintenance &amp; Pembersihan Sistem">🔧 Maintenance &amp; Pembersihan Sistem</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Modul Terdampak (Pisahkan Koma) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={affectedModules}
+                  onChange={(e) => setAffectedModules(e.target.value)}
+                  className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                  placeholder="Contoh: Turnamen, Forum, Satpam AI"
+                />
+              </div>
+            </div>
+
+            {/* Quick Chips for Modules */}
+            <div>
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                Pilih Cepat Modul:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {MODULE_SUGGESTIONS.map((mod) => {
+                  const isSelected = affectedModules.includes(mod);
+                  return (
+                    <button
+                      key={mod}
+                      type="button"
+                      onClick={() => toggleModule(mod)}
+                      className={`px-2 py-0.5 text-[10px] font-medium border transition ${
+                        isSelected
+                          ? "bg-[#7C3AED]/20 border-[#7C3AED] text-[#7C3AED] dark:text-[#A78BFA] font-bold"
+                          : "bg-white dark:bg-[#08060B] border-gray-200 dark:border-[#2E1E45] text-gray-500 hover:border-gray-400"
+                      }`}
+                    >
+                      {isSelected ? `✓ ${mod}` : `+ ${mod}`}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                id="publishWebCheckbox"
+                type="checkbox"
+                checked={publishToWeb}
+                onChange={(e) => setPublishToWeb(e.target.checked)}
+                className="w-4 h-4 rounded-none accent-[#7C3AED]"
+              />
+              <label htmlFor="publishWebCheckbox" className="text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                Tayangkan juga sebagai banner warta 24 jam di Beranda website (Opsional)
+              </label>
+            </div>
+          </div>
+        ) : null}
+
         <div>
           <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-            Judul Warta / Pengumuman <span className="text-red-500">*</span>
+            {targetChannel === "mod_logs" ? "Judul Laporan Update / Perubahan" : "Judul Warta / Pengumuman"}{" "}
+            <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -4470,40 +4642,63 @@ function BroadcastSection({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-            placeholder="Contoh: Maintenance Server Guild & Pendaftaran Turnamen"
+            placeholder={
+              targetChannel === "mod_logs"
+                ? "Contoh: Pembaruan Sistem v1.4.0 & Perbaikan Rules Turnamen"
+                : "Contoh: Maintenance Server Guild & Pendaftaran Turnamen"
+            }
           />
         </div>
 
         <div>
           <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-            Isi Pengumuman Lengkap <span className="text-red-500">*</span>
+            {targetChannel === "mod_logs" ? "Rincian Poin-Poin Perubahan (Changelog)" : "Isi Pengumuman Lengkap"}{" "}
+            <span className="text-red-500">*</span>
           </label>
           <textarea
             required
-            rows={3}
-            maxLength={1000}
+            rows={targetChannel === "mod_logs" ? 5 : 3}
+            maxLength={2000}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
-            placeholder="Tuliskan instruksi, detail jadwal, atau pengumuman penting untuk seluruh anggota…"
+            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD] font-mono"
+            placeholder={
+              targetChannel === "mod_logs"
+                ? "• Menambahkan parser teks bersih pada Catatan Aturan Khusus Turnamen\n• Memperbaiki responsivitas modal bagan bracket\n• Mengoptimalkan query database untuk leaderboard XP"
+                : "Tuliskan instruksi, detail jadwal, atau pengumuman penting untuk seluruh anggota…"
+            }
           />
         </div>
 
-        <div>
-          <ImageUploader
-            value={imageUrl}
-            onChange={setImageUrl}
-            label="Upload Gambar / Banner Pengumuman (Opsional)"
-            description="Pilih banner atau poster dari galeri HP atau PC. Otomatis dikompresi."
-          />
-        </div>
+        {targetChannel === "announcements" && (
+          <div>
+            <ImageUploader
+              value={imageUrl}
+              onChange={setImageUrl}
+              label="Upload Gambar / Banner Pengumuman (Opsional)"
+              description="Pilih banner atau poster dari galeri HP atau PC. Otomatis dikompresi."
+            />
+          </div>
+        )}
 
         <button
           type="submit"
           disabled={saving}
           className="button button-primary px-5 py-2.5 rounded-none text-xs font-bold inline-flex items-center gap-2"
         >
-          {saving ? "Menyiarkan pengumuman…" : "Siarkan Pengumuman (Web + Discord)"}
+          {saving ? (
+            "Memproses pengiriman…"
+          ) : targetChannel === "mod_logs" ? (
+            <>
+              <Shield size={14} />
+              <span>📢 Kirim Rincian Update ke #mod-logs</span>
+            </>
+          ) : (
+            <>
+              <Megaphone size={14} />
+              <span>Siarkan Pengumuman (Web + Discord)</span>
+            </>
+          )}
         </button>
       </form>
 
@@ -4534,6 +4729,231 @@ function BroadcastSection({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function SystemUpdateReportSection({
+  onNotice,
+  onError,
+}: {
+  onNotice: (msg: string) => void;
+  onError: (msg: string) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [updateType, setUpdateType] = useState<"feat" | "fix" | "security" | "ui" | "maintenance">("feat");
+  const [versionTag, setVersionTag] = useState("v1.4.0");
+  const [targetChannel, setTargetChannel] = useState<"mod_logs" | "announcements">("mod_logs");
+  const [selectedModules, setSelectedModules] = useState<string[]>([
+    "Turnamen & Bracket",
+    "Satpam Horizon AI",
+  ]);
+  const [summary, setSummary] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const availableModules = [
+    "Turnamen & Bracket",
+    "Forum Diskusi",
+    "Marketplace & Rekber",
+    "Pesan Pribadi & Obrolan",
+    "Profil, Lencana & Armory",
+    "Admin Command Center",
+    "Guild Party / Squad",
+    "Satpam Horizon AI",
+    "Database PostgreSQL",
+    "Multi-Bahasa & Mata Uang",
+    "Beranda & Navigasi",
+  ];
+
+  const toggleModule = (mod: string) => {
+    setSelectedModules((prev) =>
+      prev.includes(mod) ? prev.filter((m) => m !== mod) : [...prev, mod]
+    );
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !summary.trim()) {
+      onError("Judul dan rincian update wajib diisi.");
+      return;
+    }
+
+    setSending(true);
+    try {
+      const res = await fetch("/api/admin/system-update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          updateType,
+          versionTag,
+          targetChannel,
+          affectedModules: selectedModules,
+          summary,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal menyiarkan laporan update.");
+      }
+
+      onNotice(
+        `Laporan update "${title}" berhasil disiarkan ke Discord #${
+          targetChannel === "mod_logs" ? "🛡️・mod-logs" : "📢・announcements"
+        }!`
+      );
+      setTitle("");
+      setSummary("");
+    } catch (err) {
+      onError((err as Error).message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="card space-y-5 p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#120B1E]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 dark:border-[#2E1E45] pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono font-bold text-[#A78BFA] uppercase tracking-wider">
+              🚀 DISCORD DEPLOY & SYSTEM UPDATE
+            </span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#A78BFA]/15 text-[#A78BFA]">
+              AUTO CHANGELOG
+            </span>
+          </div>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mt-1">
+            Kirim Laporan Update, Changelog & Maintenance
+          </h2>
+          <p className="text-xs text-gray-600 dark:text-gray-300 mt-0.5">
+            Publikasikan rincian pembaruan sistem dan modul terdampak secara otomatis dengan Embed kaya ke channel Discord resmi.
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+              Judul Pembaruan / Rilis *
+            </label>
+            <input
+              type="text"
+              required
+              maxLength={180}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+              placeholder="Contoh: Pembaruan Sistem v1.4.0 & Perbaikan Parser Aturan Turnamen"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+              Versi / Tag Rilis
+            </label>
+            <input
+              type="text"
+              maxLength={30}
+              value={versionTag}
+              onChange={(e) => setVersionTag(e.target.value)}
+              className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+              placeholder="v1.4.0"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+              Kategori Update
+            </label>
+            <select
+              value={updateType}
+              onChange={(e) => setUpdateType(e.target.value as any)}
+              className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+            >
+              <option value="feat">✨ Fitur Baru Ditambahkan (feat)</option>
+              <option value="fix">🐛 Perbaikan Bug & Tampilan (fix)</option>
+              <option value="security">🛡️ Peningkatan Keamanan & Proteksi (security)</option>
+              <option value="ui">⚡ Peningkatan UI/UX & Kecepatan (ui/perf)</option>
+              <option value="maintenance">🔧 Maintenance & Pembersihan Sistem (chore)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+              Channel Discord Tujuan
+            </label>
+            <select
+              value={targetChannel}
+              onChange={(e) => setTargetChannel(e.target.value as any)}
+              className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+            >
+              <option value="mod_logs">🛡️ #🛡️・mod-logs (Internal Staf & Audit)</option>
+              <option value="announcements">📢 #📢・announcements (Publik / @everyone)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+            Pilih Modul Terdampak ({selectedModules.length} dipilih)
+          </label>
+          <div className="flex flex-wrap gap-2 p-3 bg-gray-50 dark:bg-[#08060B] border border-gray-200 dark:border-[#2E1E45]">
+            {availableModules.map((mod) => {
+              const active = selectedModules.includes(mod);
+              return (
+                <button
+                  key={mod}
+                  type="button"
+                  onClick={() => toggleModule(mod)}
+                  className={`px-2.5 py-1 text-xs font-medium border transition-colors ${
+                    active
+                      ? "border-[#9D4EDD] bg-[#9D4EDD]/20 text-[#A78BFA] font-bold"
+                      : "border-gray-200 dark:border-[#2E1E45] bg-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                >
+                  {active ? "✓ " : "+ "}
+                  {mod}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+            Rincian Perubahan / Changelog * (Mendukung poin markdown / bullet)
+          </label>
+          <textarea
+            required
+            rows={5}
+            maxLength={4000}
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+            className="w-full px-3 py-2 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+            placeholder="• Memperbaiki parser teks markdown pada aturan turnamen&#10;• Menambahkan visual card kustom&#10;• Mempercepat respon database queries"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={sending}
+          className="button button-primary px-5 py-2.5 rounded-none text-xs font-bold inline-flex items-center gap-2"
+        >
+          {sending ? (
+            "Menyiarkan Laporan ke Discord..."
+          ) : (
+            <>
+              <Megaphone className="w-4 h-4" />
+              Siarkan Laporan Update ({targetChannel === "mod_logs" ? "#mod-logs" : "#announcements"})
+            </>
+          )}
+        </button>
+      </form>
     </div>
   );
 }
