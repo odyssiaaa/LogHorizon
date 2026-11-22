@@ -81,3 +81,24 @@ export type LeaderboardBenefactor = {
   badges: string[];
   total: number;
 };
+
+export type TopSellerRecord = {
+  id: string;
+  username: string | null;
+  avatar: string | null;
+  role: RoleType;
+  isPremium: boolean;
+  isVerifiedSeller: boolean;
+  equippedAvatarFrame?: string | null;
+  equippedCustomTitle?: string | null;
+  partyMembership?: {
+    role: string;
+    party: {
+      name: string;
+      tag: string;
+      emblemColor: string;
+    };
+  } | null;
+  completedSalesCount: number;
+  activeListingsCount: number;
+};

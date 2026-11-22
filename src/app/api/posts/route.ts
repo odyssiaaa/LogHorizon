@@ -38,8 +38,17 @@ export async function GET(request: Request) {
     const game = url.searchParams.get("game")?.trim();
     const type = url.searchParams.get("type");
     const sort = url.searchParams.get("sort");
+    const seller = url.searchParams.get("seller")?.trim();
     const filters: Prisma.PostWhereInput[] = [];
     if (category) filters.push({ category });
+    if (seller) {
+      filters.push({
+        OR: [
+          { authorId: seller },
+          { author: { is: { username: { equals: seller, mode: "insensitive" } } } },
+        ],
+      });
+    }
     if (tag) {
       filters.push({
         OR: [
@@ -147,6 +156,19 @@ export async function GET(request: Request) {
       delete publicMarketData.contact;
       return { ...post, author: authorWithRep, marketData: publicMarketData, escrowTransactions };
     });
+    if (sort === "recommended" || (category === PostCategory.MARKETPLACE && !priceOrder && sort !== "newest")) {
+      publicPosts.sort((a, b) => {
+        if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+        const verifiedA = a.author.isVerifiedSeller || a.author.username === ".odyssia" ? 1 : 0;
+        const verifiedB = b.author.isVerifiedSeller || b.author.username === ".odyssia" ? 1 : 0;
+        if (verifiedA !== verifiedB) return verifiedB - verifiedA;
+        const salesA = a.author.successfulSales ?? 0;
+        const salesB = b.author.successfulSales ?? 0;
+        if (salesA !== salesB) return salesB - salesA;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      return Response.json(publicPosts);
+    }
     if (!priceOrder) return Response.json(publicPosts);
     const sorted = posts.sort((a, b) => {
       if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;

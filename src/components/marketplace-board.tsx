@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ArrowDownUp, Flag, Loader2, MessageSquare, Plus, Search, Shield, ShieldCheck, ShoppingBag, Trash2, X } from "lucide-react";
+import { ArrowDownUp, Award, Filter, Flag, Loader2, MessageSquare, Plus, Search, Shield, ShieldCheck, ShoppingBag, Star, Trash2, X } from "lucide-react";
 import { isPublicMarketData } from "@/lib/market-data";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
@@ -15,12 +15,13 @@ import { PostReactions } from "@/components/post-reactions";
 import { SkeletonMarketCard, TacticalEmptyState } from "@/components/ui-feedback";
 import { EscrowChatModal } from "@/components/escrow-chat-modal";
 import { ShareButton } from "@/components/share-button";
-import type { MarketplacePostRecord } from "@/types/community";
+import type { MarketplacePostRecord, TopSellerRecord } from "@/types/community";
 import { motion } from "framer-motion";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
 import { StaffCardModerationMenu, StaffActionItem } from "@/components/staff-moderation-dropdown";
 import { VerifiedSellerModal } from "@/components/verified-seller-modal";
+import { DragScrollContainer } from "@/components/drag-scroll-container";
 
 type MarketPost = MarketplacePostRecord;
 
@@ -35,12 +36,16 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [posts, setPosts] = useState<MarketPost[]>([]);
   const [type, setType] = useState("ALL");
   const [game, setGame] = useState("");
-  const [sort, setSort] = useState("newest");
+  const [sort, setSort] = useState("recommended");
   const [searchValue, setSearchValue] = useState("");
   const [search, setSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [topSellers, setTopSellers] = useState<TopSellerRecord[]>([]);
+  const [recommendedListings, setRecommendedListings] = useState<MarketPost[]>([]);
+  const [selectedSeller, setSelectedSeller] = useState<{ id: string; username: string } | null>(null);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
 
   // Debounced Search: 500ms delay to prevent excessive queries to Neon
   useEffect(() => {
@@ -110,6 +115,28 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
     postsRef.current = posts;
   }, [posts]);
 
+  const fetchFeatured = useCallback(async () => {
+    try {
+      const response = await fetch("/api/marketplace/featured");
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data && Array.isArray(data.sellers)) {
+        setTopSellers(data.sellers);
+      }
+      if (data && Array.isArray(data.recommendedListings)) {
+        setRecommendedListings(data.recommendedListings);
+      }
+    } catch (err) {
+      console.error("[marketplace] Failed to load featured data:", err);
+    } finally {
+      setFeaturedLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchFeatured();
+  }, [fetchFeatured]);
+
   const fetchMarketListings = useCallback(
     async (isBackground = false) => {
       if (!isBackground) setLoading(true);
@@ -117,6 +144,9 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
       if (type !== "ALL") query.set("type", type);
       if (game.trim()) query.set("game", game.trim());
       if (search.trim()) query.set("search", search.trim());
+      if (selectedSeller) query.set("seller", selectedSeller.id);
+      if (sort === "recommended") query.set("sort", "recommended");
+      if (sort === "newest") query.set("sort", "newest");
       if (sort === "cheapest") query.set("sort", "asc");
       if (sort === "expensive") query.set("sort", "desc");
 
@@ -137,7 +167,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
         }
       }
     },
-    [type, game, sort, search]
+    [type, game, sort, search, selectedSeller]
   );
 
   useEffect(() => {
@@ -392,6 +422,143 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
           </Link>
         </div>
 
+        {/* ⭐ TOP VERIFIED & TRUSTED SELLERS */}
+        <section className="mb-6 text-left">
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-amber-500 font-bold text-sm">⭐</span>
+              <h2 className="font-display text-sm sm:text-base font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC]">
+                TOP VERIFIED &amp; TRUSTED SELLERS
+              </h2>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-none bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 uppercase tracking-wider">
+                REPUTASI TERTINGGI
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-[#A78BFA] hidden sm:block font-sans">
+              Geser atau klik &amp; tahan mouse untuk melihat seller terpercaya lainnya &rarr;
+            </p>
+          </div>
+
+          {featuredLoading ? (
+            <div className="flex gap-3 overflow-hidden py-1">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="min-w-[270px] p-4 border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] animate-pulse h-28" />
+              ))}
+            </div>
+          ) : topSellers.length > 0 ? (
+            <DragScrollContainer
+              className="w-full pb-1"
+              innerClassName="flex items-stretch gap-3 py-1"
+            >
+              {topSellers.map((seller) => {
+                const isSelected = selectedSeller?.id === seller.id;
+                return (
+                  <div
+                    key={seller.id}
+                    className={`min-w-[270px] sm:min-w-[290px] max-w-[320px] shrink-0 p-3.5 rounded-none border transition-all flex flex-col justify-between ${
+                      isSelected
+                        ? "border-[#7C3AED] bg-purple-500/[0.08] dark:bg-purple-950/30 shadow-md ring-1 ring-[#7C3AED]"
+                        : seller.isVerifiedSeller
+                        ? "border-amber-500/40 hover:border-amber-400 bg-gradient-to-b from-amber-500/[0.04] to-white dark:to-[#130921] shadow-sm"
+                        : "border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-purple-400 shadow-sm"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-start gap-2.5 mb-2.5">
+                        <div className="relative shrink-0">
+                          <DiscordAvatar
+                            src={seller.avatar}
+                            username={seller.username}
+                            size={40}
+                            frameId={seller.equippedAvatarFrame}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <Link
+                              href={`/u/${seller.username ?? "user"}`}
+                              className="font-bold text-xs sm:text-sm text-slate-900 dark:text-[#F8FAFC] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] truncate max-w-[130px] font-sans block"
+                              title={`Lihat profil @${seller.username ?? "Gamer"}`}
+                            >
+                              {seller.username ?? "Gamer"}
+                            </Link>
+                            {seller.partyMembership?.party?.tag && (
+                              <span className="text-[9px] font-mono font-bold px-1 py-0.2 bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                [{seller.partyMembership.party.tag}]
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="mt-1 flex items-center gap-1 flex-wrap">
+                            {seller.isVerifiedSeller ? (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase font-mono px-1.5 py-0.5 bg-amber-500/15 text-amber-600 dark:text-[#F59E0B] border border-amber-500/40">
+                                <ShieldCheck size={10} className="shrink-0 text-amber-500" />
+                                <span>VERIFIED SELLER</span>
+                              </span>
+                            ) : seller.completedSalesCount > 0 ? (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase font-mono px-1.5 py-0.5 bg-emerald-500/15 text-emerald-600 dark:text-[#10B981] border border-emerald-500/40">
+                                <Award size={10} className="shrink-0 text-emerald-500" />
+                                <span>TOP MERCHANT</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase font-mono px-1.5 py-0.5 bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45]">
+                                <span>MERCHANT</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="text-[11px] font-mono text-slate-600 dark:text-[#A78BFA] bg-slate-50 dark:bg-[#1A0E2E]/60 p-2 border border-slate-100 dark:border-[#2E1E45]/60 mb-3 flex items-center justify-between">
+                        <span className="flex items-center gap-1 font-bold text-emerald-600 dark:text-[#10B981]">
+                          <ShieldCheck size={12} />
+                          <span>{seller.completedSalesCount} Sukses</span>
+                        </span>
+                        <span className="text-slate-400 dark:text-slate-500">•</span>
+                        <span className="text-slate-700 dark:text-slate-300">
+                          <strong>{seller.activeListingsCount}</strong> Lapak Aktif
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 2 Quick Actions */}
+                    <div className="grid grid-cols-2 gap-1.5 font-mono text-xs pt-2 border-t border-slate-100 dark:border-[#2E1E45]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedSeller?.id === seller.id) {
+                            setSelectedSeller(null);
+                          } else {
+                            setSelectedSeller({ id: seller.id, username: seller.username ?? "user" });
+                          }
+                        }}
+                        className={`px-2 py-1.5 rounded-none font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 transition-colors ${
+                          isSelected
+                            ? "bg-[#7C3AED] text-white border border-[#7C3AED]"
+                            : "bg-slate-100 dark:bg-[#1A0E2E] hover:bg-[#7C3AED]/15 text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45]"
+                        }`}
+                        title={`Filter lapak khusus milik @${seller.username ?? "Gamer"}`}
+                      >
+                        <Search size={11} />
+                        <span>{isSelected ? "Filter Aktif ✓" : "Filter Lapak"}</span>
+                      </button>
+                      <Link
+                        href={`/messages?to=${seller.id}`}
+                        className="px-2 py-1.5 rounded-none font-bold text-[10px] uppercase tracking-wider bg-purple-500/15 hover:bg-purple-500/25 text-[#7C3AED] dark:text-[#A78BFA] border border-purple-500/30 flex items-center justify-center gap-1 transition-colors text-center"
+                        title={`Kirim pesan pribadi (PM) ke @${seller.username ?? "Gamer"}`}
+                      >
+                        <MessageSquare size={11} />
+                        <span>Chat</span>
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </DragScrollContainer>
+          ) : null}
+        </section>
+
         <section className="market-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] mb-6 text-left shadow-sm dark:shadow-none" aria-label="Filter dan pencarian marketplace">
           {/* Kolom 1: Pencarian */}
           <div className="flex flex-col gap-1 w-full">
@@ -458,23 +625,143 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
             />
           </div>
 
-          {/* Kolom 4: Urutkan Harga */}
+          {/* Kolom 4: Urutkan */}
           <div className="flex flex-col gap-1 w-full">
             <label className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] uppercase font-semibold flex items-center gap-1">
               <ArrowDownUp size={12} />
-              <span>URUTKAN HARGA</span>
+              <span>URUTKAN</span>
             </label>
             <select
               className="h-11 w-full px-3 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] text-xs font-mono focus:border-[#7C3AED] focus:outline-none"
               value={sort}
               onChange={(event) => setSort(event.target.value)}
             >
+              <option value="recommended">⭐ Rekomendasi Terpercaya (Verified &amp; Terlaris)</option>
               <option value="newest">Terbaru</option>
               <option value="cheapest">Termurah</option>
               <option value="expensive">Termahal</option>
             </select>
           </div>
         </section>
+
+        {selectedSeller && (
+          <div className="flex items-center justify-between p-3 mb-6 bg-purple-500/10 border border-purple-500/30 rounded-none text-xs font-mono">
+            <div className="flex items-center gap-2 text-purple-900 dark:text-purple-200">
+              <Filter size={14} className="text-[#7C3AED]" />
+              <span>Menampilkan lapak khusus penjual: <strong>@{selectedSeller.username}</strong></span>
+            </div>
+            <button
+              onClick={() => setSelectedSeller(null)}
+              className="text-[11px] font-bold uppercase text-purple-600 dark:text-purple-300 hover:text-red-500 flex items-center gap-1 transition-colors"
+            >
+              <X size={13} /> Reset Filter Penjual
+            </button>
+          </div>
+        )}
+
+        {/* 🔥 REKOMENDASI LAPAK TERPERCAYA (PILIHAN GUILD) */}
+        {!selectedSeller && !search && recommendedListings.length > 0 && (
+          <section className="mb-8 text-left">
+            <div className="flex items-center justify-between mb-3.5">
+              <div className="flex items-center gap-2">
+                <span className="text-amber-500 font-bold text-lg">🔥</span>
+                <h2 className="font-display text-base sm:text-lg font-extrabold uppercase tracking-tight text-slate-900 dark:text-[#F8FAFC]">
+                  REKOMENDASI LAPAK TERPERCAYA
+                </h2>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-none bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40 uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  ⭐ PILIHAN GUILD
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-[#A78BFA] hidden sm:block font-sans">
+                Kurasi lapak dari Verified Seller &amp; Reputasi Transaksi Tertinggi
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recommendedListings.map((post) => {
+                const market = post.marketData;
+                return (
+                  <div
+                    key={`rec-${post.id}`}
+                    className="market-card rounded-none border-2 border-amber-500/40 hover:border-amber-400 bg-gradient-to-b from-amber-500/[0.04] via-white dark:via-[#130921] to-white dark:to-[#130921] p-4 shadow-md transition-all relative flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center gap-1.5 mb-3 font-mono">
+                        <span className="px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase bg-gradient-to-r from-amber-500/25 via-yellow-500/30 to-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/50 shadow-sm flex items-center gap-1 tracking-wider">
+                          <span>⭐</span> REKOMENDASI AMAN
+                        </span>
+                        {post.author.isVerifiedSeller && (
+                          <span className="px-1.5 py-0.5 rounded-none text-[9px] font-extrabold uppercase bg-amber-500/20 text-amber-600 dark:text-[#F59E0B] border border-amber-500/40 flex items-center gap-1">
+                            <ShieldCheck size={10} />
+                            <span>VERIFIED</span>
+                          </span>
+                        )}
+                        <span className={`px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase whitespace-nowrap ${market.type === "WTS" ? "bg-[#7C3AED] text-white" : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45]"}`}>
+                          {market.type}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] whitespace-nowrap">
+                          {market.game}
+                        </span>
+                      </div>
+
+                      <div className="market-image mb-3 rounded-none overflow-hidden border border-amber-500/30 bg-slate-100 dark:bg-[#1A0E2E]">
+                        <MarketImage src={market.imageUrl} alt={`Bukti lapak ${post.title}`} />
+                      </div>
+
+                      <div className="market-card-body text-left">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="font-mono text-xs text-slate-500 dark:text-[#A78BFA] uppercase">HARGA:</span>
+                          <PriceDisplay amountIdr={market.price} className="font-mono text-base font-extrabold text-emerald-600 dark:text-[#10B981]" />
+                        </div>
+                        <h3 className="font-display text-base font-bold uppercase tracking-tight break-words text-slate-900 dark:text-[#F8FAFC]">
+                          {post.title}
+                        </h3>
+                        <p className="market-description break-words text-xs text-slate-600 dark:text-[#A78BFA] font-sans line-clamp-2 mt-1 leading-relaxed">
+                          {post.content}
+                        </p>
+
+                        <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-slate-200 dark:border-[#2E1E45] font-mono text-xs">
+                          <span className="flex items-center gap-2">
+                            <DiscordAvatar src={post.author.avatar} username={post.author.username} size={22} frameId={post.author.equippedAvatarFrame} />
+                            <Link
+                              href={`/u/${post.author.username ?? "user"}`}
+                              className="font-semibold hover:underline text-slate-900 dark:text-[#F8FAFC]"
+                            >
+                              {post.author.username ?? "Gamer"}
+                            </Link>
+                          </span>
+                          {(post.author.successfulSales ?? 0) > 0 && (
+                            <span className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-[#10B981] bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 text-[9px]">
+                              <ShieldCheck size={11} /> {post.author.successfulSales} Transaksi Sukses
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-4 pt-2 border-t border-slate-100 dark:border-[#2E1E45] font-mono text-xs">
+                      <Link
+                        href={`/messages?to=${post.authorId}`}
+                        className="flex-1 py-1.5 rounded-none font-bold text-xs uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] hover:bg-slate-200 dark:hover:bg-[#251540] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] flex items-center justify-center gap-1 text-center transition-colors"
+                      >
+                        <MessageSquare size={13} /> PM Penjual
+                      </Link>
+                      {market.status === "AVAILABLE" && market.type === "WTS" && user?.id !== post.authorId && (
+                        <button
+                          type="button"
+                          className="flex-1 py-1.5 rounded-none font-bold text-xs uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] flex items-center justify-center gap-1 text-center transition-colors shadow-sm"
+                          onClick={() => void startEscrow(post.id)}
+                        >
+                          <ShieldCheck size={13} /> Beli Rekber
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {notice && <div className="inline-notice mb-4" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Tutup notifikasi"><X size={15} /></button></div>}
         {error && <div className="inline-error mb-4" role="alert">{error}</div>}
@@ -493,6 +780,11 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
             return <motion.article className={`market-card rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#7C3AED] transition-all p-4 shadow-sm dark:shadow-none ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold opacity-60" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
               <div className="market-listing-labels flex flex-wrap items-center gap-1.5 mb-3 font-mono">
                 {post.isPinned && <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/40 whitespace-nowrap">PINNED</span>}
+                {(post.author.isVerifiedSeller || (post.author.successfulSales ?? 0) >= 3 || post.author.username === ".odyssia") && (
+                  <span className="px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase bg-gradient-to-r from-amber-500/20 via-yellow-500/25 to-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/40 whitespace-nowrap flex items-center gap-1 shadow-sm" title="Rekomendasi Aman Terpercaya LogHorizon">
+                    <span>⭐</span> REKOMENDASI AMAN
+                  </span>
+                )}
                 {(post.author.isVerifiedSeller || post.author.username === ".odyssia") && (
                   <span className="px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-600 dark:text-[#F59E0B] border border-amber-500/40 whitespace-nowrap flex items-center gap-1 shadow-sm" title="Penjual Terpercaya Resmi LogHorizon (Tervalidasi Staf)">
                     <ShieldCheck size={11} className="text-amber-500 shrink-0" />

@@ -229,6 +229,8 @@ async function getLiveDatabaseContext(userId?: string) {
       openTournaments,
       openLfg,
       pastWinners,
+      verifiedSellersRaw,
+      completedSalesRaw,
     ] = await Promise.all([
       userId
         ? prisma.user.findUnique({
@@ -374,6 +376,27 @@ async function getLiveDatabaseContext(userId?: string) {
           thirdPlaceTeam: true,
         },
       }),
+      prisma.user.findMany({
+        where: {
+          isBanned: false,
+          OR: [
+            { isVerifiedSeller: true },
+            { username: ".odyssia" },
+          ],
+        },
+        select: {
+          id: true,
+          username: true,
+          isVerifiedSeller: true,
+          role: true,
+        },
+        take: 8,
+      }),
+      prisma.escrowTransaction.groupBy({
+        by: ["sellerId"],
+        where: { status: "COMPLETED" },
+        _count: { id: true },
+      }),
     ]);
 
     // Parse active LFG party listings
@@ -391,6 +414,18 @@ async function getLiveDatabaseContext(userId?: string) {
           .join("\n")
       : "Belum ada party mabar yang aktif mencari pemain di /events?view=mabar.";
 
+    const salesMap = new Map((completedSalesRaw || []).map((s) => [s.sellerId, s._count.id]));
+
+    // Format top verified sellers & top merchants
+    const verifiedSellersSummary = (verifiedSellersRaw || []).length
+      ? (verifiedSellersRaw || [])
+          .map((s) => {
+            const count = salesMap.get(s.id) ?? 0;
+            return `• @${s.username ?? "Gamer"} [✅ VERIFIED SELLER] (${count} transaksi rekber sukses)`;
+          })
+          .join("\n")
+      : "Belum ada penjual yang terverifikasi. Transaksi tetap dilindungi Rekber 3-Pihak resmi guild.";
+
     // Parse marketplace listings
     const availableMarket = allMarketListings
       .filter((item) => {
@@ -406,6 +441,10 @@ async function getLiveDatabaseContext(userId?: string) {
         const formattedPrice = price > 0 ? `Rp ${price.toLocaleString("id-ID")}` : "Gratis / Hubungi Penjual";
         return `• [${type}] "${item.title}" [${game}] - ${formattedPrice} oleh @${item.author?.username || "Gamer"}`;
       });
+
+    const recommendedListingsSummary = availableMarket.length
+      ? availableMarket.join("\n")
+      : "Belum ada lapak aktif saat ini.";
 
     const topDonors = (donorRaw || []).map((d) => {
       const amount = Number(d.total || 0);
@@ -504,6 +543,8 @@ async function getLiveDatabaseContext(userId?: string) {
       sponsorsSummary,
       aiKnowledgeBase,
       marketSummary,
+      verifiedSellersSummary,
+      recommendedListingsSummary,
       tournamentSummary,
       hallOfWinnersSummary,
     };
@@ -520,6 +561,8 @@ async function getLiveDatabaseContext(userId?: string) {
       sponsorsSummary: "Partner resmi guild LogHorizon.",
       aiKnowledgeBase: "",
       marketSummary: "Lapak marketplace tersedia dengan sistem Escrow aman.",
+      verifiedSellersSummary: "Daftar penjual terverifikasi dapat dilihat di /marketplace.",
+      recommendedListingsSummary: "Rekomendasi lapak aktif dapat dilihat di /marketplace.",
       tournamentSummary: "Turnamen resmi dan bagan bracket live dapat dilihat di /events?view=turnamen.",
       hallOfWinnersSummary: "Arsip kejuaraan dapat dilihat di /hall-of-winners.",
     };
@@ -957,6 +1000,8 @@ export async function POST(request: Request) {
     `- Daftar Party Mabar LFG Aktif di /events?view=mabar:\n${dbContext.lfgSummary}`,
     `- Turnamen Resmi & Bracket Aktif:\n${dbContext.tournamentSummary}`,
     `- Arsip Juara Hall of Winners (1, 2, 3):\n${dbContext.hallOfWinnersSummary}`,
+    `- Top Verified & Trusted Sellers Guild (Penjual Terpercaya Resmi):\n${dbContext.verifiedSellersSummary}`,
+    `- Rekomendasi Lapak Terpercaya Pilihan:\n${dbContext.recommendedListingsSummary}`,
     `- Data Lapak Marketplace Terbaru:\n${dbContext.marketSummary}`,
     `- Topik Hot Forum Diskusi Terkini:\n${dbContext.hotForumSummary}`,
     `- Warta Berita & Pengumuman Discord Terkini:\n${dbContext.liveNewsSummary}`,
@@ -989,6 +1034,7 @@ export async function POST(request: Request) {
     "- Jika user bertanya 'Cara Dapat XP & Naik Level': jelaskan 3 cara utama (Klaim Absen Harian di [Halaman Profil](/profile), aktif diskusi di [Forum Komunitas](/forum), dan bertransaksi sukses di [Marketplace](/marketplace)).",
     "- Jika user bertanya 'Cara Daftar Turnamen': jelaskan langkahnya (Buka [Arena Turnamen](/events?view=turnamen), pilih turnamen yang sedang BUKA, klik 'Daftar Tim', masukkan nama tim & roster, serta transfer biaya jika turnamen berbayar).",
     "- Jika user bertanya 'Cara Aman Pakai Rekber' atau 'Cara Transaksi Rekber 3-Pihak': jelaskan alur 3-pihak (Pembeli klik Rekber di [Marketplace](/marketplace), Admin mengklaim tiket wasit, pembeli transfer ke rekening kas resmi, penjual serahkan data akun/item di chat rekber, dan dana dicairkan setelah barang aman).",
+    "- Jika user bertanya 'Rekomendasi seller aman', 'Siapa penjual terpercaya', atau berniat beli akun/item gaming: rekomendasikan nama-nama Top Verified Seller di atas (sebutkan username mereka yang berstatus [✅ VERIFIED SELLER] dan jumlah transaksi rekber suksesnya). Ingatkan selalu untuk bertransaksi via Rekber 3-Pihak resmi guild dan sertakan tautan langsung [Buka Lapak Marketplace](/marketplace).",
     "- Jika user bertanya 'Aturan WO & DQ': jelaskan bahwa toleransi hadir maksimal 15 menit, wajib klik Ready Check di ruang koordinasi lobi turnamen, dan dilarang keras joki/cheat/toxic.",
     "",
     "PANDUAN FORMAT TAUTAN HALAMAN (CLICKABLE ACTION LINK):",
