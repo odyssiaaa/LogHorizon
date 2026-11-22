@@ -22,6 +22,7 @@ import { DiscordAvatar } from "@/components/discord-avatar";
 import { UniversalTextRenderer } from "@/lib/text-parser";
 import { RoyalKnightMascot } from "@/components/royal-knight-mascot";
 import { DraggableScrollRow } from "@/components/draggable-scroll-row";
+import { useLocale } from "@/context/locale-context";
 
 export type MessageAction = {
   type: "navigate" | "party_created" | "thread_created" | "require_login" | "broadcast_preview" | "tournament_created" | string;
@@ -101,6 +102,7 @@ const INITIAL_MESSAGE: Message = {
 export function HorizonChatWidget() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { locale } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const [showBubble, setShowBubble] = useState(false);
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
@@ -325,6 +327,7 @@ export function HorizonChatWidget() {
         body: JSON.stringify({
           message: text,
           history: historyPayload,
+          locale,
         }),
       });
 

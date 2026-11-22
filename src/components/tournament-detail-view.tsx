@@ -32,6 +32,7 @@ import {
   Trophy,
   Users,
   X,
+  Zap,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentRosterPlayer, TournamentLossReason, evaluateAutoLiveMatches, formatMatchScheduleDisplay, isoToDateTimeLocal, dateTimeLocalToIso, formatWibDateTime, extractTournamentPodium } from "@/lib/tournament";
@@ -605,6 +606,54 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
     setRegisterSubPlayers(subs);
 
     setShowRegisterModal(true);
+  }
+
+  async function handleAutofillFromParty() {
+    try {
+      const res = await fetch("/api/parties/my-party");
+      if (!res.ok) throw new Error("Gagal memeriksa data party");
+      const data = await res.json();
+      if (!data.inParty || !data.party) {
+        setError("Kamu belum memiliki atau bergabung dalam party resmi. Buat atau gabung party di menu Events > Party Skuad!");
+        return;
+      }
+
+      const party = data.party;
+      setRegisterTeamName(party.name);
+
+      const members = party.members || [];
+      const mainC = tournament?.mainPlayersCount ?? 5;
+      const subC = tournament?.subPlayersCount ?? 2;
+
+      // Fill main players from party roster
+      const newMains: { nickname: string; gameId: string }[] = [];
+      for (let i = 0; i < mainC; i++) {
+        const mem = members[i];
+        newMains.push({
+          nickname: mem?.inGameNickname || mem?.user?.username || "",
+          gameId: mem?.inGameId || "",
+        });
+      }
+      setRegisterMainPlayers(newMains);
+
+      // Fill sub players from party roster
+      const newSubs: { nickname: string; gameId: string }[] = [];
+      for (let i = 0; i < subC; i++) {
+        const mem = members[mainC + i];
+        newSubs.push({
+          nickname: mem?.inGameNickname || mem?.user?.username || "",
+          gameId: mem?.inGameId || "",
+        });
+      }
+      setRegisterSubPlayers(newSubs);
+
+      if (members[0]?.inGameNickname) {
+        setRegisterCaptainIgn(members[0].inGameNickname);
+      }
+      setNotice(`✅ Data tim & roster berhasil diisi otomatis dari party [${party.tag}] ${party.name}!`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal mengisi data party");
+    }
   }
 
   async function handleSubmitRegistration(e: FormEvent) {
@@ -1752,6 +1801,16 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             </div>
 
             <form onSubmit={handleSubmitRegistration} className="space-y-4 text-xs">
+              {/* Shortcut Autofill from Party */}
+              <button
+                type="button"
+                onClick={handleAutofillFromParty}
+                className="w-full py-2.5 px-3 rounded-lg border border-purple-500/40 bg-purple-950/30 hover:bg-purple-900/40 text-purple-200 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm"
+              >
+                <Zap size={15} className="text-amber-400" />
+                <span>⚡ Isi Otomatis dari Anggota Party Saya</span>
+              </button>
+
               <div>
                 <label className="font-bold text-gray-800 dark:text-gray-200 block mb-1">
                   Nama Tim / Clan *

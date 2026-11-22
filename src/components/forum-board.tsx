@@ -17,6 +17,7 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
 import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown";
 import { MentionHashtagInput } from "@/components/mention-hashtag-input";
+import { getCustomTitleBadge } from "@/lib/armory-catalog";
 
 type Category = "GENERAL_CHAT" | "PROMOTION" | "FEEDBACK";
 type ForumLiveRow = { id: string };
@@ -509,13 +510,23 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                     {/* Header Info: Author, Badges, Date & Pinned Badge */}
                     <div className="flex items-center justify-between gap-2 flex-wrap text-xs text-slate-500 dark:text-[#A78BFA] font-mono">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <DiscordAvatar src={post.author.avatar} username={post.author.username} size={20} />
+                        <DiscordAvatar src={post.author.avatar} username={post.author.username} size={20} frameId={post.author.equippedAvatarFrame} />
                         <Link
                           href={`/u/${post.author.username ?? "user"}`}
                           className={`hover:underline ${(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") ? "premium-username" : "font-medium text-slate-900 dark:text-[#F8FAFC]"}`}
                         >
                           {post.author.username ?? "Gamer"}
                         </Link>
+                        {post.author.partyMembership?.party?.tag && (
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40 shrink-0">
+                            [{post.author.partyMembership.party.tag}]
+                          </span>
+                        )}
+                        {post.author.equippedCustomTitle && getCustomTitleBadge(post.author.equippedCustomTitle) && (
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 shrink-0">
+                            {getCustomTitleBadge(post.author.equippedCustomTitle)}
+                          </span>
+                        )}
                         {post.author.username?.toLowerCase() === ".odyssia" || post.author.username?.toLowerCase() === "odyssia" ? (
                           <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 shrink-0">
                             👑 Emperor
@@ -540,9 +551,16 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                     </div>
 
                     {/* Thread Title */}
-                    <Link className="block text-base sm:text-lg font-display font-bold uppercase tracking-tight break-words text-slate-900 dark:text-[#F8FAFC] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] transition-colors leading-snug" href={`/forum/${post.id}`}>
-                      {post.title}
-                    </Link>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Link className="text-base sm:text-lg font-display font-bold uppercase tracking-tight break-words text-slate-900 dark:text-[#F8FAFC] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] transition-colors leading-snug" href={`/forum/${post.id}`}>
+                        {post.title}
+                      </Link>
+                      {post.poll && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-950/60 text-purple-300 border border-purple-800/50 shrink-0">
+                          📊 Polling
+                        </span>
+                      )}
+                    </div>
 
                     {/* Hashtags */}
                     {(() => {
@@ -805,8 +823,29 @@ function ThreadModal({
   const [content, setContent] = useState("");
   const [attachmentImg, setAttachmentImg] = useState("");
   const [isPinned, setIsPinned] = useState(false);
+  const [enablePoll, setEnablePoll] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  function handleAddOption() {
+    if (pollOptions.length < 5) {
+      setPollOptions([...pollOptions, ""]);
+    }
+  }
+
+  function handleRemoveOption(idx: number) {
+    if (pollOptions.length > 2) {
+      setPollOptions(pollOptions.filter((_, i) => i !== idx));
+    }
+  }
+
+  function handleOptionChange(idx: number, val: string) {
+    const updated = [...pollOptions];
+    updated[idx] = val;
+    setPollOptions(updated);
+  }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -817,10 +856,30 @@ function ThreadModal({
       if (attachmentImg) {
         finalContent += `\n\n![Lampiran Gambar](${attachmentImg})`;
       }
+
+      const validPollOptions = pollOptions.map((o) => o.trim()).filter(Boolean);
+      if (enablePoll && validPollOptions.length < 2) {
+        throw new Error("Polling voting minimal membutuhkan 2 pilihan jawaban.");
+      }
+
+      const pollPayload =
+        enablePoll && validPollOptions.length >= 2
+          ? {
+              question: pollQuestion.trim() || title.trim(),
+              options: validPollOptions,
+            }
+          : undefined;
+
       const response = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category, title, content: finalContent, isPinned }),
+        body: JSON.stringify({
+          category,
+          title,
+          content: finalContent,
+          isPinned,
+          poll: pollPayload,
+        }),
       });
       await readApiResponse<unknown>(response, "Thread tidak dapat dibuat.");
       onCreated();
@@ -878,6 +937,78 @@ function ThreadModal({
               label="Lampiran Gambar / Tangkapan Layar (Opsional)"
               description="Unggah tangkapan layar langsung dari galeri HP atau PC. Otomatis dikompresi."
             />
+          </div>
+
+          {/* OPSI POLLING VOTING INTERAKTIF */}
+          <div className="p-3 border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E]/60 space-y-3">
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-xs font-mono font-bold text-slate-800 dark:text-[#A78BFA] uppercase flex items-center gap-1.5">
+                <span>+ Tambah Polling Voting</span>
+                <span className="text-[10px] px-1.5 py-0.2 bg-purple-500/20 text-purple-400 font-normal">
+                  Opsional
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                checked={enablePoll}
+                onChange={(e) => setEnablePoll(e.target.checked)}
+                className="w-4 h-4 rounded-none accent-[#7C3AED]"
+              />
+            </label>
+
+            {enablePoll && (
+              <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-[#2E1E45]/80">
+                <label className="block text-[11px] font-mono text-slate-600 dark:text-gray-400">
+                  Pertanyaan Polling (Kosongkan jika sama dengan judul thread)
+                  <input
+                    value={pollQuestion}
+                    onChange={(e) => setPollQuestion(e.target.value)}
+                    placeholder="Contoh: Siapa agen duelist terbaik di patch ini?"
+                    maxLength={150}
+                    className="mt-1 w-full p-2 border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs text-slate-900 dark:text-white"
+                  />
+                </label>
+
+                <div className="space-y-1.5">
+                  <span className="block text-[11px] font-mono text-slate-600 dark:text-gray-400">
+                    Pilihan Jawaban (Maksimal 5)
+                  </span>
+                  {pollOptions.map((opt, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-mono text-gray-500 w-4">{idx + 1}.</span>
+                      <input
+                        value={opt}
+                        onChange={(e) => handleOptionChange(idx, e.target.value)}
+                        placeholder={`Opsi ${idx + 1}`}
+                        maxLength={80}
+                        required={enablePoll && idx < 2}
+                        className="flex-1 p-1.5 border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] text-xs text-slate-900 dark:text-white"
+                      />
+                      {pollOptions.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveOption(idx)}
+                          className="px-2 py-1 text-xs text-red-400 hover:text-red-300 border border-red-500/30"
+                          title="Hapus opsi"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {pollOptions.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={handleAddOption}
+                      className="mt-1.5 text-xs font-mono font-bold text-purple-400 hover:text-purple-300 hover:underline inline-flex items-center gap-1"
+                    >
+                      + Tambah Pilihan
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           {canPin && (
             <label className="flex items-center gap-2 text-xs font-mono text-slate-600 dark:text-[#A78BFA] cursor-pointer">

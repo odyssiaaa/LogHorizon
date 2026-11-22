@@ -86,8 +86,8 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
   if (!user) notFound();
 
-  // Query achievements stats
-  const [successfulSales, postsCount, donationsCount, lfgCount] = await Promise.all([
+  // Query achievements stats, permanent squad party, and tournament history
+  const [successfulSales, postsCount, donationsCount, lfgCount, partyMembership, tournamentHistory] = await Promise.all([
     prisma.escrowTransaction.count({
       where: {
         OR: [{ sellerId: user.id }, { buyerId: user.id }],
@@ -97,6 +97,38 @@ export default async function PublicProfilePage({ params }: PageProps) {
     prisma.post.count({ where: { authorId: user.id, category: { not: "MARKETPLACE" } } }),
     prisma.donation.count({ where: { userId: user.id, status: { in: ["APPROVED", "SUCCEEDED"] } } }),
     prisma.lfgPost.count({ where: { authorId: user.id } }),
+    prisma.guildPartyMember.findFirst({
+      where: { userId: user.id },
+      include: {
+        party: {
+          select: {
+            id: true,
+            name: true,
+            tag: true,
+            emblemColor: true,
+            primaryGame: true,
+            totalPartyXp: true,
+          },
+        },
+      },
+    }),
+    prisma.participant.findMany({
+      where: { leaderId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      include: {
+        tournament: {
+          select: {
+            id: true,
+            title: true,
+            game: true,
+            status: true,
+            prizePool: true,
+            eventDate: true,
+          },
+        },
+      },
+    }),
   ]);
 
   const isOwner =
@@ -166,7 +198,8 @@ export default async function PublicProfilePage({ params }: PageProps) {
               <DiscordAvatar
                 src={user.avatar}
                 username={user.username}
-                size={80}
+                frameId={(user as any).equippedAvatarFrame}
+                size={84}
                 className="size-20 sm:size-24 rounded-full border-2 border-[#9D4EDD] shadow-lg shadow-[#9D4EDD]/20 object-cover"
               />
               {isOwner && (
@@ -178,9 +211,27 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
+                {partyMembership?.party?.tag && (
+                  <span
+                    className="px-2 py-0.5 rounded text-xs font-mono font-black"
+                    style={{
+                      backgroundColor: `${partyMembership.party.emblemColor || "#7C3AED"}25`,
+                      color: partyMembership.party.emblemColor || "#A78BFA",
+                      border: `1px solid ${partyMembership.party.emblemColor || "#7C3AED"}60`,
+                    }}
+                    title={`Squad Party: ${partyMembership.party.name}`}
+                  >
+                    [{partyMembership.party.tag}]
+                  </span>
+                )}
                 <h1 className="page-title text-2xl sm:text-3xl font-black text-gray-900 dark:text-white break-words">
                   {user.username ?? "Petualang"}
                 </h1>
+                {(user as any).equippedTitle && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                    ✦ {(user as any).equippedTitle}
+                  </span>
+                )}
                 {(user.isPremium || isOwner || user.role === "ADMIN") && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30">
                     <Sparkles size={12} /> {isOwner ? "👑 Guild Emperor / Noble Patron" : user.role === "ADMIN" ? "✨ Prince / Princess (Admin)" : "✦ Elite Member"}
@@ -197,6 +248,11 @@ export default async function PublicProfilePage({ params }: PageProps) {
                     : user.role === "MODERATOR"
                       ? "⚔️ Lord Commander (Moderator)"
                       : "🎮 Guild Adventurer"}
+                {partyMembership?.party && (
+                  <span className="text-slate-400 dark:text-slate-500 font-normal">
+                    • Member of {partyMembership.party.name} ({partyMembership.role})
+                  </span>
+                )}
               </p>
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -442,6 +498,58 @@ export default async function PublicProfilePage({ params }: PageProps) {
                       <span className="text-purple-400 flex items-center gap-0.5">
                         Buka thread <ExternalLink size={11} />
                       </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Tournament Activity & Achievements Card */}
+          <div className="p-5 sm:p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] mt-6">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-[#2E1E45] mb-4">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Trophy size={16} className="text-[#F59E0B]" /> Aktivitas &amp; Prestasi Turnamen
+              </h2>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/30">
+                {tournamentHistory.length} Turnamen Diikuti
+              </span>
+            </div>
+
+            {tournamentHistory.length === 0 ? (
+              <p className="text-xs text-gray-400 py-6 text-center">
+                Belum ada turnamen resmi yang didaftarkan oleh petualang ini.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {tournamentHistory.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/events/turnamen/${item.tournament.id}`}
+                    className="p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] hover:border-[#7C3AED] transition group block"
+                  >
+                    <div className="flex items-center justify-between text-[10px] font-mono mb-1">
+                      <span className="font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase">
+                        {item.tournament.game}
+                      </span>
+                      <span
+                        className={`px-1.5 py-0.2 rounded font-bold ${
+                          item.tournament.status === "COMPLETED"
+                            ? "bg-slate-200 dark:bg-slate-800 text-slate-500"
+                            : item.tournament.status === "ONGOING"
+                            ? "bg-emerald-500/15 text-emerald-500 animate-pulse"
+                            : "bg-amber-500/15 text-amber-500"
+                        }`}
+                      >
+                        {item.tournament.status}
+                      </span>
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white group-hover:text-[#7C3AED] transition-colors truncate">
+                      {item.tournament.title}
+                    </h3>
+                    <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-[#2E1E45]/60 flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]">
+                      <span>Tim: <strong className="text-slate-800 dark:text-slate-200">{item.teamName}</strong></span>
+                      <span className="text-[#7C3AED] group-hover:underline font-bold">Bagan ➔</span>
                     </div>
                   </Link>
                 ))}

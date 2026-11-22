@@ -1,6 +1,7 @@
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { prisma } from "@/lib/prisma";
 import { sanitizeBadges } from "@/lib/caste";
+import { getCustomTitleBadge } from "@/lib/armory-catalog";
 
 export const metadata = { title: "Guild Leaderboard | LogHorizon" };
 export const instant = false;
@@ -19,6 +20,7 @@ export default async function LeaderboardPage() {
       select: {
         id: true,
         username: true,
+        avatar: true,
         level: true,
         xp: true,
         role: true,
@@ -26,6 +28,17 @@ export default async function LeaderboardPage() {
         isPremium: true,
         tempTitle: true,
         tempTitleExpiresAt: true,
+        equippedAvatarFrame: true,
+        equippedCustomTitle: true,
+        partyMembership: {
+          select: {
+            party: {
+              select: {
+                tag: true,
+              },
+            },
+          },
+        },
       },
       orderBy: [{ level: "desc" }, { xp: "desc" }, { joinedAt: "asc" }],
       take: 5,
@@ -45,15 +58,28 @@ export default async function LeaderboardPage() {
     `,
   ]);
 
-  const members = rawMembers.map((m) => ({
-    id: m.id,
-    username: m.username,
-    level: m.level,
-    xp: m.xp,
-    role: m.role,
-    badges: sanitizeBadges(m, m.badges),
-    isPremium: m.isPremium,
-  }));
+  const members = rawMembers.map((m) => {
+    const rawBadges = [...m.badges];
+    if (m.equippedCustomTitle) {
+      const customTitle = getCustomTitleBadge(m.equippedCustomTitle);
+      if (customTitle && !rawBadges.includes(customTitle)) {
+        rawBadges.unshift(customTitle);
+      }
+    }
+    return {
+      id: m.id,
+      username: m.username,
+      avatar: m.avatar,
+      level: m.level,
+      xp: m.xp,
+      role: m.role,
+      badges: sanitizeBadges(m, rawBadges),
+      isPremium: m.isPremium,
+      equippedAvatarFrame: m.equippedAvatarFrame,
+      equippedCustomTitle: m.equippedCustomTitle,
+      partyTag: m.partyMembership?.party?.tag ?? null,
+    };
+  });
 
   const benefactors = donorTotals.map((donor) => ({ ...donor, total: Number(donor.total) }));
   return <LeaderboardTable members={members} benefactors={benefactors} />;

@@ -19,6 +19,7 @@ export async function GET() {
     successfulTrades,
     donationsCount,
     lfgCount,
+    partyMembership,
     recentPosts,
     recentTournaments,
     recentTrades,
@@ -35,6 +36,21 @@ export async function GET() {
       where: { userId: user.id, status: { in: ["APPROVED", "SUCCEEDED"] } },
     }),
     prisma.lfgPost.count({ where: { authorId: user.id } }),
+    prisma.guildPartyMember.findUnique({
+      where: { userId: user.id },
+      include: {
+        party: {
+          select: {
+            id: true,
+            name: true,
+            tag: true,
+            emblemColor: true,
+            primaryGame: true,
+            _count: { select: { members: true } },
+          },
+        },
+      },
+    }),
     prisma.post.findMany({
       where: { authorId: user.id },
       take: 5,
@@ -153,6 +169,24 @@ export async function GET() {
     badges: user.badges ?? [],
     checkInStreak: user.checkInStreak ?? 0,
     lastCheckInAt: user.lastCheckInAt?.toISOString() ?? null,
+    equippedAvatarFrame: user.equippedAvatarFrame ?? null,
+    equippedCustomTitle: user.equippedCustomTitle ?? null,
+    partyMembership: partyMembership
+      ? {
+          id: partyMembership.id,
+          role: partyMembership.role,
+          inGameNickname: partyMembership.inGameNickname,
+          inGameId: partyMembership.inGameId,
+          party: {
+            id: partyMembership.party.id,
+            name: partyMembership.party.name,
+            tag: partyMembership.party.tag,
+            emblemColor: partyMembership.party.emblemColor,
+            primaryGame: partyMembership.party.primaryGame,
+            membersCount: partyMembership.party._count.members,
+          },
+        }
+      : null,
     postsCount,
     tournamentsCount,
     isPremium: isOwner || user.isPremium,

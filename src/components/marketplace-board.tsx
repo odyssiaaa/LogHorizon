@@ -9,6 +9,7 @@ import { isPublicMarketData } from "@/lib/market-data";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
 import { DiscordAvatar } from "@/components/discord-avatar";
+import { PriceDisplay } from "@/context/locale-context";
 import { createRealtimeClient, type SealedLiveQuery } from "@neon/realtime/client";
 import { PostReactions } from "@/components/post-reactions";
 import { SkeletonMarketCard, TacticalEmptyState } from "@/components/ui-feedback";
@@ -342,7 +343,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
         </div>
 
         {/* ESCROW SECURITY PROTOCOL BANNER */}
-        <div className="mb-6 p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] border-l-4 border-l-[#10B981] bg-white dark:bg-[#130921] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left font-mono shadow-sm dark:shadow-none">
+        <div className="mb-4 p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] border-l-4 border-l-[#10B981] bg-white dark:bg-[#130921] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left font-mono shadow-sm dark:shadow-none">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-none bg-emerald-50 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45] flex items-center justify-center text-emerald-600 dark:text-[#10B981] shrink-0">
               <ShieldCheck size={18} />
@@ -355,6 +356,29 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
           <span className="text-[10px] uppercase font-bold px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-[#10B981] border border-emerald-500/30 rounded-none shrink-0 self-start sm:self-auto">
             ● ESCROW READY
           </span>
+        </div>
+
+        {/* GUILD ARMORY SHOP BANNER */}
+        <div className="mb-6 p-4 rounded-none border border-purple-500/30 bg-purple-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-none bg-purple-500/20 text-[#A78BFA] flex items-center justify-center shrink-0">
+              <ShoppingBag size={18} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                🛡️ GUILD ARMORY SHOP // KOSMETIK PROFIL
+              </p>
+              <p className="text-[11px] text-gray-300">
+                Tukarkan XP aktivitasmu dengan Bingkai Avatar bercahaya dan Gelar Kustom eksklusif.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/profile?tab=armory"
+            className="px-3.5 py-1.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-mono text-xs font-bold uppercase tracking-wider shrink-0 self-start sm:self-auto transition-colors"
+          >
+            Kunjungi Toko Armory &rarr;
+          </Link>
         </div>
 
         <section className="market-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] mb-6 text-left shadow-sm dark:shadow-none" aria-label="Filter dan pencarian marketplace">
@@ -473,13 +497,13 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               <div className="market-card-body text-left">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="font-mono text-xs text-slate-500 dark:text-[#A78BFA] uppercase">HARGA:</span>
-                  <span className="font-mono text-base font-extrabold text-emerald-600 dark:text-[#10B981]">{money.format(market.price)}</span>
+                  <PriceDisplay amountIdr={market.price} className="font-mono text-base font-extrabold text-emerald-600 dark:text-[#10B981]" />
                 </div>
                 <h2 className="font-display text-base font-bold uppercase tracking-tight break-words text-slate-900 dark:text-[#F8FAFC]">{post.title}</h2>
                 <p className="market-description break-words text-xs text-slate-600 dark:text-[#A78BFA] font-sans line-clamp-2 mt-1 leading-relaxed">{post.content}</p>
                 <div className="market-card-meta flex flex-wrap items-center justify-between gap-2 mt-3 pt-2.5 border-t border-slate-200 dark:border-[#2E1E45] font-mono text-xs">
                   <span className="post-author flex items-center gap-2">
-                    <DiscordAvatar src={post.author.avatar} username={post.author.username} size={22} />
+                    <DiscordAvatar src={post.author.avatar} username={post.author.username} size={22} frameId={post.author.equippedAvatarFrame} />
                     <span className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-slate-500 dark:text-[#A78BFA]">oleh{" "}</span>
                       <Link
@@ -488,6 +512,11 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                       >
                         {post.author.username ?? "Gamer"}
                       </Link>
+                      {post.author.partyMembership?.party?.tag && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                          [{post.author.partyMembership.party.tag}]
+                        </span>
+                      )}
                       {(post.author.username?.toLowerCase() === ".odyssia" || post.author.username?.toLowerCase() === "odyssia") ? (
                         <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-none bg-amber-500/10 text-amber-600 dark:text-[#F59E0B] border border-amber-500/30">
                           👑 Emperor

@@ -11,6 +11,16 @@ export type AuthorSummary = {
   role: RoleType;
   isPremium: boolean;
   successfulSales?: number;
+  equippedAvatarFrame?: string | null;
+  equippedCustomTitle?: string | null;
+  partyMembership?: {
+    role: string;
+    party: {
+      name: string;
+      tag: string;
+      emblemColor: string;
+    };
+  } | null;
 };
 
 export type PublicMarketData = {
@@ -32,6 +42,7 @@ export type ForumPostRecord = {
   createdAt: string;
   author: AuthorSummary;
   votes: { value: Exclude<ReactionType, null> }[];
+  poll?: { id: string; question: string } | null;
 };
 
 export type MarketplacePostRecord = {
@@ -52,11 +63,15 @@ export type MarketplacePostRecord = {
 export type LeaderboardAdventurer = {
   id: string;
   username: string | null;
+  avatar?: string | null;
   level: number;
   xp: number;
   role: RoleType;
   badges: string[];
   isPremium: boolean;
+  equippedAvatarFrame?: string | null;
+  equippedCustomTitle?: string | null;
+  partyTag?: string | null;
 };
 
 export type LeaderboardBenefactor = {

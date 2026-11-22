@@ -172,14 +172,21 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                         {RankIcon ? <RankIcon size={iconSize} /> : `#${index + 1}`}
                       </div>
                       <div className="min-w-0">
-                        <Link
-                          href={`/u/${member.username ?? "user"}`}
-                          className={`block font-bold text-sm truncate hover:text-purple-600 dark:hover:text-[#A78BFA] text-slate-900 dark:text-[#F8FAFC] ${
-                            isUserPremium ? "premium-username text-[#A78BFA]" : ""
-                          }`}
-                        >
-                          {member.username ?? "Gamer"}
-                        </Link>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Link
+                            href={`/u/${member.username ?? "user"}`}
+                            className={`block font-bold text-sm truncate hover:text-purple-600 dark:hover:text-[#A78BFA] text-slate-900 dark:text-[#F8FAFC] ${
+                              isUserPremium ? "premium-username text-[#A78BFA]" : ""
+                            }`}
+                          >
+                            {member.username ?? "Gamer"}
+                          </Link>
+                          {member.partyTag && (
+                            <span className="px-1.5 py-0.2 text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                              [{member.partyTag}]
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA] truncate">
                           Lv. <strong className="text-slate-900 dark:text-[#F8FAFC]">{member.level}</strong> • {member.xp.toLocaleString("id-ID")} XP
                         </p>
@@ -235,9 +242,16 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                           {RankIcon ? <RankIcon aria-label={`Peringkat ${index + 1}`} size={iconSize} className="inline text-[#F59E0B]" /> : `#${index + 1}`}
                         </td>
                         <td className="p-3">
-                          <Link href={`/u/${member.username ?? "user"}`} className={`hover:text-purple-600 dark:hover:text-[#A78BFA] font-bold ${isUserPremium ? "premium-username" : "text-slate-900 dark:text-[#F8FAFC]"}`}>
-                            {member.username ?? "Gamer"}
-                          </Link>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <Link href={`/u/${member.username ?? "user"}`} className={`hover:text-purple-600 dark:hover:text-[#A78BFA] font-bold ${isUserPremium ? "premium-username" : "text-slate-900 dark:text-[#F8FAFC]"}`}>
+                              {member.username ?? "Gamer"}
+                            </Link>
+                            {member.partyTag && (
+                              <span className="px-1.5 py-0.2 text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                [{member.partyTag}]
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="p-3 text-right font-bold text-slate-900 dark:text-[#F8FAFC]">{member.level}</td>
                         <td className="p-3 text-right text-slate-600 dark:text-[#A78BFA]">{member.xp.toLocaleString("id-ID")}</td>

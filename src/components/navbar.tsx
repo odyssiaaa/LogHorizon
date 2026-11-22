@@ -31,6 +31,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 
 type NavDropdownItem = {
   label: string;
@@ -529,6 +530,9 @@ export function Navbar() {
           <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Theme Toggle Component */}
             <ThemeToggle />
+            <div className="hidden sm:block">
+              <LocaleSwitcher />
+            </div>
 
             {/* Aksi Khusus Desktop (Pesan, Lonceng Notifikasi & Profil) */}
             <div className="hidden md:flex desktop-navbar items-center gap-2">
@@ -767,6 +771,11 @@ export function Navbar() {
                   >
                     <X size={16} />
                   </button>
+                </div>
+
+                {/* Switcher Bahasa & Mata Uang Mobile */}
+                <div className="mt-3">
+                  <LocaleSwitcher isMobileDrawer />
                 </div>
 
                 {/* Kartu Info User Mobile */}

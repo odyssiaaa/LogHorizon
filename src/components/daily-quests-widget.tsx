@@ -115,13 +115,22 @@ export function DailyQuestsWidget({ isCompact = false }: DailyQuestsWidgetProps)
     }
   };
 
-  if (loading) {
+  if (status === "unauthenticated" || (!session?.user && status !== "loading")) {
+    return null;
+  }
+
+  if (status === "loading" || loading) {
+    if (!session?.user) return null;
     return (
       <div className="p-5 rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] flex items-center justify-center gap-2 text-slate-400 text-xs py-8">
         <Loader2 size={16} className="animate-spin text-[#7C3AED]" />
         <span>Memuat Misi Petualang Harian...</span>
       </div>
     );
+  }
+
+  if (!session?.user) {
+    return null;
   }
 
   const quests = data?.quests ?? [];

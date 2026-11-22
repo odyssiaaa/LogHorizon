@@ -59,6 +59,7 @@ import { TournamentBackupDropdown } from "@/components/tournament-backup-dropdow
 import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown";
 import { exportTournamentToCsv, exportTournamentToJson } from "@/lib/tournament-export";
 import { useLiveSync } from "@/hooks/use-live-sync";
+import { GuildPartyDirectory } from "@/components/guild-party-directory";
 
 type Participant = {
   id: string;
@@ -189,7 +190,7 @@ export function EventsBoard() {
   const searchParams = useSearchParams();
   const viewParam = searchParams.get("view");
 
-  const [activeTab, setActiveTab] = useState<"all" | "mabar" | "turnamen">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "mabar" | "turnamen" | "party">("all");
   const [tournamentSubTab, setTournamentSubTab] = useState<"active" | "history">("active");
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [lfgPosts, setLfgPosts] = useState<LfgPost[]>([]);
@@ -231,6 +232,7 @@ export function EventsBoard() {
   useEffect(() => {
     if (viewParam === "mabar") setActiveTab("mabar");
     else if (viewParam === "turnamen") setActiveTab("turnamen");
+    else if (viewParam === "party") setActiveTab("party");
     else setActiveTab("all");
   }, [viewParam]);
 
@@ -1357,7 +1359,21 @@ export function EventsBoard() {
           <Swords size={14} />
           <span>Cari Teman Mabar (LFG)</span>
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("party")}
+          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border ${
+            activeTab === "party"
+              ? "bg-[#7C3AED] text-white border-[#7C3AED]"
+              : "bg-white dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+          }`}
+        >
+          <Users size={14} />
+          <span>Party Skuad (Guild Party)</span>
+        </button>
       </div>
+
+      {activeTab === "party" && <GuildPartyDirectory />}
 
       {/* QUICK SEARCH BAR */}
       <div className="flex items-center gap-3 px-3.5 h-11 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] focus-within:border-[#7C3AED] transition-colors mb-6 shadow-sm dark:shadow-none" role="search">

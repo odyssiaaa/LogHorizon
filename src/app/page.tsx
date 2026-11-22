@@ -5,6 +5,7 @@ import { GuildAnnouncementCard } from "@/components/guild-announcement-card";
 import { AnnouncementPopupModal } from "@/components/announcement-popup-modal";
 import { StarterGuideCard } from "@/components/starter-guide-card";
 import { DailyQuestsWidget } from "@/components/daily-quests-widget";
+import { PriceDisplay } from "@/context/locale-context";
 import {
   ArrowUpRight,
   AudioLines,
@@ -40,6 +41,29 @@ function formatRupiah(amount: number): string {
     currency: "IDR",
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+function getCategoryLabel(category: string): string {
+  switch (category) {
+    case "GENERAL_CHAT":
+      return "Obrolan Umum";
+    case "PROMOTION":
+      return "Promosi & Sponsor";
+    case "COMMUNITY_CLIPS":
+      return "Klip Komunitas";
+    case "FEEDBACK":
+      return "Aspirasi & Saran";
+    case "MARKETPLACE":
+      return "Lapak Rekber";
+    case "ANNOUNCEMENT":
+      return "Pengumuman Resmi";
+    case "ESPORTS":
+      return "Arena Esports";
+    case "GUIDE":
+      return "Panduan & Tips";
+    default:
+      return category.replace(/_/g, " ");
+  }
 }
 
 const divisions = [
@@ -301,7 +325,7 @@ export default async function Home() {
                     {activeTournamentCount} Turnamen
                   </strong>
                   <span className="font-mono text-[10px] text-slate-500 dark:text-[#A78BFA] mt-1 block truncate">
-                    Hadiah: {formatRupiah(totalPrizePool)}
+                    Hadiah: <PriceDisplay amountIdr={totalPrizePool} fallback={formatRupiah(totalPrizePool)} />
                   </span>
                 </div>
 
@@ -324,10 +348,6 @@ export default async function Home() {
             <div className="lg:col-span-5 space-y-4" id="flight-board">
               {/* Emblem Kompas Ungu LogHorizon */}
               <div className="p-6 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] flex flex-col items-center justify-center relative overflow-hidden text-center shadow-sm dark:shadow-none">
-                <span className="absolute top-2 left-3 font-mono text-[10px] text-[#7C3AED]">+</span>
-                <span className="absolute top-2 right-3 font-mono text-[10px] text-[#7C3AED]">+</span>
-                <span className="absolute bottom-2 left-3 font-mono text-[10px] text-[#7C3AED]">+</span>
-                <span className="absolute bottom-2 right-3 font-mono text-[10px] text-[#7C3AED]">+</span>
                 <HeroLogo />
                 <div className="mt-3 text-center">
                   <span className="font-mono text-[11px] text-slate-500 dark:text-[#A78BFA] uppercase tracking-wider block">
@@ -618,7 +638,7 @@ export default async function Home() {
                         {post.title}
                       </h4>
                       <p className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]/80 mt-1 truncate">
-                        Oleh @{post.author?.username || post.author?.name || "Petualang"} • Kategori: {post.category || "Umum"}
+                        Oleh @{post.author?.username || post.author?.name || "Petualang"} • Kategori: {getCategoryLabel(post.category)}
                       </p>
                     </Link>
                   ))}
@@ -637,7 +657,7 @@ export default async function Home() {
                         <div className="flex items-center justify-between text-[10px] font-mono mb-1">
                           <span className="font-bold text-amber-500 uppercase">🛒 LAPAK REKBER</span>
                           <span className="text-emerald-500 font-bold">
-                            {price > 0 ? `Rp ${price.toLocaleString("id-ID")}` : "Rekber Kas"}
+                            <PriceDisplay amountIdr={price} fallback="Rekber Kas" />
                           </span>
                         </div>
                         <h4 className="font-display font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate group-hover:text-[#7C3AED] transition-colors">

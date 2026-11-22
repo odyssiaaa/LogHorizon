@@ -123,6 +123,19 @@ model User {
   // Quests & Chest Claims
   questClaims    DailyQuestClaim[]
   chestClaims    DailyChestClaim[]
+
+  // Guild Armory (Avatar Frames & Custom Titles)
+  equippedAvatarFrame String?
+  equippedCustomTitle String?
+  cosmetics           UserCosmetic[]
+
+  // Guild Party (Permanent Squad)
+  partyMembership     GuildPartyMember?
+  ledParties          GuildParty[]             @relation("PartyLeader")
+  partyJoinRequests   GuildPartyJoinRequest[]
+
+  // Forum Polls
+  pollVotes           PollVote[]
 }
 
 model Tournament {
@@ -271,6 +284,7 @@ model Post {
   reports            Report[]
   votes              PostVote[]
   escrowTransactions EscrowTransaction[]
+  poll               Poll?
 
   @@index([category, createdAt])
   @@index([isPinned, createdAt])
@@ -550,6 +564,128 @@ model DailyChestClaim {
   @@unique([userId, dateKey])
   @@index([userId, dateKey])
 }
+
+enum GuildPartyRole {
+  LEADER
+  CO_LEADER
+  MEMBER
+}
+
+enum GuildPartyRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CosmeticType {
+  AVATAR_FRAME
+  CUSTOM_TITLE
+}
+
+model GuildParty {
+  id             String                  @id @default(cuid())
+  name           String                  @unique
+  tag            String                  @unique
+  description    String?                 @db.Text
+  primaryGame    String
+  emblemColor    String                  @default("#8B5CF6")
+  leaderId       String
+  maxMembers     Int                     @default(10)
+  totalPartyXp   Int                     @default(0)
+  conversationId String?                 @unique
+  createdAt      DateTime                @default(now())
+
+  leader         User                    @relation("PartyLeader", fields: [leaderId], references: [id], onDelete: Cascade)
+  members        GuildPartyMember[]
+  joinRequests   GuildPartyJoinRequest[]
+
+  @@index([totalPartyXp(sort: Desc)])
+  @@index([createdAt])
+}
+
+model GuildPartyMember {
+  id             String         @id @default(cuid())
+  partyId        String
+  userId         String         @unique
+  role           GuildPartyRole @default(MEMBER)
+  inGameNickname String?
+  inGameId       String?
+  joinedAt       DateTime       @default(now())
+
+  party          GuildParty     @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([partyId, userId])
+  @@index([partyId, role])
+}
+
+model GuildPartyJoinRequest {
+  id        String                  @id @default(cuid())
+  partyId   String
+  userId    String
+  message   String?
+  status    GuildPartyRequestStatus @default(PENDING)
+  createdAt DateTime                @default(now())
+
+  party     GuildParty              @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  user      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([partyId, userId, status])
+  @@index([partyId, status])
+}
+
+model UserCosmetic {
+  id          String       @id @default(cuid())
+  userId      String
+  itemType    CosmeticType
+  itemId      String
+  itemName    String
+  purchasedAt DateTime     @default(now())
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([userId, itemType])
+}
+
+model Poll {
+  id        String       @id @default(cuid())
+  postId    String       @unique
+  question  String
+  createdAt DateTime     @default(now())
+
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  options   PollOption[]
+  votes     PollVote[]
+}
+
+model PollOption {
+  id     String     @id @default(cuid())
+  pollId String
+  text   String
+  order  Int        @default(0)
+
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes  PollVote[]
+
+  @@index([pollId, order])
+}
+
+model PollVote {
+  id        String     @id @default(cuid())
+  pollId    String
+  optionId  String
+  userId    String
+  createdAt DateTime   @default(now())
+
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([pollId, optionId])
+}
+
 
 
 

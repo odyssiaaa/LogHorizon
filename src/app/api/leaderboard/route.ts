@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sanitizeBadges } from "@/lib/caste";
+import { getCustomTitleBadge } from "@/lib/armory-catalog";
 
 export async function GET() {
   const [rawMembers, donorTotals] = await Promise.all([
@@ -15,6 +16,7 @@ export async function GET() {
       select: {
         id: true,
         username: true,
+        avatar: true,
         level: true,
         xp: true,
         role: true,
@@ -22,6 +24,17 @@ export async function GET() {
         isPremium: true,
         tempTitle: true,
         tempTitleExpiresAt: true,
+        equippedAvatarFrame: true,
+        equippedCustomTitle: true,
+        partyMembership: {
+          select: {
+            party: {
+              select: {
+                tag: true,
+              },
+            },
+          },
+        },
       },
       orderBy: [{ level: "desc" }, { xp: "desc" }, { joinedAt: "asc" }],
       take: 5,
@@ -41,15 +54,28 @@ export async function GET() {
     `,
   ]);
 
-  const members = rawMembers.map((m) => ({
-    id: m.id,
-    username: m.username,
-    level: m.level,
-    xp: m.xp,
-    role: m.role,
-    badges: sanitizeBadges(m, m.badges),
-    isPremium: m.isPremium,
-  }));
+  const members = rawMembers.map((m) => {
+    const rawBadges = [...m.badges];
+    if (m.equippedCustomTitle) {
+      const customTitle = getCustomTitleBadge(m.equippedCustomTitle);
+      if (customTitle && !rawBadges.includes(customTitle)) {
+        rawBadges.unshift(customTitle);
+      }
+    }
+    return {
+      id: m.id,
+      username: m.username,
+      avatar: m.avatar,
+      level: m.level,
+      xp: m.xp,
+      role: m.role,
+      badges: sanitizeBadges(m, rawBadges),
+      isPremium: m.isPremium,
+      equippedAvatarFrame: m.equippedAvatarFrame,
+      equippedCustomTitle: m.equippedCustomTitle,
+      partyTag: m.partyMembership?.party?.tag ?? null,
+    };
+  });
 
   const benefactors = donorTotals.map((donor) => ({
     id: donor.id,

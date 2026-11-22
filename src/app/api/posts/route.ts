@@ -72,7 +72,47 @@ export async function GET(request: Request) {
       where,
       take,
       include: {
-        author: { select: { id: true, username: true, avatar: true, role: true, isPremium: true, discordId: true, tempTitle: true, tempTitleExpiresAt: true } },
+        author: {
+          select: {
+            id: true,
+            username: true,
+            avatar: true,
+            role: true,
+            isPremium: true,
+            discordId: true,
+            tempTitle: true,
+            tempTitleExpiresAt: true,
+            equippedAvatarFrame: true,
+            equippedCustomTitle: true,
+            partyMembership: {
+              select: {
+                role: true,
+                party: {
+                  select: {
+                    name: true,
+                    tag: true,
+                    emblemColor: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        poll: {
+          select: {
+            id: true,
+            question: true,
+            options: {
+              orderBy: { order: "asc" },
+              select: {
+                id: true,
+                text: true,
+                order: true,
+                _count: { select: { votes: true } },
+              },
+            },
+          },
+        },
         votes: { where: { userId: viewer?.id ?? "" }, select: { value: true } },
         escrowTransactions: { where: { status: "IN_ESCROW" }, select: { id: true, buyerId: true, sellerId: true, status: true } },
       },
@@ -204,8 +244,41 @@ export async function POST(request: Request) {
 
   if (typeof category !== "string" || !isPostCategory(category) || category === PostCategory.MARKETPLACE) return jsonError("Kategori tidak valid.", 400);
   if (!content || content.length > 10_000) return jsonError("Isi thread wajib diisi (maksimal 10.000 karakter).", 400);
+
+  const pollInput = data.poll as { question?: string; options?: string[] } | undefined;
+  const pollOptions = Array.isArray(pollInput?.options)
+    ? pollInput.options
+        .map((opt) => (typeof opt === "string" ? sanitizePlainText(opt.trim()) : ""))
+        .filter(Boolean)
+        .slice(0, 5)
+    : [];
+  const pollQuestion = pollInput?.question ? sanitizePlainText(pollInput.question.trim()) : title;
+
   const post = await prisma.$transaction(async (tx) => {
-    const created = await tx.post.create({ data: { authorId: user.id, category, title, content, isPinned } });
+    const created = await tx.post.create({
+      data: {
+        authorId: user.id,
+        category,
+        title,
+        content,
+        isPinned,
+        ...(pollOptions.length >= 2
+          ? {
+              poll: {
+                create: {
+                  question: pollQuestion || title,
+                  options: {
+                    create: pollOptions.map((text, idx) => ({
+                      text,
+                      order: idx,
+                    })),
+                  },
+                },
+              },
+            }
+          : {}),
+      },
+    });
     await addXpInTransaction(tx, user.id, 10);
     return created;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });

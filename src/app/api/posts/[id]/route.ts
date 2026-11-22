@@ -8,41 +8,84 @@ export async function GET(_request: Request, { params }: RouteContext) {
   try {
     const viewer = await authenticatedUser().catch(() => null);
     const { id } = await params;
-    const post = await prisma.post.findUnique({
-      where: { id },
-      include: {
-        author: {
-          select: {
-            id: true,
-            username: true,
-            avatar: true,
-            role: true,
-            isPremium: true,
-            tempTitle: true,
-            tempTitleExpiresAt: true,
-          },
-        },
-        comments: {
-          orderBy: { createdAt: "asc" },
-          include: {
-            author: {
-              select: {
-                id: true,
-                username: true,
-                avatar: true,
-                role: true,
-                isPremium: true,
-                tempTitle: true,
-                tempTitleExpiresAt: true,
-              },
+    const userSelect = {
+      id: true,
+      username: true,
+      avatar: true,
+      role: true,
+      isPremium: true,
+      tempTitle: true,
+      tempTitleExpiresAt: true,
+      equippedAvatarFrame: true,
+      equippedCustomTitle: true,
+      partyMembership: {
+        select: {
+          role: true,
+          party: {
+            select: {
+              name: true,
+              tag: true,
+              emblemColor: true,
             },
           },
         },
+      },
+    };
+
+    const post = await prisma.post.findUnique({
+      where: { id },
+      include: {
+        author: { select: userSelect },
+        comments: {
+          orderBy: { createdAt: "asc" },
+          include: {
+            author: { select: userSelect },
+          },
+        },
         votes: { where: { userId: viewer?.id ?? "" }, select: { value: true } },
+        poll: {
+          include: {
+            options: {
+              orderBy: { order: "asc" },
+              include: {
+                _count: { select: { votes: true } },
+              },
+            },
+            votes: viewer?.id
+              ? {
+                  where: { userId: viewer.id },
+                  select: { optionId: true },
+                }
+              : false,
+          },
+        },
       },
     });
     if (!post || post.category === "MARKETPLACE") return jsonError("Thread tidak ditemukan.", 404);
-    return Response.json(post);
+
+    let formattedPoll = null;
+    if (post.poll) {
+      const totalVotes = post.poll.options.reduce((sum, opt) => sum + opt._count.votes, 0);
+      const userVote = post.poll.votes && post.poll.votes.length > 0 ? post.poll.votes[0].optionId : null;
+      formattedPoll = {
+        id: post.poll.id,
+        question: post.poll.question,
+        totalVotes,
+        userVotedOptionId: userVote,
+        options: post.poll.options.map((opt) => ({
+          id: opt.id,
+          text: opt.text,
+          order: opt.order,
+          votesCount: opt._count.votes,
+          percentage: totalVotes > 0 ? Math.round((opt._count.votes / totalVotes) * 100) : 0,
+        })),
+      };
+    }
+
+    return Response.json({
+      ...post,
+      poll: formattedPoll,
+    });
   } catch (error) {
     console.error("[api/posts/[id]] Failed to load thread:", error);
     return jsonError("Gagal memuat thread dari database.", 500);

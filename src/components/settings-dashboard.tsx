@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
 import Link from "next/link";
 import {
@@ -22,13 +22,19 @@ import {
   Type,
   User,
   Zap,
+  ShoppingBag,
+  Users,
+  MessageSquare,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { readApiResponse } from "@/lib/api-response";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { DailyCheckInWidget } from "@/components/daily-check-in-widget";
 import { DailyQuestsWidget } from "@/components/daily-quests-widget";
 import { RoyalChestWidget } from "@/components/royal-chest-widget";
 import { ReferralInviteCard } from "@/components/referral-invite-card";
+import { GuildArmoryShop } from "@/components/guild-armory-shop";
+import { getCustomTitleBadge } from "@/lib/armory-catalog";
 
 type Achievement = {
   id: string;
@@ -59,6 +65,22 @@ type Profile = {
   postsCount?: number;
   tournamentsCount?: number;
   isPremium: boolean;
+  equippedAvatarFrame?: string | null;
+  equippedCustomTitle?: string | null;
+  partyMembership?: {
+    id: string;
+    role: string;
+    inGameNickname?: string | null;
+    inGameId?: string | null;
+    party: {
+      id: string;
+      name: string;
+      tag: string;
+      emblemColor: string;
+      primaryGame: string;
+      membersCount?: number;
+    };
+  } | null;
   favoriteGames?: string[];
   gender?: string | null;
   birthDate?: string | null;
@@ -119,6 +141,9 @@ function getCasteBadge(role?: string, username?: string, discordId?: string, isP
 
 export function SettingsDashboard() {
   const { data: session, status, update } = useSession();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [preferences, setPreferences] = useState(initialPreferences);
@@ -129,8 +154,15 @@ export function SettingsDashboard() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  // Sub-tabs: "profile" | "badges" | "settings"
-  const [activeTab, setActiveTab] = useState<"profile" | "badges" | "settings">("profile");
+  // Sub-tabs: "profile" | "badges" | "armory" | "settings"
+  const [activeTab, setActiveTab] = useState<"profile" | "badges" | "armory" | "settings">("profile");
+
+  useEffect(() => {
+    if (tabParam === "armory") setActiveTab("armory");
+    else if (tabParam === "badges") setActiveTab("badges");
+    else if (tabParam === "settings") setActiveTab("settings");
+    else if (tabParam === "profile") setActiveTab("profile");
+  }, [tabParam]);
 
   // Gamer Profile Form
   const [favoriteGames, setFavoriteGames] = useState<string[]>([]);
@@ -183,6 +215,20 @@ export function SettingsDashboard() {
       console.error("[settings] Failed to save browser preferences", reason);
     }
   }, [preferences, preferencesReady]);
+
+  const fetchProfileData = useCallback(async () => {
+    try {
+      const res = await fetch("/api/settings/profile");
+      const nextProfile = await readApiResponse<Profile>(res, "Profil gagal dimuat.");
+      setProfile(nextProfile);
+      setFavoriteGames(nextProfile.favoriteGames ?? []);
+      setGender(nextProfile.gender ?? "");
+      setBirthDate(nextProfile.birthDate ?? "");
+      setShowBirthDate(Boolean(nextProfile.showBirthDate));
+    } catch (err) {
+      console.error("[settings] Error reloading profile:", err);
+    }
+  }, []);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -391,6 +437,18 @@ export function SettingsDashboard() {
         </button>
         <button
           type="button"
+          onClick={() => setActiveTab("armory")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
+            activeTab === "armory"
+              ? "bg-[#7C3AED] text-white shadow-md shadow-[#7C3AED]/25"
+              : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-[#7C3AED]/50"
+          }`}
+        >
+          <ShoppingBag size={16} />
+          <span>Guild Armory</span>
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab("settings")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
             activeTab === "settings"
@@ -427,6 +485,7 @@ export function SettingsDashboard() {
                   username={profile?.username ?? session.user.username}
                   size={84}
                   className="rounded-2xl border-2 border-[#7C3AED]/50 shadow-lg shadow-[#7C3AED]/20"
+                  frameId={profile?.equippedAvatarFrame}
                 />
                 <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md bg-[#7C3AED] text-white text-[10px] font-black uppercase">
                   Lv.{currentLevel}
@@ -436,9 +495,21 @@ export function SettingsDashboard() {
               <div className="flex-1 min-w-0 w-full">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
                   <div className="min-w-0">
-                    <h2 className="text-xl sm:text-2xl font-black text-white truncate">
-                      {profile?.username ?? session.user.name ?? "Petualang"}
-                    </h2>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl sm:text-2xl font-black text-white truncate">
+                        {profile?.username ?? session.user.name ?? "Petualang"}
+                      </h2>
+                      {profile?.partyMembership?.party?.tag && (
+                        <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-mono font-bold">
+                          [{profile.partyMembership.party.tag}]
+                        </span>
+                      )}
+                      {profile?.equippedCustomTitle && getCustomTitleBadge(profile.equippedCustomTitle) && (
+                        <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-mono font-bold">
+                          {getCustomTitleBadge(profile.equippedCustomTitle)}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-400 font-mono">
                       Discord ID: {profile?.discordId ?? "Tidak terhubung"}
                     </p>
@@ -549,6 +620,55 @@ export function SettingsDashboard() {
 
           {/* Kartu Undang Teman & Dapatkan +200 XP */}
           <ReferralInviteCard />
+
+          {/* Kartu Status Party Resmi */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-purple-500/30 bg-[#120B1E]/80 backdrop-blur-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                {profile?.partyMembership?.party ? (
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-sm text-white shadow-md shrink-0"
+                    style={{ backgroundColor: profile.partyMembership.party.emblemColor }}
+                  >
+                    {profile.partyMembership.party.tag}
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                    <Users size={22} />
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-bold text-white">
+                      {profile?.partyMembership?.party
+                        ? `[${profile.partyMembership.party.tag}] ${profile.partyMembership.party.name}`
+                        : "Party Skuad Guild"}
+                    </h3>
+                    {profile?.partyMembership && (
+                      <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-mono font-bold border border-purple-500/30">
+                        {profile.partyMembership.role}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {profile?.partyMembership?.party
+                      ? `Game: ${profile.partyMembership.party.primaryGame} • ${profile.partyMembership.party.membersCount || 0} Anggota`
+                      : "Kamu belum bergabung dengan party resmi guild. Bergabunglah untuk mabar, chat grup, dan turnamen tim!"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/events?view=party"
+                  className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-purple-600/25"
+                >
+                  <Users size={14} />
+                  <span>{profile?.partyMembership ? "Lihat Party Saya" : "Cari / Bentuk Party"}</span>
+                </Link>
+              </div>
+            </div>
+          </section>
 
           {/* Gamer Info Ringkas */}
           <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
@@ -694,7 +814,12 @@ export function SettingsDashboard() {
         </div>
       )}
 
-      {/* TAB 3: PENGATURAN AKUN */}
+      {/* TAB 3: GUILD ARMORY SHOP */}
+      {activeTab === "armory" && (
+        <GuildArmoryShop onEquipChange={() => void fetchProfileData()} />
+      )}
+
+      {/* TAB 4: PENGATURAN AKUN */}
       {activeTab === "settings" && (
         <div className="space-y-6">
           {/* 1. Profil Discord Sync */}

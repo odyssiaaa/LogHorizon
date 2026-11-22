@@ -145,6 +145,8 @@ export function MessagesView() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const targetUserParam = searchParams.get("user");
+  const conversationIdParam = searchParams.get("conversationId") || searchParams.get("id");
+  const partyParam = searchParams.get("party") || searchParams.get("partyId");
 
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
@@ -254,6 +256,27 @@ export function MessagesView() {
       active = false;
     };
   }, [targetUserParam, me?.id, fetchConversations]);
+
+  // Handle direct conversationId or party query param
+  useEffect(() => {
+    if (conversationIdParam) {
+      setActiveConvId(conversationIdParam);
+    } else if (partyParam) {
+      void (async () => {
+        try {
+          const res = await fetch(`/api/parties/${partyParam}/chat`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.conversationId) {
+              setActiveConvId(data.conversationId);
+            }
+          }
+        } catch {
+          // ignore error
+        }
+      })();
+    }
+  }, [conversationIdParam, partyParam]);
 
   // Fetch full active conversation detail
   const loadConversationDetail = useCallback(async (convId: string) => {

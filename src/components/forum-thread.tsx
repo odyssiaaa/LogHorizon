@@ -13,6 +13,8 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
 import { MentionHashtagInput, type MentionUser } from "@/components/mention-hashtag-input";
 import { getActiveTempTitle } from "@/lib/caste";
+import { ForumPollWidget, type PollData } from "@/components/forum-poll-widget";
+import { getCustomTitleBadge } from "@/lib/armory-catalog";
 
 type CommentRecord = {
   id: string;
@@ -29,6 +31,16 @@ type CommentRecord = {
     role?: string;
     tempTitle?: string | null;
     tempTitleExpiresAt?: string | Date | null;
+    equippedAvatarFrame?: string | null;
+    equippedCustomTitle?: string | null;
+    partyMembership?: {
+      role: string;
+      party: {
+        name: string;
+        tag: string;
+        emblemColor: string;
+      };
+    } | null;
   };
 };
 
@@ -51,7 +63,18 @@ type ThreadRecord = {
     role?: string;
     tempTitle?: string | null;
     tempTitleExpiresAt?: string | Date | null;
+    equippedAvatarFrame?: string | null;
+    equippedCustomTitle?: string | null;
+    partyMembership?: {
+      role: string;
+      party: {
+        name: string;
+        tag: string;
+        emblemColor: string;
+      };
+    } | null;
   };
+  poll?: PollData | null;
   comments: CommentRecord[];
 };
 
@@ -447,13 +470,23 @@ export function ForumThread({ id }: { id: string }) {
         )}
 
         <div className="flex items-start gap-3">
-          <DiscordAvatar className="comment-avatar shrink-0 mt-0.5" src={item.author.avatar} username={item.author.username} size={28} />
+          <DiscordAvatar className="comment-avatar shrink-0 mt-0.5" src={item.author.avatar} username={item.author.username} size={28} frameId={item.author.equippedAvatarFrame} />
           <div className="comment-content min-w-0 flex-1">
             {/* Header: Author + Badges + Timestamp */}
             <div className="comment-meta flex flex-wrap items-center gap-1.5">
               <strong className={isSatpamBot ? "font-bold text-[#7C3AED] dark:text-[#A78BFA]" : (item.author.isPremium || item.author.username === ".odyssia") ? "premium-username" : "text-slate-900 dark:text-[#F8FAFC] font-bold text-xs"}>
                 {isSatpamBot ? "Satpam Horizon" : (item.author.username ?? "Gamer")}
               </strong>
+              {item.author.partyMembership?.party?.tag && (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40 whitespace-nowrap">
+                  [{item.author.partyMembership.party.tag}]
+                </span>
+              )}
+              {item.author.equippedCustomTitle && getCustomTitleBadge(item.author.equippedCustomTitle) && (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 whitespace-nowrap">
+                  {getCustomTitleBadge(item.author.equippedCustomTitle)}
+                </span>
+              )}
               {isSatpamBot ? (
                 <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#7C3AED] text-white shadow-sm flex items-center gap-1 whitespace-nowrap">
                   🛡️ SATPAM AI • BOT GUILD
@@ -601,9 +634,19 @@ export function ForumThread({ id }: { id: string }) {
               {thread.title}
             </h1>
             <div className="thread-meta flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-[#7C3AED] dark:text-[#A78BFA] font-mono my-3 pt-2 border-t border-slate-200 dark:border-[#2E1E45]">
-              <span className="post-author flex items-center gap-1.5">
-                <DiscordAvatar src={thread.author.avatar} username={thread.author.username} size={20} />
+              <span className="post-author flex items-center gap-1.5 flex-wrap">
+                <DiscordAvatar src={thread.author.avatar} username={thread.author.username} size={20} frameId={thread.author.equippedAvatarFrame} />
                 <span>oleh <Link href={`/u/${thread.author.username ?? "user"}`} className={`hover:underline ${(thread.author.isPremium || thread.author.username === ".odyssia") ? "premium-username" : "font-semibold text-slate-900 dark:text-[#F8FAFC]"}`}>{thread.author.username ?? "Gamer"}</Link>
+                  {thread.author.partyMembership?.party?.tag && (
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40 ml-1.5">
+                      [{thread.author.partyMembership.party.tag}]
+                    </span>
+                  )}
+                  {thread.author.equippedCustomTitle && getCustomTitleBadge(thread.author.equippedCustomTitle) && (
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 ml-1.5">
+                      {getCustomTitleBadge(thread.author.equippedCustomTitle)}
+                    </span>
+                  )}
                   {(thread.author.username?.toLowerCase() === ".odyssia" || thread.author.username?.toLowerCase() === "odyssia") ? (
                     <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 ml-1.5">👑 Emperor</span>
                   ) : thread.author.role === "ADMIN" ? (
@@ -621,6 +664,16 @@ export function ForumThread({ id }: { id: string }) {
               <span>•</span>
               <span>{new Date(thread.createdAt).toLocaleString("id-ID")}</span>
             </div>
+
+            {/* Polling Voting Interaktif jika tersedia */}
+            {thread.poll && (
+              <ForumPollWidget
+                postId={thread.id}
+                initialPoll={thread.poll}
+                onVoted={(p) => setThread((prev) => (prev ? { ...prev, poll: p } : null))}
+              />
+            )}
+
             <div className="thread-body break-words leading-relaxed text-sm sm:text-base my-5 text-slate-800 dark:text-[#F8FAFC]/90 font-sans">
               <FormattedPostContent text={thread.content} onImageClick={setLightboxImg} />
             </div>
