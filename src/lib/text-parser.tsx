@@ -69,7 +69,7 @@ export function parseInlineMarkdown(
 
   // Regex ordered by specificity
   const tokenRegex =
-    /(!\[([^\]]*)\]\(([^)]+)\))|(\[([^\]]+)\]\(([^)]+)\))|(`(\/[a-zA-Z0-9_\-\/?=&%#.]+)`)|((?:^|(?<=\s))(\/(?:events|forum|marketplace|donate|leaderboard|hall-of-winners|news|profile|rules|settings|messages|u)(?:[a-zA-Z0-9_\-\/?=&%#]*)))|(\*\*([^*]+)\*\*)|(`([^`]+)`)|(\*([^*]+)\*)|(@(?:satpam|[a-zA-Z0-9_.-]+))|(#[a-zA-Z0-9_]+)|(https?:\/\/[^\s<]+)/gi;
+    /(!\[([^\]]*)\]\(([^)]+)\))|(\[([^\]]+)\]\(([^)]+)\))|(`(\/[a-zA-Z0-9_\-\/?=&%#.]+)`)|((?:^|(?<=\s))(\/(?:events|forum|marketplace|donate|leaderboard|hall-of-winners|news|profile|rules|settings|messages|u)(?:[a-zA-Z0-9_\-\/?=&%#]*)))|(\*\*\*([^*]+)\*\*\*)|(\*\*([^*]+)\*\*)|(`([^`]+)`)|(\*([^*]+)\*)|(__([^_]+)__)|(_([^_]+)_)|(@(?:satpam|[a-zA-Z0-9_.-]+))|(#[a-zA-Z0-9_]+)|(https?:\/\/[^\s<]+)/gi;
 
   const elements: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -161,32 +161,53 @@ export function parseInlineMarkdown(
         </Link>
       );
     } else if (match[11]) {
-      // 4. Bold **text**
+      // 4. Bold + Italic ***text***
       elements.push(
         <strong key={key} className="font-bold text-slate-900 dark:text-white">
-          {match[12]}
+          <em className="italic text-[#7C3AED] dark:text-[#C4B5FD]">{match[12]}</em>
         </strong>
       );
     } else if (match[13]) {
-      // 5. Backtick code `code` (not route)
+      // 5. Bold **text**
+      elements.push(
+        <strong key={key} className="font-bold text-slate-900 dark:text-white">
+          {match[14]}
+        </strong>
+      );
+    } else if (match[15]) {
+      // 6. Backtick code `code` (not route)
       elements.push(
         <code
           key={key}
           className="px-1.5 py-0.5 rounded bg-[#7C3AED]/15 dark:bg-[#7C3AED]/20 text-[#7C3AED] dark:text-[#C4B5FD] font-mono text-[11px] border border-[#7C3AED]/30 font-semibold"
         >
-          {match[14]}
+          {match[16]}
         </code>
       );
-    } else if (match[15]) {
-      // 6. Italic *text*
+    } else if (match[17]) {
+      // 7. Italic *text*
       elements.push(
         <em key={key} className="italic text-[#7C3AED] dark:text-[#C4B5FD]">
-          {match[16]}
+          {match[18]}
         </em>
       );
-    } else if (match[17]) {
-      // 7. @satpam or @username mention
-      const mention = match[17];
+    } else if (match[19]) {
+      // 8. Underscore Bold __text__
+      elements.push(
+        <strong key={key} className="font-bold text-slate-900 dark:text-white">
+          {match[20]}
+        </strong>
+      );
+    } else if (match[21]) {
+      // 9. Underscore Italic _text_
+      elements.push(
+        <em key={key} className="italic text-[#7C3AED] dark:text-[#C4B5FD]">
+          {match[22]}
+        </em>
+      );
+    } else if (match[23]) {
+      // 10. @satpam or @username mention
+      const mention = match[23];
       if (mention.toLowerCase() === "@satpam") {
         elements.push(
           <span
@@ -208,9 +229,9 @@ export function parseInlineMarkdown(
           </Link>
         );
       }
-    } else if (match[18]) {
-      // 8. #hashtag
-      const tag = match[18].slice(1);
+    } else if (match[24]) {
+      // 11. #hashtag
+      const tag = match[24].slice(1);
       elements.push(
         <Link
           key={key}
@@ -220,9 +241,9 @@ export function parseInlineMarkdown(
           #{tag}
         </Link>
       );
-    } else if (match[19]) {
-      // 9. Raw URL
-      const url = match[19];
+    } else if (match[25]) {
+      // 12. Raw URL
+      const url = match[25];
       elements.push(
         <a
           key={key}
@@ -321,13 +342,13 @@ export function UniversalTextRenderer({
             continue;
           }
 
-          // ### Heading 3
-          if (trimmed.startsWith("### ")) {
-            const headingText = trimmed.replace(/^###\s+/, "");
+          // ### Heading 3 (Subheading)
+          if (/^###\s*/.test(trimmed)) {
+            const headingText = trimmed.replace(/^###\s*/, "");
             renderedBlocks.push(
               <h4
                 key={`h3-${pIdx}-${i}`}
-                className="text-xs sm:text-sm font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider mt-2.5 mb-1"
+                className="text-sm font-bold text-[#A78BFA] uppercase tracking-wider mt-4 mb-2 border-b border-[#2A1B42] pb-1"
               >
                 {parseInlineMarkdown(headingText, { routeButtonVariant })}
               </h4>
@@ -336,12 +357,12 @@ export function UniversalTextRenderer({
           }
 
           // ## or # Heading
-          if (trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
-            const headingText = trimmed.replace(/^#{1,2}\s+/, "");
+          if (/^#{1,2}\s*/.test(trimmed)) {
+            const headingText = trimmed.replace(/^#{1,2}\s*/, "");
             renderedBlocks.push(
               <h3
                 key={`h2-${pIdx}-${i}`}
-                className="text-sm sm:text-base font-extrabold text-[#7C3AED] dark:text-[#C4B5FD] uppercase tracking-wider mt-3 mb-1"
+                className="text-base font-extrabold text-[#C4B5FD] uppercase tracking-wider mt-5 mb-2 border-b border-[#2A1B42] pb-1"
               >
                 {parseInlineMarkdown(headingText, { routeButtonVariant })}
               </h3>
@@ -349,34 +370,53 @@ export function UniversalTextRenderer({
             continue;
           }
 
-          // Bullet List: * item, - item, • item
+          // Bullet List: * item, - item, • item (Grouped into clean <ul> / <li>)
           if (/^(\*|-|•)\s+/.test(trimmed)) {
-            const itemText = trimmed.replace(/^(\*|-|•)\s+/, "");
+            const listItems: string[] = [];
+            while (i < lines.length && /^(\*|-|•)\s+/.test(lines[i].trim())) {
+              listItems.push(lines[i].trim().replace(/^(\*|-|•)\s+/, ""));
+              i++;
+            }
+            i--; // adjust loop counter since for loop increments i
             renderedBlocks.push(
-              <div key={`bullet-${pIdx}-${i}`} className="flex items-start gap-2 my-1 pl-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] dark:bg-[#A78BFA] mt-1.5 shrink-0" />
-                <div className="text-xs leading-relaxed text-slate-800 dark:text-slate-200">
-                  {parseInlineMarkdown(itemText, { routeButtonVariant })}
-                </div>
-              </div>
+              <ul key={`ul-${pIdx}-${i}`} className="space-y-1.5 my-2.5 pl-1 leading-relaxed list-none">
+                {listItems.map((itemText, lIdx) => (
+                  <li key={`li-${pIdx}-${i}-${lIdx}`} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED] dark:bg-[#A78BFA] mt-2 shrink-0" />
+                    <div className="flex-1 leading-relaxed">
+                      {parseInlineMarkdown(itemText, { routeButtonVariant })}
+                    </div>
+                  </li>
+                ))}
+              </ul>
             );
             continue;
           }
 
-          // Numbered List: 1. item, 2. item
-          const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
-          if (numMatch) {
-            const num = numMatch[1];
-            const itemText = numMatch[2];
+          // Numbered List: 1. item, 2. item (Grouped into clean <ol> / <li>)
+          if (/^\d+\.\s+/.test(trimmed)) {
+            const numItems: Array<{ num: string; text: string }> = [];
+            while (i < lines.length && /^\d+\.\s+/.test(lines[i].trim())) {
+              const m = lines[i].trim().match(/^(\d+)\.\s+(.*)$/);
+              if (m) {
+                numItems.push({ num: m[1], text: m[2] });
+              }
+              i++;
+            }
+            i--;
             renderedBlocks.push(
-              <div key={`num-${pIdx}-${i}`} className="flex items-start gap-2 my-1 pl-1">
-                <span className="text-[11px] font-mono font-bold text-[#7C3AED] dark:text-[#A78BFA] shrink-0 mt-0.5">
-                  {num}.
-                </span>
-                <div className="text-xs leading-relaxed text-slate-800 dark:text-slate-200">
-                  {parseInlineMarkdown(itemText, { routeButtonVariant })}
-                </div>
-              </div>
+              <ol key={`ol-${pIdx}-${i}`} className="space-y-1.5 my-2.5 pl-1 leading-relaxed list-none">
+                {numItems.map((item, lIdx) => (
+                  <li key={`nli-${pIdx}-${i}-${lIdx}`} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                    <span className="text-[11px] font-mono font-bold text-[#7C3AED] dark:text-[#A78BFA] shrink-0 mt-0.5">
+                      {item.num}.
+                    </span>
+                    <div className="flex-1 leading-relaxed">
+                      {parseInlineMarkdown(item.text, { routeButtonVariant })}
+                    </div>
+                  </li>
+                ))}
+              </ol>
             );
             continue;
           }
@@ -385,7 +425,7 @@ export function UniversalTextRenderer({
           renderedBlocks.push(
             <p
               key={`p-${pIdx}-${i}`}
-              className="text-xs font-medium leading-relaxed text-slate-800 dark:text-slate-200"
+              className="text-xs sm:text-sm font-medium leading-relaxed text-slate-800 dark:text-slate-200 my-1"
             >
               {parseInlineMarkdown(rawLine, { routeButtonVariant })}
             </p>
@@ -394,6 +434,31 @@ export function UniversalTextRenderer({
 
         return <React.Fragment key={`part-${pIdx}`}>{renderedBlocks}</React.Fragment>;
       })}
+    </div>
+  );
+}
+
+/**
+ * Specialized renderer for tournament custom rules and regulations.
+ * Renders subheadings, bold highlights, bullet points, and numbered lists cleanly.
+ */
+export function TournamentRulesRenderer({
+  content,
+  className = "",
+}: {
+  content?: string | null;
+  className?: string;
+}) {
+  if (!content || !content.trim()) return null;
+
+  return (
+    <div className={`tournament-rules-renderer text-left text-xs sm:text-sm leading-relaxed ${className}`}>
+      <UniversalTextRenderer
+        content={content}
+        enableBlocks={true}
+        routeButtonVariant="link"
+        className="space-y-2.5"
+      />
     </div>
   );
 }

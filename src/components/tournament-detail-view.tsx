@@ -41,6 +41,7 @@ import { ShareButton } from "@/components/share-button";
 import { DualWingBracketView } from "@/components/events-board";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
+import { TournamentRulesRenderer } from "@/lib/text-parser";
 import { RosterPlayerRow } from "@/components/roster-player-row";
 import { QuickMatchScoreModal } from "@/components/quick-match-score-modal";
 import { ChampionCertificateModal } from "@/components/champion-certificate-modal";
@@ -1313,13 +1314,14 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
 
               {/* ATURAN KHUSUS TAMBAHAN PENYELENGGARA */}
               {tournament.rules ? (
-                <div className="p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] space-y-2">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-[#A78BFA]">
-                    Catatan Aturan Khusus Penyelenggara:
-                  </span>
-                  <div className="text-xs font-mono text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
-                    {tournament.rules}
+                <div className="p-4 sm:p-5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] space-y-3 text-left">
+                  <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-[#2E1E45]">
+                    <span className="w-2 h-2 rounded-full bg-[#7C3AED] dark:bg-[#A78BFA] animate-pulse" />
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#7C3AED] dark:text-[#A78BFA]">
+                      Catatan Aturan Khusus Penyelenggara:
+                    </span>
                   </div>
+                  <TournamentRulesRenderer content={tournament.rules} />
                 </div>
               ) : (
                 <p className="text-xs font-mono text-slate-500 dark:text-slate-400 italic">

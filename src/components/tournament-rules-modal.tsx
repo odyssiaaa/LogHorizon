@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AlertTriangle, BookOpen, Check, ShieldAlert, X } from "lucide-react";
 import { DEFAULT_TOURNAMENT_RULES } from "@/lib/tournament";
+import { TournamentRulesRenderer } from "@/lib/text-parser";
 
 interface TournamentRulesModalProps {
   isOpen: boolean;
@@ -154,8 +155,8 @@ export function TournamentRulesModal({
               </div>
             </>
           ) : (
-            <div className="whitespace-pre-wrap font-sans text-xs sm:text-sm leading-relaxed p-4 rounded-none border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324]">
-              {rawRules}
+            <div className="p-4 sm:p-5 rounded-none border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#181324] text-left">
+              <TournamentRulesRenderer content={rawRules} />
             </div>
           )}
         </div>
