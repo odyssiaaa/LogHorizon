@@ -8,6 +8,18 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim() || "";
+
+  // On-demand search only: require at least 2 characters to protect database performance
+  if (!query || query.length < 2) {
+    return Response.json({
+      users: [],
+      total: 0,
+      page: 1,
+      limit: 6,
+      totalPages: 0,
+    });
+  }
+
   const gameFilter = searchParams.get("game")?.trim() || "";
   const roleFilter = searchParams.get("role")?.trim() || "";
   const sort = searchParams.get("sort")?.trim() || "active";
@@ -15,7 +27,8 @@ export async function GET(request: Request) {
   const pageParam = parseInt(searchParams.get("page") || "1", 10);
   const excludeMe = searchParams.get("excludeMe") === "true";
 
-  const limit = Math.max(1, Math.min(50, isNaN(limitParam) ? 6 : limitParam));
+  // Maximum 6 results per search query
+  const limit = Math.max(1, Math.min(6, isNaN(limitParam) ? 6 : limitParam));
   const page = Math.max(1, isNaN(pageParam) ? 1 : pageParam);
   const skip = (page - 1) * limit;
 

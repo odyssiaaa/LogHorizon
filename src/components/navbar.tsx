@@ -57,12 +57,6 @@ const navGroups: NavGroup[] = [
     icon: MessageSquare,
     items: [
       {
-        label: "Direktori Petualang",
-        href: "/members",
-        desc: "Cari member, cek profil & ajak mabar",
-        icon: Users,
-      },
-      {
         label: "Forum Diskusi",
         href: "/forum",
         desc: "Diskusi umum & clip komunitas",
@@ -539,7 +533,7 @@ export function Navbar() {
           {/* SISI KANAN: Aksi Desktop & Hamburger Mobile */}
           <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Global Member Search Desktop */}
-            <GlobalUserSearch className="hidden lg:block w-40 xl:w-56 shrink-0" placeholder="🔍 Cari Petualang..." />
+            <GlobalUserSearch className="hidden lg:block w-40 xl:w-56 shrink-0" placeholder="Cari petualang..." />
 
             {/* Theme Toggle Component */}
             <ThemeToggle />
@@ -795,7 +789,7 @@ export function Navbar() {
                 <div className="mt-3">
                   <GlobalUserSearch
                     variant="mobile"
-                    placeholder="🔍 Cari Petualang..."
+                    placeholder="Cari petualang..."
                     onSelectUser={() => setMobileOpen(false)}
                   />
                 </div>

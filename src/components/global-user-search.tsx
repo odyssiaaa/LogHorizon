@@ -112,9 +112,12 @@ export function GlobalUserSearch({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && query.trim().length >= 2) {
-      setIsOpen(false);
-      router.push(`/members?q=${encodeURIComponent(query.trim())}`);
+    if (e.key === "Enter" && results.length > 0) {
+      const firstUser = results[0];
+      if (firstUser?.username) {
+        setIsOpen(false);
+        router.push(`/u/${firstUser.username}`);
+      }
     } else if (e.key === "Escape") {
       setIsOpen(false);
     }
@@ -174,9 +177,9 @@ export function GlobalUserSearch({
           <div className="px-3.5 py-2 bg-slate-50 dark:bg-[#0D0717] flex items-center justify-between text-[11px] font-mono">
             <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <Users size={12} className="text-[#7C3AED]" />
-              <span>HASIL PETUALANG ({results.length}{totalCount > results.length ? ` dari ${totalCount}` : ""})</span>
+              <span>HASIL PETUALANG ({results.length})</span>
             </span>
-            <span className="text-[10px] text-slate-400">Tekan Enter untuk direktori</span>
+            <span className="text-[10px] text-slate-400">Maksimal 6 petualang</span>
           </div>
 
           {/* List Hasil Petualang */}
@@ -278,22 +281,24 @@ export function GlobalUserSearch({
                     </Link>
 
                     {/* Quick Action Buttons */}
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <Link
                         href={`/messages?to=${user.id}`}
                         onClick={() => setIsOpen(false)}
-                        className="p-1.5 rounded-lg border border-slate-200 dark:border-[#2A1B42] hover:border-[#7C3AED] hover:bg-[#7C3AED]/10 text-slate-600 dark:text-slate-300 hover:text-[#7C3AED] dark:hover:text-[#A78BFA] transition-colors"
+                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-[#2A1B42] hover:border-[#7C3AED] hover:bg-[#7C3AED]/10 text-slate-700 dark:text-slate-300 hover:text-[#7C3AED] dark:hover:text-[#A78BFA] text-[11px] font-bold transition-colors flex items-center gap-1 shrink-0"
                         title={`Chat langsung dengan @${user.username}`}
                       >
-                        <MessageSquare size={13} />
+                        <MessageSquare size={12} className="text-[#7C3AED]" />
+                        <span>Chat</span>
                       </Link>
                       <Link
                         href={`/u/${user.username || ""}`}
                         onClick={() => setIsOpen(false)}
-                        className="px-2 py-1 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-[10px] font-bold transition-colors flex items-center gap-1 shadow-xs"
+                        className="px-2.5 py-1.5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-[11px] font-bold transition-colors flex items-center gap-1 shadow-xs shrink-0"
+                        title={`Lihat profil @${user.username}`}
                       >
-                        <User size={11} />
-                        <span>Profil</span>
+                        <User size={12} />
+                        <span>Lihat Profil</span>
                       </Link>
                     </div>
                   </div>
@@ -301,15 +306,6 @@ export function GlobalUserSearch({
               })}
             </div>
           )}
-
-          {/* Footer Link: Lihat Semua Petualang */}
-          <Link
-            href={`/members?q=${encodeURIComponent(query.trim())}`}
-            onClick={() => setIsOpen(false)}
-            className="block px-3.5 py-2.5 text-center text-xs font-bold text-[#7C3AED] dark:text-[#A78BFA] hover:bg-slate-50 dark:hover:bg-[#1A0F2E] transition-colors bg-white dark:bg-[#11091D]"
-          >
-            Lihat Semua Petualang di Direktori →
-          </Link>
         </div>
       )}
     </div>

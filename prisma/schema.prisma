@@ -151,6 +151,13 @@ model User {
   sellerVerificationStatus   String    @default("NONE") // "NONE" | "REQUESTED" | "VERIFIED" | "REJECTED"
   sellerPactAcceptedAt       DateTime?
   sellerVerificationNote     String?   @db.Text
+
+  // Royal Dungeon & Wanted Bounties
+  banReason                  String?   @db.Text
+  bannedAt                   DateTime?
+  bountiesTargeted           DungeonBounty[] @relation("BountyTarget")
+  bountiesSubmitted          DungeonBounty[] @relation("BountySubmitter")
+  bountiesApproved           DungeonBounty[] @relation("BountyApprover")
 }
 
 model Tournament {
@@ -719,6 +726,31 @@ model Follow {
   @@index([followerId])
   @@index([followingId])
 }
+
+model DungeonBounty {
+  id               String    @id @default(cuid())
+  targetName       String    // Nama Pelaku / Discord / No Rekening / E-Wallet / Akun Sosmed yang dilaporkan
+  targetUserId     String?   // Opsional jika pelaku memiliki akun di web
+  category         String    // "SCAM_TRANSAKSI" | "CHEAT_TURNAMEN" | "TOXIC_BERAT" | "BURONAN_GUILD"
+  crimeDescription String    @db.Text // Kronologi kejadian / penipuan
+  evidenceImage    String?   @db.Text // Foto pelaku / bukti transfer / screenshot chat (maks 4MB)
+  bountyReward     String?   // Hadiah imbalan bagi pemberi info valid (misal: "Rp 100.000" atau "500 XP")
+  status           String    @default("PENDING_REVIEW") // "PENDING_REVIEW" | "IMPRISONED" | "WANTED_ACTIVE" | "CAPTURED" | "REJECTED"
+  submittedById    String
+  approvedById     String?
+  reviewNote       String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  targetUser       User?     @relation("BountyTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  submittedBy      User      @relation("BountySubmitter", fields: [submittedById], references: [id], onDelete: Cascade)
+  approvedBy       User?     @relation("BountyApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([category])
+  @@index([submittedById])
+}
+
 
 
 

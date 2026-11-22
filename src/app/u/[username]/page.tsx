@@ -226,10 +226,10 @@ export default async function PublicProfilePage({ params }: PageProps) {
       {/* Back Button */}
       <div className="flex items-center justify-between mb-6">
         <Link
-          href="/members"
+          href="/"
           className="inline-flex items-center gap-1.5 text-xs font-bold text-[#7C3AED] dark:text-[#A78BFA] hover:underline"
         >
-          <ArrowLeft size={15} /> Kembali ke Direktori Petualang
+          <ArrowLeft size={15} /> Kembali ke Beranda
         </Link>
       </div>
 
