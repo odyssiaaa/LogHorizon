@@ -190,6 +190,8 @@ export async function GET() {
     postsCount,
     tournamentsCount,
     isPremium: isOwner || user.isPremium,
+    isVerifiedSeller: isOwner || user.isVerifiedSeller,
+    sellerVerificationStatus: isOwner ? "VERIFIED" : user.sellerVerificationStatus,
     favoriteGames: user.favoriteGames ?? [],
     inGameName: user.inGameName ?? "",
     highestRank: user.highestRank ?? "",

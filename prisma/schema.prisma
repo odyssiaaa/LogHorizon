@@ -143,6 +143,14 @@ model User {
   allowDirectMessages Boolean                  @default(true)
   followers           Follow[]                 @relation("UserFollowers")
   following           Follow[]                 @relation("UserFollowing")
+
+  // Verified Seller Program (Manual Staff Verification)
+  isVerifiedSeller           Boolean   @default(false)
+  verifiedSellerAt           DateTime?
+  verifiedSellerBy           String?
+  sellerVerificationStatus   String    @default("NONE") // "NONE" | "REQUESTED" | "VERIFIED" | "REJECTED"
+  sellerPactAcceptedAt       DateTime?
+  sellerVerificationNote     String?   @db.Text
 }
 
 model Tournament {

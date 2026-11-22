@@ -79,6 +79,7 @@ export async function GET(request: Request) {
             avatar: true,
             role: true,
             isPremium: true,
+            isVerifiedSeller: true,
             discordId: true,
             tempTitle: true,
             tempTitleExpiresAt: true,

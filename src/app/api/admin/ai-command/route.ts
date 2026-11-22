@@ -5,6 +5,7 @@ import { isGuildOwner } from "@/lib/caste";
 import { notifyNewLfgParty, sendDiscordNotice, DISCORD_CHANNELS, DiscordChannelKey, sendDiscordChannelMessage, resolveDiscordChannelKey, notifyPartnership, notifyAdminCommandAudit, getBaseAppUrl, DiscordEmbed } from "@/lib/discord-webhook";
 import { createNotification } from "@/lib/notifications";
 import { logSecurityIncident } from "@/lib/satpam-guardian";
+import { notifyVerifiedSellerAudit } from "@/lib/verified-seller";
 import { generateTemplateBracket, shuffleArray, advanceMatchWinner, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentLossReason } from "@/lib/tournament";
 import { DonationStatus, EscrowStatus, LfgStatus, PostCategory, Prisma, Role, TournamentStatus } from "@prisma/client";
 
@@ -273,6 +274,19 @@ const GEMINI_TOOLS = [
             reason: { type: "STRING", description: "Alasan pemblokiran (opsional)" }
           },
           required: ["username", "isBanned"]
+        }
+      },
+      {
+        name: "toggleVerifiedSeller",
+        description: "Memberikan atau mencabut status lencana resmi Verified Seller untuk member marketplace",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            username: { type: "STRING", description: "Username akun member yang akan diubah status Verified Seller-nya" },
+            isVerified: { type: "BOOLEAN", description: "True untuk memberikan status Verified Seller, False untuk mencabut" },
+            reason: { type: "STRING", description: "Catatan atau alasan verifikasi/pencabutan (opsional)" }
+          },
+          required: ["username", "isVerified"]
         }
       },
 
@@ -590,10 +604,11 @@ PANDUAN PEMILIHAN TOOLS:
 11. Kelola Rekber (Klaim Wasit / Cairkan Dana / Batalkan) ➡️ "manageRekberTicket"
 12. Ubah Role/XP Member ➡️ "updateUserRoleOrXp" (Perlindungan: Akun Founder/Emperor .odyssia TIDAK BISA diubah)
 13. Ban/Unban Member ➡️ "toggleUserBan" (Perlindungan: Akun Founder/Emperor .odyssia TIDAK BISA diban)
-14. Ubah pengaturan SiteConfig / Knowledge Base AI ➡️ "updateSiteConfig"
-15. Tambah/Hapus Sponsor resmi ➡️ "manageSponsor"
-16. Kirim Broadcast Pengumuman ➡️ "broadcastAnnouncement" (Tentukan targetPlatform: 'WEB_ONLY' jika Admin minta hanya website/beranda, 'DISCORD_ONLY' jika minta hanya ke Discord, atau 'BOTH' jika keduanya. Tentukan targetChannel: 'announcements' [#📢・announcements], 'giveaway' [#🎁・events-giveaway], 'info_live' [#📡・info-live], 'partnership' [#🤝・partnership], 'lfg' [#🎮・gaming-lounge], 'mod_logs' [#🛡️・mod-logs], atau 'auto' sesuai konteks isi pengumuman. Catatan: Broadcast akan selalu menghasilkan draf preview terlebih dahulu untuk dikonfirmasi Admin).
-17. Jika pertanyaan informasi biasa (analisis stats, tanya jadwal, status turnamen), jawablah secara ringkas, sopan, dan taktis tanpa memanggil tool.
+14. Berikan / Cabut Lencana Verified Seller ➡️ "toggleVerifiedSeller" (Memberikan atau mencabut status lencana resmi ✅ VERIFIED SELLER pada akun marketplace & profil)
+15. Ubah pengaturan SiteConfig / Knowledge Base AI ➡️ "updateSiteConfig"
+16. Tambah/Hapus Sponsor resmi ➡️ "manageSponsor"
+17. Kirim Broadcast Pengumuman ➡️ "broadcastAnnouncement" (Tentukan targetPlatform: 'WEB_ONLY' jika Admin minta hanya website/beranda, 'DISCORD_ONLY' jika minta hanya ke Discord, atau 'BOTH' jika keduanya. Tentukan targetChannel: 'announcements' [#📢・announcements], 'giveaway' [#🎁・events-giveaway], 'info_live' [#📡・info-live], 'partnership' [#🤝・partnership], 'lfg' [#🎮・gaming-lounge], 'mod_logs' [#🛡️・mod-logs], atau 'auto' sesuai konteks isi pengumuman. Catatan: Broadcast akan selalu menghasilkan draf preview terlebih dahulu untuk dikonfirmasi Admin).
+18. Jika pertanyaan informasi biasa (analisis stats, tanya jadwal, status turnamen), jawablah secara ringkas, sopan, dan taktis tanpa memanggil tool.
 
 ${contextPrompt}`;
 
@@ -1548,6 +1563,68 @@ async function executeToolAction(
         before: { isBanned: targetUser.isBanned },
         after: { isBanned },
         details: isBanned ? `Alasan: ${reason}` : "Akun dapat kembali login normal.",
+      },
+      requiresConfirmation: false,
+    };
+  }
+
+  if (normalizedTool === "toggleVerifiedSeller") {
+    const rawUsername = String(args.username || "").trim();
+    const cleanUsername = rawUsername.replace(/^@/, "");
+    const isVerified = Boolean(args.isVerified);
+    const reason = typeof args.reason === "string" && args.reason.trim()
+      ? args.reason.trim()
+      : isVerified
+      ? "Tervalidasi wawancara langsung & verifikasi rekam jejak transaksi oleh Admin."
+      : "Status Verified Seller dicabut oleh Admin.";
+
+    const targetUser = await prisma.user.findFirst({
+      where: { username: { equals: cleanUsername, mode: "insensitive" } },
+      select: { id: true, username: true, name: true, isVerifiedSeller: true, sellerVerificationStatus: true },
+    });
+
+    if (!targetUser) {
+      return { success: false, reply: `Member @${cleanUsername} tidak ditemukan di database.`, toolResult: null };
+    }
+
+    await prisma.user.update({
+      where: { id: targetUser.id },
+      data: {
+        isVerifiedSeller: isVerified,
+        sellerVerificationStatus: isVerified ? "VERIFIED" : "NONE",
+        verifiedSellerAt: isVerified ? new Date() : null,
+        verifiedSellerBy: adminUser.username ?? adminUser.name ?? "Admin",
+        sellerVerificationNote: reason,
+      },
+    });
+
+    // Kirim laporan audit ke channel Discord #🛡️・mod-logs
+    void notifyVerifiedSellerAudit({
+      adminName: adminUser.username ?? adminUser.name ?? "Admin",
+      targetUsername: targetUser.username ?? targetUser.name ?? "Petualang",
+      action: isVerified ? "VERIFIED" : "REVOKED",
+      note: reason,
+    });
+
+    // Notifikasi in-app ke member
+    void createNotification({
+      userId: targetUser.id,
+      type: "SYSTEM",
+      message: isVerified
+        ? `🛡️ Selamat! Lencana resmi ✅ VERIFIED SELLER telah disetujui dan diterbitkan oleh @${adminUser.username}. Lencana kini aktif di lapak Marketplace dan profil Anda.`
+        : `⚠️ Status Verified Seller Anda telah dicabut oleh jajaran Admin. Alasan: ${reason}`,
+      link: isVerified ? "/profile" : "/marketplace",
+    });
+
+    return {
+      success: true,
+      reply: `Berhasil! Status Verified Seller untuk @${targetUser.username} telah ${isVerified ? "DITERBITKAN (VERIFIED)" : "DICABUT (REVOKED)"}. Laporan audit resmi telah dikirim ke channel Discord #🛡️・mod-logs.`,
+      toolResult: {
+        action: "toggleVerifiedSeller",
+        summary: `${isVerified ? "Beri Verified Seller" : "Cabut Verified Seller"}: @${targetUser.username}`,
+        before: { isVerifiedSeller: targetUser.isVerifiedSeller },
+        after: { isVerifiedSeller: isVerified },
+        details: reason,
       },
       requiresConfirmation: false,
     };

@@ -3,6 +3,7 @@ import { requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { isGuildOwner } from "@/lib/caste";
 import { logSecurityIncident } from "@/lib/satpam-guardian";
+import { notifyVerifiedSellerAudit } from "@/lib/verified-seller";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -81,6 +82,28 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const lvlVal = Number(data.level);
     if (!Number.isSafeInteger(lvlVal) || lvlVal < 1 || lvlVal > 100) return Response.json({ error: "Level harus 1–100." }, { status: 400 });
     updateData.level = lvlVal;
+  }
+
+  // 6. Verified Seller Status (Admin only)
+  if (Object.prototype.hasOwnProperty.call(data, "isVerifiedSeller")) {
+    if (access.user.role !== "ADMIN" && !isGuildOwner(access.user)) {
+      return Response.json({ error: "Hanya Admin yang dapat mengubah status Verified Seller." }, { status: 403 });
+    }
+    const isVerified = Boolean(data.isVerifiedSeller);
+    updateData.isVerifiedSeller = isVerified;
+    updateData.sellerVerificationStatus = isVerified ? "VERIFIED" : "NONE";
+    updateData.verifiedSellerAt = isVerified ? new Date() : null;
+    updateData.verifiedSellerBy = access.user.username ?? access.user.name ?? "Admin";
+    if (typeof data.sellerVerificationNote === "string") {
+      updateData.sellerVerificationNote = data.sellerVerificationNote;
+    }
+
+    void notifyVerifiedSellerAudit({
+      adminName: access.user.username ?? access.user.name ?? "Admin",
+      targetUsername: existing.username ?? existing.name ?? "Petualang",
+      action: isVerified ? "VERIFIED" : "REVOKED",
+      note: typeof data.sellerVerificationNote === "string" ? data.sellerVerificationNote : undefined,
+    });
   }
 
   if (Object.keys(updateData).length === 0) {

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
+  Award,
+  BadgeCheck,
   Check,
   Coins,
   Copy,
@@ -44,6 +46,7 @@ export type PublicProfileProps = {
     level: number;
     badges: string[];
     isPremium: boolean;
+    isVerifiedSeller?: boolean;
     bio?: string | null;
     favoriteGames: string[];
     inGameName?: string | null;
@@ -265,6 +268,13 @@ export function PublicProfileClient({
                 {(user.isPremium || isOwner || user.role === "ADMIN") && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30">
                     <Sparkles size={12} /> {isOwner ? "👑 Guild Emperor" : user.role === "ADMIN" ? "✨ Prince / Princess (Admin)" : "✦ Elite Member"}
+                  </span>
+                )}
+
+                {(user.isVerifiedSeller || isOwner) && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-black bg-amber-500/20 text-amber-500 dark:text-amber-400 border border-amber-500/40 shadow-sm" title="Penjual Terpercaya Resmi LogHorizon (Tervalidasi Staf)">
+                    <BadgeCheck size={13} className="text-amber-500 shrink-0" />
+                    <span>✅ VERIFIED SELLER</span>
                   </span>
                 )}
               </div>

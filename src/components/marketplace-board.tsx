@@ -20,6 +20,7 @@ import { motion } from "framer-motion";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
 import { StaffCardModerationMenu, StaffActionItem } from "@/components/staff-moderation-dropdown";
+import { VerifiedSellerModal } from "@/components/verified-seller-modal";
 
 type MarketPost = MarketplacePostRecord;
 
@@ -60,6 +61,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [escrowLoading, setEscrowLoading] = useState("");
   const [activeEscrowModalId, setActiveEscrowModalId] = useState<string | null>(null);
   const [liveState, setLiveState] = useState<LiveState>("live");
+  const [showVerifiedSellerModal, setShowVerifiedSellerModal] = useState(false);
 
   async function performContactAction(id: string, contactData: { contact: string; discordId?: string | null; sellerUsername?: string | null }, preopenedWindow?: Window | null) {
     const value = contactData.contact;
@@ -328,7 +330,16 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               {liveState === "live" ? "● LIVE SYNC" : liveState === "connecting" ? "MENYAMBUNG LIVE…" : liveState === "stale" ? "MEMPERBARUI…" : liveState === "error" ? "TERPUTUS" : "OFFLINE"}
             </span>
           </div>
-          <div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <button
+              type="button"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 border border-amber-500/40 transition-colors shadow-sm"
+              onClick={() => setShowVerifiedSellerModal(true)}
+              title="Dapatkan lencana Penjual Terpercaya resmi LogHorizon melalui wawancara staf"
+            >
+              <ShieldCheck size={16} className="text-amber-500 shrink-0" />
+              <span>🛡️ Ajukan Verified Seller</span>
+            </button>
             {status === "loading" ? (
               <span className="nav-loading" />
             ) : (
@@ -482,9 +493,10 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
             return <motion.article className={`market-card rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#7C3AED] transition-all p-4 shadow-sm dark:shadow-none ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold opacity-60" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
               <div className="market-listing-labels flex flex-wrap items-center gap-1.5 mb-3 font-mono">
                 {post.isPinned && <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/40 whitespace-nowrap">PINNED</span>}
-                {(post.author.isPremium || post.author.role === "ADMIN" || post.author.username === ".odyssia") && (
-                  <span className="px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase bg-amber-500/15 text-amber-600 dark:text-[#F59E0B] border border-amber-500/30 whitespace-nowrap">
-                    ✦ VERIFIED SELLER
+                {(post.author.isVerifiedSeller || post.author.username === ".odyssia") && (
+                  <span className="px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-600 dark:text-[#F59E0B] border border-amber-500/40 whitespace-nowrap flex items-center gap-1 shadow-sm" title="Penjual Terpercaya Resmi LogHorizon (Tervalidasi Staf)">
+                    <ShieldCheck size={11} className="text-amber-500 shrink-0" />
+                    <span>✦ VERIFIED SELLER</span>
                   </span>
                 )}
                 <span className={`px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase whitespace-nowrap ${market.type === "WTS" ? "bg-[#7C3AED] text-white" : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45]"}`}>{market.type}</span>
@@ -699,6 +711,11 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
     )}
     <LoginPrompt open={Boolean(loginAction)} action={loginAction} onClose={() => setLoginAction("")} />
     <ReportDialog postId={reportId} open={Boolean(reportId)} onClose={() => setReportId(null)} onSuccess={setNotice} />
+    <VerifiedSellerModal
+      isOpen={showVerifiedSellerModal}
+      onClose={() => setShowVerifiedSellerModal(false)}
+      onSuccess={() => void fetchMarketListings(true)}
+    />
   </main>
   );
 }

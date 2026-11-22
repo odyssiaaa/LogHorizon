@@ -14,6 +14,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       avatar: true,
       role: true,
       isPremium: true,
+      isVerifiedSeller: true,
       tempTitle: true,
       tempTitleExpiresAt: true,
       equippedAvatarFrame: true,

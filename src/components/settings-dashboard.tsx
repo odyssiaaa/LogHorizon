@@ -15,6 +15,7 @@ import {
   Gamepad2,
   RefreshCw,
   Shield,
+  ShieldCheck,
   Sparkles,
   SunMoon,
   Swords,
@@ -35,6 +36,7 @@ import { RoyalChestWidget } from "@/components/royal-chest-widget";
 import { ReferralInviteCard } from "@/components/referral-invite-card";
 import { GuildArmoryShop } from "@/components/guild-armory-shop";
 import { getCustomTitleBadge } from "@/lib/armory-catalog";
+import { VerifiedSellerModal } from "@/components/verified-seller-modal";
 
 type Achievement = {
   id: string;
@@ -65,6 +67,8 @@ type Profile = {
   postsCount?: number;
   tournamentsCount?: number;
   isPremium: boolean;
+  isVerifiedSeller?: boolean;
+  sellerVerificationStatus?: string;
   equippedAvatarFrame?: string | null;
   equippedCustomTitle?: string | null;
   partyMembership?: {
@@ -175,6 +179,7 @@ export function SettingsDashboard() {
   const [bio, setBio] = useState("");
   const [allowDirectMessages, setAllowDirectMessages] = useState(true);
   const [savingGamer, setSavingGamer] = useState(false);
+  const [showVerifiedSellerModal, setShowVerifiedSellerModal] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -522,7 +527,30 @@ export function SettingsDashboard() {
                       Discord ID: {profile?.discordId ?? "Tidak terhubung"}
                     </p>
                   </div>
-                  <div className="flex items-center justify-center sm:justify-end gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 shrink-0">
+                    {profile?.isVerifiedSeller ? (
+                      <span
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 text-amber-400 border border-amber-500/40 shadow-sm"
+                        title="Penjual Terpercaya Resmi LogHorizon (Tervalidasi Staf)"
+                      >
+                        <ShieldCheck size={14} className="text-amber-500" />
+                        <span>✅ VERIFIED SELLER</span>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowVerifiedSellerModal(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/40 transition-colors shadow-sm cursor-pointer"
+                        title="Ajukan verifikasi penjual terpercaya melalui wawancara staf"
+                      >
+                        <ShieldCheck size={14} className="text-amber-500" />
+                        <span>
+                          {profile?.sellerVerificationStatus === "REQUESTED"
+                            ? "⏳ Menunggu Wawancara"
+                            : "🛡️ Ajukan Verified Seller"}
+                        </span>
+                      </button>
+                    )}
                     <span
                       className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border ${caste.color}`}
                     >
@@ -1228,6 +1256,12 @@ export function SettingsDashboard() {
           </section>
         </div>
       )}
+
+      <VerifiedSellerModal
+        isOpen={showVerifiedSellerModal}
+        onClose={() => setShowVerifiedSellerModal(false)}
+        onSuccess={() => void fetchProfileData()}
+      />
     </main>
   );
 }

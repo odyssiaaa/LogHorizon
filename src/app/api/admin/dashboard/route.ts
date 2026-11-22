@@ -31,6 +31,7 @@ export async function GET(request: Request) {
     totalForumThreads,
     pendingReports,
     totalDonationsSum,
+    pendingSellerVerifications,
     reports,
     totalUsers,
     users,
@@ -65,6 +66,13 @@ export async function GET(request: Request) {
       where: { status: { in: ["APPROVED", "SUCCEEDED"] } },
       _sum: { amount: true },
     }),
+    prisma.user.count({
+      where: {
+        isBanned: false,
+        isVerifiedSeller: false,
+        sellerVerificationStatus: "REQUESTED",
+      },
+    }),
     prisma.report.findMany({
       where: { status: ReportStatus.PENDING },
       include: {
@@ -92,6 +100,12 @@ export async function GET(request: Request) {
         role: true,
         isBanned: true,
         isPremium: true,
+        isVerifiedSeller: true,
+        sellerVerificationStatus: true,
+        sellerPactAcceptedAt: true,
+        verifiedSellerAt: true,
+        verifiedSellerBy: true,
+        sellerVerificationNote: true,
         xp: true,
         level: true,
         badges: true,
@@ -211,6 +225,7 @@ export async function GET(request: Request) {
       pendingDonations: isAdmin ? pendingDonationsCount : 0,
       pendingTournamentRegistrations,
       pendingReports,
+      pendingSellerVerifications: isAdmin ? pendingSellerVerifications : 0,
       totalDonations: isAdmin ? (totalDonationsSum._sum.amount ?? 0) : 0,
     },
     reports,

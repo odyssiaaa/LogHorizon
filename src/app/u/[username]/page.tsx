@@ -44,6 +44,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
       level: true,
       badges: true,
       isPremium: true,
+      isVerifiedSeller: true,
       bio: true,
       favoriteGames: true,
       inGameName: true,

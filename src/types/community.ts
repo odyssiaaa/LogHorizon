@@ -10,6 +10,7 @@ export type AuthorSummary = {
   avatar: string | null;
   role: RoleType;
   isPremium: boolean;
+  isVerifiedSeller?: boolean;
   successfulSales?: number;
   equippedAvatarFrame?: string | null;
   equippedCustomTitle?: string | null;

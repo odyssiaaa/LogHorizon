@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -23,6 +23,7 @@ import {
   ImageIcon,
   LayoutDashboard,
   Megaphone,
+  MessageSquare,
   Pin,
   PinOff,
   Phone,
@@ -30,6 +31,7 @@ import {
   QrCode,
   RefreshCw,
   RotateCcw,
+  Scale,
   Search,
   Settings,
   Shield,
@@ -44,7 +46,6 @@ import {
   Eye,
   Terminal,
   Zap,
-  MessageSquare,
   X,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
@@ -93,6 +94,12 @@ type Member = {
   role: Role;
   isBanned: boolean;
   isPremium?: boolean;
+  isVerifiedSeller?: boolean;
+  sellerVerificationStatus?: string;
+  sellerPactAcceptedAt?: string | null;
+  verifiedSellerAt?: string | null;
+  verifiedSellerBy?: string | null;
+  sellerVerificationNote?: string | null;
   xp?: number;
   level?: number;
   badges?: string[];
@@ -195,6 +202,7 @@ type DashboardData = {
     pendingDonations?: number;
     pendingTournamentRegistrations?: number;
     pendingReports: number;
+    pendingSellerVerifications?: number;
     totalDonations: number;
   };
   reports: Report[];
@@ -214,7 +222,17 @@ type DashboardData = {
   currentUserId: string;
 };
 
-type Tab = "overview" | "ai_command" | "settings" | "tournaments" | "hall_of_winners" | "treasury" | "members" | "moderation" | "security_logs";
+type Tab =
+  | "overview"
+  | "ai_command"
+  | "settings"
+  | "tournaments"
+  | "hall_of_winners"
+  | "treasury"
+  | "members"
+  | "verified_sellers"
+  | "moderation"
+  | "security_logs";
 
 const formatMoney = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
@@ -236,6 +254,69 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
   const [tournamentFilterStatus, setTournamentFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [adminProofLightbox, setAdminProofLightbox] = useState<string | null>(null);
   const [adminVerificationLoading, setAdminVerificationLoading] = useState<string | null>(null);
+
+  // Verified Seller Management State
+  const [sellerVerifications, setSellerVerifications] = useState<{
+    pendingRequests: any[];
+    verifiedSellers: any[];
+  }>({ pendingRequests: [], verifiedSellers: [] });
+  const [loadingSellerVerifications, setLoadingSellerVerifications] = useState(false);
+
+  const fetchSellerVerifications = useCallback(async () => {
+    try {
+      setLoadingSellerVerifications(true);
+      const res = await fetch("/api/admin/seller-verification");
+      if (res.ok) {
+        const json = await res.json();
+        setSellerVerifications({
+          pendingRequests: json.pendingRequests || [],
+          verifiedSellers: json.verifiedSellers || [],
+        });
+      }
+    } catch (err) {
+      console.error("Gagal memuat verifikasi penjual:", err);
+    } finally {
+      setLoadingSellerVerifications(false);
+    }
+  }, []);
+
+  async function handleSellerVerificationAction(
+    targetUserId: string,
+    action: "APPROVE" | "REVOKE" | "REJECT",
+    note?: string
+  ) {
+    if (!isAdmin && !isOwner) {
+      setError("Hanya jajaran Admin (👑 Emperor, ✨ Prince/Princess, 📘 Grand Chancellor) yang berwenang.");
+      return;
+    }
+    const confirmMsg =
+      action === "APPROVE"
+        ? "Validasi akun ini dan terbitkan lencana resmi Verified Seller?"
+        : action === "REVOKE"
+        ? "Cabut lencana Verified Seller dari akun ini?"
+        : "Tolak pengajuan verifikasi penjual ini?";
+    if (!window.confirm(confirmMsg)) return;
+
+    setBusyId(targetUserId);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/seller-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId, action, note }),
+      });
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error || "Gagal memproses verifikasi.");
+      setNotice(resData.message || "Aksi verifikasi berhasil.");
+      setTimeout(() => setNotice(""), 4000);
+      void fetchSellerVerifications();
+      loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
+    } finally {
+      setBusyId("");
+    }
+  }
   const [adminRulesViewModal, setAdminRulesViewModal] = useState<any | null>(null);
   const [editTournamentModal, setEditTournamentModal] = useState<any | null>(null);
 
@@ -602,10 +683,13 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
   // Strict Moderator Guard: Ensure non-admins never access admin-only tabs
   useEffect(() => {
-    if (!isAdmin && (tab === "settings" || tab === "treasury" || tab === "ai_command")) {
+    if (!isAdmin && (tab === "settings" || tab === "treasury" || tab === "ai_command" || tab === "verified_sellers")) {
       setTab("overview");
     }
-  }, [isAdmin, tab]);
+    if (tab === "verified_sellers") {
+      fetchSellerVerifications();
+    }
+  }, [isAdmin, tab, fetchSellerVerifications]);
 
   useLiveSync(() => {
     const query = new URLSearchParams({ page: String(page), search });
@@ -616,6 +700,9 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
       })
       .catch(() => {});
     fetchTournaments();
+    if (tab === "verified_sellers") {
+      fetchSellerVerifications();
+    }
   }, { intervalMs: 12000, revalidateOnFocus: true });
 
   // Save Site Config CMS
@@ -1214,6 +1301,32 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               </div>
             </button>
 
+            {/* VERIFIKASI PENJUAL (KHUSUS ADMIN) */}
+            {isAdmin && (
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                  tab === "verified_sellers"
+                    ? "bg-[#9D4EDD] text-white"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+                }`}
+                onClick={() => {
+                  setTab("verified_sellers");
+                  fetchSellerVerifications();
+                }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck size={16} />
+                  <span>Verifikasi Penjual</span>
+                </div>
+                {Boolean(data?.stats.pendingSellerVerifications || sellerVerifications.pendingRequests.length) && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${tab === "verified_sellers" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                    {data?.stats.pendingSellerVerifications || sellerVerifications.pendingRequests.length}
+                  </span>
+                )}
+              </button>
+            )}
+
             {/* 5. MODERASI & LOG KEAMANAN SATPAM AI */}
             <button
               type="button"
@@ -1336,6 +1449,26 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             >
               <Users size={14} /> <span>4. Member &amp; Kasta</span>
             </button>
+
+            {isAdmin && (
+              <button
+                type="button"
+                className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
+                  tab === "verified_sellers" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                }`}
+                onClick={() => {
+                  setTab("verified_sellers");
+                  fetchSellerVerifications();
+                }}
+              >
+                <ShieldCheck size={14} /> <span>Verifikasi Penjual</span>
+                {Boolean(data?.stats.pendingSellerVerifications || sellerVerifications.pendingRequests.length) && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500 text-black font-extrabold">
+                    {data?.stats.pendingSellerVerifications || sellerVerifications.pendingRequests.length}
+                  </span>
+                )}
+              </button>
+            )}
 
             <button
               type="button"
@@ -3630,6 +3763,17 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                               >
                                 {member.isPremium ? "★ Premium" : "Standar"}
                               </button>
+
+                              {member.isVerifiedSeller ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/15 text-amber-500 border border-amber-500/40">
+                                  <ShieldCheck size={11} className="text-amber-500" />
+                                  <span>✅ Verified</span>
+                                </span>
+                              ) : member.sellerVerificationStatus === "REQUESTED" ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/40 animate-pulse">
+                                  ⏳ Menunggu Validasi
+                                </span>
+                              ) : null}
                             </div>
                           </div>
 
@@ -3682,6 +3826,7 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                             <th className="py-2.5">Role Web</th>
                             <th className="py-2.5">Level / XP</th>
                             <th className="py-2.5">Status Premium</th>
+                            <th className="py-2.5">Verified Seller</th>
                             <th className="py-2.5 text-right">Aksi Akun</th>
                           </tr>
                         </thead>
@@ -3758,6 +3903,46 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                                   </button>
                                 </td>
 
+                                <td className="py-3">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    {member.isVerifiedSeller ? (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/15 text-amber-500 border border-amber-500/40 whitespace-nowrap">
+                                        <ShieldCheck size={11} className="text-amber-500" />
+                                        <span>✅ VERIFIED</span>
+                                      </span>
+                                    ) : member.sellerVerificationStatus === "REQUESTED" ? (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/40 whitespace-nowrap animate-pulse">
+                                        ⏳ DIAJUKAN
+                                      </span>
+                                    ) : (
+                                      <span className="text-[11px] text-gray-500">Standar</span>
+                                    )}
+                                    {isAdmin && !isOwnerMember && (
+                                      member.isVerifiedSeller ? (
+                                        <button
+                                          type="button"
+                                          disabled={busyId === member.id}
+                                          onClick={() => void handleSellerVerificationAction(member.id, "REVOKE")}
+                                          className="px-1.5 py-0.5 text-[9px] font-bold border border-red-500/30 text-red-400 hover:bg-red-500/10 rounded transition"
+                                          title="Cabut Lencana Verified Seller"
+                                        >
+                                          Cabut
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          disabled={busyId === member.id}
+                                          onClick={() => void handleSellerVerificationAction(member.id, "APPROVE")}
+                                          className="px-1.5 py-0.5 text-[9px] font-bold border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 rounded transition"
+                                          title="Validasi & Terbitkan Lencana Verified Seller"
+                                        >
+                                          + Verified
+                                        </button>
+                                      )
+                                    )}
+                                  </div>
+                                </td>
+
                                 <td className="py-3 text-right">
                                   {isOwnerMember ? (
                                     <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20">
@@ -3810,6 +3995,228 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                           Selanjutnya
                         </button>
                       </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* ========================================================================= */}
+            {/* TAB: PANEL VERIFIKASI PENJUAL TERPERCAYA (MANUAL STAFF VERIFICATION) */}
+            {/* ========================================================================= */}
+            {tab === "verified_sellers" && isAdmin && (
+              <section className="space-y-6" role="tabpanel">
+                {/* Header Banner */}
+                <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <span className="p-2 rounded-none bg-amber-500/15 border border-amber-500/30 text-amber-500">
+                          <ShieldCheck size={22} />
+                        </span>
+                        <div>
+                          <h2 className="text-base font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                            Verifikasi Penjual Terpercaya
+                            <span className="text-[10px] px-2 py-0.5 rounded-none bg-amber-500/20 text-amber-400 font-mono font-bold">
+                              ✦ VERIFIED SELLER
+                            </span>
+                          </h2>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Validasi identitas &amp; rekam jejak calon penjual melalui wawancara langsung Staf. Laporan audit otomatis dikirim ke channel Discord #mod-logs.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={fetchSellerVerifications}
+                      disabled={loadingSellerVerifications}
+                      className="px-3 py-1.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 self-start sm:self-auto transition"
+                    >
+                      <RefreshCw size={12} className={loadingSellerVerifications ? "animate-spin" : ""} />
+                      <span>Segarkan Data</span>
+                    </button>
+                  </div>
+
+                  <div className="mt-4 p-3.5 bg-purple-950/20 border border-purple-500/30 text-xs font-mono text-purple-300 space-y-1">
+                    <p className="font-bold flex items-center gap-1.5 text-white">
+                      <Scale size={14} className="text-amber-400" />
+                      Protokol Privasi &amp; Pertanggungjawaban Hukum:
+                    </p>
+                    <p className="text-[11px] text-gray-300">
+                      Website LogHorizon tidak menyimpan foto KTP mentah member di database publik. Setiap calon penjual telah menyetujui Pakta Integritas (bersedia menerima sanksi sosial publikasi blacklist penipu &amp; diproses hukum pidana jika melakukan scam).
+                    </p>
+                  </div>
+                </div>
+
+                {/* BAGIAN 1: ANTREAN PENGAJUAN (REQUESTED) */}
+                <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2 font-mono">
+                      <span>⏳ Antrean Pengajuan Menunggu Wawancara Staf</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold">
+                        {sellerVerifications.pendingRequests.length}
+                      </span>
+                    </h3>
+                  </div>
+
+                  {sellerVerifications.pendingRequests.length === 0 ? (
+                    <div className="py-8 px-4 text-center border border-dashed border-gray-200 dark:border-[#2E1E45] bg-gray-50/50 dark:bg-[#180E2B]/50">
+                      <ShieldCheck size={28} className="mx-auto text-emerald-400 mb-2 opacity-80" />
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-200">Tidak ada pengajuan yang tertunda</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5">Seluruh permohonan Verified Seller telah ditinjau dan divalidasi oleh Staf.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {sellerVerifications.pendingRequests.map((req) => (
+                        <div
+                          key={req.id}
+                          className="p-4 rounded-none border border-amber-500/30 bg-amber-950/10 space-y-3 text-left"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <DiscordAvatar src={req.avatar} username={req.username ?? "Member"} size={36} />
+                              <div>
+                                <h4 className="font-bold text-sm text-gray-900 dark:text-white">
+                                  @{req.username ?? "Petualang"}
+                                </h4>
+                                <p className="text-[11px] text-gray-400 font-mono">
+                                  Lv.{req.level ?? 1} • {(req.xp ?? 0).toLocaleString("id-ID")} XP • Discord: {req.discordId || "Belum ditautkan"}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40 uppercase">
+                              PENDING INTERVIEW
+                            </span>
+                          </div>
+
+                          <div className="p-2.5 bg-black/40 border border-white/10 text-xs font-mono space-y-1">
+                            <div className="flex items-center justify-between text-gray-300">
+                              <span>Pakta Integritas:</span>
+                              <span className="text-emerald-400 font-bold">✅ DISETUJUI SADAR HUKUM</span>
+                            </div>
+                            <div className="flex items-center justify-between text-gray-300">
+                              <span>Waktu Persetujuan:</span>
+                              <span className="text-gray-400">
+                                {req.sellerPactAcceptedAt ? new Date(req.sellerPactAcceptedAt).toLocaleString("id-ID") : "-"}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-gray-300">
+                              <span>Lapak / Rekber Sukses:</span>
+                              <span className="text-[#A78BFA] font-bold">
+                                {req._count?.posts ?? 0} Lapak • {req._count?.escrowAsSeller ?? 0} Rekber Sukses
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 pt-1 flex-wrap">
+                            <Link
+                              href={`/messages?targetUser=${req.id}`}
+                              className="px-3 py-1.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-mono font-bold flex items-center gap-1.5 transition shadow-sm"
+                            >
+                              <MessageSquare size={13} />
+                              <span>💬 Buka Chat Wawancara</span>
+                            </Link>
+                            <button
+                              type="button"
+                              disabled={busyId === req.id}
+                              onClick={() => void handleSellerVerificationAction(req.id, "APPROVE")}
+                              className="px-3 py-1.5 rounded-none bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono font-bold flex items-center gap-1.5 transition shadow-sm disabled:opacity-50"
+                            >
+                              <CheckCircle size={13} />
+                              <span>✅ Validasi &amp; Beri Lencana</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busyId === req.id}
+                              onClick={() => void handleSellerVerificationAction(req.id, "REJECT")}
+                              className="px-3 py-1.5 rounded-none bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 text-xs font-mono font-bold transition disabled:opacity-50"
+                            >
+                              <span>Tolak</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* BAGIAN 2: DAFTAR PENJUAL TERVERIFIKASI AKTIF (VERIFIED) */}
+                <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2 font-mono">
+                      <span>✅ Penjual Terverifikasi Aktif (Verified Sellers)</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">
+                        {sellerVerifications.verifiedSellers.length}
+                      </span>
+                    </h3>
+                  </div>
+
+                  {sellerVerifications.verifiedSellers.length === 0 ? (
+                    <div className="py-8 px-4 text-center border border-dashed border-gray-200 dark:border-[#2E1E45] bg-gray-50/50 dark:bg-[#180E2B]/50">
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-200">Belum ada penjual terverifikasi</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5">Daftar member yang berhasil divalidasi akan tampil di sini.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-gray-200 dark:border-[#2E1E45] text-gray-400 font-mono text-[11px]">
+                            <th className="py-2.5 px-3">PENJUAL</th>
+                            <th className="py-2.5 px-3">STATUS</th>
+                            <th className="py-2.5 px-3">VALIDATOR &amp; TANGGAL</th>
+                            <th className="py-2.5 px-3">REPUTASI</th>
+                            <th className="py-2.5 px-3 text-right">AKSI</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-[#1F1435]">
+                          {sellerVerifications.verifiedSellers.map((seller) => (
+                            <tr key={seller.id} className="hover:bg-gray-50/50 dark:hover:bg-[#1A0F2E]/50 transition-colors">
+                              <td className="py-3 px-3">
+                                <div className="flex items-center gap-2.5">
+                                  <DiscordAvatar src={seller.avatar} username={seller.username ?? "Member"} size={28} />
+                                  <div>
+                                    <Link href={`/u/${encodeURIComponent(seller.username ?? "")}`} className="font-bold text-gray-900 dark:text-white hover:text-[#A78BFA] block">
+                                      @{seller.username ?? "Petualang"}
+                                    </Link>
+                                    <span className="text-[10px] text-gray-400 font-mono">ID: {seller.discordId || seller.id}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3 px-3">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/15 text-amber-500 border border-amber-500/40">
+                                  <ShieldCheck size={11} className="text-amber-500" /> ✅ VERIFIED
+                                </span>
+                              </td>
+                              <td className="py-3 px-3 font-mono text-gray-400 text-[11px]">
+                                <span className="block text-gray-200">Diverifikasi oleh @{seller.verifiedSellerBy || "Admin"}</span>
+                                <span>{seller.verifiedSellerAt ? new Date(seller.verifiedSellerAt).toLocaleDateString("id-ID") : "-"}</span>
+                              </td>
+                              <td className="py-3 px-3 font-mono text-emerald-400">
+                                {seller._count?.escrowAsSeller ?? 0} Rekber Sukses
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Link
+                                    href={`/messages?targetUser=${seller.id}`}
+                                    className="px-2.5 py-1 rounded text-xs font-mono font-bold bg-[#7C3AED]/20 text-[#A78BFA] hover:bg-[#7C3AED]/30 transition"
+                                  >
+                                    Chat
+                                  </Link>
+                                  <button
+                                    type="button"
+                                    disabled={busyId === seller.id}
+                                    onClick={() => void handleSellerVerificationAction(seller.id, "REVOKE")}
+                                    className="px-2.5 py-1 rounded text-xs font-mono font-bold bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition disabled:opacity-50"
+                                  >
+                                    Cabut Lencana
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>

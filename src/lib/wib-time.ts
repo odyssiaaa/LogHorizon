@@ -62,3 +62,12 @@ export function formatLastSeen(dateInput?: Date | string | null): {
   };
 }
 
+export function formatWibDateTime(dateInput: Date | string = new Date()): string {
+  const d = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  return `${d.toLocaleString("id-ID", {
+    timeZone: "Asia/Jakarta",
+    dateStyle: "medium",
+    timeStyle: "short",
+  })} WIB`;
+}
+
