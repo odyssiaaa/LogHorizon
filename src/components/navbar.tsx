@@ -32,6 +32,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { GlobalUserSearch } from "@/components/global-user-search";
 
 type NavDropdownItem = {
   label: string;
@@ -53,6 +54,12 @@ const navGroups: NavGroup[] = [
     key: "komunitas",
     icon: MessageSquare,
     items: [
+      {
+        label: "Direktori Petualang",
+        href: "/members",
+        desc: "Cari member, cek profil & ajak mabar",
+        icon: Users,
+      },
       {
         label: "Forum Diskusi",
         href: "/forum",
@@ -528,6 +535,9 @@ export function Navbar() {
 
           {/* SISI KANAN: Aksi Desktop & Hamburger Mobile */}
           <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Global Member Search Desktop */}
+            <GlobalUserSearch className="hidden lg:block w-40 xl:w-56 shrink-0" placeholder="🔍 Cari Petualang..." />
+
             {/* Theme Toggle Component */}
             <ThemeToggle />
             <div className="hidden sm:block">
@@ -776,6 +786,15 @@ export function Navbar() {
                 {/* Switcher Bahasa & Mata Uang Mobile */}
                 <div className="mt-3">
                   <LocaleSwitcher isMobileDrawer />
+                </div>
+
+                {/* Global Member Search Mobile */}
+                <div className="mt-3">
+                  <GlobalUserSearch
+                    variant="mobile"
+                    placeholder="🔍 Cari Petualang..."
+                    onSelectUser={() => setMobileOpen(false)}
+                  />
                 </div>
 
                 {/* Kartu Info User Mobile */}

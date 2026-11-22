@@ -85,6 +85,8 @@ type Profile = {
   gender?: string | null;
   birthDate?: string | null;
   showBirthDate?: boolean;
+  bio?: string | null;
+  allowDirectMessages?: boolean;
   inGameName?: string;
   highestRank?: string;
   primaryRole?: string;
@@ -170,6 +172,8 @@ export function SettingsDashboard() {
   const [gender, setGender] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [showBirthDate, setShowBirthDate] = useState(false);
+  const [bio, setBio] = useState("");
+  const [allowDirectMessages, setAllowDirectMessages] = useState(true);
   const [savingGamer, setSavingGamer] = useState(false);
 
   useEffect(() => {
@@ -244,6 +248,8 @@ export function SettingsDashboard() {
         setGender(nextProfile.gender ?? "");
         setBirthDate(nextProfile.birthDate ?? "");
         setShowBirthDate(Boolean(nextProfile.showBirthDate));
+        setBio(nextProfile.bio ?? "");
+        setAllowDirectMessages(nextProfile.allowDirectMessages ?? true);
         setListings(nextListings);
         setError("");
       })
@@ -293,6 +299,8 @@ export function SettingsDashboard() {
           gender: gender ? gender : null,
           birthDate: birthDate ? birthDate : null,
           showBirthDate,
+          bio: bio.trim(),
+          allowDirectMessages,
         }),
       });
       const result = await readApiResponse<{ profile: Profile; message: string }>(response, "Gagal menyimpan profil gamer.");
@@ -947,6 +955,21 @@ export function SettingsDashboard() {
                 )}
               </div>
 
+              {/* Bio Singkat Petualang */}
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1.5">
+                  Bio Singkat Petualang (Maks. 300 Karakter)
+                </label>
+                <textarea
+                  rows={3}
+                  maxLength={300}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Ceritakan tentang dirimu, gaya bermain, role favorit, atau jadwal aktif mabar…"
+                  className="w-full max-w-full box-border px-3 py-2 rounded-lg border border-[#2A1B42] bg-[#0A0612] text-xs text-white placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED]"
+                />
+              </div>
+
               {/* Gender & Tanggal Lahir */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#2A1B42]">
                 <div>
@@ -1088,6 +1111,34 @@ export function SettingsDashboard() {
                   aria-label="Notifikasi Balasan & Transaksi"
                   checked={preferences.notifications}
                   onChange={(e) => updatePreference("notifications", e.target.checked)}
+                  className="h-5 w-9 shrink-0 cursor-pointer accent-[#7C3AED]"
+                />
+              </div>
+
+              {/* Izin Pesan Pribadi (PM) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[#2A1B42] bg-[#0A0612]/60">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare size={16} className="text-[#9D4EDD] shrink-0" />
+                    <h3 className="text-xs sm:text-sm font-bold text-white break-words">Izinkan Pesan Pribadi (PM) Langsung</h3>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5 break-words">
+                    Izinkan semua member komunitas mengirimi saya Pesan Pribadi (PM) secara langsung.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  aria-label="Izinkan Pesan Pribadi (PM)"
+                  checked={allowDirectMessages}
+                  onChange={(e) => {
+                    const nextVal = e.target.checked;
+                    setAllowDirectMessages(nextVal);
+                    void fetch("/api/settings/profile", {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ allowDirectMessages: nextVal }),
+                    });
+                  }}
                   className="h-5 w-9 shrink-0 cursor-pointer accent-[#7C3AED]"
                 />
               </div>

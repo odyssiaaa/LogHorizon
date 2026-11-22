@@ -144,7 +144,7 @@ function FormattedChatMessage({ text, isDeleted }: { text: string; isDeleted?: b
 export function MessagesView() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
-  const targetUserParam = searchParams.get("user");
+  const targetUserParam = searchParams.get("to") || searchParams.get("user") || searchParams.get("userId");
   const conversationIdParam = searchParams.get("conversationId") || searchParams.get("id");
   const partyParam = searchParams.get("party") || searchParams.get("partyId");
 

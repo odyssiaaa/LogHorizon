@@ -130,7 +130,16 @@ export function jsonError(message: string, status: number) {
 export async function authenticatedUser(): Promise<User | null> {
   const session = await auth();
   if (!session?.user?.id) return null;
-  return prisma.user.findUnique({ where: { id: session.user.id } });
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  if (user && (!user.lastActiveAt || Date.now() - new Date(user.lastActiveAt).getTime() > 60_000)) {
+    void prisma.user
+      .update({
+        where: { id: user.id },
+        data: { lastActiveAt: new Date() },
+      })
+      .catch(() => null);
+  }
+  return user;
 }
 
 /**

@@ -197,6 +197,8 @@ export async function GET() {
     gender: user.gender ?? null,
     birthDate: user.birthDate ?? null,
     showBirthDate: user.showBirthDate ?? false,
+    bio: user.bio ?? "",
+    allowDirectMessages: user.allowDirectMessages ?? true,
     achievements,
     recentActivity: activityList.slice(0, 10),
   });
@@ -222,6 +224,8 @@ export async function PATCH(request: Request) {
   const gender = typeof body.gender === "string" ? sanitizePlainText(body.gender.trim().slice(0, 40)) : body.gender === null ? null : undefined;
   const birthDate = typeof body.birthDate === "string" ? sanitizePlainText(body.birthDate.trim().slice(0, 25)) : body.birthDate === null ? null : undefined;
   const showBirthDate = typeof body.showBirthDate === "boolean" ? body.showBirthDate : undefined;
+  const bio = typeof body.bio === "string" ? sanitizePlainText(body.bio.trim().slice(0, 500)) : undefined;
+  const allowDirectMessages = typeof body.allowDirectMessages === "boolean" ? body.allowDirectMessages : undefined;
 
   const updated = await prisma.user.update({
     where: { id: user.id },
@@ -233,6 +237,8 @@ export async function PATCH(request: Request) {
       ...(gender !== undefined ? { gender } : {}),
       ...(birthDate !== undefined ? { birthDate } : {}),
       ...(showBirthDate !== undefined ? { showBirthDate } : {}),
+      ...(bio !== undefined ? { bio } : {}),
+      ...(allowDirectMessages !== undefined ? { allowDirectMessages } : {}),
     },
     select: {
       id: true,
@@ -250,6 +256,8 @@ export async function PATCH(request: Request) {
       gender: true,
       birthDate: true,
       showBirthDate: true,
+      bio: true,
+      allowDirectMessages: true,
     },
   });
 

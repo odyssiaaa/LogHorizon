@@ -1,4 +1,4 @@
-import { activeUser, jsonError } from "@/lib/http";
+import { activeUser, jsonError, isGuildOwner } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sanitizePlainText } from "@/lib/sanitize";
 
@@ -85,11 +85,14 @@ export async function POST(request: Request) {
   if (!me) return jsonError("Login diperlukan.", 401);
 
   const body = await request.json().catch(() => ({}));
-  const { isGroup, name, targetUserId, memberIds } = body;
+  const isGroup = Boolean(body.isGroup);
+  const name = body.name;
+  const targetUserId = (typeof body.targetUserId === "string" ? body.targetUserId : typeof body.to === "string" ? body.to : "").trim();
+  const memberIds = body.memberIds;
 
   // 1-on-1 Chat
   if (!isGroup) {
-    if (!targetUserId || typeof targetUserId !== "string") {
+    if (!targetUserId) {
       return jsonError("ID target pengguna diperlukan.", 400);
     }
 
@@ -99,7 +102,7 @@ export async function POST(request: Request) {
 
     const targetUser = await prisma.user.findUnique({
       where: { id: targetUserId },
-      select: { id: true, isBanned: true, username: true },
+      select: { id: true, isBanned: true, username: true, allowDirectMessages: true },
     });
     if (!targetUser || targetUser.isBanned) {
       return jsonError("Pengguna tujuan tidak ditemukan atau dibekukan.", 404);
@@ -140,6 +143,12 @@ export async function POST(request: Request) {
         },
       });
       return Response.json({ success: true, conversation: existingConv, isNew: false });
+    }
+
+    // Privacy Check: if target has disabled direct messages, only Staff/Emperor can initiate a new PM
+    const isSenderStaff = me.role === "ADMIN" || me.role === "MODERATOR" || isGuildOwner(me);
+    if (targetUser.allowDirectMessages === false && !isSenderStaff) {
+      return jsonError("Pengguna ini membatasi penerimaan pesan pribadi (PM).", 403);
     }
 
     // Create new 1-on-1 conversation

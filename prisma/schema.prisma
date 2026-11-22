@@ -136,6 +136,13 @@ model User {
 
   // Forum Polls
   pollVotes           PollVote[]
+
+  // Social, Following & Directory
+  bio                 String?                  @db.Text
+  lastActiveAt        DateTime?                @default(now())
+  allowDirectMessages Boolean                  @default(true)
+  followers           Follow[]                 @relation("UserFollowers")
+  following           Follow[]                 @relation("UserFollowing")
 }
 
 model Tournament {
@@ -685,6 +692,21 @@ model PollVote {
   @@unique([pollId, userId])
   @@index([pollId, optionId])
 }
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
 
 
 
