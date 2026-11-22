@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import { authenticatedUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sanitizePlainText } from "@/lib/sanitize";
-import { notifyStaffAlert } from "@/lib/discord-webhook";
+import { sendDiscordChannelMessage, getBaseAppUrl, DiscordEmbed } from "@/lib/discord-bot";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -15,19 +15,53 @@ export async function POST(request: Request, { params }: RouteContext) {
   const reason = sanitizePlainText(typeof rawReason === "string" ? rawReason.trim() : "");
   if (!reason || reason.length > 2000) return jsonError("Alasan laporan wajib diisi (maksimal 2.000 karakter).", 400);
   try {
-    const report = await prisma.report.create({ data: { postId: id, reporterId: user.id, reason: reason.trim() } });
-
-    void notifyStaffAlert({
-      type: "REPORT",
-      title: `Laporan Konten Post #${id.slice(0, 8)}`,
-      actorName: user.username,
-      amountOrTarget: `Post ID: ${id}`,
-      details: `Alasan pelaporan: "${reason.trim()}"`,
+    const post = await prisma.post.findUnique({
+      where: { id },
+      select: { id: true, title: true, category: true },
     });
+
+    const report = await prisma.report.create({
+      data: {
+        postId: id,
+        targetType: post?.category === "MARKETPLACE" ? "MARKETPLACE" : "POST",
+        targetId: id,
+        targetName: post?.title || null,
+        reporterId: user.id,
+        reason: reason.trim(),
+      },
+    });
+
+    const now = new Date();
+    const wibDate =
+      new Intl.DateTimeFormat("id-ID", {
+        timeZone: "Asia/Jakarta",
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(now) + " WIB";
+    const baseUrl = getBaseAppUrl();
+
+    const embed: DiscordEmbed = {
+      title: `🚨 LAPORAN KONTEN MASUK [MODERASI]`,
+      description: `Laporan baru untuk postingan/lapak telah dikirim oleh member.`,
+      color: 0xef4444,
+      fields: [
+        { name: "📌 Judul Target", value: `**${post?.title || id}**`, inline: false },
+        { name: "👤 Dilaporkan Oleh", value: `@${user.username || "Member"} (ID: \`${user.id}\`)`, inline: true },
+        { name: "⏰ Waktu (WIB)", value: wibDate, inline: true },
+        { name: "📝 Kronologi", value: reason.slice(0, 1024), inline: false },
+        { name: "⚖️ Panel Moderasi", value: `[Buka /admin](${baseUrl}/admin)`, inline: false },
+      ],
+      footer: { text: "LogHorizon Moderation Center • #mod-logs (1547552557868777552)" },
+      timestamp: now.toISOString(),
+    };
+
+    void sendDiscordChannelMessage("mod_logs", {
+      content: `🚨 **[ALERT MODERASI]** Laporan konten baru telah masuk:`,
+      embeds: [embed],
+    }).catch(() => null);
 
     return Response.json(report, { status: 201 });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return jsonError("Kamu sudah pernah melaporkan postingan ini.", 409);
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") return jsonError("Postingan tidak ditemukan.", 404);
     throw error;
   }

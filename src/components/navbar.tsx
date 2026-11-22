@@ -33,6 +33,7 @@ import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { GlobalUserSearch } from "@/components/global-user-search";
+import { PwaInstallBanner } from "@/components/pwa-install-banner";
 
 type NavDropdownItem = {
   label: string;
@@ -796,6 +797,9 @@ export function Navbar() {
                     onSelectUser={() => setMobileOpen(false)}
                   />
                 </div>
+
+                {/* Banner Pasang PWA di Layar Utama HP */}
+                <PwaInstallBanner isDrawer />
 
                 {/* Kartu Info User Mobile */}
                 {user ? (

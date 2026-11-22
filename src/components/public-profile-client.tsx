@@ -10,6 +10,7 @@ import {
   Copy,
   Crown,
   ExternalLink,
+  Flag,
   Flame,
   Gamepad2,
   Heart,
@@ -24,10 +25,12 @@ import {
   UserCheck,
   UserPlus,
   Users,
+  X,
   Zap,
 } from "lucide-react";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { ShareButton } from "@/components/share-button";
+import { UniversalReportDialog } from "@/components/universal-report-dialog";
 
 export type PublicProfileProps = {
   user: {
@@ -147,6 +150,8 @@ export function PublicProfileClient({
   const [followersCount, setFollowersCount] = useState(initialFollowersCount);
   const [followLoading, setFollowLoading] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportNotice, setReportNotice] = useState("");
 
   const xpNeeded = user.level * 100;
   const xpProgress = Math.min(100, Math.round(((user.xp % 100) / 100) * 100));
@@ -348,6 +353,18 @@ export function PublicProfileClient({
               text={`Lihat profil, reputasi, level, dan rekam jejak ${user.username ?? "Petualang"} di markas komunitas LogHorizon!`}
               className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center gap-1.5 text-xs font-bold shrink-0"
             />
+
+            {!isMe && (
+              <button
+                type="button"
+                onClick={() => setShowReportDialog(true)}
+                className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 text-rose-500 text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0"
+                title={`Laporkan akun @${user.username}`}
+              >
+                <Flag size={14} />
+                <span className="hidden sm:inline">Laporkan</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -744,6 +761,26 @@ export function PublicProfileClient({
           </div>
         )}
       </div>
+
+      {/* Universal Report Dialog */}
+      <UniversalReportDialog
+        open={showReportDialog}
+        onClose={() => setShowReportDialog(false)}
+        targetType="USER"
+        targetId={user.id}
+        targetName={`@${user.username || "Petualang"}`}
+        onSuccess={(msg) => setReportNotice(msg)}
+      />
+
+      {reportNotice && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-xl animate-in fade-in slide-in-from-bottom-3 flex items-center gap-2">
+          <Check size={16} />
+          <span>{reportNotice}</span>
+          <button type="button" onClick={() => setReportNotice("")} className="ml-2 hover:opacity-80">
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

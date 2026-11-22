@@ -14,7 +14,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: "#09040F",
+  themeColor: "#11091D",
 };
 
 const spaceGrotesk = Space_Grotesk({
@@ -39,6 +39,12 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://loghorizon.vercel.app"),
   title: "LogHorizon | Find Your Party",
   description: "Satu guild untuk semua petualang.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "LogHorizon",
+  },
   icons: { icon: "/loghorizon-logo.png", apple: "/loghorizon-logo.png" },
   openGraph: {
     title: "LogHorizon | Find Your Party",

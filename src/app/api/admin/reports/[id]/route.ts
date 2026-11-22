@@ -18,7 +18,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (report.status !== ReportStatus.PENDING) return Response.json({ error: "Laporan ini sudah ditangani." }, { status: 409 });
 
   if (action === "delete-post") {
-    await prisma.post.delete({ where: { id: report.postId } });
+    if (report.postId) {
+      await prisma.post.delete({ where: { id: report.postId } }).catch(() => null);
+    }
+    await prisma.report.update({ where: { id }, data: { status: ReportStatus.RESOLVED } });
     return Response.json({ success: true, action });
   }
   if (action === "dismiss") {

@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  Flag,
   MessageSquare,
   Send,
   ShieldAlert,
@@ -14,6 +15,7 @@ import {
 import { useSession } from "next-auth/react";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { UniversalReportDialog } from "@/components/universal-report-dialog";
 import { TournamentMatch } from "@/lib/tournament";
 
 type MatchChatMessage = {
@@ -102,6 +104,7 @@ export function MatchLobbyModal({
   const [isCapB, setIsCapB] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
   const [togglingReady, setTogglingReady] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const currentUser = session?.user;
@@ -294,6 +297,15 @@ export function MatchLobbyModal({
           </div>
 
           <div className="flex items-center gap-2 shrink-0 font-mono">
+            <button
+              type="button"
+              onClick={() => setShowReportDialog(true)}
+              className="px-2.5 py-1.5 rounded-none bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-500 dark:text-amber-400 font-bold text-xs flex items-center gap-1.5 transition uppercase"
+              title="Laporkan sengketa atau kecurangan pada match ini"
+            >
+              <Flag size={13} />
+              <span className="hidden sm:inline">Laporkan</span>
+            </button>
             {!isMatchFinished && (
               <button
                 type="button"
@@ -549,6 +561,14 @@ export function MatchLobbyModal({
           </form>
         )}
       </div>
+
+      <UniversalReportDialog
+        isOpen={showReportDialog}
+        onClose={() => setShowReportDialog(false)}
+        targetType="TOURNAMENT_MATCH"
+        targetId={match.matchId}
+        targetName={`Match #${match.matchId} (${match.teamA.name || "Tim A"} vs ${match.teamB.name || "Tim B"})`}
+      />
     </div>
   );
 }

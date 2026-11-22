@@ -64,10 +64,15 @@ type Role = "MEMBER" | "MODERATOR" | "ADMIN";
 
 type Report = {
   id: string;
-  postId: string;
+  postId?: string | null;
+  targetType?: string | null;
+  targetId?: string | null;
+  targetName?: string | null;
+  category?: string | null;
+  proofUrl?: string | null;
   reason: string;
   createdAt: string;
-  post: { id: string; title: string; category: string; isPinned?: boolean; author: { username: string | null } };
+  post?: { id: string; title: string; category: string; isPinned?: boolean; author: { username: string | null } } | null;
   reporter: { username: string | null };
 };
 
@@ -772,10 +777,11 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
   // Handle report dismiss or delete
   async function handleReport(report: Report, action: "dismiss" | "delete-post") {
+    const targetTitle = report.post?.title || report.targetName || "konten ini";
     const confirmed = window.confirm(
       action === "delete-post"
-        ? `Hapus postingan "${report.post.title}" dan seluruh laporannya?`
-        : `Abaikan laporan untuk "${report.post.title}"?`
+        ? `Hapus target "${targetTitle}" dan seluruh laporannya?`
+        : `Abaikan laporan untuk "${targetTitle}"?`
     );
     if (!confirmed) return;
     setBusyId(report.id);
@@ -3829,20 +3835,42 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                         key={report.id}
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 uppercase tracking-wider inline-flex items-center gap-1">
                               <AlertTriangle size={11} /> PENDING
                             </span>
+                            {report.category && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/15 text-rose-500 uppercase tracking-wider">
+                                {report.category}
+                              </span>
+                            )}
                             <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                              {report.post.title}
+                              {report.post?.title || report.targetName || `Target #${report.id.slice(0, 8)}`}
                             </h3>
                           </div>
                           <p className="text-xs text-gray-500">
-                            Penulis: <strong>{report.post.author.username ?? "Gamer"}</strong> • Pelapor: <strong>{report.reporter.username ?? "Gamer"}</strong>
+                            {report.post?.author?.username ? (
+                              <>Penulis: <strong>{report.post.author.username}</strong> • </>
+                            ) : report.targetName ? (
+                              <>Target: <strong>{report.targetName}</strong> ({report.targetType || "UMUM"}) • </>
+                            ) : null}
+                            Pelapor: <strong>{report.reporter.username ?? "Gamer"}</strong>
                           </p>
                           <p className="text-xs text-gray-700 dark:text-gray-300 mt-2 bg-gray-50 dark:bg-[#1A1526] p-2 rounded border border-gray-200 dark:border-[#2E1E45]">
-                            <strong>Alasan:</strong> {report.reason}
+                            <strong>Alasan / Kronologi:</strong> {report.reason}
                           </p>
+                          {report.proofUrl && (
+                            <div className="mt-2">
+                              <a
+                                href={report.proofUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-xs font-bold text-[#7C3AED] dark:text-[#A78BFA] hover:underline"
+                              >
+                                📸 Buka Bukti Screenshot Lampiran ↗
+                              </a>
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
