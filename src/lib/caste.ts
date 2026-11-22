@@ -1,9 +1,10 @@
 /**
  * Centralized Guild Caste & Hierarchy Logic for LogHorizon
- * Re-exports core caste logic from @/lib/auth-guard.
+ * Re-exports core caste logic from @/lib/auth-guard and European Nobility Rank System.
  */
 
 export * from "@/lib/auth-guard";
+export * from "@/lib/nobility-ranks";
 import { isGuildOwner, CasteUserLike } from "@/lib/auth-guard";
 
 /**

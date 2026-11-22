@@ -26,6 +26,7 @@ import {
   ShoppingBag,
   Users,
   MessageSquare,
+  Globe,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { readApiResponse } from "@/lib/api-response";
@@ -37,6 +38,8 @@ import { ReferralInviteCard } from "@/components/referral-invite-card";
 import { GuildArmoryShop } from "@/components/guild-armory-shop";
 import { getCustomTitleBadge } from "@/lib/armory-catalog";
 import { VerifiedSellerModal } from "@/components/verified-seller-modal";
+import { getEuropeanNobilityRank } from "@/lib/nobility-ranks";
+import { useLocale, SUPPORTED_LANGUAGES, SUPPORTED_CURRENCIES } from "@/context/locale-context";
 
 type Achievement = {
   id: string;
@@ -404,10 +407,12 @@ export function SettingsDashboard() {
     profile?.isPremium ?? session.user.isPremium
   );
 
+  const { locale, setLocale, currency, setCurrency } = useLocale();
   const currentLevel = profile?.level ?? 1;
   const currentXp = profile?.xp ?? 0;
   const xpInLevel = currentXp % 100;
   const xpPercent = Math.min(100, Math.max(0, Math.round((xpInLevel / 100) * 100)));
+  const nobility = getEuropeanNobilityRank(currentLevel);
 
   return (
     <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 min-w-0 overflow-x-hidden">
@@ -522,6 +527,17 @@ export function SettingsDashboard() {
                           {getCustomTitleBadge(profile.equippedCustomTitle)}
                         </span>
                       )}
+                      <span
+                        className="px-2.5 py-0.5 rounded-md text-xs font-bold border shadow-xs"
+                        style={{
+                          borderColor: `${nobility.color}60`,
+                          backgroundColor: `${nobility.color}15`,
+                          color: nobility.color,
+                        }}
+                        title={`Gelar Kebangsawanan Level ${currentLevel}: ${nobility.description}`}
+                      >
+                        {nobility.icon} {nobility.name}
+                      </span>
                     </div>
                     <p className="text-xs text-gray-400 font-mono">
                       Discord ID: {profile?.discordId ?? "Tidak terhubung"}
@@ -1169,6 +1185,73 @@ export function SettingsDashboard() {
                   }}
                   className="h-5 w-9 shrink-0 cursor-pointer accent-[#7C3AED]"
                 />
+              </div>
+            </div>
+          </section>
+
+          {/* Preferensi Bahasa & Mata Uang */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
+            <div className="mb-4">
+              <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                <Globe size={18} className="text-[#9D4EDD]" />
+                Bahasa Antarmuka &amp; Mata Uang (Regional Preferences)
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Pilihan bahasa dan konverter mata uang otomatis tersimpan di perangkat ini dan berlaku di seluruh halaman tanpa refresh.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-2">
+                  Bahasa Antarmuka ({SUPPORTED_LANGUAGES.length} Bahasa Resmi)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => setLocale(lang.code)}
+                      className={`px-3 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between border ${
+                        locale === lang.code
+                          ? "bg-[#7C3AED] border-[#9D4EDD] text-white shadow-md shadow-[#7C3AED]/20"
+                          : "border-[#2A1B42] bg-[#0A0612]/60 text-gray-300 hover:border-[#7C3AED]/50 hover:text-white"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 truncate">
+                        <span>{lang.flag}</span>
+                        <span className="truncate">{lang.name}</span>
+                      </span>
+                      <span className="font-mono text-[10px] opacity-75 uppercase shrink-0">{lang.code}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-2">
+                  Konversi Mata Uang ({SUPPORTED_CURRENCIES.length} Mata Uang)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {SUPPORTED_CURRENCIES.map((curr) => (
+                    <button
+                      key={curr.code}
+                      type="button"
+                      onClick={() => setCurrency(curr.code)}
+                      className={`px-3 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between border ${
+                        currency === curr.code
+                          ? "bg-[#7C3AED] border-[#9D4EDD] text-white shadow-md shadow-[#7C3AED]/20"
+                          : "border-[#2A1B42] bg-[#0A0612]/60 text-gray-300 hover:border-[#7C3AED]/50 hover:text-white"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 truncate">
+                        <span className="font-mono font-black text-amber-400 shrink-0">{curr.symbol}</span>
+                        <span className="truncate">{curr.name}</span>
+                      </span>
+                      <span className="font-mono text-[10px] opacity-75 shrink-0">{curr.code}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </section>

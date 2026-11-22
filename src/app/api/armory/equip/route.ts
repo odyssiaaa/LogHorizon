@@ -1,6 +1,7 @@
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { getArmoryItem } from "@/lib/armory-catalog";
+import { isGuildOwner } from "@/lib/auth-guard";
 
 export async function POST(request: Request) {
   const user = await activeUser();
@@ -35,23 +36,27 @@ export async function POST(request: Request) {
     });
   }
 
-  // Equip: verify ownership
-  const owned = await prisma.userCosmetic.findUnique({
-    where: {
-      userId_itemId: {
-        userId: user.id,
-        itemId,
-      },
-    },
-  });
-
-  if (!owned) {
-    return jsonError("Kamu belum memiliki item kosmetik ini.", 403);
-  }
-
   const catalogItem = getArmoryItem(itemId);
   if (!catalogItem) {
     return jsonError("Item kosmetik tidak valid.", 400);
+  }
+
+  const isOwner = isGuildOwner(user);
+
+  // Equip: verify ownership (Bypassed for Guild Owner / Emperor .odyssia)
+  if (!isOwner) {
+    const owned = await prisma.userCosmetic.findUnique({
+      where: {
+        userId_itemId: {
+          userId: user.id,
+          itemId,
+        },
+      },
+    });
+
+    if (!owned) {
+      return jsonError("Kamu belum memiliki item kosmetik ini.", 403);
+    }
   }
 
   const updated = await prisma.user.update({

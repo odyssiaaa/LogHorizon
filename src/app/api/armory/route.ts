@@ -1,6 +1,7 @@
 import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { ARMORY_ITEMS } from "@/lib/armory-catalog";
+import { isGuildOwner } from "@/lib/auth-guard";
 
 export async function GET() {
   const user = await activeUser();
@@ -17,6 +18,10 @@ export async function GET() {
     select: {
       id: true,
       username: true,
+      name: true,
+      email: true,
+      discordId: true,
+      role: true,
       avatar: true,
       xp: true,
       level: true,
@@ -34,6 +39,11 @@ export async function GET() {
 
   if (!dbUser) return jsonError("Pengguna tidak ditemukan.", 404);
 
+  const isOwner = isGuildOwner(dbUser);
+  const ownedItemIds = isOwner
+    ? ARMORY_ITEMS.map((item) => item.id)
+    : dbUser.cosmetics.map((c) => c.itemId);
+
   return Response.json({
     catalog: ARMORY_ITEMS,
     user: {
@@ -44,7 +54,8 @@ export async function GET() {
       level: dbUser.level,
       equippedAvatarFrame: dbUser.equippedAvatarFrame,
       equippedCustomTitle: dbUser.equippedCustomTitle,
+      isOwner,
     },
-    ownedItemIds: dbUser.cosmetics.map((c) => c.itemId),
+    ownedItemIds,
   });
 }

@@ -30,6 +30,7 @@ type ArmoryUser = {
   level: number;
   equippedAvatarFrame: string | null;
   equippedCustomTitle: string | null;
+  isOwner?: boolean;
 };
 
 export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void }) {
@@ -41,6 +42,15 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
   const [selectedItem, setSelectedItem] = useState<ArmoryItem | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const isOwner = Boolean(
+    userData?.isOwner ||
+    userData?.username === ".odyssia" ||
+    userData?.username === "odyssia" ||
+    session?.user?.username === ".odyssia" ||
+    session?.user?.username === "odyssia" ||
+    session?.user?.discordId === "706661230835925042"
+  );
 
   useEffect(() => {
     async function fetchArmory() {
@@ -196,11 +206,19 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
               <Zap size={22} className="text-purple-400" />
             </div>
             <div>
-              <p className="text-[11px] font-mono text-gray-400 uppercase">Saldo XP Kamu</p>
-              <p className="text-xl sm:text-2xl font-black text-white font-mono">
-                {userData ? userData.xp.toLocaleString("id-ID") : 0}{" "}
-                <span className="text-xs text-purple-400 font-bold">XP</span>
+              <p className="text-[11px] font-mono text-gray-400 uppercase">
+                {isOwner ? "Hak Istimewa Owner" : "Saldo XP Kamu"}
               </p>
+              {isOwner ? (
+                <p className="text-sm sm:text-base font-black text-amber-400 font-mono flex items-center gap-1.5">
+                  👑 Akses Penuh Emperor (Milik Owner • 0 XP)
+                </p>
+              ) : (
+                <p className="text-xl sm:text-2xl font-black text-white font-mono">
+                  {userData ? userData.xp.toLocaleString("id-ID") : 0}{" "}
+                  <span className="text-xs text-purple-400 font-bold">XP</span>
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -258,14 +276,14 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
           {/* Items Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredItems.map((item) => {
-              const isOwned = ownedItemIds.includes(item.id);
+              const isOwned = isOwner || ownedItemIds.includes(item.id);
               const isEquipped =
                 item.type === "AVATAR_FRAME"
                   ? userData?.equippedAvatarFrame === item.id
                   : userData?.equippedCustomTitle === item.id;
               const isSelected = selectedItem?.id === item.id;
               const isProcessing = processingId === item.id;
-              const canAfford = (userData?.xp ?? 0) >= item.priceXp;
+              const canAfford = isOwner || (userData?.xp ?? 0) >= item.priceXp;
 
               return (
                 <div
@@ -297,7 +315,7 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
                         </span>
                       ) : isOwned ? (
                         <span className="shrink-0 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-mono font-bold">
-                          Dimiliki
+                          {isOwner ? "👑 Milik Owner" : "Dimiliki"}
                         </span>
                       ) : (
                         <span className="shrink-0 font-mono font-bold text-xs text-purple-300">

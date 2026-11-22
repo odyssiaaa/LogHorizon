@@ -33,6 +33,7 @@ import {
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { ShareButton } from "@/components/share-button";
 import { UniversalReportDialog } from "@/components/universal-report-dialog";
+import { getEuropeanNobilityRank } from "@/lib/nobility-ranks";
 
 export type PublicProfileProps = {
   user: {
@@ -158,6 +159,7 @@ export function PublicProfileClient({
 
   const xpNeeded = user.level * 100;
   const xpProgress = Math.min(100, Math.round(((user.xp % 100) / 100) * 100));
+  const nobility = getEuropeanNobilityRank(user.level ?? 1);
 
   async function handleToggleFollow() {
     if (!currentUserId) {
@@ -265,6 +267,20 @@ export function PublicProfileClient({
                   </span>
                 )}
 
+                {/* European Nobility Rank Badge */}
+                <span
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border shadow-xs"
+                  style={{
+                    borderColor: `${nobility.color}60`,
+                    backgroundColor: `${nobility.color}15`,
+                    color: nobility.color,
+                  }}
+                  title={`Gelar Kebangsawanan Level ${user.level}: ${nobility.description}`}
+                >
+                  <span>{nobility.icon}</span>
+                  <span>{nobility.name}</span>
+                </span>
+
                 {(user.isPremium || isOwner || user.role === "ADMIN") && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30">
                     <Sparkles size={12} /> {isOwner ? "👑 Guild Emperor" : user.role === "ADMIN" ? "✨ Prince / Princess (Admin)" : "✦ Elite Member"}
@@ -319,23 +335,23 @@ export function PublicProfileClient({
             </div>
           </div>
 
-          {/* Primary Action Buttons (Chat & Follow) */}
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full md:w-auto">
+          {/* Primary Action Buttons (Chat & Follow & Share) */}
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             {!isMe && (
               <>
                 <Link
                   href={`/messages?to=${user.id}`}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-[#7C3AED]/20 shrink-0"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-[#7C3AED]/20 shrink-0 whitespace-nowrap"
                 >
                   <MessageSquare size={15} />
-                  <span>💬 Kirim Pesan (PM)</span>
+                  <span>Kirim Pesan (PM)</span>
                 </Link>
 
                 <button
                   type="button"
                   onClick={handleToggleFollow}
                   disabled={followLoading}
-                  className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 ${
+                  className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
                     isFollowing
                       ? "border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-white/5 text-slate-800 dark:text-slate-200 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30"
                       : "border border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED] dark:text-[#A78BFA] hover:bg-[#7C3AED] hover:text-white"
@@ -351,7 +367,7 @@ export function PublicProfileClient({
                   ) : (
                     <>
                       <UserPlus size={15} />
-                      <span>➕ Ikuti</span>
+                      <span>Ikuti</span>
                     </>
                   )}
                 </button>
@@ -361,14 +377,14 @@ export function PublicProfileClient({
             <ShareButton
               title={`Profil ${user.username ?? "Petualang"} di LogHorizon`}
               text={`Lihat profil, reputasi, level, dan rekam jejak ${user.username ?? "Petualang"} di markas komunitas LogHorizon!`}
-              className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center gap-1.5 text-xs font-bold shrink-0"
+              className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center gap-1.5 text-xs font-bold shrink-0 whitespace-nowrap"
             />
 
             {!isMe && (
               <button
                 type="button"
                 onClick={() => setShowReportDialog(true)}
-                className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 text-rose-500 text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0"
+                className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 text-rose-500 text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap"
                 title={`Laporkan akun @${user.username}`}
               >
                 <Flag size={14} />
@@ -382,7 +398,7 @@ export function PublicProfileClient({
         <div className="mt-6 pt-6 border-t border-slate-100 dark:border-[#2E1E45]">
           <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
             <span className="flex items-center gap-1.5 font-mono">
-              <Zap size={14} className="text-[#7C3AED]" /> Level {user.level}
+              <Zap size={14} className="text-[#7C3AED]" /> Level {user.level} • {nobility.name}
             </span>
             <span className="font-mono text-slate-500 dark:text-slate-400">
               {user.xp} XP / {xpNeeded} XP
@@ -497,7 +513,7 @@ export function PublicProfileClient({
             }`}
           >
             <MessageSquare size={14} />
-            <span>💬 Diskusi &amp; Komentar ({forumPosts.length + forumComments.length})</span>
+            <span>Diskusi &amp; Komentar ({forumPosts.length + forumComments.length})</span>
           </button>
 
           <button
@@ -510,7 +526,7 @@ export function PublicProfileClient({
             }`}
           >
             <Trophy size={14} />
-            <span>🏆 Turnamen &amp; Prestasi ({tournamentHistory.length})</span>
+            <span>Turnamen &amp; Prestasi ({tournamentHistory.length})</span>
           </button>
 
           <button
@@ -523,7 +539,7 @@ export function PublicProfileClient({
             }`}
           >
             <ShoppingBag size={14} />
-            <span>🛒 Lapak Aktif ({marketplaceListings.length})</span>
+            <span>Lapak Aktif ({marketplaceListings.length})</span>
           </button>
         </div>
 

@@ -32,6 +32,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { useLocale } from "@/context/locale-context";
 import { GlobalUserSearch } from "@/components/global-user-search";
 import { PwaInstallBanner } from "@/components/pwa-install-banner";
 
@@ -131,6 +132,7 @@ export function Navbar() {
   const { data: session, status } = useSession();
   const user = session?.user;
   const pathname = usePathname();
+  const { t } = useLocale();
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -353,32 +355,32 @@ export function Navbar() {
             {/* 1. HOME */}
             <Link
               href="/"
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
                 isHomeActive
                   ? "bg-[#7C3AED] text-white"
                   : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
               }`}
             >
-              Home
+              {t("nav_home", "Home")}
             </Link>
 
             {/* 2. KOMUNITAS DROPDOWN */}
             <div
-              className="relative"
+              className="relative shrink-0"
               onMouseEnter={() => handleMouseEnter("komunitas")}
               onMouseLeave={handleMouseLeave}
             >
               <button
                 type="button"
                 onClick={() => setActiveMenu(activeMenu === "komunitas" ? null : "komunitas")}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
                   isKomunitasActive || activeMenu === "komunitas"
                     ? "bg-[#7C3AED] text-white"
                     : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                 }`}
               >
-                <span>Komunitas</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "komunitas" ? "rotate-180" : "opacity-70"}`} />
+                <span className="whitespace-nowrap">{t("nav_community", "Komunitas")}</span>
+                <ChevronDown size={13} className={`transition-transform duration-200 shrink-0 ${activeMenu === "komunitas" ? "rotate-180" : "opacity-70"}`} />
               </button>
 
               <AnimatePresence>
@@ -417,21 +419,21 @@ export function Navbar() {
 
             {/* 3. ARENA & MABAR DROPDOWN */}
             <div
-              className="relative"
+              className="relative shrink-0"
               onMouseEnter={() => handleMouseEnter("arena")}
               onMouseLeave={handleMouseLeave}
             >
               <button
                 type="button"
                 onClick={() => setActiveMenu(activeMenu === "arena" ? null : "arena")}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
                   isArenaActive || activeMenu === "arena"
                     ? "bg-[#7C3AED] text-white"
                     : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                 }`}
               >
-                <span>Arena &amp; Mabar</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "arena" ? "rotate-180" : "opacity-70"}`} />
+                <span className="whitespace-nowrap">{t("nav_arena", "Arena & Mabar")}</span>
+                <ChevronDown size={13} className={`transition-transform duration-200 shrink-0 ${activeMenu === "arena" ? "rotate-180" : "opacity-70"}`} />
               </button>
 
               <AnimatePresence>
@@ -471,32 +473,32 @@ export function Navbar() {
             {/* 4. MARKETPLACE */}
             <Link
               href="/marketplace"
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
                 isMarketplaceActive
                   ? "bg-[#7C3AED] text-white"
                   : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
               }`}
             >
-              Marketplace
+              {t("nav_marketplace", "Marketplace")}
             </Link>
 
             {/* 5. GUILD DROPDOWN */}
             <div
-              className="relative"
+              className="relative shrink-0"
               onMouseEnter={() => handleMouseEnter("guild")}
               onMouseLeave={handleMouseLeave}
             >
               <button
                 type="button"
                 onClick={() => setActiveMenu(activeMenu === "guild" ? null : "guild")}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
                   isGuildActive || activeMenu === "guild"
                     ? "bg-[#7C3AED] text-white"
                     : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                 }`}
               >
-                <span>Guild</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 ${activeMenu === "guild" ? "rotate-180" : "opacity-70"}`} />
+                <span className="whitespace-nowrap">{t("nav_guild", "Guild")}</span>
+                <ChevronDown size={13} className={`transition-transform duration-200 shrink-0 ${activeMenu === "guild" ? "rotate-180" : "opacity-70"}`} />
               </button>
 
               <AnimatePresence>

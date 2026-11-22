@@ -386,6 +386,7 @@ export function HorizonChatWidget() {
             ...payload,
             confirmed: true,
           },
+          locale,
         }),
       });
 
@@ -445,7 +446,7 @@ export function HorizonChatWidget() {
             : undefined
         }
         className={`fixed z-[45] touch-none select-none scale-75 opacity-90 sm:scale-100 sm:opacity-100 ${
-          !position ? "bottom-24 right-3 sm:bottom-6 sm:right-6" : ""
+          !position ? "bottom-24 right-3 sm:bottom-6 sm:right-5" : ""
         }`}
       >
         <div className="relative flex flex-col items-center">
@@ -546,8 +547,8 @@ export function HorizonChatWidget() {
           role="dialog"
           aria-label="Jendela Chat Satpam Horizon"
           style={getPopupStyle()}
-          className={`fixed z-[50] rounded-xl border-2 border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 inset-x-3 top-16 bottom-24 w-auto h-auto max-h-[75vh] sm:inset-auto sm:bottom-24 sm:right-6 sm:w-[390px] sm:h-[540px] sm:max-h-[540px] ${
-            !position ? "sm:bottom-24 sm:right-6" : ""
+          className={`fixed z-[50] rounded-xl border-2 border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 inset-x-3 top-16 bottom-24 w-auto h-auto max-h-[75vh] sm:inset-auto sm:bottom-24 sm:right-5 sm:w-[390px] sm:h-[540px] sm:max-h-[540px] ${
+            !position ? "sm:bottom-24 sm:right-5" : ""
           }`}
         >
           {/* Header */}

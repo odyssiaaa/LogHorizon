@@ -3,6 +3,7 @@ import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { getArmoryItem } from "@/lib/armory-catalog";
 import { createNotification } from "@/lib/notifications";
+import { isGuildOwner } from "@/lib/auth-guard";
 
 export async function POST(request: Request) {
   const user = await activeUser();
@@ -19,6 +20,48 @@ export async function POST(request: Request) {
     return jsonError("Item kosmetik tidak ditemukan dalam katalog Armory.", 404);
   }
 
+  const isOwner = isGuildOwner(user);
+  if (isOwner) {
+    // Owner bypass: Auto equip and register ownership without deducting any XP
+    await prisma.userCosmetic.upsert({
+      where: {
+        userId_itemId: {
+          userId: user.id,
+          itemId: catalogItem.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        itemId: catalogItem.id,
+        itemType: catalogItem.type,
+        itemName: catalogItem.name,
+      },
+    });
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data:
+        catalogItem.type === "AVATAR_FRAME"
+          ? { equippedAvatarFrame: catalogItem.id }
+          : { equippedCustomTitle: catalogItem.id },
+      select: {
+        id: true,
+        xp: true,
+        equippedAvatarFrame: true,
+        equippedCustomTitle: true,
+      },
+    });
+
+    return Response.json({
+      success: true,
+      message: `👑 Hak Istimewa Owner: "${catalogItem.name}" berhasil dibuka dan dipasang gratis (0 XP)!`,
+      item: catalogItem,
+      user: updatedUser,
+    });
+  }
+
+  // Regular user flow with serializable transaction
   try {
     const result = await prisma.$transaction(
       async (tx) => {
