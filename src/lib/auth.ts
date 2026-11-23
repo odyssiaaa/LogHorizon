@@ -45,7 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   session: { strategy: "database" },
   events: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }: any) {
       if (!account?.providerAccountId) return;
 
       const isOwner =
@@ -116,6 +116,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           },
         });
       } else if (account.provider === "google") {
+        // Persist specific Google email in Account session_state so it is never confused with Discord email
+        const specificGoogleEmail = profile?.email || user.email;
+        if (specificGoogleEmail && account.providerAccountId) {
+          try {
+            await prisma.account.updateMany({
+              where: {
+                provider: "google",
+                providerAccountId: account.providerAccountId,
+              },
+              data: {
+                session_state: specificGoogleEmail,
+              },
+            });
+          } catch (err) {
+            console.error("[auth] Failed to persist Google email in session_state", err);
+          }
+        }
+
         // Fetch current user from DB to check existing username and role
         const existing = await prisma.user.findUnique({
           where: { id: user.id },
@@ -167,7 +185,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }: any) {
       if (!account?.provider || !account?.providerAccountId) return true;
 
       // 1. Collision check: Is this provider + providerAccountId already linked in Account table?
@@ -197,6 +215,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           user?.email === "farrel.andhikapratama0905@gmail.com";
         if (!isOwnerUser) {
           return "/profile?tab=settings&error=UnauthorizedBinding";
+        }
+      }
+
+      // 3. Persist Google email into session_state if account already exists
+      if (account.provider === "google" && existingAccount) {
+        const specificGoogleEmail = profile?.email || user?.email;
+        if (specificGoogleEmail) {
+          try {
+            await prisma.account.update({
+              where: {
+                provider_providerAccountId: {
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                },
+              },
+              data: { session_state: specificGoogleEmail },
+            });
+          } catch {
+            // Ignore
+          }
         }
       }
 

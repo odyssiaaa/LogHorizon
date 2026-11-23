@@ -11,6 +11,37 @@ function maskEmail(email?: string | null): string | null {
   return `${local.slice(0, 2)}***@${domain}`;
 }
 
+export function extractGoogleEmail(account?: {
+  session_state?: string | null;
+  id_token?: string | null;
+} | null): string | null {
+  if (!account) return null;
+
+  // 1. If explicitly stored in session_state
+  if (account.session_state && account.session_state.includes("@")) {
+    return account.session_state.trim();
+  }
+
+  // 2. Decode from Google id_token JWT payload
+  if (account.id_token && account.id_token.includes(".")) {
+    try {
+      const parts = account.id_token.split(".");
+      if (parts.length >= 2) {
+        const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = Buffer.from(base64, "base64").toString("utf-8");
+        const payload = JSON.parse(jsonPayload);
+        if (typeof payload.email === "string" && payload.email.includes("@")) {
+          return payload.email.trim();
+        }
+      }
+    } catch {
+      // Ignore parse failure
+    }
+  }
+
+  return null;
+}
+
 export async function GET() {
   const user = await authenticatedUser();
   if (!user) {
@@ -23,6 +54,8 @@ export async function GET() {
     select: {
       provider: true,
       providerAccountId: true,
+      id_token: true,
+      session_state: true,
     },
   });
 
@@ -34,6 +67,24 @@ export async function GET() {
 
   const totalConnected = (isDiscordConnected ? 1 : 0) + (isGoogleConnected ? 1 : 0);
 
+  // Retrieve exact email belonging to the connected Google account
+  const specificGoogleEmail = extractGoogleEmail(googleAccount);
+
+  // Cache back to session_state if retrieved from id_token and session_state was empty
+  if (specificGoogleEmail && googleAccount && !googleAccount.session_state) {
+    void prisma.account.updateMany({
+      where: {
+        provider: "google",
+        providerAccountId: googleAccount.providerAccountId,
+      },
+      data: { session_state: specificGoogleEmail },
+    }).catch(() => {});
+  }
+
+  // If user only has Google (no Discord), user.email is also their Google email
+  const googleEmailToMask = specificGoogleEmail || (!isDiscordConnected && isGoogleConnected ? user.email : null);
+  const googleEmailMasked = isGoogleConnected ? maskEmail(googleEmailToMask) : null;
+
   return Response.json({
     success: true,
     accounts: {
@@ -44,7 +95,7 @@ export async function GET() {
       },
       google: {
         connected: isGoogleConnected,
-        emailMasked: isGoogleConnected ? maskEmail(user.email) : null,
+        emailMasked: googleEmailMasked,
       },
     },
     totalConnected,
