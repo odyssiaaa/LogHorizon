@@ -5,7 +5,7 @@ export type MarketData = {
   game: string;
   price: number;
   contact: string;
-  status: "AVAILABLE" | "IN_ESCROW" | "SOLD";
+  status: "AVAILABLE" | "IN_ESCROW" | "SOLD" | "FROZEN";
   imageUrl?: string | null;
 };
 
@@ -21,7 +21,7 @@ export function isMarketData(value: unknown): value is MarketData {
     Number.isInteger(data.price) &&
     data.price >= 0 &&
     typeof data.contact === "string" &&
-    (data.status === "AVAILABLE" || data.status === "IN_ESCROW" || data.status === "SOLD") &&
+    (data.status === "AVAILABLE" || data.status === "IN_ESCROW" || data.status === "SOLD" || data.status === "FROZEN") &&
     (data.imageUrl == null || typeof data.imageUrl === "string")
   );
 }
@@ -35,7 +35,7 @@ export function isPublicMarketData(value: unknown): value is PublicMarketData {
     typeof data.price === "number" &&
     Number.isInteger(data.price) &&
     typeof data.status === "string" &&
-    (data.status === "AVAILABLE" || data.status === "IN_ESCROW" || data.status === "SOLD") &&
+    (data.status === "AVAILABLE" || data.status === "IN_ESCROW" || data.status === "SOLD" || data.status === "FROZEN") &&
     (data.imageUrl == null || typeof data.imageUrl === "string")
   );
 }

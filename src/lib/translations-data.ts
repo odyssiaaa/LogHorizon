@@ -150,6 +150,42 @@ export const UI_PHRASES: Record<string, Record<LocaleCode, string>> = {
       "AR": "السجن والمطلوبين",
       "ES": "Mazmorra y Se Busca"
   },
+  "DPO & daftar hitam terpidana": {
+      "ID": "DPO & daftar hitam terpidana",
+      "EN": "Most Wanted & convict blacklist",
+      "JA": "指名手配と有罪判決者ブラックリスト",
+      "KO": "현상수배 및 유죄 판결자 블랙리스트",
+      "ZH": "通缉名单与定罪黑名单",
+      "AR": "قائمة المطلوبين والسجناء المدانين",
+      "ES": "Lista de los más buscados y convictos"
+  },
+  "Sel Tahanan (Banned Permanen)": {
+      "ID": "Sel Tahanan (Banned Permanen)",
+      "EN": "Prison Cell (Permanent Ban)",
+      "JA": "牢獄セル（永久BAN）",
+      "KO": "수감실 (영구 차단)",
+      "ZH": "牢房（永久封禁）",
+      "AR": "زنزانة السجن (حظر دائم)",
+      "ES": "Celda de Prisión (Baneo Permanente)"
+  },
+  "Papan Buronan & Bounty (WANTED)": {
+      "ID": "Papan Buronan & Bounty (WANTED)",
+      "EN": "Wanted Bounty Board",
+      "JA": "指名手配＆賞金首ボード（WANTED）",
+      "KO": "현상수배 및 바운티 게시판 (WANTED)",
+      "ZH": "通缉悬赏榜（WANTED）",
+      "AR": "لوحة المطلوبين والمكافآت (WANTED)",
+      "ES": "Tablero de Se Busca y Recompensas"
+  },
+  "Lapor Informasi Keberadaan": {
+      "ID": "Lapor Informasi Keberadaan",
+      "EN": "Report Location Info",
+      "JA": "目撃情報を報告する",
+      "KO": "위치 정보 제보하기",
+      "ZH": "举报行踪线索",
+      "AR": "الإبلاغ عن معلومات الموقع",
+      "ES": "Reportar Información de Ubicación"
+  },
   "Dashboard Admin": {
       "ID": "Dashboard Admin",
       "EN": "Admin Dashboard",

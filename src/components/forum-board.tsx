@@ -773,7 +773,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
       {compose && (
         <ThreadModal
           category={category}
-          canPin={Boolean(user?.isPremium || user?.role === "ADMIN" || user?.username === ".odyssia")}
+          canPin={Boolean(user?.isPremium || user?.role === "ADMIN" || user?.role === "MODERATOR" || user?.username === ".odyssia")}
           onClose={() => setCompose(false)}
           onCreated={() => {
             setCompose(false);

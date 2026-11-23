@@ -301,7 +301,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
     }
   }
 
-  async function updateListingStatus(id: string, nextStatus: "AVAILABLE" | "SOLD") {
+  async function updateListingStatus(id: string, nextStatus: "AVAILABLE" | "SOLD" | "FROZEN") {
     try {
       setEscrowLoading(id);
       const response = await fetch(`/api/posts/${id}`, {
@@ -793,8 +793,12 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                 )}
                 <span className={`px-2 py-0.5 rounded-none text-[10px] font-extrabold uppercase whitespace-nowrap ${market.type === "WTS" ? "bg-[#7C3AED] text-white" : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45]"}`}>{market.type}</span>
                 <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] whitespace-nowrap">{market.game}</span>
-                <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-emerald-500/15 text-emerald-600 dark:text-[#10B981] border border-emerald-500/30 whitespace-nowrap">
-                  {market.status === "IN_ESCROW" ? "IN ESCROW" : market.status}
+                <span className={`px-2 py-0.5 rounded-none text-[10px] font-bold uppercase border whitespace-nowrap ${
+                  market.status === "FROZEN"
+                    ? "bg-rose-500/20 text-rose-400 border-rose-500/40"
+                    : "bg-emerald-500/15 text-emerald-600 dark:text-[#10B981] border-emerald-500/30"
+                }`}>
+                  {market.status === "IN_ESCROW" ? "IN ESCROW" : market.status === "FROZEN" ? "❄️ DIBEKUKAN STAF" : market.status}
                 </span>
               </div>
               <div className="market-image mb-3 rounded-none overflow-hidden border border-slate-200 dark:border-[#2E1E45] bg-slate-100 dark:bg-[#1A0E2E]"><MarketImage src={market.imageUrl} alt={`Bukti lapak ${post.title}`} /></div>
@@ -961,8 +965,14 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                     actions={[
                       {
                         label: market.status === "SOLD" ? "Tandai Tersedia" : "Tandai Terjual",
-                        disabled: market.status === "IN_ESCROW",
+                        disabled: market.status === "IN_ESCROW" || market.status === "FROZEN",
                         onClick: () => updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD"),
+                      },
+                      {
+                        label: market.status === "FROZEN" ? "Buka Pembekuan Lapak" : "❄️ Bekukan Lapak (Investigasi)",
+                        disabled: market.status === "IN_ESCROW",
+                        danger: market.status !== "FROZEN",
+                        onClick: () => updateListingStatus(post.id, market.status === "FROZEN" ? "AVAILABLE" : "FROZEN"),
                       },
                       ...(post.escrowTransactions?.map((tr) => ({
                         label: "Konfirmasi Selesai (Rekber)",
@@ -993,7 +1003,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
       />
     )}
   </div>
-    {compose && <MarketModal canPin={Boolean(user?.isPremium || user?.role === "ADMIN" || user?.username === ".odyssia")} onClose={() => setCompose(false)} onCreated={() => { setCompose(false); void fetchMarketListings(false); }} />}
+    {compose && <MarketModal canPin={Boolean(user?.isPremium || user?.role === "ADMIN" || user?.role === "MODERATOR" || user?.username === ".odyssia")} onClose={() => setCompose(false)} onCreated={() => { setCompose(false); void fetchMarketListings(false); }} />}
     {activeEscrowModalId && (
       <EscrowChatModal
         escrowId={activeEscrowModalId}

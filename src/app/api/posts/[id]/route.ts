@@ -114,8 +114,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   const status = data.status;
-  if (status !== "SOLD" && status !== "AVAILABLE") {
+  if (status !== "SOLD" && status !== "AVAILABLE" && status !== "FROZEN") {
     return jsonError("Status yang diminta tidak valid.", 400);
+  }
+  if (status === "FROZEN" && user.role !== "ADMIN" && user.role !== "MODERATOR") {
+    return jsonError("Hanya staf (Admin / Moderator) yang dapat membekukan lapak.", 403);
   }
   const post = await prisma.post.findUnique({ where: { id }, select: { authorId: true, category: true, marketData: true } });
   if (!post) return jsonError("Lapak tidak ditemukan.", 404);

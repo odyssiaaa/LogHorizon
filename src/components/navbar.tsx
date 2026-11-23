@@ -26,6 +26,7 @@ import {
   Swords,
   Trophy,
   Users,
+  Skull,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -117,6 +118,12 @@ const navGroups: NavGroup[] = [
         href: "/rules",
         desc: "Panduan & hierarki kerajaan LogHorizon",
         icon: BookOpen,
+      },
+      {
+        label: "Penjara & Buronan",
+        href: "/dungeon",
+        desc: "DPO & daftar hitam terpidana",
+        icon: Skull,
       },
     ],
   },

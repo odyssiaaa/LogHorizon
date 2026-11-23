@@ -20,8 +20,10 @@ import {
   Edit3,
   ExternalLink,
   Flag,
+  Flame,
   ImageIcon,
   LayoutDashboard,
+  Lock,
   Megaphone,
   MessageSquare,
   Pin,
@@ -37,6 +39,7 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  Skull,
   Sparkles,
   Store,
   Trash2,
@@ -279,6 +282,72 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
       setLoadingSellerVerifications(false);
     }
   }, []);
+
+  // Dungeon & Bounty Moderation State (Accessible by MODERATOR and ADMIN)
+  const [dungeonBounties, setDungeonBounties] = useState<any[]>([]);
+  const [dungeonPendingCount, setDungeonPendingCount] = useState<number>(0);
+  const [dungeonStatusFilter, setDungeonStatusFilter] = useState<string>("PENDING_REVIEW");
+  const [loadingDungeon, setLoadingDungeon] = useState<boolean>(false);
+  const [dungeonActionNote, setDungeonActionNote] = useState<Record<string, string>>({});
+
+  const fetchDungeonBounties = useCallback(async (filter?: string) => {
+    try {
+      setLoadingDungeon(true);
+      const status = filter ?? dungeonStatusFilter;
+      const res = await fetch(`/api/admin/dungeon?status=${status}`);
+      if (res.ok) {
+        const json = await res.json();
+        setDungeonBounties(json.bounties || []);
+        if (typeof json.pendingCount === "number") {
+          setDungeonPendingCount(json.pendingCount);
+        }
+      }
+    } catch (err) {
+      console.error("[admin-dashboard] fetchDungeon error:", err);
+    } finally {
+      setLoadingDungeon(false);
+    }
+  }, [dungeonStatusFilter]);
+
+  async function handleDungeonAction(
+    bountyId: string,
+    action: "APPROVE_WANTED" | "APPROVE_IMPRISON" | "CAPTURE" | "REJECT"
+  ) {
+    const actionLabel =
+      action === "APPROVE_WANTED"
+        ? "Terbitkan sebagai Poster Buronan Resmi (WANTED)"
+        : action === "APPROVE_IMPRISON"
+        ? "Jatuhkan vonis masuk Sel Penjara Permanen (IMPRISONED)"
+        : action === "CAPTURE"
+        ? "Tandai buronan telah Tertangkap (CAPTURED)"
+        : "Tolak pengajuan laporan buronan (REJECT)";
+
+    const confirmed = window.confirm(`Konfirmasi: ${actionLabel}?`);
+    if (!confirmed) return;
+
+    setBusyId(bountyId);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/dungeon/${bountyId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          note: dungeonActionNote[bountyId] || undefined,
+        }),
+      });
+      const resData = await readApiResponse<{ success: boolean; message?: string }>(
+        res,
+        "Aksi moderasi buronan gagal."
+      );
+      setNotice(resData.message || "Status buronan berhasil diperbarui & tercatat di #mod-logs.");
+      await fetchDungeonBounties();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal memproses aksi moderasi.");
+    } finally {
+      setBusyId("");
+    }
+  }
 
   async function handleSellerVerificationAction(
     targetUserId: string,
@@ -678,18 +747,22 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
   useEffect(() => {
     loadDashboard();
     fetchTournaments();
+    fetchDungeonBounties();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search]);
 
   // Strict Moderator Guard: Ensure non-admins never access admin-only tabs
   useEffect(() => {
     if (!isAdmin && (tab === "settings" || tab === "treasury" || tab === "ai_command" || tab === "verified_sellers")) {
-      setTab("overview");
+      setTab("moderation");
     }
     if (tab === "verified_sellers") {
       fetchSellerVerifications();
     }
-  }, [isAdmin, tab, fetchSellerVerifications]);
+    if (tab === "moderation") {
+      fetchDungeonBounties();
+    }
+  }, [isAdmin, tab, fetchSellerVerifications, fetchDungeonBounties]);
 
   useLiveSync(() => {
     const query = new URLSearchParams({ page: String(page), search });
@@ -702,6 +775,9 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     fetchTournaments();
     if (tab === "verified_sellers") {
       fetchSellerVerifications();
+    }
+    if (tab === "moderation") {
+      fetchDungeonBounties();
     }
   }, { intervalMs: 12000, revalidateOnFocus: true });
 
@@ -1335,15 +1411,18 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   ? "bg-[#9D4EDD] text-white"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
               }`}
-              onClick={() => setTab("moderation")}
+              onClick={() => {
+                setTab("moderation");
+                fetchDungeonBounties();
+              }}
             >
               <div className="flex items-center gap-2.5">
                 <ShieldAlert size={16} />
-                <span>Moderasi &amp; Log AI</span>
+                <span>Operasional Moderasi</span>
               </div>
-              {Boolean(data?.stats.pendingReports) && (
+              {Boolean((data?.stats.pendingReports || 0) + dungeonPendingCount) && (
                 <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${tab === "moderation" ? "bg-white text-[#9D4EDD]" : "bg-rose-500/20 text-rose-400"}`}>
-                  {data?.stats.pendingReports}
+                  {(data?.stats.pendingReports || 0) + dungeonPendingCount}
                 </span>
               )}
             </button>
@@ -1475,12 +1554,15 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
                 tab === "moderation" || tab === "security_logs" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
-              onClick={() => setTab("moderation")}
+              onClick={() => {
+                setTab("moderation");
+                fetchDungeonBounties();
+              }}
             >
-              <ShieldAlert size={14} /> <span>5. Moderasi &amp; AI</span>
-              {Boolean(data?.stats.pendingReports) && (
+              <ShieldAlert size={14} /> <span>5. Moderasi</span>
+              {Boolean((data?.stats.pendingReports || 0) + dungeonPendingCount) && (
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-extrabold">
-                  {data?.stats.pendingReports}
+                  {(data?.stats.pendingReports || 0) + dungeonPendingCount}
                 </span>
               )}
             </button>
@@ -4228,6 +4310,217 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
             {/* ========================================================================= */}
             {(tab === "moderation" || tab === "security_logs") && (
               <section className="space-y-8" role="tabpanel">
+                {/* 0. PENGAJUAN PENJARA & PAPAN BURONAN GUILD (/dungeon) */}
+                <div className="p-6 rounded-none border border-rose-200 dark:border-rose-950/60 bg-white dark:bg-[#130718]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Skull size={18} className="text-rose-500" />
+                        <span>Verifikasi Pengajuan Penjara &amp; Buronan Guild</span>
+                        {dungeonPendingCount > 0 && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/40 font-mono font-bold animate-pulse">
+                            {dungeonPendingCount} MENUNGGU ACC
+                          </span>
+                        )}
+                      </h2>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Tinjau laporan dugaan penipu (*scammer*), manipulasi turnamen, dan pelanggar berat. Setiap vonis ACC otomatis disinkronkan ke sel penjara <code>/dungeon</code> dan mencatat embed resmi ke <code>#🛡️・mod-logs</code>.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                      {(["PENDING_REVIEW", "WANTED_ACTIVE", "IMPRISONED", "CAPTURED", "ALL"] as const).map((st) => (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => {
+                            setDungeonStatusFilter(st);
+                            fetchDungeonBounties(st);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                            dungeonStatusFilter === st
+                              ? "bg-rose-600 text-white shadow-sm"
+                              : "bg-gray-100 dark:bg-[#1F0D24] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#2B1432]"
+                          }`}
+                        >
+                          {st === "PENDING_REVIEW"
+                            ? `Menunggu (${dungeonPendingCount})`
+                            : st === "WANTED_ACTIVE"
+                            ? "Buronan Aktif"
+                            : st === "IMPRISONED"
+                            ? "Tahanan"
+                            : st === "CAPTURED"
+                            ? "Tertangkap"
+                            : "Semua"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {loadingDungeon ? (
+                    <div className="py-8 text-center space-y-2">
+                      <div className="w-6 h-6 border-2 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                      <p className="text-xs font-mono text-gray-400">Memuat berkas buronan...</p>
+                    </div>
+                  ) : dungeonBounties.length === 0 ? (
+                    <div className="py-8 text-center border border-dashed border-gray-200 dark:border-rose-950/40 rounded-lg p-6">
+                      <p className="text-xs text-gray-400">
+                        {dungeonStatusFilter === "PENDING_REVIEW"
+                          ? "🛡️ Tidak ada antrean laporan buronan yang menunggu peninjauan saat ini."
+                          : "Tidak ada data buronan pada status ini."}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {dungeonBounties.map((bounty: any) => (
+                        <article
+                          key={bounty.id}
+                          className="p-4 rounded-xl border border-gray-200 dark:border-rose-950/50 bg-gray-50/50 dark:bg-[#180A1F] space-y-3"
+                        >
+                          <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                            <div className="space-y-1.5 min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span
+                                  className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border uppercase ${
+                                    bounty.status === "PENDING_REVIEW"
+                                      ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                                      : bounty.status === "WANTED_ACTIVE"
+                                      ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                                      : bounty.status === "IMPRISONED"
+                                      ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
+                                      : "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                  }`}
+                                >
+                                  {bounty.status}
+                                </span>
+                                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-gray-200 dark:bg-black/40 text-gray-700 dark:text-gray-300">
+                                  {bounty.category}
+                                </span>
+                                <h3 className="text-sm font-black text-gray-900 dark:text-white truncate">
+                                  Target: <span className="text-rose-400">{bounty.targetName}</span>
+                                </h3>
+                              </div>
+
+                              <p className="text-xs text-gray-500">
+                                Pelapor: <strong>@{bounty.submittedBy?.username || "Member"}</strong> (Lv. {bounty.submittedBy?.level || 1}) • Waktu: {new Date(bounty.createdAt).toLocaleString("id-ID")}
+                              </p>
+
+                              {bounty.bountyReward && (
+                                <p className="text-xs font-mono font-bold text-amber-400">
+                                  💰 Tawaran Hadiah Bounty: {bounty.bountyReward}
+                                </p>
+                              )}
+
+                              <div className="p-3 rounded-lg border border-gray-200 dark:border-rose-950/40 bg-white dark:bg-[#100414] text-xs text-gray-700 dark:text-gray-300 space-y-1">
+                                <p className="text-[10px] font-mono text-gray-400 uppercase font-bold">Kronologi Kasus:</p>
+                                <p className="leading-relaxed whitespace-pre-line">{bounty.crimeDescription}</p>
+                              </div>
+
+                              {bounty.evidenceImage && (
+                                <div className="pt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setAdminProofLightbox(bounty.evidenceImage)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs font-bold hover:bg-rose-500/20 transition"
+                                  >
+                                    <Eye size={13} />
+                                    <span>Lihat Bukti Foto / Transfer / Chat ↗</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex flex-col gap-2 shrink-0 md:w-56 pt-2 md:pt-0">
+                              <input
+                                type="text"
+                                placeholder="Catatan vonis staf (opsional)..."
+                                value={dungeonActionNote[bounty.id] || ""}
+                                onChange={(e) =>
+                                  setDungeonActionNote((prev) => ({
+                                    ...prev,
+                                    [bounty.id]: e.target.value,
+                                  }))
+                                }
+                                className="px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-rose-950/60 bg-white dark:bg-[#100414] text-xs text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-rose-500"
+                              />
+
+                              {bounty.status === "PENDING_REVIEW" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={busyId === bounty.id}
+                                    onClick={() => void handleDungeonAction(bounty.id, "APPROVE_WANTED")}
+                                    className="px-3 py-1.5 rounded-lg text-xs font-black bg-amber-500 hover:bg-amber-400 text-black shadow-sm transition flex items-center justify-center gap-1.5"
+                                  >
+                                    <Flame size={13} />
+                                    <span>ACC Jadi Buronan (WANTED)</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={busyId === bounty.id}
+                                    onClick={() => void handleDungeonAction(bounty.id, "APPROVE_IMPRISON")}
+                                    className="px-3 py-1.5 rounded-lg text-xs font-black bg-rose-600 hover:bg-rose-500 text-white shadow-sm transition flex items-center justify-center gap-1.5"
+                                  >
+                                    <Lock size={13} />
+                                    <span>Vonis Sel Penjara (BAN)</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={busyId === bounty.id}
+                                    onClick={() => void handleDungeonAction(bounty.id, "REJECT")}
+                                    className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition"
+                                  >
+                                    Tolak Pengajuan
+                                  </button>
+                                </>
+                              )}
+
+                              {bounty.status === "WANTED_ACTIVE" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={busyId === bounty.id}
+                                    onClick={() => void handleDungeonAction(bounty.id, "CAPTURE")}
+                                    className="px-3 py-1.5 rounded-lg text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition flex items-center justify-center gap-1.5"
+                                  >
+                                    <CheckCircle size={13} />
+                                    <span>Tandai Tertangkap</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={busyId === bounty.id}
+                                    onClick={() => void handleDungeonAction(bounty.id, "APPROVE_IMPRISON")}
+                                    className="px-3 py-1.5 rounded-lg text-xs font-black bg-rose-600 hover:bg-rose-500 text-white shadow-sm transition flex items-center justify-center gap-1.5"
+                                  >
+                                    <Lock size={13} />
+                                    <span>Jebloskan ke Penjara</span>
+                                  </button>
+                                </>
+                              )}
+
+                              {bounty.status === "IMPRISONED" && (
+                                <span className="text-[11px] font-mono text-rose-400 font-bold text-center py-1">
+                                  ⚖️ Terpidana Penjara Permanen
+                                </span>
+                              )}
+
+                              {bounty.status === "CAPTURED" && (
+                                <span className="text-[11px] font-mono text-emerald-400 font-bold text-center py-1">
+                                  🏆 Kasus Selesai / Tertangkap
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 {/* 1. LAPORAN PELANGGARAN FORUM */}
                 <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-1">

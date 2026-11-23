@@ -28,7 +28,7 @@ export type PublicMarketData = {
   game: string;
   type: "WTS" | "WTB";
   price: number;
-  status: "AVAILABLE" | "SOLD" | "IN_ESCROW";
+  status: "AVAILABLE" | "SOLD" | "IN_ESCROW" | "FROZEN";
   imageUrl?: string | null;
 };
 

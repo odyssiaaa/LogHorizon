@@ -99,7 +99,8 @@ const CATEGORY_MAP: Record<
 
 export function DungeonBoard() {
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState<"IMPRISONED" | "WANTED" | "CAPTURED">("WANTED");
+  const [activeTab, setActiveTab] = useState<"IMPRISONED" | "WANTED">("IMPRISONED");
+  const [bountySubFilter, setBountySubFilter] = useState<"ACTIVE" | "CAPTURED" | "ALL">("ACTIVE");
   const [imprisonedList, setImprisonedList] = useState<ImprisonedRecord[]>([]);
   const [bountiesList, setBountiesList] = useState<BountyRecord[]>([]);
   const [stats, setStats] = useState({ totalImprisoned: 0, activeBounties: 0, totalCaptured: 0 });
@@ -149,6 +150,16 @@ export function DungeonBoard() {
     e.preventDefault();
     if (!session?.user) {
       setFormFeedback({ message: "Silakan login terlebih dahulu untuk mengajukan laporan.", type: "error" });
+      return;
+    }
+
+    const userLevel = (session?.user as any)?.level ?? 1;
+    const userDiscord = (session?.user as any)?.discordId;
+    if (userLevel < 2 && !userDiscord) {
+      setFormFeedback({
+        message: "Akun minimal Level 2 atau terverifikasi akun Discord untuk mengajukan laporan buronan guna mencegah laporan palsu/spam.",
+        type: "error",
+      });
       return;
     }
 
@@ -215,7 +226,12 @@ export function DungeonBoard() {
   }, [bountiesList]);
 
   const displayedBounties = useMemo(() => {
-    const source = activeTab === "WANTED" ? activeWantedList : capturedList;
+    let source = bountiesList;
+    if (bountySubFilter === "ACTIVE") {
+      source = activeWantedList;
+    } else if (bountySubFilter === "CAPTURED") {
+      source = capturedList;
+    }
     return source.filter((item) => {
       const matchQuery =
         !searchQuery ||
@@ -224,7 +240,7 @@ export function DungeonBoard() {
       const matchCategory = selectedCategory === "ALL" || item.category === selectedCategory;
       return matchQuery && matchCategory;
     });
-  }, [activeTab, activeWantedList, capturedList, searchQuery, selectedCategory]);
+  }, [bountiesList, bountySubFilter, activeWantedList, capturedList, searchQuery, selectedCategory]);
 
   return (
     <div className="space-y-8 min-w-0">
@@ -292,24 +308,11 @@ export function DungeonBoard() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. TAB CONTROLS & SEARCH BAR                                              */}
+      {/* 2. TAB CONTROLS & SEARCH BAR (2 MAIN TABS)                                */}
       {/* ========================================================================= */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-[#2A153A]">
-        {/* Main 3 Tabs */}
+        {/* Main 2 Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setActiveTab("WANTED")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 border ${
-              activeTab === "WANTED"
-                ? "bg-amber-500/20 text-amber-300 border-amber-500 shadow-md shadow-amber-900/20"
-                : "border-[#2A153A] bg-[#120516] text-gray-400 hover:text-white"
-            }`}
-          >
-            <Flame size={14} className={activeTab === "WANTED" ? "text-amber-400" : "text-gray-500"} />
-            <span>Papan Buronan ({activeWantedList.length})</span>
-          </button>
-
           <button
             type="button"
             onClick={() => setActiveTab("IMPRISONED")}
@@ -320,30 +323,42 @@ export function DungeonBoard() {
             }`}
           >
             <Lock size={14} className={activeTab === "IMPRISONED" ? "text-rose-400" : "text-gray-500"} />
-            <span>Sel Tahanan Permanen ({imprisonedList.length})</span>
+            <span>⛓️ Sel Tahanan (Banned Permanen) ({imprisonedList.length})</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab("CAPTURED")}
+            onClick={() => setActiveTab("WANTED")}
             className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 border ${
-              activeTab === "CAPTURED"
-                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500 shadow-md shadow-emerald-900/20"
+              activeTab === "WANTED"
+                ? "bg-amber-500/20 text-amber-300 border-amber-500 shadow-md shadow-amber-900/20"
                 : "border-[#2A153A] bg-[#120516] text-gray-400 hover:text-white"
             }`}
           >
-            <CheckCircle2 size={14} className={activeTab === "CAPTURED" ? "text-emerald-400" : "text-gray-500"} />
-            <span>Tertangkap ({capturedList.length})</span>
+            <Flame size={14} className={activeTab === "WANTED" ? "text-amber-400" : "text-gray-500"} />
+            <span>🎯 Papan Buronan &amp; Bounty (WANTED) ({activeWantedList.length})</span>
           </button>
         </div>
 
-        {/* Search & Category Filter */}
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
+        {/* Search, Sub-filter & Category Filter */}
+        <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+          {activeTab === "WANTED" && (
+            <select
+              value={bountySubFilter}
+              onChange={(e) => setBountySubFilter(e.target.value as any)}
+              className="px-3 py-2 rounded-xl border border-amber-900/40 bg-[#120516] text-amber-300 text-xs focus:outline-none focus:border-amber-500 cursor-pointer"
+            >
+              <option value="ACTIVE">🎯 Buronan Aktif ({activeWantedList.length})</option>
+              <option value="CAPTURED">🏆 Tertangkap ({capturedList.length})</option>
+              <option value="ALL">Semua Poster ({bountiesList.length})</option>
+            </select>
+          )}
+
+          <div className="relative flex-1 md:w-60">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Cari nama pelaku, kronologi..."
+              placeholder="Cari nama pelaku, rekening, kronologi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#2A153A] bg-[#120516] text-white text-xs placeholder-gray-500 focus:outline-none focus:border-rose-500"
@@ -409,10 +424,10 @@ export function DungeonBoard() {
                 return (
                   <div
                     key={item.id}
-                    className="relative rounded-2xl border-2 border-rose-600/30 bg-[#110517] overflow-hidden shadow-xl flex flex-col justify-between"
+                    className="relative rounded-2xl border-2 border-rose-500/40 bg-[#11091D] overflow-hidden shadow-xl flex flex-col justify-between"
                   >
                     {/* Visual prison bars simulation */}
-                    <div className="absolute inset-0 pointer-events-none opacity-[0.07] bg-[linear-gradient(to_right,#ffffff_2px,transparent_2px)] bg-[size:32px_100%]" />
+                    <div className="absolute inset-0 pointer-events-none opacity-[0.08] bg-[linear-gradient(to_right,#ffffff_2px,transparent_2px)] bg-[size:28px_100%]" />
 
                     {/* Red BANNED stamp overlay */}
                     <div className="absolute top-4 right-4 rotate-12 pointer-events-none z-10">
@@ -476,18 +491,18 @@ export function DungeonBoard() {
           )}
         </div>
       ) : (
-        /* ================= TAB 2 & 3: PAPAN BURONAN (WANTED & CAPTURED) ================= */
+        /* ================= TAB 2: PAPAN BURONAN (WANTED & BOUNTY) ================= */
         <div className="space-y-4">
           <div className="p-4 rounded-xl border border-amber-900/40 bg-amber-950/10 text-xs text-amber-300 flex items-start gap-3">
             <Flame size={18} className="text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="font-bold">
-                {activeTab === "WANTED" ? "Peringatan Buronan Aktif:" : "Arsip Buronan Tertangkap:"}
+                {bountySubFilter === "CAPTURED" ? "Arsip Buronan Tertangkap:" : "Peringatan Buronan Aktif:"}
               </p>
               <p className="text-gray-400 mt-0.5">
-                {activeTab === "WANTED"
-                  ? "Daftar terlapor penipuan (scammer) & perusak guild yang sedang diburu. Jika kamu memiliki informasi valid terkait kontak baru, nomor rekening penipu, atau akun sosial medianya, klik 'Lapor Info Keberadaan' untuk menerima imbalan bounty!"
-                  : "Daftar buronan yang telah berhasil diselesaikan permasalahannya, ganti rugi dikembalikan, atau pelakunya telah diamankan dan dijatuhi vonis mutlak."}
+                {bountySubFilter === "CAPTURED"
+                  ? "Daftar buronan yang telah berhasil diselesaikan permasalahannya, ganti rugi dikembalikan, atau pelakunya telah diamankan dan dijatuhi vonis mutlak."
+                  : "Daftar terlapor penipuan (scammer) & perusak guild yang sedang diburu. Jika kamu memiliki informasi valid terkait kontak baru, nomor rekening penipu, atau akun sosial medianya, klik 'Lapor Info Keberadaan' untuk menerima imbalan bounty!"}
               </p>
             </div>
           </div>
@@ -496,12 +511,12 @@ export function DungeonBoard() {
             <div className="py-16 text-center rounded-2xl border border-dashed border-[#2A153A] bg-[#100414] p-8 space-y-2">
               <CheckCircle2 size={36} className="text-emerald-500 mx-auto" />
               <h3 className="text-base font-bold text-white">
-                {activeTab === "WANTED" ? "Tidak Ada Buronan Aktif" : "Belum Ada Catatan Tertangkap"}
+                {bountySubFilter === "CAPTURED" ? "Belum Ada Catatan Tertangkap" : "Tidak Ada Buronan Aktif"}
               </h3>
               <p className="text-xs text-gray-400 max-w-sm mx-auto">
-                {activeTab === "WANTED"
-                  ? "Semua laporan terverifikasi telah diselesaikan atau dijebloskan ke sel penjara."
-                  : "Arsip buronan tertangkap akan tampil di sini begitu staf menandai kasus selesai."}
+                {bountySubFilter === "CAPTURED"
+                  ? "Arsip buronan tertangkap akan tampil di sini begitu staf menandai kasus selesai."
+                  : "Semua laporan terverifikasi telah diselesaikan atau dijebloskan ke sel penjara."}
               </p>
             </div>
           ) : (
