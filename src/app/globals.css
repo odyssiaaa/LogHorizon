@@ -265,7 +265,6 @@ html.dark body {
     display: block !important;
   }
   .desktop-table,
-  .desktop-navbar,
   .desktop-only {
     display: none !important;
   }
@@ -276,9 +275,6 @@ html.dark body {
   .mobile-card-list,
   .mobile-only {
     display: none !important;
-  }
-  .desktop-navbar {
-    display: flex !important;
   }
   .desktop-table {
     display: table !important;

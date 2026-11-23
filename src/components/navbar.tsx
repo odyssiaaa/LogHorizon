@@ -377,7 +377,7 @@ export function Navbar() {
 
             {/* Menu Navigasi 4 Menu Utama dengan Font 100% Identik */}
             <nav
-              className="hidden lg:flex desktop-navbar items-center gap-1.5 p-1 rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-slate-100/90 dark:bg-[#11091D] shrink-0"
+              className="hidden lg:flex items-center gap-1.5 p-1 rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-slate-100/90 dark:bg-[#11091D] shrink-0"
               aria-label="Navigasi Utama Desktop"
             >
               {/* 1. BERANDA */}
@@ -565,7 +565,7 @@ export function Navbar() {
             <ThemeToggle />
 
             {/* Aksi Khusus Desktop (Pesan, Lonceng Notifikasi & Profil) - WAJIB SELALU TAMPIL PENUH */}
-            <div className="hidden md:flex desktop-navbar items-center gap-2.5 shrink-0">
+            <div className="hidden lg:flex items-center gap-2.5 shrink-0">
               {/* Ikon Chat / Messages */}
               <Link
                 href="/messages"
@@ -721,8 +721,8 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Mobile Actions (Pesan, Notifikasi & Hamburger Menu pada < md) */}
-            <div className="flex md:hidden items-center gap-1.5 shrink-0">
+            {/* Mobile & Tablet Actions (Pesan, Notifikasi & Hamburger Menu pada < lg) */}
+            <div className="flex lg:hidden items-center gap-1.5 shrink-0">
               {user ? (
                 <Link
                   href="/messages"
@@ -775,7 +775,7 @@ export function Navbar() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 md:hidden"
+              className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 lg:hidden"
               aria-hidden="true"
             />
 
@@ -785,7 +785,7 @@ export function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="fixed inset-y-0 right-0 z-50 w-84 sm:w-96 max-w-[90vw] bg-white dark:bg-[#0B0614] border-l border-slate-200 dark:border-[#7C3AED]/40 flex flex-col justify-between shadow-2xl md:hidden overflow-y-auto select-none"
+              className="fixed inset-y-0 right-0 z-50 w-84 sm:w-96 max-w-[90vw] bg-white dark:bg-[#0B0614] border-l border-slate-200 dark:border-[#7C3AED]/40 flex flex-col justify-between shadow-2xl lg:hidden overflow-y-auto select-none"
               aria-label="Menu navigasi mobile"
             >
               {/* Konten Atas & Tengah */}
@@ -1238,7 +1238,7 @@ export function Navbar() {
         <button
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-24 left-3.5 z-40 md:hidden size-11 rounded-full bg-[#11091D]/90 dark:bg-[#11091D]/90 bg-white/90 backdrop-blur-md border-2 border-[#7C3AED] shadow-xl text-[#7C3AED] dark:text-[#A78BFA] hover:bg-[#7C3AED] hover:text-white flex items-center justify-center transition-all active:scale-90 animate-in fade-in zoom-in-75 duration-200 cursor-pointer"
+          className="fixed bottom-24 md:bottom-20 left-3.5 z-40 lg:hidden size-11 rounded-full bg-[#11091D]/90 dark:bg-[#11091D]/90 bg-white/90 backdrop-blur-md border-2 border-[#7C3AED] shadow-xl text-[#7C3AED] dark:text-[#A78BFA] hover:bg-[#7C3AED] hover:text-white flex items-center justify-center transition-all active:scale-90 animate-in fade-in zoom-in-75 duration-200 cursor-pointer"
           aria-label="Kembali ke atas layar"
           title="Kembali ke atas layar"
         >
@@ -1247,11 +1247,11 @@ export function Navbar() {
       )}
 
       {/* ===================================================================== */}
-      {/* MOBILE FLOATING BOTTOM DOCK (< 768px / md:hidden)                     */}
+      {/* MOBILE & TABLET FLOATING BOTTOM DOCK (< 1024px / lg:hidden)           */}
       {/* ===================================================================== */}
       <nav
         aria-label="Navigasi Bawah Layar Mobile"
-        className="fixed bottom-3 inset-x-3 z-40 md:hidden bg-[#11091D]/95 dark:bg-[#11091D]/95 bg-white/95 backdrop-blur-md border border-[#7C3AED]/40 shadow-[0_8px_30px_rgba(0,0,0,0.45)] rounded-2xl px-2 py-1.5 transition-all select-none"
+        className="fixed bottom-3 inset-x-3 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[480px] z-40 lg:hidden bg-[#11091D]/95 dark:bg-[#11091D]/95 bg-white/95 backdrop-blur-md border border-[#7C3AED]/40 shadow-[0_8px_30px_rgba(0,0,0,0.45)] rounded-2xl px-2 py-1.5 transition-all select-none"
       >
         <div className="grid grid-cols-5 items-center text-center gap-1">
           {/* 1. Home */}

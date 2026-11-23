@@ -45,7 +45,7 @@ export function RulesGuideTabs() {
           }`}
         >
           <Scale size={15} />
-          <span>⚖️ Kode Etik &amp; Sanksi</span>
+          <span>Kode Etik &amp; Sanksi</span>
         </button>
 
         <button
@@ -58,7 +58,7 @@ export function RulesGuideTabs() {
           }`}
         >
           <Trophy size={15} />
-          <span>🏆 Regulasi Turnamen</span>
+          <span>Regulasi Turnamen</span>
         </button>
 
         <button
@@ -71,7 +71,7 @@ export function RulesGuideTabs() {
           }`}
         >
           <ShieldCheck size={15} />
-          <span>🛡️ Panduan Rekber 3-Pihak</span>
+          <span>Panduan Rekber 3-Pihak</span>
         </button>
 
         <button
@@ -84,7 +84,7 @@ export function RulesGuideTabs() {
           }`}
         >
           <HelpCircle size={15} />
-          <span>❓ FAQ &amp; Panduan Fitur</span>
+          <span>FAQ &amp; Panduan Fitur</span>
         </button>
       </div>
 
