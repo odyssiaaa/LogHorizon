@@ -461,6 +461,46 @@ export async function notifyTournamentBracketShuffle(data: {
 }
 
 /**
+ * Event: Pengingat Kick-Off Turnamen H-15 Menit (#🏆・live-info-tournament)
+ */
+export async function notifyTournamentKickoffReminder(data: {
+  tournamentTitle: string;
+  game: string;
+  prizePool?: string | null;
+  totalTeams: number;
+  tournamentId: string;
+}): Promise<void> {
+  const baseUrl = getBaseAppUrl();
+  const tournamentUrl = `${baseUrl}/events/turnamen/${data.tournamentId}`;
+
+  const embed: DiscordEmbed = {
+    title: `⏰ 15 MENIT MENUJU PERTANDINGAN!`,
+    description: `Turnamen akbar **${data.tournamentTitle}** cabang **${data.game}** akan segera dimulai dalam waktu **15 menit**! Seluruh kapten dan anggota tim diharapkan bersiap di lobi game masing-masing.`,
+    color: 0xf59e0b, // Amber / Alert
+    url: tournamentUrl,
+    fields: [
+      { name: "🎮 Divisi Game", value: `\`${data.game}\``, inline: true },
+      { name: "👥 Total Tim Terdaftar", value: `${data.totalTeams} Tim`, inline: true },
+      { name: "🎁 Total Hadiah", value: data.prizePool || "Prizepool Komunitas", inline: true },
+      {
+        name: "⚔️ Masuk Ruang Pertandingan & Bagan",
+        value: `Periksa bagan lawan tanding dan koordinasi chat kapten di [Halaman Turnamen](${tournamentUrl}).`,
+        inline: false,
+      },
+    ],
+    footer: {
+      text: "LogHorizon Tournament Engine • #live-info-tournament",
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  await sendDiscordChannelMessage("tournament_live", {
+    content: `⏰ **15 MENIT MENUJU PERTANDINGAN!** Turnamen **${data.tournamentTitle}** (${data.game}) akan segera dimulai! Seluruh tim harap segera bersiap!`,
+    embeds: [embed],
+  }).catch((err) => console.warn("[Discord Bot Dispatcher] notifyTournamentKickoffReminder error:", err));
+}
+
+/**
  * Event: Live Streaming Broadcast (#📡・info-live)
  */
 export async function notifyLiveStreamBroadcast(data: {

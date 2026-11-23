@@ -51,6 +51,7 @@ import { BracketZoomControl } from "@/components/bracket-zoom-control";
 import { EditTournamentModal } from "@/components/edit-tournament-modal";
 import { TournamentBackupDropdown } from "@/components/tournament-backup-dropdown";
 import { useLiveSync } from "@/hooks/use-live-sync";
+import { GuestTournamentTrackerModal } from "@/components/guest-tournament-tracker-modal";
 
 type TournamentData = {
   id: string;
@@ -161,6 +162,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   });
 
   const [showCertificate, setShowCertificate] = useState(false);
+  const [isTrackerOpen, setIsTrackerOpen] = useState(false);
   const [activeLobbyMatch, setActiveLobbyMatch] = useState<TournamentMatch | null>(null);
   const [deletingTournament, setDeletingTournament] = useState(false);
 
@@ -966,6 +968,16 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
               </button>
             )}
 
+            <button
+              type="button"
+              onClick={() => setIsTrackerOpen(true)}
+              className="px-4 py-2.5 rounded-none font-bold text-xs uppercase tracking-wider bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 dark:border-purple-900/50 inline-flex items-center justify-center gap-1.5 transition cursor-pointer"
+              title="Cek Status Pendaftaran Tim (Guest Tracker) & Jadwal Lawan"
+            >
+              <Search size={15} className="text-[#A78BFA]" />
+              <span>Cek Status Tim</span>
+            </button>
+
             <div className="flex items-center gap-2">
               <ShareButton
                 url={shareUrl}
@@ -1600,6 +1612,16 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
                 className="w-full justify-center text-xs py-2.5"
               />
 
+              <button
+                type="button"
+                onClick={() => setIsTrackerOpen(true)}
+                className="w-full py-2.5 px-3 rounded-none font-mono font-bold text-xs uppercase tracking-wider bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 dark:border-purple-900/50 inline-flex items-center justify-center gap-1.5 transition cursor-pointer"
+                title="Cek Status Pendaftaran Tim (Guest Tracker) & Jadwal Lawan"
+              >
+                <Search size={14} className="text-[#A78BFA]" />
+                <span>Cek Status Pendaftaran Tim</span>
+              </button>
+
               {gfWinner && (
                 <button
                   type="button"
@@ -2227,6 +2249,13 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
           onClose={() => setActiveLobbyMatch(null)}
         />
       )}
+
+      {/* GUEST TOURNAMENT TRACKER MODAL */}
+      <GuestTournamentTrackerModal
+        isOpen={isTrackerOpen}
+        onClose={() => setIsTrackerOpen(false)}
+        tournament={tournament}
+      />
     </main>
   );
 }

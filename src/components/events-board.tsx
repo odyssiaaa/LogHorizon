@@ -48,6 +48,7 @@ import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatc
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 import { ShareButton } from "@/components/share-button";
+import { GuestTournamentTrackerModal } from "@/components/guest-tournament-tracker-modal";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 import { RosterPlayerRow } from "@/components/roster-player-row";
@@ -430,6 +431,7 @@ export function EventsBoard() {
 
   // View Team Roster Popup
   const [viewingRoster, setViewingRoster] = useState<TournamentTeam | null>(null);
+  const [trackerTournament, setTrackerTournament] = useState<Tournament | null>(null);
 
   // Live Auto-Refresh & Real-Time Sync State
   const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
@@ -1634,6 +1636,16 @@ export function EventsBoard() {
                               <span>Daftar Tim</span>
                             </button>
                           )}
+
+                          <button
+                            type="button"
+                            onClick={() => setTrackerTournament(tournament)}
+                            className="h-10 px-3 flex-1 sm:flex-initial whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 dark:border-purple-900/50 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                            title="Cek Status Pendaftaran Tim (Guest Tracker) & Jadwal Lawan"
+                          >
+                            <Search size={14} className="text-[#A78BFA]" />
+                            <span>Cek Status Tim</span>
+                          </button>
 
                           {isAdminOrMod && (
                             <StaffCardModerationMenu
@@ -3822,6 +3834,13 @@ export function EventsBoard() {
           </div>
         </div>
       )}
+
+      {/* POPUP: CEK STATUS PENDAFTARAN TIM (GUEST TRACKER) */}
+      <GuestTournamentTrackerModal
+        isOpen={Boolean(trackerTournament)}
+        onClose={() => setTrackerTournament(null)}
+        tournament={trackerTournament}
+      />
 
       {/* ========================================================================= */}
       {/* POPUP: LIHAT SUSUNAN PEMAIN (ROSTER) TIM */}

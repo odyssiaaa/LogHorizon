@@ -3,6 +3,7 @@ import { authenticatedUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { generateTemplateBracket, TournamentTeam, TournamentMatch, DEFAULT_TOURNAMENT_RULES, evaluateAutoLiveMatches, checkAllFinalsFinished, extractTournamentPodium } from "@/lib/tournament";
 import { sanitizePlainText } from "@/lib/sanitize";
+import { notifyTournamentKickoffReminder } from "@/lib/discord-bot-sender";
 
 export async function GET() {
   const viewer = await authenticatedUser().catch(() => null);
@@ -44,6 +45,29 @@ export async function GET() {
       if (isEventDue && (currentStatus === "REGISTRATION" || currentStatus === "OPEN")) {
         currentStatus = TournamentStatus.ONGOING;
         shouldPersist = true;
+      }
+
+      // 1b. H-15 Minutes Kick-off Reminder to #🏆・live-info-tournament (1572575614974693427)
+      const diffToEvent = eventTime - now;
+      const isWithin15Minutes = !isNaN(eventTime) && diffToEvent <= 15 * 60 * 1000 && diffToEvent > -30 * 60 * 1000;
+      if (!tournament.reminderSent && isWithin15Minutes && currentStatus !== TournamentStatus.COMPLETED) {
+        const updateResult = await prisma.tournament
+          .updateMany({
+            where: { id: tournament.id, reminderSent: false },
+            data: { reminderSent: true },
+          })
+          .catch(() => ({ count: 0 }));
+
+        if (updateResult.count > 0) {
+          tournament.reminderSent = true;
+          void notifyTournamentKickoffReminder({
+            tournamentTitle: tournament.title,
+            game: tournament.game,
+            prizePool: tournament.prizePool,
+            totalTeams: tournament.participants.length,
+            tournamentId: tournament.id,
+          });
+        }
       }
 
       // 2. Evaluate auto-live matches (Round 1 auto-start and Ready Checks)

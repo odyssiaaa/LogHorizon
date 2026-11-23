@@ -182,6 +182,7 @@ model Tournament {
   matches          Json?            @default("[]")
   createdAt        DateTime         @default(now())
   completedAt      DateTime?
+  reminderSent     Boolean          @default(false)
   participants     Participant[]
   matchMessages    MatchMessage[]
 
