@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { DiscordAvatar } from "@/components/discord-avatar";
+import { useLocale } from "@/context/locale-context";
 
 export type SearchedMember = {
   id: string;
@@ -55,11 +56,13 @@ interface GlobalUserSearchProps {
 export function GlobalUserSearch({
   className = "",
   inputClassName = "",
-  placeholder = "Cari petualang...",
+  placeholder,
   onSelectUser,
   variant = "navbar",
 }: GlobalUserSearchProps) {
   const router = useRouter();
+  const { t } = useLocale();
+  const resolvedPlaceholder = placeholder ? t(placeholder) : t("Cari petualang...", "Search Adventurers...");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchedMember[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -147,8 +150,8 @@ export function GlobalUserSearch({
             }
           }}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className={`w-full pl-8 pr-8 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-slate-50 dark:bg-[#0A0512] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#7C3AED] focus:border-[#7C3AED] transition ${inputClassName}`}
+          placeholder={resolvedPlaceholder}
+          className={`w-full pl-8 pr-8 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-slate-50 dark:bg-[#0A0512] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#7C3AED] focus:border-[#7C3AED] transition [&::-webkit-search-decoration]:hidden [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-results-button]:hidden ${inputClassName}`}
         />
         {loading ? (
           <Loader2
@@ -177,9 +180,9 @@ export function GlobalUserSearch({
           <div className="px-3.5 py-2 bg-slate-50 dark:bg-[#0D0717] flex items-center justify-between text-[11px] font-mono">
             <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <Users size={12} className="text-[#7C3AED]" />
-              <span>HASIL PETUALANG ({results.length})</span>
+              <span>{t("HASIL PETUALANG", "ADVENTURER RESULTS")} ({results.length})</span>
             </span>
-            <span className="text-[10px] text-slate-400">Maksimal 6 petualang</span>
+            <span className="text-[10px] text-slate-400">{t("Maksimal 6 petualang", "Up to 6 adventurers")}</span>
           </div>
 
           {/* List Hasil Petualang */}
@@ -188,10 +191,10 @@ export function GlobalUserSearch({
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 size={15} className="animate-spin text-[#7C3AED]" />
-                  <span>Mencari petualang…</span>
+                  <span>{t("Mencari petualang…", "Searching adventurers…")}</span>
                 </div>
               ) : (
-                <span>Tidak ada petualang yang cocok dengan &quot;{query}&quot;</span>
+                <span>{t("Tidak ada petualang yang cocok dengan", "No adventurers matching")} &quot;{query}&quot;</span>
               )}
             </div>
           ) : (
@@ -223,7 +226,7 @@ export function GlobalUserSearch({
                           className={`absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white dark:border-[#11091D] ${
                             user.isOnline ? "bg-emerald-500" : "bg-slate-400 dark:bg-slate-600"
                           }`}
-                          title={user.isOnline ? "Online Sekarang" : user.lastSeenText}
+                          title={user.isOnline ? t("Online Sekarang", "Online Now") : user.lastSeenText}
                         />
                       </div>
 

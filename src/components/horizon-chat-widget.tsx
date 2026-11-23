@@ -102,7 +102,7 @@ const INITIAL_MESSAGE: Message = {
 export function HorizonChatWidget() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const [showBubble, setShowBubble] = useState(false);
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
@@ -762,7 +762,7 @@ export function HorizonChatWidget() {
               maxLength={300}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Tanya Satpam Horizon..."
+              placeholder={t("ask_satpam", "Tanya Satpam Horizon...")}
               disabled={loading}
               className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-[#0E0B13] border border-gray-200 dark:border-[#262033] text-xs text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#9D4EDD]"
             />

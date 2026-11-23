@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
+import { usePathname } from "next/navigation";
+import { UI_PHRASES, LocaleCode } from "@/lib/translations-data";
 
 export type Locale = "ID" | "EN" | "JA" | "KO" | "ZH" | "AR" | "ES";
 export type Currency = "IDR" | "USD" | "JPY" | "KRW" | "CNY" | "SAR" | "EUR";
@@ -416,8 +418,17 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   };
 
   const t = (key: string, fallback?: string): string => {
+    if (!key) return "";
     const dict = DICTIONARY[locale] || DICTIONARY.ID;
-    return dict[key] || DICTIONARY.ID[key] || fallback || key;
+    if (dict[key]) return dict[key];
+    const trimmed = key.trim();
+    const phrase = UI_PHRASES[key] || UI_PHRASES[trimmed];
+    if (phrase) {
+      if (locale === "ID") return phrase.ID || key;
+      if (phrase[locale as LocaleCode]) return phrase[locale as LocaleCode];
+    }
+    if (DICTIONARY.ID[key]) return DICTIONARY.ID[key];
+    return fallback || key;
   };
 
   const value = useMemo(
@@ -433,7 +444,11 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     [locale, currency]
   );
 
-  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
+  return (
+    <LocaleContext.Provider value={value}>
+      <AutoTranslateWrapper>{children}</AutoTranslateWrapper>
+    </LocaleContext.Provider>
+  );
 }
 
 export function useLocale() {
@@ -467,4 +482,257 @@ export function PriceDisplay({
       {formatted}
     </span>
   );
+}
+
+const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "PRE", "CODE", "NOSCRIPT"]);
+
+function isElementExcluded(el: Element | null): boolean {
+  if (!el) return false;
+  if (SKIP_TAGS.has(el.tagName)) return true;
+  if (el.getAttribute("data-no-translate") === "true") return true;
+  if (el.hasAttribute("data-no-translate")) return true;
+  if (el.getAttribute("contenteditable") === "true") return true;
+  if (el.classList.contains("premium-username")) return true;
+  if (el.classList.contains("user-content")) return true;
+  if (el.classList.contains("post-body")) return true;
+  if (el.classList.contains("comment-body")) return true;
+  if (el.classList.contains("forum-content")) return true;
+  if (el.closest("[data-no-translate]")) return true;
+  if (el.closest(".user-content")) return true;
+  if (el.closest(".post-body")) return true;
+  if (el.closest(".comment-body")) return true;
+  if (el.closest(".forum-content")) return true;
+  if (el.closest(".premium-username")) return true;
+  if (el.closest("a[href^='/u/']")) return true;
+  if (el.closest("[data-author]")) return true;
+  return false;
+}
+
+const SORTED_PHRASES: [string, Record<LocaleCode, string>][] = Object.entries(UI_PHRASES).sort(
+  (a, b) => b[0].length - a[0].length
+);
+
+export function translateDocument(targetLocale: Locale) {
+  if (typeof document === "undefined") return;
+
+  const isRtl = LOCALES[targetLocale]?.dir === "rtl";
+  if (isRtl) {
+    document.documentElement.setAttribute("dir", "rtl");
+  } else {
+    document.documentElement.removeAttribute("dir");
+  }
+  document.documentElement.lang = targetLocale.toLowerCase();
+
+  // 1. Text Nodes
+  const walker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: (node) => {
+        const parent = node.parentElement;
+        if (!parent || isElementExcluded(parent)) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    }
+  );
+
+  let currentNode: Node | null = walker.nextNode();
+  while (currentNode) {
+    const textNode = currentNode as Text & {
+      __lh_orig?: string;
+      __lh_locale?: string;
+      __lh_translated?: string;
+    };
+
+    if (targetLocale === "ID") {
+      if (textNode.__lh_orig !== undefined) {
+        textNode.nodeValue = textNode.__lh_orig;
+        textNode.__lh_locale = "ID";
+        textNode.__lh_translated = textNode.__lh_orig;
+      }
+    } else {
+      if (textNode.__lh_locale !== targetLocale || (textNode.__lh_translated && textNode.nodeValue !== textNode.__lh_translated)) {
+        if (textNode.__lh_orig === undefined || (textNode.__lh_translated && textNode.nodeValue !== textNode.__lh_translated && textNode.nodeValue !== textNode.__lh_orig)) {
+          textNode.__lh_orig = textNode.nodeValue || "";
+        }
+        const orig = textNode.__lh_orig;
+        if (orig && orig.trim()) {
+          const trimmed = orig.trim();
+          if (UI_PHRASES[trimmed]?.[targetLocale as LocaleCode]) {
+            const leading = orig.match(/^\s*/)?.[0] || "";
+            const trailing = orig.match(/\s*$/)?.[0] || "";
+            const res = leading + UI_PHRASES[trimmed][targetLocale as LocaleCode] + trailing;
+            textNode.nodeValue = res;
+            textNode.__lh_translated = res;
+          } else {
+            let replaced = orig;
+            let changed = false;
+            for (let i = 0; i < SORTED_PHRASES.length; i++) {
+              const [idPhrase, translations] = SORTED_PHRASES[i];
+              if (idPhrase.length >= 2 && replaced.includes(idPhrase)) {
+                const target = translations[targetLocale as LocaleCode];
+                if (target) {
+                  replaced = replaced.replaceAll(idPhrase, target);
+                  changed = true;
+                }
+              }
+            }
+            if (changed) {
+              textNode.nodeValue = replaced;
+              textNode.__lh_translated = replaced;
+            } else {
+              textNode.__lh_translated = orig;
+            }
+          }
+        }
+        textNode.__lh_locale = targetLocale;
+      }
+    }
+
+    currentNode = walker.nextNode();
+  }
+
+  // 2. Input & Textarea Placeholders
+  const inputs = document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("input[placeholder], textarea[placeholder]");
+  inputs.forEach((input) => {
+    if (isElementExcluded(input)) return;
+    const inputWithOrig = input as (HTMLInputElement | HTMLTextAreaElement) & {
+      __lh_orig_ph?: string;
+    };
+
+    if (targetLocale === "ID") {
+      if (inputWithOrig.__lh_orig_ph !== undefined) {
+        input.placeholder = inputWithOrig.__lh_orig_ph;
+      }
+    } else {
+      if (inputWithOrig.__lh_orig_ph === undefined) {
+        inputWithOrig.__lh_orig_ph = input.placeholder;
+      }
+      const origPh = inputWithOrig.__lh_orig_ph;
+      if (origPh && origPh.trim()) {
+        const trimmed = origPh.trim();
+        if (UI_PHRASES[trimmed]?.[targetLocale as LocaleCode]) {
+          input.placeholder = UI_PHRASES[trimmed][targetLocale as LocaleCode];
+        } else {
+          let replaced = origPh;
+          for (let i = 0; i < SORTED_PHRASES.length; i++) {
+            const [idPhrase, translations] = SORTED_PHRASES[i];
+            if (idPhrase.length >= 2 && replaced.includes(idPhrase)) {
+              const target = translations[targetLocale as LocaleCode];
+              if (target) {
+                replaced = replaced.replaceAll(idPhrase, target);
+              }
+            }
+          }
+          input.placeholder = replaced;
+        }
+      }
+    }
+  });
+
+  // 3. Titles & Aria-Labels
+  const labeledElements = document.querySelectorAll<HTMLElement>("[title], [aria-label]");
+  labeledElements.forEach((el) => {
+    if (isElementExcluded(el)) return;
+    const elWithOrig = el as HTMLElement & {
+      __lh_orig_title?: string;
+      __lh_orig_aria?: string;
+    };
+
+    const titleAttr = el.getAttribute("title");
+    if (titleAttr && titleAttr.trim()) {
+      if (targetLocale === "ID") {
+        if (elWithOrig.__lh_orig_title !== undefined) {
+          el.setAttribute("title", elWithOrig.__lh_orig_title);
+        }
+      } else {
+        if (elWithOrig.__lh_orig_title === undefined) {
+          elWithOrig.__lh_orig_title = titleAttr;
+        }
+        const origTitle = elWithOrig.__lh_orig_title.trim();
+        if (UI_PHRASES[origTitle]?.[targetLocale as LocaleCode]) {
+          el.setAttribute("title", UI_PHRASES[origTitle][targetLocale as LocaleCode]);
+        }
+      }
+    }
+
+    const ariaAttr = el.getAttribute("aria-label");
+    if (ariaAttr && ariaAttr.trim()) {
+      if (targetLocale === "ID") {
+        if (elWithOrig.__lh_orig_aria !== undefined) {
+          el.setAttribute("aria-label", elWithOrig.__lh_orig_aria);
+        }
+      } else {
+        if (elWithOrig.__lh_orig_aria === undefined) {
+          elWithOrig.__lh_orig_aria = ariaAttr;
+        }
+        const origAria = elWithOrig.__lh_orig_aria.trim();
+        if (UI_PHRASES[origAria]?.[targetLocale as LocaleCode]) {
+          el.setAttribute("aria-label", UI_PHRASES[origAria][targetLocale as LocaleCode]);
+        }
+      }
+    }
+  });
+}
+
+export function AutoTranslateWrapper({ children }: { children: React.ReactNode }) {
+  const { locale } = useLocale();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    translateDocument(locale);
+
+    if (typeof MutationObserver !== "undefined") {
+      let rafId: number | null = null;
+      let isTranslating = false;
+
+      const runTranslation = () => {
+        if (isTranslating) return;
+        isTranslating = true;
+        try {
+          translateDocument(locale);
+        } finally {
+          isTranslating = false;
+        }
+      };
+
+      const observer = new MutationObserver((mutations) => {
+        if (isTranslating) return;
+        let shouldTranslate = false;
+        for (let i = 0; i < mutations.length; i++) {
+          const m = mutations[i];
+          if (m.type === "childList" && (m.addedNodes.length > 0 || m.removedNodes.length > 0)) {
+            shouldTranslate = true;
+            break;
+          }
+          if (m.type === "characterData") {
+            const target = m.target as Node & { __lh_translated?: string };
+            if (target.nodeValue !== target.__lh_translated) {
+              shouldTranslate = true;
+              break;
+            }
+          }
+        }
+        if (shouldTranslate) {
+          if (rafId) cancelAnimationFrame(rafId);
+          rafId = requestAnimationFrame(runTranslation);
+        }
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+
+      return () => {
+        if (rafId) cancelAnimationFrame(rafId);
+        observer.disconnect();
+      };
+    }
+  }, [locale, pathname]);
+
+  return <>{children}</>;
 }

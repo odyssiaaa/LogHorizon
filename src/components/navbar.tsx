@@ -398,10 +398,10 @@ export function Navbar() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-[#A78BFA] transition-colors">
-                            {item.label}
+                            {t(item.label)}
                           </p>
                           <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
-                            {item.desc}
+                            {t(item.desc)}
                           </p>
                         </div>
                       </Link>
@@ -451,10 +451,10 @@ export function Navbar() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-[#A78BFA] transition-colors">
-                            {item.label}
+                            {t(item.label)}
                           </p>
                           <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
-                            {item.desc}
+                            {t(item.desc)}
                           </p>
                         </div>
                       </Link>
@@ -516,10 +516,10 @@ export function Navbar() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-[#A78BFA] transition-colors">
-                            {item.label}
+                            {t(item.label)}
                           </p>
                           <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
-                            {item.desc}
+                            {t(item.desc)}
                           </p>
                         </div>
                       </Link>
@@ -533,7 +533,7 @@ export function Navbar() {
           {/* SISI KANAN: Aksi Desktop & Hamburger Mobile */}
           <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Global Member Search Desktop */}
-            <GlobalUserSearch className="hidden lg:block w-40 xl:w-56 shrink-0" placeholder="Cari petualang..." />
+            <GlobalUserSearch className="hidden lg:block w-40 xl:w-56 shrink-0" placeholder={t("Cari petualang...", "Search Adventurers...")} />
 
             {/* Theme Toggle Component */}
             <ThemeToggle />
@@ -789,7 +789,7 @@ export function Navbar() {
                 <div className="mt-3">
                   <GlobalUserSearch
                     variant="mobile"
-                    placeholder="Cari petualang..."
+                    placeholder={t("Cari petualang...", "Search Adventurers...")}
                     onSelectUser={() => setMobileOpen(false)}
                   />
                 </div>
@@ -928,7 +928,7 @@ export function Navbar() {
                         >
                           <span className="flex items-center gap-2.5">
                             <GroupIcon size={16} className="text-[#7C3AED]" />
-                            <span>{group.title}</span>
+                            <span>{t(group.title)}</span>
                           </span>
                           <ChevronDown size={14} className={`transition-transform duration-200 text-slate-400 dark:text-[#A78BFA] ${isOpen ? "rotate-180 text-[#7C3AED]" : ""}`} />
                         </button>
@@ -946,7 +946,7 @@ export function Navbar() {
                                 const SubIcon = subItem.icon;
                                 const isSubActive = pathname === subItem.href || (subItem.href.includes("?") && pathname === subItem.href.split("?")[0]);
                                 return (
-                                  <Link
+                                   <Link
                                     key={subItem.href}
                                     href={subItem.href}
                                     onClick={() => setMobileOpen(false)}
@@ -958,8 +958,8 @@ export function Navbar() {
                                   >
                                     <SubIcon size={14} className="shrink-0 mt-0.5 text-[#7C3AED]" />
                                     <div>
-                                      <p>{subItem.label}</p>
-                                      <p className="text-[10px] text-slate-500 dark:text-[#A78BFA]/80 line-clamp-1">{subItem.desc}</p>
+                                      <p>{t(subItem.label)}</p>
+                                      <p className="text-[10px] text-slate-500 dark:text-[#A78BFA]/80 line-clamp-1">{t(subItem.desc)}</p>
                                     </div>
                                   </Link>
                                 );
