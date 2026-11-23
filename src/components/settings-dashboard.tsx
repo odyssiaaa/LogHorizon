@@ -48,6 +48,7 @@ import { getEuropeanNobilityRank } from "@/lib/nobility-ranks";
 import { useLocale, SUPPORTED_LANGUAGES, SUPPORTED_CURRENCIES } from "@/context/locale-context";
 import { FlagIcon } from "@/components/locale-switcher";
 import { openLoginModal } from "@/components/login-modal";
+import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 
 type Achievement = {
   id: string;
@@ -497,57 +498,59 @@ export function SettingsDashboard() {
         </p>
       </div>
 
-      {/* 3 Sub-Tabs Navigation */}
-      <div className="flex overflow-x-auto gap-2 border-b border-[#2A1B42] pb-2 mb-6 no-scrollbar">
-        <button
-          type="button"
-          onClick={() => setActiveTab("profile")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
-            activeTab === "profile"
-              ? "bg-[#7C3AED] text-white shadow-md shadow-[#7C3AED]/25"
-              : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-[#7C3AED]/50"
-          }`}
-        >
-          <User size={16} />
-          <span>Ringkasan Profil</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("badges")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
-            activeTab === "badges"
-              ? "bg-[#7C3AED] text-white shadow-md shadow-[#7C3AED]/25"
-              : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-[#7C3AED]/50"
-          }`}
-        >
-          <Trophy size={16} />
-          <span>Lencana &amp; Riwayat Aktivitas</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("armory")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
-            activeTab === "armory"
-              ? "bg-[#7C3AED] text-white shadow-md shadow-[#7C3AED]/25"
-              : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-[#7C3AED]/50"
-          }`}
-        >
-          <ShoppingBag size={16} />
-          <span>Guild Armory</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("settings")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
-            activeTab === "settings"
-              ? "bg-[#7C3AED] text-white shadow-md shadow-[#7C3AED]/25"
-              : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-[#7C3AED]/50"
-          }`}
-        >
-          <Shield size={16} />
-          <span>Pengaturan Akun</span>
-        </button>
-      </div>
+      {/* 4 Sub-Tabs Navigation (Draggable & Wheel Horizontal Scroll) */}
+      <DraggableScrollRow className="border-b border-[#2A1B42] pb-2 mb-6 w-full">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("profile")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
+              activeTab === "profile"
+                ? "bg-[#7C3AED] text-white shadow-md shadow-[#7C3AED]/25"
+                : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-[#7C3AED]/50"
+            }`}
+          >
+            <User size={16} />
+            <span>Ringkasan Profil</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("badges")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
+              activeTab === "badges"
+                ? "bg-[#7C3AED] text-white shadow-md shadow-[#7C3AED]/25"
+                : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-[#7C3AED]/50"
+            }`}
+          >
+            <Trophy size={16} />
+            <span>Lencana &amp; Riwayat Aktivitas</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("armory")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
+              activeTab === "armory"
+                ? "bg-[#7C3AED] text-white shadow-md shadow-[#7C3AED]/25"
+                : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-[#7C3AED]/50"
+            }`}
+          >
+            <ShoppingBag size={16} />
+            <span>Guild Armory</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("settings")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
+              activeTab === "settings"
+                ? "bg-[#7C3AED] text-white shadow-md shadow-[#7C3AED]/25"
+                : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-[#7C3AED]/50"
+            }`}
+          >
+            <Shield size={16} />
+            <span>Pengaturan Akun</span>
+          </button>
+        </div>
+      </DraggableScrollRow>
 
       {/* Global Alerts */}
       {error && (

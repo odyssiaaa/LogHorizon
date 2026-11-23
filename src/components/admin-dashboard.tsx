@@ -55,6 +55,7 @@ import { readApiResponse } from "@/lib/api-response";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { EscrowChatModal } from "@/components/escrow-chat-modal";
 import { DragScrollContainer } from "@/components/drag-scroll-container";
+import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 import { EditTournamentModal } from "@/components/edit-tournament-modal";
@@ -1458,7 +1459,8 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
           </aside>
 
           {/* MOBILE HORIZONTAL SCROLLABLE TABS (>= lg hidden) */}
-          <div className="lg:hidden flex overflow-x-auto gap-2 pb-2 mb-6 border-b border-gray-200 dark:border-[#2E1E45] no-scrollbar -mx-4 px-4">
+          <DraggableScrollRow className="lg:hidden pb-2 mb-6 border-b border-gray-200 dark:border-[#2E1E45] w-full">
+            <div className="flex items-center gap-2">
             {isAdmin && (
               <button
                 type="button"
@@ -1585,7 +1587,8 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             >
               <Trophy size={14} /> <span>Bagan Live</span>
             </Link>
-          </div>
+            </div>
+          </DraggableScrollRow>
 
           {/* MAIN TAB CONTENT */}
           <div className="min-w-0 flex-1">
@@ -4325,37 +4328,39 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                         )}
                       </h2>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Tinjau laporan dugaan penipu (*scammer*), manipulasi turnamen, dan pelanggar berat. Setiap vonis ACC otomatis disinkronkan ke sel penjara <code>/dungeon</code> dan mencatat embed resmi ke <code>#🛡️・mod-logs</code>.
+                        Tinjau laporan dugaan penipu (<em>scammer</em>), manipulasi turnamen, dan pelanggar berat. Setiap vonis ACC otomatis disinkronkan ke sel penjara <code>/dungeon</code> dan mencatat embed resmi ke <code>#🛡️・mod-logs</code>.
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                      {(["PENDING_REVIEW", "WANTED_ACTIVE", "IMPRISONED", "CAPTURED", "ALL"] as const).map((st) => (
-                        <button
-                          key={st}
-                          type="button"
-                          onClick={() => {
-                            setDungeonStatusFilter(st);
-                            fetchDungeonBounties(st);
-                          }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
-                            dungeonStatusFilter === st
-                              ? "bg-rose-600 text-white shadow-sm"
-                              : "bg-gray-100 dark:bg-[#1F0D24] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#2B1432]"
-                          }`}
-                        >
-                          {st === "PENDING_REVIEW"
-                            ? `Menunggu (${dungeonPendingCount})`
-                            : st === "WANTED_ACTIVE"
-                            ? "Buronan Aktif"
-                            : st === "IMPRISONED"
-                            ? "Tahanan"
-                            : st === "CAPTURED"
-                            ? "Tertangkap"
-                            : "Semua"}
-                        </button>
-                      ))}
-                    </div>
+                    <DraggableScrollRow className="w-full sm:w-auto pb-1 shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        {(["PENDING_REVIEW", "WANTED_ACTIVE", "IMPRISONED", "CAPTURED", "ALL"] as const).map((st) => (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => {
+                              setDungeonStatusFilter(st);
+                              fetchDungeonBounties(st);
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                              dungeonStatusFilter === st
+                                ? "bg-rose-600 text-white shadow-sm"
+                                : "bg-gray-100 dark:bg-[#1F0D24] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#2B1432]"
+                            }`}
+                          >
+                            {st === "PENDING_REVIEW"
+                              ? `Menunggu (${dungeonPendingCount})`
+                              : st === "WANTED_ACTIVE"
+                              ? "Buronan Aktif"
+                              : st === "IMPRISONED"
+                              ? "Tahanan"
+                              : st === "CAPTURED"
+                              ? "Tertangkap"
+                              : "Semua"}
+                          </button>
+                        ))}
+                      </div>
+                    </DraggableScrollRow>
                   </div>
 
                   {loadingDungeon ? (

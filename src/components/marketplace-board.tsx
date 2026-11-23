@@ -560,13 +560,13 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
         </section>
 
         <section className="market-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end p-4 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] mb-6 text-left shadow-sm dark:shadow-none" aria-label="Filter dan pencarian marketplace">
-          {/* Kolom 1: Pencarian */}
+          {/* Kolom 1: Pencarian (Single-bordered h-11 uniform input) */}
           <div className="flex flex-col gap-1 w-full">
             <label className="text-xs font-mono text-slate-600 dark:text-[#A78BFA] uppercase font-semibold">
               PENCARIAN
             </label>
-            <div className="flex items-center gap-3 px-3.5 h-11 w-full rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] focus-within:border-[#7C3AED] transition-colors">
-              <div className="shrink-0 text-slate-400 dark:text-[#A78BFA] flex items-center">
+            <div className="relative w-full">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#A78BFA] pointer-events-none flex items-center z-10">
                 {isSearching ? (
                   <Loader2 size={16} className="animate-spin text-[#7C3AED]" />
                 ) : (
@@ -578,7 +578,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                 onChange={(event) => setSearchValue(event.target.value)}
                 placeholder="Cari judul, game, penjual…"
                 aria-label="Cari lapak"
-                className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#A78BFA]/50 p-0 font-sans"
+                className="!h-11 !w-full !pl-10 !pr-9 !rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] text-xs sm:text-sm font-sans focus:border-[#7C3AED] focus:outline-none placeholder:text-slate-400 dark:placeholder:text-[#A78BFA]/50 transition-colors"
               />
               {searchValue && (
                 <button
@@ -588,7 +588,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                     setSearch("");
                   }}
                   aria-label="Hapus pencarian"
-                  className="shrink-0 text-slate-400 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] font-mono text-xs uppercase cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] font-mono text-xs uppercase cursor-pointer z-10"
                 >
                   <X size={14} />
                 </button>

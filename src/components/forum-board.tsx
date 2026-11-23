@@ -16,6 +16,7 @@ import type { ForumPostRecord } from "@/types/community";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
 import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown";
+import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 import { MentionHashtagInput } from "@/components/mention-hashtag-input";
 import { getCustomTitleBadge } from "@/lib/armory-catalog";
 
@@ -322,32 +323,34 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
         </div>
 
         {/* MODERN SEGMENTED CONTROL PILL TABS (Mobile & Tablet only, Desktop uses right sidebar directory) */}
-        <div className="lg:hidden flex items-center gap-1.5 p-1 rounded-none bg-slate-100 dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] overflow-x-auto scrollbar-none my-4" role="tablist" aria-label="Kategori sub-forum">
-          {categories.map((item) => {
-            const isActive = category === item.id;
-            return (
-              <button
-                key={item.id}
-                role="tab"
-                aria-selected={isActive}
-                className={`px-3.5 py-2 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border ${
-                  isActive
-                    ? "bg-[#7C3AED] text-white border-[#7C3AED]"
-                    : "bg-white dark:bg-[#1A0E2E] text-slate-600 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:border-[#7C3AED]"
-                }`}
-                onClick={() => {
-                  if (category !== item.id) {
-                    setLoading(true);
-                    setCategory(item.id);
-                  }
-                }}
-              >
-                <span className="text-[10px] opacity-75">{item.slug}</span>
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        <DraggableScrollRow className="lg:hidden my-4 w-full" role="tablist" aria-label="Kategori sub-forum">
+          <div className="flex items-center gap-1.5 p-1 rounded-none bg-slate-100 dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45]">
+            {categories.map((item) => {
+              const isActive = category === item.id;
+              return (
+                <button
+                  key={item.id}
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`px-3.5 py-2 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border cursor-pointer ${
+                    isActive
+                      ? "bg-[#7C3AED] text-white border-[#7C3AED]"
+                      : "bg-white dark:bg-[#1A0E2E] text-slate-600 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:border-[#7C3AED]"
+                  }`}
+                  onClick={() => {
+                    if (category !== item.id) {
+                      setLoading(true);
+                      setCategory(item.id);
+                    }
+                  }}
+                >
+                  <span className="text-[10px] opacity-75">{item.slug}</span>
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </DraggableScrollRow>
 
         {/* 2-COLUMN DESKTOP LAYOUT (FEED + SIDEBAR) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-4">

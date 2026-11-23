@@ -48,7 +48,6 @@ import { advanceMatchWinner, resetMatchResult, updateMatchStatus, TournamentMatc
 import { DragScrollContainer } from "@/components/drag-scroll-container";
 import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 import { ShareButton } from "@/components/share-button";
-import { GuestTournamentTrackerModal } from "@/components/guest-tournament-tracker-modal";
 import { GachaBracketModal } from "@/components/gacha-bracket-modal";
 import { TournamentRulesModal } from "@/components/tournament-rules-modal";
 import { RosterPlayerRow } from "@/components/roster-player-row";
@@ -431,7 +430,6 @@ export function EventsBoard() {
 
   // View Team Roster Popup
   const [viewingRoster, setViewingRoster] = useState<TournamentTeam | null>(null);
-  const [trackerTournament, setTrackerTournament] = useState<Tournament | null>(null);
 
   // Live Auto-Refresh & Real-Time Sync State
   const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
@@ -1329,55 +1327,57 @@ export function EventsBoard() {
       {notice && <p className="p-3 text-xs font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-500/30 rounded-none mb-4" role="status">{notice}</p>}
 
       {/* TOP FILTER NAVIGATION: ALL / MABAR / TURNAMEN */}
-      <div className="flex items-center gap-1.5 p-1 rounded-none bg-slate-100 dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] overflow-x-auto scrollbar-none mb-6">
-        <button
-          type="button"
-          onClick={() => setActiveTab("all")}
-          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0 border ${
-            activeTab === "all"
-              ? "bg-[#7C3AED] text-white border-[#7C3AED]"
-              : "bg-white dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-          }`}
-        >
-          Semua Kegiatan
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("turnamen")}
-          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border ${
-            activeTab === "turnamen"
-              ? "bg-[#7C3AED] text-white border-[#7C3AED]"
-              : "bg-white dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-          }`}
-        >
-          <Trophy size={14} />
-          <span>Turnamen &amp; Bagan</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("mabar")}
-          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border ${
-            activeTab === "mabar"
-              ? "bg-[#7C3AED] text-white border-[#7C3AED]"
-              : "bg-white dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-          }`}
-        >
-          <Swords size={14} />
-          <span>Cari Teman Mabar (LFG)</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("party")}
-          className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border ${
-            activeTab === "party"
-              ? "bg-[#7C3AED] text-white border-[#7C3AED]"
-              : "bg-white dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-          }`}
-        >
-          <Users size={14} />
-          <span>Party Skuad (Guild Party)</span>
-        </button>
-      </div>
+      <DraggableScrollRow className="w-full mb-6">
+        <div className="flex items-center gap-1.5 p-1 rounded-none bg-slate-100 dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45]">
+          <button
+            type="button"
+            onClick={() => setActiveTab("all")}
+            className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0 border cursor-pointer ${
+              activeTab === "all"
+                ? "bg-[#7C3AED] text-white border-[#7C3AED]"
+                : "bg-white dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+            }`}
+          >
+            Semua Kegiatan
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("turnamen")}
+            className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border cursor-pointer ${
+              activeTab === "turnamen"
+                ? "bg-[#7C3AED] text-white border-[#7C3AED]"
+                : "bg-white dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+            }`}
+          >
+            <Trophy size={14} />
+            <span>Turnamen &amp; Bagan</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("mabar")}
+            className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border cursor-pointer ${
+              activeTab === "mabar"
+                ? "bg-[#7C3AED] text-white border-[#7C3AED]"
+                : "bg-white dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+            }`}
+          >
+            <Swords size={14} />
+            <span>Cari Teman Mabar (LFG)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("party")}
+            className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border cursor-pointer ${
+              activeTab === "party"
+                ? "bg-[#7C3AED] text-white border-[#7C3AED]"
+                : "bg-white dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+            }`}
+          >
+            <Users size={14} />
+            <span>Party Skuad (Guild Party)</span>
+          </button>
+        </div>
+      </DraggableScrollRow>
 
       {activeTab === "party" && <GuildPartyDirectory />}
 
@@ -1636,16 +1636,6 @@ export function EventsBoard() {
                               <span>Daftar Tim</span>
                             </button>
                           )}
-
-                          <button
-                            type="button"
-                            onClick={() => setTrackerTournament(tournament)}
-                            className="h-10 px-3 flex-1 sm:flex-initial whitespace-nowrap rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 dark:border-purple-900/50 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
-                            title="Cek Status Pendaftaran Tim (Guest Tracker) & Jadwal Lawan"
-                          >
-                            <Search size={14} className="text-[#A78BFA]" />
-                            <span>Cek Status Tim</span>
-                          </button>
 
                           {isAdminOrMod && (
                             <StaffCardModerationMenu
@@ -3834,13 +3824,6 @@ export function EventsBoard() {
           </div>
         </div>
       )}
-
-      {/* POPUP: CEK STATUS PENDAFTARAN TIM (GUEST TRACKER) */}
-      <GuestTournamentTrackerModal
-        isOpen={Boolean(trackerTournament)}
-        onClose={() => setTrackerTournament(null)}
-        tournament={trackerTournament}
-      />
 
       {/* ========================================================================= */}
       {/* POPUP: LIHAT SUSUNAN PEMAIN (ROSTER) TIM */}

@@ -30,6 +30,7 @@ import {
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { readApiResponse } from "@/lib/api-response";
+import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 
 export type ImprisonedRecord = {
   id: string;
@@ -268,7 +269,7 @@ export function DungeonBoard() {
             </h1>
 
             <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-              Efek jera sosial &amp; daftar hitam terpidana penipuan (*scammer*), manipulasi turnamen, dan pelanggaran berat di LogHorizon. Laporkan pelaku untuk diblacklist permanen atau klaim hadiah bounty bagi pembawa informasi valid!
+              Efek jera sosial &amp; daftar hitam terpidana penipuan (<em className="italic text-rose-300 font-semibold">scammer</em>), manipulasi turnamen, dan pelanggaran berat di LogHorizon. Laporkan pelaku untuk diblacklist permanen atau klaim hadiah bounty bagi pembawa informasi valid!
             </p>
           </div>
 
@@ -308,45 +309,68 @@ export function DungeonBoard() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. TAB CONTROLS & SEARCH BAR (2 MAIN TABS)                                */}
+      {/* 2. TAB CONTROLS & SEARCH BAR (SEPARATED ROWS - ANTI-CLIPPING)             */}
       {/* ========================================================================= */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-[#2A153A]">
-        {/* Main 2 Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setActiveTab("IMPRISONED")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 border ${
-              activeTab === "IMPRISONED"
-                ? "bg-rose-500/20 text-rose-300 border-rose-500 shadow-md shadow-rose-900/20"
-                : "border-[#2A153A] bg-[#120516] text-gray-400 hover:text-white"
-            }`}
-          >
-            <Lock size={14} className={activeTab === "IMPRISONED" ? "text-rose-400" : "text-gray-500"} />
-            <span>⛓️ Sel Tahanan (Banned Permanen) ({imprisonedList.length})</span>
-          </button>
+      <div className="space-y-3 pb-3 border-b border-[#2A153A]">
+        {/* Baris 1: Tab Utama (Sel Tahanan & Papan Buronan) Full Width Draggable */}
+        <DraggableScrollRow className="w-full pb-1">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setActiveTab("IMPRISONED")}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 border whitespace-nowrap cursor-pointer ${
+                activeTab === "IMPRISONED"
+                  ? "bg-rose-500/20 text-rose-300 border-rose-500 shadow-md shadow-rose-900/20"
+                  : "border-[#2A153A] bg-[#120516] text-gray-400 hover:text-white"
+              }`}
+            >
+              <Lock size={14} className={activeTab === "IMPRISONED" ? "text-rose-400" : "text-gray-500"} />
+              <span>⛓️ Sel Tahanan (Banned Permanen) ({imprisonedList.length})</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("WANTED")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 border ${
-              activeTab === "WANTED"
-                ? "bg-amber-500/20 text-amber-300 border-amber-500 shadow-md shadow-amber-900/20"
-                : "border-[#2A153A] bg-[#120516] text-gray-400 hover:text-white"
-            }`}
-          >
-            <Flame size={14} className={activeTab === "WANTED" ? "text-amber-400" : "text-gray-500"} />
-            <span>🎯 Papan Buronan &amp; Bounty (WANTED) ({activeWantedList.length})</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab("WANTED")}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 border whitespace-nowrap cursor-pointer ${
+                activeTab === "WANTED"
+                  ? "bg-amber-500/20 text-amber-300 border-amber-500 shadow-md shadow-amber-900/20"
+                  : "border-[#2A153A] bg-[#120516] text-gray-400 hover:text-white"
+              }`}
+            >
+              <Flame size={14} className={activeTab === "WANTED" ? "text-amber-400" : "text-gray-500"} />
+              <span>🎯 Papan Buronan &amp; Bounty (WANTED) ({activeWantedList.length})</span>
+            </button>
+          </div>
+        </DraggableScrollRow>
 
-        {/* Search, Sub-filter & Category Filter */}
-        <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+        {/* Baris 2: Kotak Pencarian Pelaku + Filter Kasus (+ Subfilter jika WANTED) */}
+        <div className={`grid grid-cols-1 ${activeTab === "WANTED" ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-3 w-full`}>
+          <div className="relative w-full">
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Cari nama pelaku, nomor rekening, kontak..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-10 pl-9 pr-8 rounded-xl border border-[#2A153A] bg-[#120516] text-white text-xs placeholder-gray-500 focus:outline-none focus:border-rose-500 transition-colors"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                title="Hapus pencarian"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
           {activeTab === "WANTED" && (
             <select
               value={bountySubFilter}
               onChange={(e) => setBountySubFilter(e.target.value as any)}
-              className="px-3 py-2 rounded-xl border border-amber-900/40 bg-[#120516] text-amber-300 text-xs focus:outline-none focus:border-amber-500 cursor-pointer"
+              className="w-full h-10 px-3 rounded-xl border border-amber-900/40 bg-[#120516] text-amber-300 text-xs focus:outline-none focus:border-amber-500 cursor-pointer"
             >
               <option value="ACTIVE">🎯 Buronan Aktif ({activeWantedList.length})</option>
               <option value="CAPTURED">🏆 Tertangkap ({capturedList.length})</option>
@@ -354,30 +378,10 @@ export function DungeonBoard() {
             </select>
           )}
 
-          <div className="relative flex-1 md:w-60">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Cari nama pelaku, rekening, kronologi..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#2A153A] bg-[#120516] text-white text-xs placeholder-gray-500 focus:outline-none focus:border-rose-500"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-              >
-                <X size={13} />
-              </button>
-            )}
-          </div>
-
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-[#2A153A] bg-[#120516] text-white text-xs focus:outline-none focus:border-rose-500 cursor-pointer"
+            className="w-full h-10 px-3 rounded-xl border border-[#2A153A] bg-[#120516] text-white text-xs focus:outline-none focus:border-rose-500 cursor-pointer"
           >
             <option value="ALL">Semua Kasus</option>
             <option value="SCAM_TRANSAKSI">🚨 Penipuan Transaksi</option>
@@ -404,7 +408,7 @@ export function DungeonBoard() {
             <div>
               <p className="font-bold">Ketetapan Hukum Royal Dungeon:</p>
               <p className="text-gray-400 mt-0.5">
-                Semua entri di bawah ini telah dijatuhi sanksi hukuman penjara permanen (*Permanent Blacklist*). Akun yang terdaftar dilarang keras melakukan transaksi Rekber, dilarang mendaftar turnamen, dan dikucilkan dari seluruh ruang interaksi LogHorizon.
+                Semua entri di bawah ini telah dijatuhi sanksi hukuman penjara permanen (<em className="italic text-rose-300 font-semibold">Permanent Blacklist</em>). Akun yang terdaftar dilarang keras melakukan transaksi Rekber, dilarang mendaftar turnamen, dan dikucilkan dari seluruh ruang interaksi LogHorizon.
               </p>
             </div>
           </div>
