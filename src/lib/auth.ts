@@ -167,6 +167,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
+    async signIn({ user, account }) {
+      if (!account?.provider || !account?.providerAccountId) return true;
+
+      // 1. Collision check: Is this provider + providerAccountId already linked in Account table?
+      const existingAccount = await prisma.account.findUnique({
+        where: {
+          provider_providerAccountId: {
+            provider: account.provider,
+            providerAccountId: account.providerAccountId,
+          },
+        },
+        select: { userId: true },
+      });
+
+      if (existingAccount && user?.id && existingAccount.userId !== user.id) {
+        return "/profile?tab=settings&error=AccountAlreadyLinked";
+      }
+
+      // 2. Strict Owner Protection
+      const isOwnerProvider =
+        account.providerAccountId === "706661230835925042" ||
+        user?.email === "farrel.andhikapratama0905@gmail.com";
+
+      if (isOwnerProvider) {
+        const isOwnerUser =
+          user?.name === ".odyssia" ||
+          user?.name === "odyssia" ||
+          user?.email === "farrel.andhikapratama0905@gmail.com";
+        if (!isOwnerUser) {
+          return "/profile?tab=settings&error=UnauthorizedBinding";
+        }
+      }
+
+      return true;
+    },
     async session({ session, user }) {
       if (session.user) {
         const isOwner =

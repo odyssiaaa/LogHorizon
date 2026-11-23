@@ -4,29 +4,34 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   Award,
   BadgeCheck,
   Bell,
   Calendar,
   Check,
+  CheckCircle2,
   Crown,
   ExternalLink,
   Flame,
   Gamepad2,
+  Globe,
+  Link2,
+  Lock,
+  MessageSquare,
   RefreshCw,
   Shield,
   ShieldCheck,
+  ShoppingBag,
   Sparkles,
   SunMoon,
   Swords,
   Trophy,
   Type,
+  Unlink,
   User,
-  Zap,
-  ShoppingBag,
   Users,
-  MessageSquare,
-  Globe,
+  Zap,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { readApiResponse } from "@/lib/api-response";
@@ -38,7 +43,7 @@ import { ReferralInviteCard } from "@/components/referral-invite-card";
 import { GuildArmoryShop } from "@/components/guild-armory-shop";
 import { getCustomTitleBadge } from "@/lib/armory-catalog";
 import { VerifiedSellerModal } from "@/components/verified-seller-modal";
-import { isGuildOwner } from "@/lib/auth-guard";
+import { isGuildOwner } from "@/lib/caste-hierarchy";
 import { getEuropeanNobilityRank } from "@/lib/nobility-ranks";
 import { useLocale, SUPPORTED_LANGUAGES, SUPPORTED_CURRENCIES } from "@/context/locale-context";
 import { FlagIcon } from "@/components/locale-switcher";
@@ -168,6 +173,68 @@ export function SettingsDashboard() {
 
   // Sub-tabs: "profile" | "badges" | "armory" | "settings"
   const [activeTab, setActiveTab] = useState<"profile" | "badges" | "armory" | "settings">("profile");
+
+  // Linked Accounts State (Multi-Provider Login)
+  const [linkedAccounts, setLinkedAccounts] = useState<{
+    discord: { connected: boolean; id: string | null; username: string | null };
+    google: { connected: boolean; emailMasked: string | null };
+    totalConnected: number;
+  }>({
+    discord: { connected: false, id: null, username: null },
+    google: { connected: false, emailMasked: null },
+    totalConnected: 0,
+  });
+  const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(null);
+
+  const fetchLinkedAccounts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/user/linked-accounts");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.accounts) {
+          setLinkedAccounts({
+            discord: data.accounts.discord || { connected: false, id: null, username: null },
+            google: data.accounts.google || { connected: false, emailMasked: null },
+            totalConnected: data.totalConnected || 0,
+          });
+        }
+      }
+    } catch {
+      // Background silent fallback
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      void fetchLinkedAccounts();
+    }
+  }, [status, fetchLinkedAccounts]);
+
+  async function handleUnlink(provider: "discord" | "google") {
+    const label = provider === "discord" ? "Discord" : "Google";
+    if (!confirm(`Apakah Anda yakin ingin memutuskan tautan akun ${label}?`)) return;
+
+    setUnlinkingProvider(provider);
+    try {
+      const res = await fetch("/api/user/linked-accounts", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || `Gagal memutuskan tautan ${label}.`);
+      } else {
+        setMessage(json.message || `Tautan akun ${label} berhasil diputuskan.`);
+        await fetchLinkedAccounts();
+        await fetchProfileData();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Gagal memutuskan tautan ${label}.`);
+    } finally {
+      setUnlinkingProvider(null);
+    }
+  }
 
   useEffect(() => {
     if (tabParam === "armory") setActiveTab("armory");
@@ -890,47 +957,211 @@ export function SettingsDashboard() {
       {/* TAB 4: PENGATURAN AKUN */}
       {activeTab === "settings" && (
         <div className="space-y-6">
-          {/* 1. Profil Discord Sync */}
-          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-              <div>
-                <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
-                  <Shield size={18} className="text-[#9D4EDD]" />
-                  Sinkronisasi Profil Discord
-                </h2>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Perbarui avatar, username, dan kasta dari akun Discord yang terhubung.
-                </p>
-              </div>
-              {!profile?.discordId ? (
-                <button
-                  type="button"
-                  onClick={() => void signIn("discord", { callbackUrl: "/profile" })}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-xs font-bold text-white inline-flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
-                >
-                  <span className="text-sm">◉</span>
-                  <span>{t("link_discord_account", "Tautkan Akun Discord")}</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => void syncProfile()}
-                  disabled={syncing}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-[#2A1B42] bg-[#1A102E] hover:border-[#7C3AED] text-xs font-bold text-white inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
-                  <span>{syncing ? "Sinkronisasi…" : "Sync Akun Discord"}</span>
-                </button>
-              )}
+          {/* 1. KARTU TAUTAN AKUN & KEAMANAN LOGIN (DISCORD & GOOGLE MULTI-PROVIDER) */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md space-y-5">
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                <Link2 size={18} className="text-[#9D4EDD]" />
+                Tautan Akun &amp; Keamanan Login
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Hubungkan Discord dan Google ke satu akun yang sama untuk login fleksibel, aman, dan tanpa khawatir kehilangan akses.
+              </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-lg border border-[#2A1B42] bg-[#0A0612]/50">
-                <span className="text-gray-400 block font-semibold mb-0.5">Discord ID</span>
-                <span className="font-mono text-white break-all">{profile?.discordId ?? "-"}</span>
+
+            {/* Status Banners */}
+            {searchParams.get("bind") === "success" && (
+              <div className="p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-xs flex items-center justify-between gap-3 animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  <span className="font-semibold">Berhasil! Akun login baru telah tertaut ke profil LogHorizon Anda.</span>
+                </div>
+                <Link href="/profile?tab=settings" className="text-[11px] underline text-emerald-400 hover:text-emerald-200">
+                  Tutup
+                </Link>
               </div>
-              <div className="p-3 rounded-lg border border-[#2A1B42] bg-[#0A0612]/50">
-                <span className="text-gray-400 block font-semibold mb-0.5">Username</span>
-                <span className="text-white font-bold">{profile?.username ?? "-"}</span>
+            )}
+
+            {searchParams.get("error") && (
+              <div className="p-3.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 text-xs flex items-center justify-between gap-3 animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-rose-400 shrink-0" />
+                  <span className="font-semibold">
+                    {searchParams.get("error") === "AccountAlreadyLinked"
+                      ? "Akun Discord/Google ini sudah terhubung ke pengguna lain. Satu akun login hanya dapat dipakai oleh satu profil."
+                      : searchParams.get("error") === "UnauthorizedBinding"
+                        ? "Tindakan tautan akun tidak diizinkan demi integritas dan keamanan server."
+                        : "Terjadi kendala saat menautkan akun."}
+                  </span>
+                </div>
+                <Link href="/profile?tab=settings" className="text-[11px] underline text-rose-400 hover:text-rose-200">
+                  Tutup
+                </Link>
+              </div>
+            )}
+
+            {/* Provider Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* KARTU 1: DISCORD */}
+              <div className="p-4 rounded-xl border border-[#2A1B42] bg-[#0A0612]/60 flex flex-col justify-between gap-3.5">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-8 rounded-lg bg-[#5865F2]/20 border border-[#5865F2]/40 flex items-center justify-center text-[#5865F2]">
+                        <svg className="size-4 fill-current" viewBox="0 0 24 24">
+                          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-white block">Discord</span>
+                        <span className="text-[11px] text-gray-400">Sinkronisasi role guild &amp; kasta</span>
+                      </div>
+                    </div>
+                    {linkedAccounts.discord.connected ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                        <CheckCircle2 size={11} />
+                        <span>Terhubung</span>
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-500/15 text-gray-400 border border-gray-500/30">
+                        Belum Tertaut
+                      </span>
+                    )}
+                  </div>
+
+                  {linkedAccounts.discord.connected ? (
+                    <div className="text-[11px] font-mono text-gray-300 bg-[#120B1E] p-2.5 rounded-lg border border-[#2A1B42]">
+                      <p className="text-gray-400 text-[10px]">ID DISCORD:</p>
+                      <p className="truncate text-white font-bold">{linkedAccounts.discord.id || profile?.discordId || "Terkoneksi"}</p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400">
+                      Hubungkan akun Discord untuk mendapatkan sinkronisasi role server LogHorizon, lencana kasta, dan gelar kehormatan secara otomatis.
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-[#2A1B42]/60 flex items-center justify-between gap-2">
+                  {linkedAccounts.discord.connected ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void syncProfile()}
+                        disabled={syncing}
+                        className="px-3 py-1.5 rounded-lg border border-[#2A1B42] bg-[#1A102E] hover:border-[#7C3AED] text-xs font-bold text-white inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        <RefreshCw size={12} className={syncing ? "animate-spin" : ""} />
+                        <span>{syncing ? "Sinkronisasi…" : "Sync Role"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUnlink("discord")}
+                        disabled={linkedAccounts.totalConnected <= 1 || unlinkingProvider === "discord"}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+                          linkedAccounts.totalConnected <= 1
+                            ? "opacity-40 border-gray-700 bg-gray-800/40 text-gray-400 cursor-not-allowed"
+                            : "border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300"
+                        }`}
+                        title={linkedAccounts.totalConnected <= 1 ? "Tautkan Google terlebih dahulu sebelum melepas Discord" : "Putuskan tautan Discord"}
+                      >
+                        <Unlink size={12} />
+                        <span>{unlinkingProvider === "discord" ? "Melepas…" : "Putuskan Tautan"}</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void signIn("discord", { callbackUrl: "/profile?tab=settings&bind=success" })}
+                      className="w-full py-2 px-3 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-xs font-bold text-white inline-flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                    >
+                      <Link2 size={14} />
+                      <span>Hubungkan Discord</span>
+                    </button>
+                  )}
+                </div>
+                {linkedAccounts.discord.connected && linkedAccounts.totalConnected <= 1 && (
+                  <p className="text-[10px] text-amber-400/90 -mt-1 flex items-center gap-1">
+                    <Lock size={10} />
+                    Tautkan Google dulu jika ingin melepas akun Discord.
+                  </p>
+                )}
+              </div>
+
+              {/* KARTU 2: GOOGLE */}
+              <div className="p-4 rounded-xl border border-[#2A1B42] bg-[#0A0612]/60 flex flex-col justify-between gap-3.5">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-8 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center">
+                        <svg className="size-4" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-white block">Google</span>
+                        <span className="text-[11px] text-gray-400">Login cadangan 1-klik aman</span>
+                      </div>
+                    </div>
+                    {linkedAccounts.google.connected ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                        <CheckCircle2 size={11} />
+                        <span>Terhubung</span>
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-500/15 text-gray-400 border border-gray-500/30">
+                        Belum Tertaut
+                      </span>
+                    )}
+                  </div>
+
+                  {linkedAccounts.google.connected ? (
+                    <div className="text-[11px] font-mono text-gray-300 bg-[#120B1E] p-2.5 rounded-lg border border-[#2A1B42]">
+                      <p className="text-gray-400 text-[10px]">EMAIL TERSAMAR:</p>
+                      <p className="truncate text-white font-bold">{linkedAccounts.google.emailMasked || "Terkoneksi"}</p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400">
+                      Tautkan akun Google sebagai metode login cadangan 1-klik agar Anda tetap bisa masuk meskipun Discord sedang gangguan atau maintenance.
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-[#2A1B42]/60 flex items-center justify-end gap-2">
+                  {linkedAccounts.google.connected ? (
+                    <button
+                      type="button"
+                      onClick={() => handleUnlink("google")}
+                      disabled={linkedAccounts.totalConnected <= 1 || unlinkingProvider === "google"}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+                        linkedAccounts.totalConnected <= 1
+                          ? "opacity-40 border-gray-700 bg-gray-800/40 text-gray-400 cursor-not-allowed"
+                          : "border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300"
+                      }`}
+                      title={linkedAccounts.totalConnected <= 1 ? "Tautkan Discord terlebih dahulu sebelum melepas Google" : "Putuskan tautan Google"}
+                    >
+                      <Unlink size={12} />
+                      <span>{unlinkingProvider === "google" ? "Melepas…" : "Putuskan Tautan"}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void signIn("google", { callbackUrl: "/profile?tab=settings&bind=success" })}
+                      className="w-full py-2 px-3 rounded-lg bg-white hover:bg-slate-100 text-slate-900 text-xs font-bold inline-flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                    >
+                      <Link2 size={14} />
+                      <span>Hubungkan Google</span>
+                    </button>
+                  )}
+                </div>
+                {linkedAccounts.google.connected && linkedAccounts.totalConnected <= 1 && (
+                  <p className="text-[10px] text-amber-400/90 -mt-1 flex items-center gap-1">
+                    <Lock size={10} />
+                    Tautkan Discord dulu jika ingin melepas akun Google.
+                  </p>
+                )}
               </div>
             </div>
           </section>

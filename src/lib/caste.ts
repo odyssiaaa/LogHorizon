@@ -3,9 +3,9 @@
  * Re-exports core caste logic from @/lib/auth-guard and European Nobility Rank System.
  */
 
-export * from "@/lib/auth-guard";
+export * from "@/lib/caste-hierarchy";
 export * from "@/lib/nobility-ranks";
-import { isGuildOwner, CasteUserLike } from "@/lib/auth-guard";
+import { isGuildOwner, CasteUserLike } from "@/lib/caste-hierarchy";
 
 /**
  * Checks if the user currently holds an active 24h temporary title from Royal Daily Chest.
