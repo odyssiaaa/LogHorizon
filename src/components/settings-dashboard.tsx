@@ -38,6 +38,7 @@ import { ReferralInviteCard } from "@/components/referral-invite-card";
 import { GuildArmoryShop } from "@/components/guild-armory-shop";
 import { getCustomTitleBadge } from "@/lib/armory-catalog";
 import { VerifiedSellerModal } from "@/components/verified-seller-modal";
+import { isGuildOwner } from "@/lib/auth-guard";
 import { getEuropeanNobilityRank } from "@/lib/nobility-ranks";
 import { useLocale, SUPPORTED_LANGUAGES, SUPPORTED_CURRENCIES } from "@/context/locale-context";
 
@@ -544,7 +545,7 @@ export function SettingsDashboard() {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 shrink-0">
-                    {profile?.isVerifiedSeller ? (
+                    {profile?.isVerifiedSeller || isGuildOwner(profile) ? (
                       <span
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 text-amber-400 border border-amber-500/40 shadow-sm"
                         title="Penjual Terpercaya Resmi LogHorizon (Tervalidasi Staf)"

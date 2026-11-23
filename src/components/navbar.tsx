@@ -535,6 +535,18 @@ export function Navbar() {
                 )}
               </AnimatePresence>
             </div>
+
+            {/* 6. PENJARA & BURONAN */}
+            <Link
+              href="/dungeon"
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                pathname.startsWith("/dungeon")
+                  ? "bg-[#7C3AED] text-white"
+                  : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
+              }`}
+            >
+              {t("Penjara & Buronan", "Dungeon & Wanted")}
+            </Link>
           </nav>
 
           {/* SISI KANAN: Aksi Desktop & Hamburger Mobile */}

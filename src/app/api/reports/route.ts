@@ -2,10 +2,16 @@ import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sanitizePlainText } from "@/lib/sanitize";
 import { sendDiscordChannelMessage, getBaseAppUrl, DiscordEmbed } from "@/lib/discord-bot";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 export async function POST(request: Request) {
   const me = await activeUser();
   if (!me) return jsonError("Silakan masuk terlebih dahulu untuk mengirim laporan.", 401);
+
+  const limitCheck = checkRateLimit(`report:user:${me.id}`, 5, 10 * 60 * 1000);
+  if (!limitCheck.allowed) {
+    return jsonError(`Batas pelaporan tercapai. Mohon tunggu ${limitCheck.remainingSec} detik sebelum mengirim laporan baru.`, 429);
+  }
 
   const body = await request.json().catch(() => ({}));
   const targetType = String(body.targetType || "POST").toUpperCase();

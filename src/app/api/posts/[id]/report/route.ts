@@ -3,12 +3,18 @@ import { authenticatedUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sanitizePlainText } from "@/lib/sanitize";
 import { sendDiscordChannelMessage, getBaseAppUrl, DiscordEmbed } from "@/lib/discord-bot";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: RouteContext) {
   const user = await authenticatedUser();
   if (!user) return jsonError("Login diperlukan untuk melaporkan postingan.", 401);
+
+  const limitCheck = checkRateLimit(`report:user:${user.id}`, 5, 10 * 60 * 1000);
+  if (!limitCheck.allowed) {
+    return jsonError(`Batas pelaporan tercapai. Mohon tunggu ${limitCheck.remainingSec} detik sebelum mengirim laporan baru.`, 429);
+  }
   const { id } = await params;
   const payload: unknown = await request.json();
   const rawReason = payload && typeof payload === "object" ? (payload as Record<string, unknown>).reason : null;
