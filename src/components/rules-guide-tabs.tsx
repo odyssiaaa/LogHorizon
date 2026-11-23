@@ -20,11 +20,13 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   Trophy,
   Users,
   Zap,
 } from "lucide-react";
+import { openPwaInstallModal } from "@/components/pwa-install-modal";
 
 export function RulesGuideTabs() {
   const [activeTab, setActiveTab] = useState<"ethics" | "esports" | "escrow" | "faq">("ethics");
@@ -403,6 +405,32 @@ export function RulesGuideTabs() {
                   <li><strong>Widget Maskot Ksatria Melayang:</strong> Klik maskot ksatria di pojok kanan bawah layar untuk bertanya seputar jadwal turnamen, panduan aturan, atau meminta navigasi fitur.</li>
                   <li><strong>Mention di Komentar Forum:</strong> Ketik <code>@satpam</code> pada kolom komentar thread mana pun. Satpam AI akan membaca konteks diskusi dan membalas pertanyaan atau merangkum isi thread secara cerdas.</li>
                   <li><strong>Sensor Kata Kasar Otomatis:</strong> Satpam AI secara otomatis memfilter komentar atau konten berbahaya demi menjaga keamanan komunitas.</li>
+                </ul>
+              </div>
+
+              {/* FAQ 4: Cara Pasang Aplikasi PWA */}
+              <div className="p-4 rounded-xl border border-[#7C3AED]/40 bg-[#7C3AED]/5 space-y-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
+                    <Smartphone size={16} className="text-[#7C3AED]" />
+                    <span>Bagaimana cara mengunduh dan memasang LogHorizon sebagai aplikasi di HP atau PC (PWA)?</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={openPwaInstallModal}
+                    className="px-3 py-1.5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold font-mono transition shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+                  >
+                    <Smartphone size={13} />
+                    <span>Panduan Lengkap</span>
+                  </button>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
+                  LogHorizon adalah Progressive Web App (PWA) resmi yang dapat dipasang ke layar utama HP (Android / iPhone) atau Desktop PC (Windows / Mac) tanpa perlu download melalui Play Store atau App Store:
+                </p>
+                <ul className="list-disc list-inside text-xs text-slate-500 dark:text-slate-400 pl-8 space-y-1">
+                  <li><strong>Android (Chrome/Edge):</strong> Buka browser, ketuk menu titik tiga (⋮) di pojok kanan atas, lalu pilih <em>&quot;Tambahkan ke Layar Utama&quot;</em> atau <em>&quot;Instal Aplikasi&quot;</em>.</li>
+                  <li><strong>iPhone/iPad (Safari):</strong> Buka di Safari, ketuk tombol <strong>Share (⬆️)</strong> di bilah bawah, lalu pilih <em>&quot;Tambah ke Layar Utama&quot;</em>.</li>
+                  <li><strong>PC/Laptop:</strong> Buka di Chrome/Edge, klik ikon <strong>Layar + Unduh (📥)</strong> di pojok kanan bilah alamat URL, lalu klik <strong>Install</strong>.</li>
                 </ul>
               </div>
             </div>

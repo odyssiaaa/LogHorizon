@@ -6,6 +6,7 @@ import { Navbar } from "@/components/navbar";
 import { Providers } from "@/components/providers";
 import { HorizonChatWidget } from "@/components/horizon-chat-widget";
 import { WelcomeOnboardingModal } from "@/components/welcome-onboarding-modal";
+import { PwaInstallModal } from "@/components/pwa-install-modal";
 import { ReferralTracker } from "@/components/referral-tracker";
 import { Footer } from "@/components/footer";
 import "./globals.css";
@@ -79,6 +80,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Providers>
           <Navbar />
           <WelcomeOnboardingModal />
+          <PwaInstallModal />
           <div className="flex-1 w-full max-w-full overflow-x-hidden pb-28 md:pb-12">
             {children}
           </div>

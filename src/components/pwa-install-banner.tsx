@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Download, Smartphone, X, Sparkles, Share, PlusSquare } from "lucide-react";
+import { openPwaInstallModal } from "@/components/pwa-install-modal";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -53,13 +54,8 @@ export function PwaInstallBanner({ isDrawer = false }: { isDrawer?: boolean }) {
         setDismissed(true);
       }
       setDeferredPrompt(null);
-    } else if (isIos) {
-      setShowIosGuide(true);
     } else {
-      // Fallback guide
-      alert(
-        "Untuk memasang LogHorizon ke layar utama:\n1. Buka menu browser (titik tiga ⋮ atau bagikan ⎋)\n2. Pilih 'Tambahkan ke Layar Utama' (Add to Home screen)"
-      );
+      openPwaInstallModal();
     }
   };
 

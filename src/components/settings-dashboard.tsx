@@ -41,6 +41,7 @@ import { VerifiedSellerModal } from "@/components/verified-seller-modal";
 import { isGuildOwner } from "@/lib/auth-guard";
 import { getEuropeanNobilityRank } from "@/lib/nobility-ranks";
 import { useLocale, SUPPORTED_LANGUAGES, SUPPORTED_CURRENCIES } from "@/context/locale-context";
+import { FlagIcon } from "@/components/locale-switcher";
 
 type Achievement = {
   id: string;
@@ -1220,7 +1221,7 @@ export function SettingsDashboard() {
                       }`}
                     >
                       <span className="flex items-center gap-2 truncate">
-                        <span>{lang.flag}</span>
+                        <FlagIcon locale={lang.code} />
                         <span className="truncate">{lang.name}</span>
                       </span>
                       <span className="font-mono text-[10px] opacity-75 uppercase shrink-0">{lang.code}</span>

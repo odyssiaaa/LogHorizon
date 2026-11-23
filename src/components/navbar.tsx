@@ -38,6 +38,7 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import { useLocale } from "@/context/locale-context";
 import { GlobalUserSearch } from "@/components/global-user-search";
 import { PwaInstallBanner } from "@/components/pwa-install-banner";
+import { openPwaInstallModal } from "@/components/pwa-install-modal";
 
 type NavDropdownItem = {
   label: string;
@@ -66,16 +67,22 @@ const navGroups: NavGroup[] = [
         icon: MessageSquare,
       },
       {
-        label: "Warta & Info Discord",
+        label: "Berita & Update",
         href: "/news",
         desc: "Berita game & pengumuman guild",
         icon: Newspaper,
       },
       {
-        label: "Papan Peringkat",
-        href: "/leaderboard",
-        desc: "Top XP & Donatur",
-        icon: Trophy,
+        label: "Marketplace & Rekber",
+        href: "/marketplace",
+        desc: "Jual beli akun & item aman terverifikasi",
+        icon: Store,
+      },
+      {
+        label: "Guild Armory Shop",
+        href: "/profile?tab=armory",
+        desc: "Bingkai avatar & gelar eksklusif",
+        icon: Sparkles,
       },
     ],
   },
@@ -85,22 +92,22 @@ const navGroups: NavGroup[] = [
     icon: Swords,
     items: [
       {
-        label: "Cari Teman Mabar (LFG)",
-        href: "/events?view=mabar",
-        desc: "Ajakan push rank & mabar cepat",
-        icon: Users,
-      },
-      {
         label: "Turnamen & Bagan",
         href: "/events?view=turnamen",
-        desc: "Kompetisi resmi & bracket pertandingan",
+        desc: "Kompetisi resmi & bracket live",
         icon: Trophy,
       },
       {
-        label: "Hall of Winners 🏆",
-        href: "/hall-of-winners",
-        desc: "Aula para juara & arsip piala season",
-        icon: Award,
+        label: "Cari Teman Mabar (LFG)",
+        href: "/events?view=mabar",
+        desc: "Party mabar push rank on-demand",
+        icon: Gamepad2,
+      },
+      {
+        label: "Guild Party / Squad",
+        href: "/events?view=party",
+        desc: "Tim & skuad petualang tetap",
+        icon: Users,
       },
     ],
   },
@@ -110,22 +117,34 @@ const navGroups: NavGroup[] = [
     icon: Crown,
     items: [
       {
-        label: "Treasury & Donasi",
+        label: "Penjara & Papan Buronan",
+        href: "/dungeon",
+        desc: "Daftar buronan & vonis sanksi",
+        icon: Skull,
+      },
+      {
+        label: "Papan Peringkat (Leaderboard)",
+        href: "/leaderboard",
+        desc: "Top XP petualang & donatur",
+        icon: Crown,
+      },
+      {
+        label: "Hall of Winners",
+        href: "/hall-of-winners",
+        desc: "Aula para juara & arsip piala",
+        icon: Award,
+      },
+      {
+        label: "Donasi Kas Guild",
         href: "/donate",
-        desc: "Dukung guild & klaim kasta role",
+        desc: "Dukung kas guild & kasta role",
         icon: HeartHandshake,
       },
       {
-        label: "Aturan & Kasta",
+        label: "Aturan & FAQ",
         href: "/rules",
-        desc: "Panduan & hierarki kerajaan LogHorizon",
+        desc: "Pedoman & hierarki kasta guild",
         icon: BookOpen,
-      },
-      {
-        label: "Penjara & Buronan",
-        href: "/dungeon",
-        desc: "DPO & daftar hitam terpidana",
-        icon: Skull,
       },
     ],
   },
@@ -313,12 +332,17 @@ export function Navbar() {
     };
   }, [isStaff, isOwner]);
 
-  // Determine active states for top nav items
+  // Determine active states for top nav items (4 Menu Seragam)
   const isHomeActive = pathname === "/";
   const isMarketplaceActive = pathname.startsWith("/marketplace");
-  const isKomunitasActive = pathname.startsWith("/forum") || pathname.startsWith("/news") || pathname.startsWith("/leaderboard");
+  const isKomunitasActive = pathname.startsWith("/forum") || pathname.startsWith("/news") || pathname.startsWith("/marketplace");
   const isArenaActive = pathname.startsWith("/events");
-  const isGuildActive = pathname.startsWith("/donate") || pathname.startsWith("/rules") || pathname === "/#rules";
+  const isGuildActive =
+    pathname.startsWith("/dungeon") ||
+    pathname.startsWith("/leaderboard") ||
+    pathname.startsWith("/hall-of-winners") ||
+    pathname.startsWith("/donate") ||
+    pathname.startsWith("/rules");
 
   return (
     <>
@@ -330,9 +354,9 @@ export function Navbar() {
           scrolled ? "shadow-md shadow-slate-900/5 dark:shadow-xl dark:shadow-black/40" : ""
         }`}
       >
-        <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-6 flex items-center justify-between gap-2">
-          {/* SISI KIRI: Logo & Menu Utama */}
-          <div className="flex items-center gap-2 xl:gap-3 shrink-0">
+        <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-6 flex items-center justify-between gap-4">
+          {/* SISI KIRI: Logo & 4 Menu Utama Seragam */}
+          <div className="flex items-center gap-3 xl:gap-5 shrink-0">
             <Link href="/" className="flex items-center gap-2.5 group shrink-0" aria-label="LogHorizon Beranda">
               <div className="relative size-8 sm:size-9 rounded-lg border border-slate-200 dark:border-[#2A1B42] group-hover:border-[#7C3AED] transition-colors bg-slate-100 dark:bg-[#11091D] flex items-center justify-center shadow-sm overflow-hidden">
                 <Image
@@ -351,21 +375,21 @@ export function Navbar() {
               </div>
             </Link>
 
-            {/* Menu Navigasi 6 Menu Pill Desktop */}
+            {/* Menu Navigasi 4 Menu Utama dengan Font 100% Identik */}
             <nav
-              className="hidden lg:flex desktop-navbar items-center gap-1 xl:gap-1.5 p-1 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-slate-100/90 dark:bg-[#11091D] shrink-0"
+              className="hidden lg:flex desktop-navbar items-center gap-1.5 p-1 rounded-xl border border-slate-200 dark:border-[#2A1B42] bg-slate-100/90 dark:bg-[#11091D] shrink-0"
               aria-label="Navigasi Utama Desktop"
             >
-              {/* 1. HOME */}
+              {/* 1. BERANDA */}
               <Link
                 href="/"
-                className={`px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                className={`text-sm font-medium px-3.5 py-2 rounded-lg whitespace-nowrap transition-colors ${
                   isHomeActive
-                    ? "bg-[#7C3AED] text-white"
+                    ? "bg-[#7C3AED] text-white shadow-xs"
                     : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                 }`}
               >
-                {t("nav_home", "Home")}
+                {t("nav_home", "Beranda")}
               </Link>
 
               {/* 2. KOMUNITAS DROPDOWN */}
@@ -377,14 +401,14 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setActiveMenu(activeMenu === "komunitas" ? null : "komunitas")}
-                  className={`flex items-center gap-1 px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                  className={`text-sm font-medium px-3.5 py-2 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
                     isKomunitasActive || activeMenu === "komunitas"
-                      ? "bg-[#7C3AED] text-white"
+                      ? "bg-[#7C3AED] text-white shadow-xs"
                       : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                   }`}
                 >
                   <span className="whitespace-nowrap">{t("nav_community", "Komunitas")}</span>
-                  <ChevronDown size={12} className={`transition-transform duration-200 shrink-0 ${activeMenu === "komunitas" ? "rotate-180" : "opacity-70"}`} />
+                  <ChevronDown size={14} className={`transition-transform duration-200 shrink-0 ${activeMenu === "komunitas" ? "rotate-180" : "opacity-70"}`} />
                 </button>
 
                 <AnimatePresence>
@@ -394,16 +418,16 @@ export function Navbar() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.98 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-xl dark:shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
+                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-xl border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
                     >
                       {navGroups[0].items.map((item) => (
                         <Link
                           key={item.href}
                           href={item.href}
                           onClick={() => setActiveMenu(null)}
-                          className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
+                          className="flex items-start gap-3 p-2.5 rounded-lg text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
                         >
-                          <div className="size-8 rounded-md bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
+                          <div className="size-8 rounded-lg bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
                             <item.icon size={15} />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -430,14 +454,14 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setActiveMenu(activeMenu === "arena" ? null : "arena")}
-                  className={`flex items-center gap-1 px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                  className={`text-sm font-medium px-3.5 py-2 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
                     isArenaActive || activeMenu === "arena"
-                      ? "bg-[#7C3AED] text-white"
+                      ? "bg-[#7C3AED] text-white shadow-xs"
                       : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                   }`}
                 >
                   <span className="whitespace-nowrap">{t("nav_arena", "Arena & Mabar")}</span>
-                  <ChevronDown size={12} className={`transition-transform duration-200 shrink-0 ${activeMenu === "arena" ? "rotate-180" : "opacity-70"}`} />
+                  <ChevronDown size={14} className={`transition-transform duration-200 shrink-0 ${activeMenu === "arena" ? "rotate-180" : "opacity-70"}`} />
                 </button>
 
                 <AnimatePresence>
@@ -447,16 +471,16 @@ export function Navbar() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.98 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-xl dark:shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
+                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-xl border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
                     >
                       {navGroups[1].items.map((item) => (
                         <Link
                           key={item.href}
                           href={item.href}
                           onClick={() => setActiveMenu(null)}
-                          className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
+                          className="flex items-start gap-3 p-2.5 rounded-lg text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
                         >
-                          <div className="size-8 rounded-md bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
+                          <div className="size-8 rounded-lg bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
                             <item.icon size={15} />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -474,19 +498,7 @@ export function Navbar() {
                 </AnimatePresence>
               </div>
 
-              {/* 4. MARKETPLACE */}
-              <Link
-                href="/marketplace"
-                className={`px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
-                  isMarketplaceActive
-                    ? "bg-[#7C3AED] text-white"
-                    : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
-                }`}
-              >
-                {t("nav_marketplace", "Marketplace")}
-              </Link>
-
-              {/* 5. GUILD DROPDOWN */}
+              {/* 4. GUILD DROPDOWN */}
               <div
                 className="relative shrink-0"
                 onMouseEnter={() => handleMouseEnter("guild")}
@@ -495,14 +507,14 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setActiveMenu(activeMenu === "guild" ? null : "guild")}
-                  className={`flex items-center gap-1 px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                  className={`text-sm font-medium px-3.5 py-2 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
                     isGuildActive || activeMenu === "guild"
-                      ? "bg-[#7C3AED] text-white"
+                      ? "bg-[#7C3AED] text-white shadow-xs"
                       : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                   }`}
                 >
                   <span className="whitespace-nowrap">{t("nav_guild", "Guild")}</span>
-                  <ChevronDown size={12} className={`transition-transform duration-200 shrink-0 ${activeMenu === "guild" ? "rotate-180" : "opacity-70"}`} />
+                  <ChevronDown size={14} className={`transition-transform duration-200 shrink-0 ${activeMenu === "guild" ? "rotate-180" : "opacity-70"}`} />
                 </button>
 
                 <AnimatePresence>
@@ -512,16 +524,16 @@ export function Navbar() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.98 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-xl dark:shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
+                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-xl border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
                     >
                       {navGroups[2].items.map((item) => (
                         <Link
                           key={item.href}
                           href={item.href}
                           onClick={() => setActiveMenu(null)}
-                          className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
+                          className="flex items-start gap-3 p-2.5 rounded-lg text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
                         >
-                          <div className="size-8 rounded-md bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
+                          <div className="size-8 rounded-lg bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
                             <item.icon size={15} />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -538,48 +550,30 @@ export function Navbar() {
                   )}
                 </AnimatePresence>
               </div>
-
-              {/* 6. PENJARA & BURONAN */}
-              <Link
-                href="/dungeon"
-                className={`px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
-                  pathname.startsWith("/dungeon")
-                    ? "bg-[#7C3AED] text-white"
-                    : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
-                }`}
-              >
-                {t("Penjara & Buronan", "Dungeon & Wanted")}
-              </Link>
             </nav>
           </div>
 
-          {/* SISI KANAN: Aksi Desktop & Hamburger Mobile (Wajib Selalu Tampil Penuh shrink-0) */}
-          <div className="shrink-0 flex items-center gap-1.5 xl:gap-2">
-            {/* Global Member Search Desktop (Ikon klikable di 1024-1280px, Input penuh di >= 1280px) */}
+          {/* SISI KANAN: Kotak Pencarian, Tema, Pesan, Notifikasi & Profil (shrink-0 flex items-center gap-2.5) */}
+          <div className="shrink-0 flex items-center gap-2.5">
+            {/* Global Member Search Desktop */}
             <GlobalUserSearch
-              compactOnLg
-              className="shrink w-auto xl:w-48"
+              className="hidden lg:block w-44 xl:w-56 shrink-0"
               placeholder={t("Cari petualang...", "Search Adventurers...")}
             />
 
-            {/* 1. Tombol Tema */}
+            {/* Tombol Tema */}
             <ThemeToggle />
 
-            {/* 2. Pil Bahasa Kompak */}
-            <div className="hidden sm:block shrink-0">
-              <LocaleSwitcher />
-            </div>
-
             {/* Aksi Khusus Desktop (Pesan, Lonceng Notifikasi & Profil) - WAJIB SELALU TAMPIL PENUH */}
-            <div className="hidden md:flex desktop-navbar items-center gap-1.5 xl:gap-2 shrink-0">
-              {/* 3. Ikon Chat / Messages */}
+            <div className="hidden md:flex desktop-navbar items-center gap-2.5 shrink-0">
+              {/* Ikon Chat / Messages */}
               <Link
                 href="/messages"
-                className="relative size-9 sm:size-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white flex items-center justify-center shrink-0 shadow-xs"
+                className="relative size-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white flex items-center justify-center shrink-0 shadow-xs"
                 title="Pesan &amp; Obrolan Komunitas"
                 aria-label="Pesan &amp; Obrolan Komunitas"
               >
-                <MessageSquare size={16} />
+                <MessageSquare size={17} />
                 {unreadMessages > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-[#7C3AED] text-white rounded-full text-[9px] font-mono font-bold flex items-center justify-center shadow-xs">
                     {unreadMessages > 9 ? "9+" : unreadMessages}
@@ -587,18 +581,18 @@ export function Navbar() {
                 )}
               </Link>
 
-              {/* 4. Ikon Lonceng Notifikasi */}
+              {/* Ikon Lonceng Notifikasi */}
               <NotificationBell />
 
-              {/* 5. Avatar Profil + Username (atau tombol Masuk) */}
+              {/* Avatar Profil + Username (atau tombol Masuk) */}
               {status === "loading" ? (
-                <div className="h-9 sm:h-10 w-24 rounded-lg bg-slate-100 dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] animate-pulse" />
+                <div className="h-10 w-24 rounded-lg bg-slate-100 dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] animate-pulse" />
               ) : user ? (
                 <div className="relative shrink-0" ref={dropdownRef}>
                   <button
                     type="button"
                     onClick={() => setDropdownOpen((prev) => !prev)}
-                    className="relative h-9 sm:h-10 px-2.5 sm:px-3 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors flex items-center gap-2 font-mono text-xs text-slate-900 dark:text-[#F8FAFC] shadow-xs shrink-0 select-none"
+                    className="relative h-10 px-3 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors flex items-center gap-2 font-mono text-xs text-slate-900 dark:text-[#F8FAFC] shadow-xs shrink-0 select-none cursor-pointer"
                     aria-expanded={dropdownOpen}
                     aria-label="Menu profil pengguna"
                   >
@@ -611,7 +605,7 @@ export function Navbar() {
                         </span>
                       )}
                     </div>
-                    <span className="text-xs font-semibold max-w-[90px] xl:max-w-[120px] truncate">
+                    <span className="text-xs font-semibold max-w-[100px] xl:max-w-[130px] truncate">
                       {user.username ?? user.name ?? "Gamer"}
                     </span>
                     <span className="size-2 rounded-full bg-[#10B981] shrink-0" title="Online" />
@@ -719,7 +713,7 @@ export function Navbar() {
                   whileTap={{ scale: 0.98 }}
                   type="button"
                   onClick={() => void signIn("discord")}
-                  className="inline-flex items-center gap-2 px-3 sm:px-4 h-9 sm:h-10 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition-all border border-[#5865F2] shrink-0"
+                  className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition-all border border-[#5865F2] shrink-0"
                 >
                   <span className="text-sm leading-none">◉</span>
                   <span className="whitespace-nowrap">Connect Discord</span>
@@ -898,6 +892,16 @@ export function Navbar() {
 
                 {/* Banner Pasang PWA di Layar Utama HP */}
                 <PwaInstallBanner isDrawer />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    openPwaInstallModal();
+                  }}
+                  className="w-full text-center text-[11px] font-mono text-[#7C3AED] dark:text-[#C4B5FD] hover:underline cursor-pointer -mt-2 block"
+                >
+                  📲 Panduan Cara Pasang Aplikasi (PWA) ➔
+                </button>
 
                 {/* ================================================================= */}
                 {/* 3 KELOMPOK MENU BERJARAK LEGA (EYE-CATCHING & ANTI-PUSING)         */}
