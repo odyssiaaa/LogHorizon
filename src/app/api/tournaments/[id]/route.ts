@@ -145,19 +145,23 @@ export async function GET(_request: Request, { params }: RouteContext) {
       participants: tournament.participants.map((p) => ({
         id: p.id,
         teamName: p.teamName,
-        phone: isStaff || (viewer && viewer.id === p.leader.id) ? p.phone ?? null : null,
+        teamTag: p.teamTag ?? null,
+        captainName: p.captainName ?? p.leader?.username ?? p.leader?.name ?? "Kapten Tim",
+        phone: isStaff || (viewer && p.leader && viewer.id === p.leader.id) ? p.phone ?? null : null,
         roster: p.roster ?? [],
         paymentStatus: p.paymentStatus ?? "APPROVED",
-        senderName: isStaff || (viewer && viewer.id === p.leader.id) ? p.senderName ?? null : null,
-        paymentProof: isStaff || (viewer && viewer.id === p.leader.id) ? p.paymentProof ?? null : null,
+        senderName: isStaff || (viewer && p.leader && viewer.id === p.leader.id) ? p.senderName ?? null : null,
+        paymentProof: isStaff || (viewer && p.leader && viewer.id === p.leader.id) ? p.paymentProof ?? null : null,
         rejectionReason: p.rejectionReason ?? null,
         createdAt: p.createdAt.toISOString(),
-        leader: {
-          id: p.leader.id,
-          username: p.leader.username,
-          discordId: p.leader.discordId ?? null,
-          name: p.leader.name,
-        },
+        leader: p.leader
+          ? {
+              id: p.leader.id,
+              username: p.leader.username,
+              discordId: p.leader.discordId ?? null,
+              name: p.leader.name,
+            }
+          : null,
       })),
       teams: sanitizedTeams,
     },

@@ -1279,12 +1279,14 @@ async function executeToolAction(
       data: { paymentStatus: status },
     });
 
-    void createNotification({
-      userId: participant.leaderId,
-      type: "SYSTEM",
-      message: `Pendaftaran tim "${participant.teamName}" untuk "${participant.tournament.title}" telah ${status === "APPROVED" ? "disetujui" : "ditolak"}.`,
-      link: `/events/turnamen/${participant.tournamentId}`,
-    });
+    if (participant.leaderId) {
+      void createNotification({
+        userId: participant.leaderId,
+        type: "SYSTEM",
+        message: `Pendaftaran tim "${participant.teamName}" untuk "${participant.tournament.title}" telah ${status === "APPROVED" ? "disetujui" : "ditolak"}.`,
+        link: `/events/turnamen/${participant.tournamentId}`,
+      });
+    }
 
     return {
       success: true,

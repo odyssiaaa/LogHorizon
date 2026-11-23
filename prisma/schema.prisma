@@ -189,22 +189,25 @@ model Tournament {
 }
 
 model Participant {
-  id              String     @id @default(cuid())
+  id              String      @id @default(cuid())
   tournamentId    String
-  leaderId        String
+  leaderId        String?
+  captainName     String?
+  teamTag         String?
   teamName        String
   phone           String?
-  roster          Json?      @default("[]")
-  paymentStatus   String     @default("APPROVED")
+  roster          Json?       @default("[]")
+  paymentStatus   String      @default("APPROVED")
   senderName      String?
-  paymentProof    String?    @db.Text
+  paymentProof    String?     @db.Text
   rejectionReason String?
-  createdAt       DateTime   @default(now())
-  tournament      Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  leader          User       @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+  ipAddress       String?
+  createdAt       DateTime    @default(now())
+  tournament      Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  leader          User?       @relation(fields: [leaderId], references: [id], onDelete: Cascade)
 
-  @@unique([tournamentId, leaderId])
   @@index([tournamentId, createdAt])
+  @@index([tournamentId, leaderId])
 }
 
 model LfgPost {

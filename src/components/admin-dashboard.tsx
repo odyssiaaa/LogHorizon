@@ -2781,8 +2781,9 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                       <div>
                                         <div className="flex items-center gap-2 flex-wrap">
-                                          <h4 className="font-black text-base text-gray-900 dark:text-white">
-                                            {p.teamName}
+                                          <h4 className="font-black text-base text-gray-900 dark:text-white flex items-center gap-1.5">
+                                            {p.teamTag && <span className="text-xs font-mono font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">[{p.teamTag}]</span>}
+                                            <span>{p.teamName}</span>
                                           </h4>
                                           <span
                                             className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
@@ -2798,7 +2799,7 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                                         </div>
 
                                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
-                                          <span>Kapten: <strong>@{p.leader?.username || p.leader?.name || "Member"}</strong></span>
+                                          <span>Kapten: <strong>{p.captainName ? p.captainName : p.leader ? `@${p.leader.username || p.leader.name}` : "Guest"}</strong></span>
                                           {p.phone && (
                                             <>
                                               <span>•</span>

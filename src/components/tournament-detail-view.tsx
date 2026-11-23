@@ -106,6 +106,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   // Registration modal state
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [registerTeamName, setRegisterTeamName] = useState("");
+  const [registerTeamTag, setRegisterTeamTag] = useState("");
   const [registerCaptainIgn, setRegisterCaptainIgn] = useState("");
   const [registerPhone, setRegisterPhone] = useState("");
   const [registerSenderName, setRegisterSenderName] = useState("");
@@ -574,11 +575,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
   const subCount = tournament?.subPlayersCount ?? 2;
 
   function handleOpenRegister() {
-    if (!session?.user) {
-      void signIn("discord");
-      return;
-    }
-    // Show mandatory tournament rules agreement first
+    // Show mandatory tournament rules agreement first (available for both logged in users and guests)
     setShowRulesModal(true);
   }
 
@@ -586,6 +583,7 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
     setShowRulesModal(false);
     // Initialize roster inputs based on tournament settings
     setRegisterTeamName("");
+    setRegisterTeamTag("");
     setRegisterCaptainIgn(session?.user?.username ?? session?.user?.name ?? "");
     setRegisterPhone("");
     setRegisterSenderName("");
@@ -661,8 +659,20 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
     e.preventDefault();
     if (!tournament) return;
 
-    if (!registerTeamName.trim()) {
-      setError("Nama tim wajib diisi.");
+    if (!registerTeamName.trim() || registerTeamName.trim().length < 2) {
+      setError("Nama tim wajib diisi (minimal 2 karakter).");
+      return;
+    }
+
+    const cleanCaptain = registerCaptainIgn.trim() || registerMainPlayers[0]?.nickname.trim();
+    if (!cleanCaptain || cleanCaptain.length < 2) {
+      setError("Nama lengkap / Nickname Kapten Tim wajib diisi (minimal 2 karakter).");
+      return;
+    }
+
+    const cleanPhone = registerPhone.replace(/[^\d+]/g, "");
+    if (!cleanPhone || cleanPhone.replace(/\D/g, "").length < 9 || cleanPhone.replace(/\D/g, "").length > 15) {
+      setError("Nomor WhatsApp/telepon kapten wajib diisi valid (9-15 digit, contoh: 08123456789 atau 628123456789).");
       return;
     }
 
@@ -712,8 +722,10 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           teamName: registerTeamName.trim(),
-          phone: registerPhone.trim(),
-          captainIgn: registerMainPlayers[0]?.nickname.trim() || registerCaptainIgn.trim(),
+          teamTag: registerTeamTag.trim() || undefined,
+          phone: cleanPhone,
+          captainName: cleanCaptain,
+          captainIgn: cleanCaptain,
           senderName: isPaid ? registerSenderName.trim() : undefined,
           paymentProof: isPaid ? registerPaymentProof : undefined,
           mainPlayers: registerMainPlayers.map((p) => ({
@@ -1803,54 +1815,87 @@ export function TournamentDetailView({ tournamentId }: { tournamentId: string })
             </div>
 
             <form onSubmit={handleSubmitRegistration} className="space-y-4 text-xs">
-              {/* Shortcut Autofill from Party */}
-              <button
-                type="button"
-                onClick={handleAutofillFromParty}
-                className="w-full py-2.5 px-3 rounded-lg border border-purple-500/40 bg-purple-950/30 hover:bg-purple-900/40 text-purple-200 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm"
-              >
-                <Zap size={15} className="text-amber-400" />
-                <span>⚡ Isi Otomatis dari Anggota Party Saya</span>
-              </button>
+              {/* Info Banner: Guest vs Party Leader */}
+              {!session?.user ? (
+                <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs flex items-start gap-2.5">
+                  <Zap size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-amber-200">⚡ Pendaftaran Cepat Tanpa Login (Guest Mode)</p>
+                    <p className="text-[11px] text-amber-300/80 mt-0.5 leading-relaxed">
+                      Daftar cepat tanpa login — pastikan seluruh data pemain &amp; nomor WhatsApp aktif benar agar panitia dapat menghubungi timmu!
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleAutofillFromParty}
+                  className="w-full py-2.5 px-3 rounded-lg border border-purple-500/40 bg-purple-950/30 hover:bg-purple-900/40 text-purple-200 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+                >
+                  <Zap size={15} className="text-amber-400" />
+                  <span>⚡ Isi Otomatis dari Anggota Party Saya</span>
+                </button>
+              )}
 
-              <div>
-                <label className="font-bold text-gray-800 dark:text-gray-200 block mb-1">
-                  Nama Tim / Clan *
-                </label>
-                <input
-                  required
-                  type="text"
-                  value={registerTeamName}
-                  onChange={(e) => setRegisterTeamName(e.target.value)}
-                  placeholder="Contoh: LogHorizon Esports"
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E] text-xs"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="font-bold text-gray-800 dark:text-gray-200 block mb-1">
+                    Nama Tim / Clan *
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    minLength={2}
+                    maxLength={64}
+                    value={registerTeamName}
+                    onChange={(e) => setRegisterTeamName(e.target.value)}
+                    placeholder="Contoh: LogHorizon Esports"
+                    className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E] text-xs font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-gray-800 dark:text-gray-200 block mb-1">
+                    Tag Tim (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={8}
+                    value={registerTeamTag}
+                    onChange={(e) => setRegisterTeamTag(e.target.value.toUpperCase())}
+                    placeholder="Contoh: LHZ"
+                    className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E] text-xs font-mono font-bold uppercase"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-gray-800 dark:text-gray-200 block mb-1">
-                    IGN Kapten Tim
+                    Nama / Nickname Kapten Tim *
                   </label>
                   <input
+                    required
                     type="text"
+                    minLength={2}
                     value={registerCaptainIgn}
                     onChange={(e) => setRegisterCaptainIgn(e.target.value)}
                     placeholder="Contoh: Shiroe"
-                    className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E] text-xs"
+                    className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E] text-xs font-bold"
                   />
                 </div>
                 <div>
                   <label className="font-bold text-gray-800 dark:text-gray-200 block mb-1">
-                    No. WA / Kontak Kapten
+                    Nomor WhatsApp Aktif Kapten *
                   </label>
                   <input
-                    type="text"
+                    required
+                    type="tel"
                     value={registerPhone}
                     onChange={(e) => setRegisterPhone(e.target.value)}
-                    placeholder="08123456789"
-                    className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E] text-xs"
+                    placeholder="Contoh: 081234567890"
+                    className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#16121E] text-xs font-mono"
                   />
+                  <span className="text-[10px] text-gray-400 mt-0.5 block">Hanya untuk koordinasi panitia turnamen</span>
                 </div>
               </div>
 

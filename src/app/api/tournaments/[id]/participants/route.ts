@@ -9,19 +9,48 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: RouteContext) {
   const user = await activeUser();
-  if (!user) return jsonError("Login diperlukan untuk mendaftar ke turnamen.", 401);
   const { id } = await params;
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
-  const teamName = sanitizePlainText(typeof data.teamName === "string" ? data.teamName.trim() : "");
 
-  if (!teamName || teamName.length > 64) {
-    return jsonError("Nama party/tim wajib diisi (maksimal 64 karakter).", 400);
+  // Extract client IP for anti-spam rate limiting
+  const forwarded = request.headers.get("x-forwarded-for");
+  const clientIp = forwarded ? forwarded.split(",")[0].trim() : request.headers.get("x-real-ip") || "127.0.0.1";
+
+  // Rate Limiting on Guest Registration: max 2 per 30 mins per IP
+  if (!user) {
+    const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+    const ipRecentCount = await prisma.participant.count({
+      where: {
+        ipAddress: clientIp,
+        createdAt: { gte: thirtyMinsAgo },
+      },
+    });
+    if (ipRecentCount >= 2) {
+      return jsonError("Batas pendaftaran tercapai (maksimal 2 kali per 30 menit). Silakan coba lagi nanti atau hubungi Admin.", 429);
+    }
   }
 
+  const teamName = sanitizePlainText(typeof data.teamName === "string" ? data.teamName.trim() : "");
+  if (!teamName || teamName.length < 2 || teamName.length > 64) {
+    return jsonError("Nama party/tim wajib diisi (minimal 2 dan maksimal 64 karakter).", 400);
+  }
+
+  const rawTag = typeof data.teamTag === "string" ? data.teamTag.trim() : "";
+  const teamTag = sanitizePlainText(rawTag).slice(0, 12);
+
+  // Captain Name / Nickname validation
+  const rawCaptain = typeof data.captainName === "string" ? data.captainName.trim() : typeof data.captainIgn === "string" ? data.captainIgn.trim() : "";
+  const captainName = sanitizePlainText(rawCaptain) || (user?.username ?? user?.name ?? "");
+  if (!captainName || captainName.length < 2) {
+    return jsonError("Nama lengkap / Nickname Kapten Tim wajib diisi (minimal 2 karakter).", 400);
+  }
+
+  // Captain Phone / WhatsApp validation (9-15 digits)
   const rawPhone = typeof data.phone === "string" ? data.phone.trim().replace(/[^\d+]/g, "") : "";
-  if (!rawPhone || rawPhone.replace(/\D/g, "").length < 8) {
-    return jsonError("Nomor WhatsApp/telepon perwakilan wajib diisi (minimal 8 angka).", 400);
+  const phoneDigits = rawPhone.replace(/\D/g, "");
+  if (!rawPhone || phoneDigits.length < 9 || phoneDigits.length > 15) {
+    return jsonError("Nomor WhatsApp/telepon kapten wajib diisi valid (9-15 digit, contoh: 08123456789 atau 628123456789).", 400);
   }
 
   // Payment proof & sender name
@@ -70,8 +99,8 @@ export async function POST(request: Request, { params }: RouteContext) {
       }));
   }
 
-  if (mainPlayers.length === 0) {
-    return jsonError("Daftar pemain inti wajib diisi lengkap dengan Nickname dan ID In-Game.", 400);
+  if (mainPlayers.length < 5) {
+    return jsonError("Seluruh 5 Pemain Inti wajib diisi lengkap dengan Nickname dan ID In-Game.", 400);
   }
 
   // Parse Pemain Cadangan (Opsional)
@@ -123,17 +152,42 @@ export async function POST(request: Request, { params }: RouteContext) {
         }
       }
 
-      // Check existing registration
-      const existing = await tx.participant.findUnique({
-        where: { tournamentId_leaderId: { tournamentId: id, leaderId: user.id } },
+      // Check duplicate team name or phone within same tournament
+      const duplicateTeam = await tx.participant.findFirst({
+        where: {
+          tournamentId: id,
+          teamName: { equals: teamName, mode: "insensitive" },
+          paymentStatus: { in: ["APPROVED", "PENDING_PAYMENT"] },
+        },
       });
-      if (existing) {
-        if (existing.paymentStatus === "REJECTED") {
-          await tx.participant.delete({ where: { id: existing.id } });
-        } else if (existing.paymentStatus === "PENDING_PAYMENT") {
-          throw new Error("PENDING_VERIFICATION");
-        } else {
-          throw new Error("ALREADY_REGISTERED");
+      if (duplicateTeam) {
+        throw new Error("TEAM_NAME_ALREADY_EXISTS");
+      }
+
+      const duplicatePhone = await tx.participant.findFirst({
+        where: {
+          tournamentId: id,
+          phone: rawPhone,
+          paymentStatus: { in: ["APPROVED", "PENDING_PAYMENT"] },
+        },
+      });
+      if (duplicatePhone) {
+        throw new Error("PHONE_ALREADY_REGISTERED");
+      }
+
+      // If user is logged in, check their existing registration
+      if (user) {
+        const existing = await tx.participant.findFirst({
+          where: { tournamentId: id, leaderId: user.id },
+        });
+        if (existing) {
+          if (existing.paymentStatus === "REJECTED") {
+            await tx.participant.delete({ where: { id: existing.id } });
+          } else if (existing.paymentStatus === "PENDING_PAYMENT") {
+            throw new Error("PENDING_VERIFICATION");
+          } else {
+            throw new Error("ALREADY_REGISTERED");
+          }
         }
       }
 
@@ -147,13 +201,16 @@ export async function POST(request: Request, { params }: RouteContext) {
       const created = await tx.participant.create({
         data: {
           tournamentId: id,
-          leaderId: user.id,
+          leaderId: user ? user.id : null,
+          captainName,
+          teamTag: teamTag || null,
           teamName,
           phone: rawPhone,
           roster: roster as unknown as Prisma.InputJsonValue,
           paymentStatus,
           senderName: isPaid ? senderName : null,
           paymentProof: isPaid ? paymentProof : null,
+          ipAddress: clientIp,
         },
       });
 
@@ -174,9 +231,9 @@ export async function POST(request: Request, { params }: RouteContext) {
       const newTeamObj: TournamentTeam = {
         id: created.id,
         teamName,
-        captainName: user.username ?? user.name ?? "Kapten Party",
-        representativeDiscord: user.username ?? user.name ?? "Gamer",
-        representativeDiscordId: user.discordId ?? undefined,
+        captainName,
+        representativeDiscord: user?.username ?? user?.name ?? `${captainName} (Guest)`,
+        representativeDiscordId: user?.discordId ?? undefined,
         representativePhone: rawPhone,
         players: legacyPlayerStrings,
         mainPlayers,
@@ -250,7 +307,7 @@ export async function POST(request: Request, { params }: RouteContext) {
         senderName: senderName || "Pengirim",
         contactPhone: rawPhone,
         entryFee: Number(result.entryFee || 0),
-        captainUsername: user.username ?? "Gamer",
+        captainUsername: user ? (user.username || user.name || "Gamer") : `${captainName} (Guest)`,
       });
     }
 
@@ -258,11 +315,13 @@ export async function POST(request: Request, { params }: RouteContext) {
   } catch (error) {
     if (error instanceof Error && error.message === "TOURNAMENT_CLOSED") return jsonError("Pendaftaran turnamen sudah ditutup.", 409);
     if (error instanceof Error && error.message === "TOURNAMENT_FULL") return jsonError("Slot turnamen sudah penuh.", 409);
+    if (error instanceof Error && error.message === "TEAM_NAME_ALREADY_EXISTS") return jsonError("Nama tim ini sudah terdaftar di turnamen ini. Silakan gunakan nama tim lain.", 409);
+    if (error instanceof Error && error.message === "PHONE_ALREADY_REGISTERED") return jsonError("Nomor WhatsApp/telepon ini sudah pernah didaftarkan pada turnamen ini.", 409);
     if (error instanceof Error && error.message === "MISSING_SENDER_NAME") return jsonError("Nama pengirim / pemilik rekening transfer wajib diisi.", 400);
     if (error instanceof Error && error.message === "MISSING_PAYMENT_PROOF") return jsonError("Upload bukti pembayaran QRIS wajib dilampirkan.", 400);
     if (error instanceof Error && error.message === "PENDING_VERIFICATION") return jsonError("Pendaftaran tim kamu sedang dalam antrean verifikasi pembayaran oleh Admin.", 409);
     if (error instanceof Error && error.message === "ALREADY_REGISTERED") return jsonError("Party kamu sudah terdaftar di turnamen ini.", 409);
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return jsonError("Party kamu sudah terdaftar di turnamen ini.", 409);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return jsonError("Tim atau nomor kontak sudah terdaftar di turnamen ini.", 409);
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") return jsonError("Pendaftaran berubah bersamaan. Coba lagi.", 409);
     throw error;
   }
@@ -315,9 +374,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         const newTeamObj: TournamentTeam = {
           id: participant.id,
           teamName: participant.teamName,
-          captainName: participant.leader.username ?? participant.leader.name ?? "Kapten Party",
-          representativeDiscord: participant.leader.username ?? participant.leader.name ?? "Gamer",
-          representativeDiscordId: participant.leader.discordId ?? undefined,
+          captainName: participant.captainName || participant.leader?.username || participant.leader?.name || "Kapten Party",
+          representativeDiscord: participant.leader?.username || participant.leader?.name || `${participant.captainName || "Guest"}`,
+          representativeDiscordId: participant.leader?.discordId ?? undefined,
           representativePhone: participant.phone ?? undefined,
           players: legacyPlayerStrings,
           mainPlayers,
@@ -365,15 +424,17 @@ export async function PATCH(request: Request, { params }: RouteContext) {
           },
         });
 
-        // Notify team leader
-        await tx.notification.create({
-          data: {
-            userId: participant.leaderId,
-            type: "SYSTEM",
-            message: `Pendaftaran tim "${participant.teamName}" di turnamen "${tournament.title}" telah disetujui Admin! Tim resmi masuk ke dalam bagan pertandingan.`,
-            link: `/events/turnamen/${tournament.id}`,
-          },
-        });
+        // Notify team leader if registered account
+        if (participant.leaderId) {
+          await tx.notification.create({
+            data: {
+              userId: participant.leaderId,
+              type: "SYSTEM",
+              message: `Pendaftaran tim "${participant.teamName}" di turnamen "${tournament.title}" telah disetujui Admin! Tim resmi masuk ke dalam bagan pertandingan.`,
+              link: `/events/turnamen/${tournament.id}`,
+            },
+          });
+        }
 
         return {
           success: true,
@@ -452,15 +513,17 @@ export async function PATCH(request: Request, { params }: RouteContext) {
           },
         });
 
-        // Notify team leader
-        await tx.notification.create({
-          data: {
-            userId: participant.leaderId,
-            type: "SYSTEM",
-            message: `Pendaftaran tim "${participant.teamName}" di turnamen "${tournament.title}" ditolak oleh Admin. Alasan: ${reason || "Bukti transfer tidak valid atau belum masuk ke rekening kas guild."}`,
-            link: `/events/turnamen/${tournament.id}`,
-          },
-        });
+        // Notify team leader if registered account
+        if (participant.leaderId) {
+          await tx.notification.create({
+            data: {
+              userId: participant.leaderId,
+              type: "SYSTEM",
+              message: `Pendaftaran tim "${participant.teamName}" di turnamen "${tournament.title}" ditolak oleh Admin. Alasan: ${reason || "Bukti transfer tidak valid atau belum masuk ke rekening kas guild."}`,
+              link: `/events/turnamen/${tournament.id}`,
+            },
+          });
+        }
 
         return {
           success: true,

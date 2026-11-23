@@ -38,6 +38,7 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import { useLocale } from "@/context/locale-context";
 import { GlobalUserSearch } from "@/components/global-user-search";
 import { PwaInstallBanner } from "@/components/pwa-install-banner";
+import { openLoginModal } from "@/components/login-modal";
 import { openPwaInstallModal } from "@/components/pwa-install-modal";
 
 type NavDropdownItem = {
@@ -712,11 +713,11 @@ export function Navbar() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="button"
-                  onClick={() => void signIn("discord")}
-                  className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition-all border border-[#5865F2] shrink-0"
+                  onClick={() => openLoginModal()}
+                  className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition-all border border-[#5865F2] shrink-0 cursor-pointer shadow-xs"
                 >
-                  <span className="text-sm leading-none">◉</span>
-                  <span className="whitespace-nowrap">Connect Discord</span>
+                  <span className="text-sm leading-none">⚔️</span>
+                  <span className="whitespace-nowrap">{t("Masuk", "Sign In")}</span>
                 </motion.button>
               )}
             </div>
@@ -739,10 +740,10 @@ export function Navbar() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => void signIn("discord")}
-                  className="px-2.5 h-9 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-[11px] font-mono font-bold border border-[#5865F2] shrink-0"
+                  onClick={() => openLoginModal()}
+                  className="px-2.5 h-9 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-[11px] font-mono font-bold border border-[#5865F2] shrink-0 cursor-pointer shadow-xs"
                 >
-                  Masuk
+                  {t("Masuk", "Sign In")}
                 </button>
               )}
 
@@ -871,12 +872,12 @@ export function Navbar() {
                       type="button"
                       onClick={() => {
                         setMobileOpen(false);
-                        void signIn("discord");
+                        openLoginModal();
                       }}
-                      className="w-full h-11 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition flex items-center justify-center gap-2.5 shadow-md border border-[#5865F2]"
+                      className="w-full h-11 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition flex items-center justify-center gap-2.5 shadow-md border border-[#5865F2] cursor-pointer"
                     >
-                      <span className="text-base leading-none">◉</span>
-                      <span>Login dengan Discord</span>
+                      <span className="text-base leading-none">⚔️</span>
+                      <span>{t("login_title", "Masuk ke LogHorizon")}</span>
                     </button>
                   </div>
                 )}

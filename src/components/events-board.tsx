@@ -40,6 +40,7 @@ import {
   Trophy,
   Users,
   X,
+  Zap,
 } from "lucide-react";
 import Image from "next/image";
 import { readApiResponse } from "@/lib/api-response";
@@ -334,6 +335,8 @@ export function EventsBoard() {
   const [rulesGateTournament, setRulesGateTournament] = useState<Tournament | null>(null);
   const [registeringTournament, setRegisteringTournament] = useState<Tournament | null>(null);
   const [registerTeamName, setRegisterTeamName] = useState("");
+  const [registerTeamTag, setRegisterTeamTag] = useState("");
+  const [registerCaptainName, setRegisterCaptainName] = useState("");
   const [registerPhone, setRegisterPhone] = useState("");
   const [registerSenderName, setRegisterSenderName] = useState("");
   const [registerPaymentProof, setRegisterPaymentProof] = useState<string>("");
@@ -757,10 +760,6 @@ export function EventsBoard() {
 
   // Open Tournament Rules Gate before Registration Form
   function handlePromptRulesAndRegister(t: Tournament) {
-    if (!session?.user) {
-      void signIn("discord");
-      return;
-    }
     setRulesGateTournament(t);
   }
 
@@ -773,12 +772,10 @@ export function EventsBoard() {
 
   // Open Structured Registration Modal
   function openRegisterModal(t: Tournament) {
-    if (!session?.user) {
-      void signIn("discord");
-      return;
-    }
     setRegisteringTournament(t);
     setRegisterTeamName("");
+    setRegisterTeamTag("");
+    setRegisterCaptainName(session?.user?.username ?? session?.user?.name ?? "");
     setRegisterPhone("");
     setRegisterSenderName("");
     setRegisterPaymentProof("");
@@ -788,7 +785,7 @@ export function EventsBoard() {
     const mains: { nickname: string; gameId: string }[] = [];
     for (let i = 0; i < mainCount; i++) {
       mains.push({
-        nickname: i === 0 ? (session.user.username ?? session.user.name ?? "") : "",
+        nickname: i === 0 ? (session?.user?.username ?? session?.user?.name ?? "") : "",
         gameId: "",
       });
     }
@@ -1077,18 +1074,20 @@ export function EventsBoard() {
   // Register Team to Tournament (Structured Form with Main/Sub slots & Representative Contact)
   async function handleRegisterTeam(e: FormEvent) {
     e.preventDefault();
-    if (!session?.user) {
-      await signIn("discord");
+    if (!registeringTournament || !registerTeamName.trim()) {
+      setError("Nama party/tim wajib diisi (minimal 2 karakter).");
       return;
     }
-    if (!registeringTournament || !registerTeamName.trim()) {
-      setError("Nama party/tim wajib diisi.");
+
+    const cleanCaptain = registerCaptainName.trim() || registerMainPlayers[0]?.nickname.trim() || (session?.user?.username ?? session?.user?.name ?? "");
+    if (!cleanCaptain || cleanCaptain.length < 2) {
+      setError("Nama lengkap / Nickname Kapten Tim wajib diisi (minimal 2 karakter).");
       return;
     }
 
     const cleanPhone = registerPhone.replace(/[^\d+]/g, "");
-    if (!cleanPhone || cleanPhone.replace(/\D/g, "").length < 8) {
-      setError("Nomor WhatsApp/telepon perwakilan wajib diisi (minimal 8 angka).");
+    if (!cleanPhone || cleanPhone.replace(/\D/g, "").length < 9 || cleanPhone.replace(/\D/g, "").length > 15) {
+      setError("Nomor WhatsApp/telepon kapten wajib diisi valid (9-15 digit, contoh: 08123456789 atau 628123456789).");
       return;
     }
 
@@ -1119,6 +1118,9 @@ export function EventsBoard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           teamName: registerTeamName.trim(),
+          teamTag: registerTeamTag.trim() || undefined,
+          captainName: cleanCaptain,
+          captainIgn: cleanCaptain,
           phone: cleanPhone,
           senderName: isPaid ? registerSenderName.trim() : undefined,
           paymentProof: isPaid ? registerPaymentProof : undefined,
@@ -1142,6 +1144,8 @@ export function EventsBoard() {
       setNotice(result.message || `Party "${registerTeamName}" berhasil didaftarkan ke turnamen!`);
       setRegisteringTournament(null);
       setRegisterTeamName("");
+      setRegisterTeamTag("");
+      setRegisterCaptainName("");
       setRegisterPhone("");
       setRegisterSenderName("");
       setRegisterPaymentProof("");
@@ -3489,6 +3493,19 @@ export function EventsBoard() {
             </div>
 
             <form onSubmit={handleRegisterTeam} className="space-y-5">
+              {/* Guest / Logged-in Notice */}
+              {!session?.user ? (
+                <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs flex items-start gap-2.5">
+                  <Zap size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-amber-200">⚡ Pendaftaran Cepat Tanpa Login (Guest Mode)</p>
+                    <p className="text-[11px] text-amber-300/80 mt-0.5 leading-relaxed">
+                      Daftar cepat tanpa login — pastikan seluruh data pemain &amp; nomor WhatsApp aktif benar agar panitia dapat menghubungi timmu!
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
               {/* BAGIAN A: IDENTITAS TIM & KONTAK PERWAKILAN */}
               <div className="space-y-3.5 p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-gray-50/50 dark:bg-[#181324]/50">
                 <h4 className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider flex items-center gap-1.5">
@@ -3496,15 +3513,15 @@ export function EventsBoard() {
                   <span>Bagian A: Identitas Tim &amp; Kontak Perwakilan</span>
                 </h4>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
                     <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
                       Nama Party / Tim *
                     </label>
                     <input
                       required
                       type="text"
-                      minLength={3}
+                      minLength={2}
                       maxLength={64}
                       value={registerTeamName}
                       onChange={(e) => setRegisterTeamName(e.target.value)}
@@ -3515,7 +3532,38 @@ export function EventsBoard() {
 
                   <div>
                     <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                      Nomor WhatsApp Perwakilan (Wajib) *
+                      Tag Tim (Opsional)
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={8}
+                      value={registerTeamTag}
+                      onChange={(e) => setRegisterTeamTag(e.target.value.toUpperCase())}
+                      placeholder="Contoh: LHZ"
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#130921] border border-gray-300 dark:border-gray-700 text-xs font-mono font-bold uppercase text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+                      Nama / Nickname Kapten Tim *
+                    </label>
+                    <input
+                      required
+                      type="text"
+                      minLength={2}
+                      value={registerCaptainName}
+                      onChange={(e) => setRegisterCaptainName(e.target.value)}
+                      placeholder="Contoh: Shiroe"
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-[#130921] border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#9D4EDD]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+                      Nomor WhatsApp Kapten (Wajib) *
                     </label>
                     <input
                       required
@@ -3529,21 +3577,23 @@ export function EventsBoard() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                    Akun Discord Perwakilan (Terkunci Otomatis)
-                  </label>
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-[#14101E] border border-gray-300 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-300 font-mono">
-                    <span className="text-purple-400">@</span>
-                    <span className="font-bold">{session?.user?.username || session?.user?.name || "Akun Discord"}</span>
-                    {session?.user?.discordId && (
-                      <span className="text-[10px] text-gray-500">({session.user.discordId})</span>
-                    )}
-                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">
-                      Terverifikasi
-                    </span>
+                {session?.user && (
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 block mb-1">
+                      Akun Discord Perwakilan (Terkoneksi)
+                    </label>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-[#14101E] border border-gray-300 dark:border-gray-700 text-xs text-gray-700 dark:text-gray-300 font-mono">
+                      <span className="text-purple-400">@</span>
+                      <span className="font-bold">{session.user.username || session.user.name || "Akun Member"}</span>
+                      {session.user.discordId && (
+                        <span className="text-[10px] text-gray-500">({session.user.discordId})</span>
+                      )}
+                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                        Terverifikasi
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* BAGIAN B: PEMAIN INTI WAJIB */}

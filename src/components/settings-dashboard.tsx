@@ -42,6 +42,7 @@ import { isGuildOwner } from "@/lib/auth-guard";
 import { getEuropeanNobilityRank } from "@/lib/nobility-ranks";
 import { useLocale, SUPPORTED_LANGUAGES, SUPPORTED_CURRENCIES } from "@/context/locale-context";
 import { FlagIcon } from "@/components/locale-switcher";
+import { openLoginModal } from "@/components/login-modal";
 
 type Achievement = {
   id: string;
@@ -385,17 +386,17 @@ export function SettingsDashboard() {
   if (!session?.user) {
     return (
       <main className="w-full max-w-[600px] mx-auto px-4 py-20 text-center">
-        <div className="p-8 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md">
-          <Shield size={48} className="mx-auto text-[#9D4EDD] mb-4" />
-          <h1 className="text-2xl font-black text-white mb-2">Profil &amp; Pengaturan Akun</h1>
-          <p className="text-sm text-gray-400 mb-6">
-            Masuk dengan akun Discord untuk mengelola profil, lencana, dan preferensi antarmuka LogHorizon.
+        <div className="p-8 rounded-2xl border border-slate-200 dark:border-[#2A1B42] bg-white/80 dark:bg-[#120B1E]/80 backdrop-blur-md shadow-xl">
+          <Shield size={48} className="mx-auto text-[#7C3AED] dark:text-[#9D4EDD] mb-4" />
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Profil &amp; Pengaturan Akun</h1>
+          <p className="text-sm text-slate-600 dark:text-gray-400 mb-6 leading-relaxed">
+            Masuk dengan akun Discord atau Google untuk mengelola profil, lencana, dan preferensi antarmuka LogHorizon.
           </p>
           <button
-            onClick={() => void signIn("discord", { callbackUrl: "/profile" })}
-            className="w-full py-3 px-6 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] font-bold text-white text-sm transition-colors shadow-lg shadow-[#5865F2]/20"
+            onClick={() => openLoginModal("/profile")}
+            className="w-full py-3.5 px-6 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] font-bold text-white text-sm transition-all shadow-lg shadow-[#7C3AED]/25 cursor-pointer"
           >
-            Login dengan Discord
+            Masuk ke LogHorizon
           </button>
         </div>
       </main>
@@ -409,7 +410,7 @@ export function SettingsDashboard() {
     profile?.isPremium ?? session.user.isPremium
   );
 
-  const { locale, setLocale, currency, setCurrency } = useLocale();
+  const { locale, setLocale, currency, setCurrency, t } = useLocale();
   const currentLevel = profile?.level ?? 1;
   const currentXp = profile?.xp ?? 0;
   const xpInLevel = currentXp % 100;
@@ -541,9 +542,22 @@ export function SettingsDashboard() {
                         {nobility.icon} {nobility.name}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 font-mono">
-                      Discord ID: {profile?.discordId ?? "Tidak terhubung"}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-xs text-gray-400 font-mono">
+                        Discord ID: {profile?.discordId ?? "Tidak terhubung"}
+                      </p>
+                      {!profile?.discordId && (
+                        <button
+                          type="button"
+                          onClick={() => void signIn("discord", { callbackUrl: "/profile" })}
+                          className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#5865F2] hover:bg-[#4752C4] text-white transition-colors cursor-pointer inline-flex items-center gap-1 shadow-xs"
+                          title="Tautkan akun Discord untuk sinkronisasi kasta dan role"
+                        >
+                          <span className="text-xs">◉</span>
+                          <span>{t("link_discord_account", "Tautkan Akun Discord")}</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 shrink-0">
                     {profile?.isVerifiedSeller || isGuildOwner(profile) ? (
@@ -888,15 +902,26 @@ export function SettingsDashboard() {
                   Perbarui avatar, username, dan kasta dari akun Discord yang terhubung.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => void syncProfile()}
-                disabled={syncing}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-[#2A1B42] bg-[#1A102E] hover:border-[#7C3AED] text-xs font-bold text-white inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-              >
-                <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
-                <span>{syncing ? "Sinkronisasi…" : "Sync Akun Discord"}</span>
-              </button>
+              {!profile?.discordId ? (
+                <button
+                  type="button"
+                  onClick={() => void signIn("discord", { callbackUrl: "/profile" })}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-xs font-bold text-white inline-flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                >
+                  <span className="text-sm">◉</span>
+                  <span>{t("link_discord_account", "Tautkan Akun Discord")}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void syncProfile()}
+                  disabled={syncing}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-[#2A1B42] bg-[#1A102E] hover:border-[#7C3AED] text-xs font-bold text-white inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+                  <span>{syncing ? "Sinkronisasi…" : "Sync Akun Discord"}</span>
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="p-3 rounded-lg border border-[#2A1B42] bg-[#0A0612]/50">

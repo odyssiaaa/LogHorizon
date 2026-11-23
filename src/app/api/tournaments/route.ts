@@ -17,6 +17,8 @@ export async function GET() {
         select: {
           id: true,
           teamName: true,
+          captainName: true,
+          teamTag: true,
           roster: true,
           paymentStatus: true,
           createdAt: true,
@@ -142,12 +144,16 @@ export async function GET() {
           paymentProof: null,
           rejectionReason: null,
           createdAt: participant.createdAt.toISOString(),
-          leader: {
-            id: participant.leader.id,
-            username: participant.leader.username,
-            discordId: participant.leader.discordId ?? null,
-            name: participant.leader.name,
-          },
+          captainName: participant.captainName ?? participant.leader?.username ?? participant.leader?.name ?? "Kapten Tim",
+          teamTag: participant.teamTag ?? null,
+          leader: participant.leader
+            ? {
+                id: participant.leader.id,
+                username: participant.leader.username,
+                discordId: participant.leader.discordId ?? null,
+                name: participant.leader.name,
+              }
+            : null,
         })),
         bracket: tournament.bracket,
         teams: sanitizedTeams,
