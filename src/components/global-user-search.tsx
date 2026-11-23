@@ -51,6 +51,7 @@ interface GlobalUserSearchProps {
   placeholder?: string;
   onSelectUser?: (user: SearchedMember) => void;
   variant?: "navbar" | "mobile";
+  compactOnLg?: boolean;
 }
 
 export function GlobalUserSearch({
@@ -59,6 +60,7 @@ export function GlobalUserSearch({
   placeholder,
   onSelectUser,
   variant = "navbar",
+  compactOnLg = false,
 }: GlobalUserSearchProps) {
   const router = useRouter();
   const { t } = useLocale();
@@ -68,13 +70,16 @@ export function GlobalUserSearch({
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isLaptopExpanded, setIsLaptopExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setIsLaptopExpanded(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -119,10 +124,12 @@ export function GlobalUserSearch({
       const firstUser = results[0];
       if (firstUser?.username) {
         setIsOpen(false);
+        setIsLaptopExpanded(false);
         router.push(`/u/${firstUser.username}`);
       }
     } else if (e.key === "Escape") {
       setIsOpen(false);
+      setIsLaptopExpanded(false);
     }
   };
 
@@ -130,17 +137,43 @@ export function GlobalUserSearch({
     setQuery("");
     setResults([]);
     setIsOpen(false);
+    setIsLaptopExpanded(false);
   };
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
+      {/* If compactOnLg: show compact button on 1024px-1279px (lg:max-xl) when not expanded */}
+      {compactOnLg && !isLaptopExpanded && (
+        <button
+          type="button"
+          onClick={() => {
+            setIsLaptopExpanded(true);
+            setTimeout(() => inputRef.current?.focus(), 50);
+          }}
+          className="hidden lg:flex xl:hidden size-9 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] items-center justify-center text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white transition-colors shrink-0 shadow-xs"
+          title={resolvedPlaceholder}
+          aria-label={resolvedPlaceholder}
+        >
+          <Search size={15} />
+        </button>
+      )}
+
       {/* Search Input Box */}
-      <div className="relative flex items-center">
+      <div
+        className={`relative items-center ${
+          compactOnLg
+            ? isLaptopExpanded
+              ? "flex fixed top-3 left-4 right-4 sm:absolute sm:top-1/2 sm:-translate-y-1/2 sm:right-0 sm:left-auto sm:w-80 z-50 bg-white dark:bg-[#11091D] p-1.5 rounded-xl shadow-2xl border-2 border-[#7C3AED]"
+              : "hidden xl:flex"
+            : "flex"
+        }`}
+      >
         <Search
           size={14}
           className="absolute left-3 text-slate-400 dark:text-slate-500 pointer-events-none"
         />
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
@@ -158,11 +191,12 @@ export function GlobalUserSearch({
             size={13}
             className="absolute right-2.5 text-[#7C3AED] animate-spin pointer-events-none"
           />
-        ) : query.length > 0 ? (
+        ) : query.length > 0 || isLaptopExpanded ? (
           <button
             type="button"
             onClick={clearSearch}
             className="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white transition"
+            aria-label="Tutup pencarian"
           >
             <X size={13} />
           </button>

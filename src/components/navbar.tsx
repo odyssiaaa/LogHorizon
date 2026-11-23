@@ -11,6 +11,7 @@ import {
   BookOpen,
   ChevronDown,
   Crown,
+  Gamepad2,
   HeartHandshake,
   Home,
   LogOut,
@@ -21,6 +22,7 @@ import {
   Settings,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   Store,
   Sun,
   Swords,
@@ -328,376 +330,388 @@ export function Navbar() {
           scrolled ? "shadow-md shadow-slate-900/5 dark:shadow-xl dark:shadow-black/40" : ""
         }`}
       >
-        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 flex items-center justify-between gap-4">
-          {/* SISI KIRI: Logo & Nama Guild */}
-          <Link href="/" className="flex items-center gap-3 group shrink-0" aria-label="LogHorizon Beranda">
-            <div className="relative size-9 rounded-lg border border-slate-200 dark:border-[#2A1B42] group-hover:border-[#7C3AED] transition-colors bg-slate-100 dark:bg-[#11091D] flex items-center justify-center shadow-sm overflow-hidden">
-              <Image
-                src="/loghorizon-logo.png"
-                alt="LogHorizon Emblem"
-                width={36}
-                height={36}
-                className="object-cover transition-transform group-hover:scale-105"
-                priority
-              />
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="font-display font-bold tracking-wider text-base text-slate-900 dark:text-[#F8FAFC] uppercase">
-                LOG<span className="text-[#7C3AED] dark:text-[#A78BFA]">HORIZON</span>
-              </span>
-            </div>
-          </Link>
-
-          {/* SISI TENGAH: Menu Navigasi 5 Menu Pill Desktop */}
-          <nav
-            className="hidden md:flex desktop-navbar items-center gap-1 p-1 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-slate-100/90 dark:bg-[#11091D]"
-            aria-label="Navigasi Utama Desktop"
-          >
-            {/* 1. HOME */}
-            <Link
-              href="/"
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
-                isHomeActive
-                  ? "bg-[#7C3AED] text-white"
-                  : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
-              }`}
-            >
-              {t("nav_home", "Home")}
+        <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-6 flex items-center justify-between gap-2">
+          {/* SISI KIRI: Logo & Menu Utama */}
+          <div className="flex items-center gap-2 xl:gap-3 shrink-0">
+            <Link href="/" className="flex items-center gap-2.5 group shrink-0" aria-label="LogHorizon Beranda">
+              <div className="relative size-8 sm:size-9 rounded-lg border border-slate-200 dark:border-[#2A1B42] group-hover:border-[#7C3AED] transition-colors bg-slate-100 dark:bg-[#11091D] flex items-center justify-center shadow-sm overflow-hidden">
+                <Image
+                  src="/loghorizon-logo.png"
+                  alt="LogHorizon Emblem"
+                  width={36}
+                  height={36}
+                  className="object-cover transition-transform group-hover:scale-105"
+                  priority
+                />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="font-display font-bold tracking-wider text-sm sm:text-base text-slate-900 dark:text-[#F8FAFC] uppercase whitespace-nowrap">
+                  LOG<span className="text-[#7C3AED] dark:text-[#A78BFA]">HORIZON</span>
+                </span>
+              </div>
             </Link>
 
-            {/* 2. KOMUNITAS DROPDOWN */}
-            <div
-              className="relative shrink-0"
-              onMouseEnter={() => handleMouseEnter("komunitas")}
-              onMouseLeave={handleMouseLeave}
+            {/* Menu Navigasi 6 Menu Pill Desktop */}
+            <nav
+              className="hidden lg:flex desktop-navbar items-center gap-1 xl:gap-1.5 p-1 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-slate-100/90 dark:bg-[#11091D] shrink-0"
+              aria-label="Navigasi Utama Desktop"
             >
-              <button
-                type="button"
-                onClick={() => setActiveMenu(activeMenu === "komunitas" ? null : "komunitas")}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
-                  isKomunitasActive || activeMenu === "komunitas"
+              {/* 1. HOME */}
+              <Link
+                href="/"
+                className={`px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                  isHomeActive
                     ? "bg-[#7C3AED] text-white"
                     : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                 }`}
               >
-                <span className="whitespace-nowrap">{t("nav_community", "Komunitas")}</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 shrink-0 ${activeMenu === "komunitas" ? "rotate-180" : "opacity-70"}`} />
-              </button>
+                {t("nav_home", "Home")}
+              </Link>
 
-              <AnimatePresence>
-                {activeMenu === "komunitas" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-xl dark:shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
-                  >
-                    {navGroups[0].items.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setActiveMenu(null)}
-                        className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
-                      >
-                        <div className="size-8 rounded-md bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
-                          <item.icon size={15} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-[#A78BFA] transition-colors">
-                            {t(item.label)}
-                          </p>
-                          <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
-                            {t(item.desc)}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+              {/* 2. KOMUNITAS DROPDOWN */}
+              <div
+                className="relative shrink-0"
+                onMouseEnter={() => handleMouseEnter("komunitas")}
+                onMouseLeave={handleMouseLeave}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActiveMenu(activeMenu === "komunitas" ? null : "komunitas")}
+                  className={`flex items-center gap-1 px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                    isKomunitasActive || activeMenu === "komunitas"
+                      ? "bg-[#7C3AED] text-white"
+                      : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
+                  }`}
+                >
+                  <span className="whitespace-nowrap">{t("nav_community", "Komunitas")}</span>
+                  <ChevronDown size={12} className={`transition-transform duration-200 shrink-0 ${activeMenu === "komunitas" ? "rotate-180" : "opacity-70"}`} />
+                </button>
 
-            {/* 3. ARENA & MABAR DROPDOWN */}
-            <div
-              className="relative shrink-0"
-              onMouseEnter={() => handleMouseEnter("arena")}
-              onMouseLeave={handleMouseLeave}
-            >
-              <button
-                type="button"
-                onClick={() => setActiveMenu(activeMenu === "arena" ? null : "arena")}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
-                  isArenaActive || activeMenu === "arena"
+                <AnimatePresence>
+                  {activeMenu === "komunitas" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-xl dark:shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
+                    >
+                      {navGroups[0].items.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setActiveMenu(null)}
+                          className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
+                        >
+                          <div className="size-8 rounded-md bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
+                            <item.icon size={15} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-[#A78BFA] transition-colors">
+                              {t(item.label)}
+                            </p>
+                            <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
+                              {t(item.desc)}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* 3. ARENA & MABAR DROPDOWN */}
+              <div
+                className="relative shrink-0"
+                onMouseEnter={() => handleMouseEnter("arena")}
+                onMouseLeave={handleMouseLeave}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActiveMenu(activeMenu === "arena" ? null : "arena")}
+                  className={`flex items-center gap-1 px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                    isArenaActive || activeMenu === "arena"
+                      ? "bg-[#7C3AED] text-white"
+                      : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
+                  }`}
+                >
+                  <span className="whitespace-nowrap">{t("nav_arena", "Arena & Mabar")}</span>
+                  <ChevronDown size={12} className={`transition-transform duration-200 shrink-0 ${activeMenu === "arena" ? "rotate-180" : "opacity-70"}`} />
+                </button>
+
+                <AnimatePresence>
+                  {activeMenu === "arena" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-xl dark:shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
+                    >
+                      {navGroups[1].items.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setActiveMenu(null)}
+                          className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
+                        >
+                          <div className="size-8 rounded-md bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
+                            <item.icon size={15} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-[#A78BFA] transition-colors">
+                              {t(item.label)}
+                            </p>
+                            <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
+                              {t(item.desc)}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* 4. MARKETPLACE */}
+              <Link
+                href="/marketplace"
+                className={`px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                  isMarketplaceActive
                     ? "bg-[#7C3AED] text-white"
                     : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                 }`}
               >
-                <span className="whitespace-nowrap">{t("nav_arena", "Arena & Mabar")}</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 shrink-0 ${activeMenu === "arena" ? "rotate-180" : "opacity-70"}`} />
-              </button>
+                {t("nav_marketplace", "Marketplace")}
+              </Link>
 
-              <AnimatePresence>
-                {activeMenu === "arena" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-xl dark:shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
-                  >
-                    {navGroups[1].items.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setActiveMenu(null)}
-                        className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
-                      >
-                        <div className="size-8 rounded-md bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
-                          <item.icon size={15} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-[#A78BFA] transition-colors">
-                            {t(item.label)}
-                          </p>
-                          <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
-                            {t(item.desc)}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+              {/* 5. GUILD DROPDOWN */}
+              <div
+                className="relative shrink-0"
+                onMouseEnter={() => handleMouseEnter("guild")}
+                onMouseLeave={handleMouseLeave}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActiveMenu(activeMenu === "guild" ? null : "guild")}
+                  className={`flex items-center gap-1 px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                    isGuildActive || activeMenu === "guild"
+                      ? "bg-[#7C3AED] text-white"
+                      : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
+                  }`}
+                >
+                  <span className="whitespace-nowrap">{t("nav_guild", "Guild")}</span>
+                  <ChevronDown size={12} className={`transition-transform duration-200 shrink-0 ${activeMenu === "guild" ? "rotate-180" : "opacity-70"}`} />
+                </button>
 
-            {/* 4. MARKETPLACE */}
-            <Link
-              href="/marketplace"
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
-                isMarketplaceActive
-                  ? "bg-[#7C3AED] text-white"
-                  : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
-              }`}
-            >
-              {t("nav_marketplace", "Marketplace")}
-            </Link>
+                <AnimatePresence>
+                  {activeMenu === "guild" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-xl dark:shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
+                    >
+                      {navGroups[2].items.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setActiveMenu(null)}
+                          className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
+                        >
+                          <div className="size-8 rounded-md bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
+                            <item.icon size={15} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-[#A78BFA] transition-colors">
+                              {t(item.label)}
+                            </p>
+                            <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
+                              {t(item.desc)}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-            {/* 5. GUILD DROPDOWN */}
-            <div
-              className="relative shrink-0"
-              onMouseEnter={() => handleMouseEnter("guild")}
-              onMouseLeave={handleMouseLeave}
-            >
-              <button
-                type="button"
-                onClick={() => setActiveMenu(activeMenu === "guild" ? null : "guild")}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
-                  isGuildActive || activeMenu === "guild"
+              {/* 6. PENJARA & BURONAN */}
+              <Link
+                href="/dungeon"
+                className={`px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                  pathname.startsWith("/dungeon")
                     ? "bg-[#7C3AED] text-white"
                     : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
                 }`}
               >
-                <span className="whitespace-nowrap">{t("nav_guild", "Guild")}</span>
-                <ChevronDown size={13} className={`transition-transform duration-200 shrink-0 ${activeMenu === "guild" ? "rotate-180" : "opacity-70"}`} />
-              </button>
+                {t("Penjara & Buronan", "Dungeon & Wanted")}
+              </Link>
+            </nav>
+          </div>
 
-              <AnimatePresence>
-                {activeMenu === "guild" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] shadow-xl dark:shadow-2xl z-50 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 p-1.5"
-                  >
-                    {navGroups[2].items.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setActiveMenu(null)}
-                        className="flex items-start gap-3 p-2.5 rounded-md text-left transition-colors hover:bg-slate-50 dark:hover:bg-[#1A0F2E] group/item"
-                      >
-                        <div className="size-8 rounded-md bg-slate-100 dark:bg-[#1A0F2E] border border-slate-200 dark:border-[#2A1B42] text-[#7C3AED] dark:text-[#A78BFA] flex items-center justify-center shrink-0 mt-0.5 group-hover/item:border-[#7C3AED] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-white transition-colors">
-                          <item.icon size={15} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] group-hover/item:text-[#7C3AED] dark:group-hover/item:text-[#A78BFA] transition-colors">
-                            {t(item.label)}
-                          </p>
-                          <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-snug line-clamp-1 mt-0.5">
-                            {t(item.desc)}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+          {/* SISI KANAN: Aksi Desktop & Hamburger Mobile (Wajib Selalu Tampil Penuh shrink-0) */}
+          <div className="shrink-0 flex items-center gap-1.5 xl:gap-2">
+            {/* Global Member Search Desktop (Ikon klikable di 1024-1280px, Input penuh di >= 1280px) */}
+            <GlobalUserSearch
+              compactOnLg
+              className="shrink w-auto xl:w-48"
+              placeholder={t("Cari petualang...", "Search Adventurers...")}
+            />
 
-            {/* 6. PENJARA & BURONAN */}
-            <Link
-              href="/dungeon"
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
-                pathname.startsWith("/dungeon")
-                  ? "bg-[#7C3AED] text-white"
-                  : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#1A0F2E]"
-              }`}
-            >
-              {t("Penjara & Buronan", "Dungeon & Wanted")}
-            </Link>
-          </nav>
-
-          {/* SISI KANAN: Aksi Desktop & Hamburger Mobile */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Global Member Search Desktop */}
-            <GlobalUserSearch className="hidden lg:block w-40 xl:w-56 shrink-0" placeholder={t("Cari petualang...", "Search Adventurers...")} />
-
-            {/* Theme Toggle Component */}
+            {/* 1. Tombol Tema */}
             <ThemeToggle />
-            <div className="hidden sm:block">
+
+            {/* 2. Pil Bahasa Kompak */}
+            <div className="hidden sm:block shrink-0">
               <LocaleSwitcher />
             </div>
 
-            {/* Aksi Khusus Desktop (Pesan, Lonceng Notifikasi & Profil) */}
-            <div className="hidden md:flex desktop-navbar items-center gap-2">
+            {/* Aksi Khusus Desktop (Pesan, Lonceng Notifikasi & Profil) - WAJIB SELALU TAMPIL PENUH */}
+            <div className="hidden md:flex desktop-navbar items-center gap-1.5 xl:gap-2 shrink-0">
+              {/* 3. Ikon Chat / Messages */}
+              <Link
+                href="/messages"
+                className="relative size-9 sm:size-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white flex items-center justify-center shrink-0 shadow-xs"
+                title="Pesan &amp; Obrolan Komunitas"
+                aria-label="Pesan &amp; Obrolan Komunitas"
+              >
+                <MessageSquare size={16} />
+                {unreadMessages > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-[#7C3AED] text-white rounded-full text-[9px] font-mono font-bold flex items-center justify-center shadow-xs">
+                    {unreadMessages > 9 ? "9+" : unreadMessages}
+                  </span>
+                )}
+              </Link>
+
+              {/* 4. Ikon Lonceng Notifikasi */}
+              <NotificationBell />
+
+              {/* 5. Avatar Profil + Username (atau tombol Masuk) */}
               {status === "loading" ? (
-                <div className="h-10 w-24 rounded-lg bg-slate-100 dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] animate-pulse" />
+                <div className="h-9 sm:h-10 w-24 rounded-lg bg-slate-100 dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] animate-pulse" />
               ) : user ? (
-                <div className="flex items-center gap-2">
-                  <Link
-                    href="/messages"
-                    className="relative w-10 h-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white flex items-center justify-center shrink-0 shadow-sm dark:shadow-none"
-                    title="Pesan &amp; Obrolan Komunitas"
+                <div className="relative shrink-0" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setDropdownOpen((prev) => !prev)}
+                    className="relative h-9 sm:h-10 px-2.5 sm:px-3 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors flex items-center gap-2 font-mono text-xs text-slate-900 dark:text-[#F8FAFC] shadow-xs shrink-0 select-none"
+                    aria-expanded={dropdownOpen}
+                    aria-label="Menu profil pengguna"
                   >
-                    <MessageSquare size={16} />
-                    {unreadMessages > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-[#7C3AED] text-white rounded-full text-[9px] font-mono font-bold flex items-center justify-center">
-                        {unreadMessages > 9 ? "9+" : unreadMessages}
-                      </span>
-                    )}
-                  </Link>
-                  <NotificationBell />
-                  <div className="relative" ref={dropdownRef}>
-                    <button
-                      type="button"
-                      onClick={() => setDropdownOpen((prev) => !prev)}
-                      className="relative h-10 px-3 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] hover:border-[#7C3AED] transition-colors flex items-center gap-2 font-mono text-xs text-slate-900 dark:text-[#F8FAFC] shadow-sm dark:shadow-none"
-                      aria-expanded={dropdownOpen}
-                      aria-label="Menu profil pengguna"
-                    >
-                      <div className="relative size-6 rounded-md border border-[#7C3AED]/40 bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center overflow-hidden">
-                        {user.avatar ? (
-                          <Image src={user.avatar} alt={user.username ?? "User"} fill className="object-cover" unoptimized />
-                        ) : (
-                          <span className="text-[10px] font-bold text-[#7C3AED] dark:text-[#A78BFA]">
-                            {(user.username ?? user.name ?? "G").slice(0, 1).toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-xs font-semibold max-w-[100px] truncate">
-                        {user.username ?? user.name ?? "Gamer"}
-                      </span>
-                      <span className="size-2 rounded-full bg-[#10B981] shrink-0" title="Online" />
-                      <ChevronDown size={13} className="text-slate-400 dark:text-[#A78BFA]" />
-                      {(isStaff || isOwner) && adminPendingCount > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                    <div className="relative size-6 rounded-md border border-[#7C3AED]/40 bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center overflow-hidden shrink-0">
+                      {user.avatar ? (
+                        <Image src={user.avatar} alt={user.username ?? "User"} fill className="object-cover" unoptimized />
+                      ) : (
+                        <span className="text-[10px] font-bold text-[#7C3AED] dark:text-[#A78BFA]">
+                          {(user.username ?? user.name ?? "G").slice(0, 1).toUpperCase()}
                         </span>
                       )}
-                    </button>
+                    </div>
+                    <span className="text-xs font-semibold max-w-[90px] xl:max-w-[120px] truncate">
+                      {user.username ?? user.name ?? "Gamer"}
+                    </span>
+                    <span className="size-2 rounded-full bg-[#10B981] shrink-0" title="Online" />
+                    <ChevronDown size={13} className="text-slate-400 dark:text-[#A78BFA] shrink-0" />
+                    {(isStaff || isOwner) && adminPendingCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                      </span>
+                    )}
+                  </button>
 
-                    <AnimatePresence>
-                      {dropdownOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 6, scale: 0.98 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute right-0 mt-2 w-56 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] p-2 shadow-xl dark:shadow-2xl z-50 space-y-1 divide-y divide-slate-100 dark:divide-[#2A1B42]/60"
-                          role="menu"
-                        >
-                          <div className="px-3 py-2 pb-2.5">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] truncate">
-                                {user.username ?? user.name ?? "Gamer"}
-                              </span>
-                              {isOwner && <Crown size={12} className="text-amber-500 shrink-0" />}
-                            </div>
-                            <div className="flex items-center justify-between mt-1">
-                              <p className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]">
-                                {isOwner
-                                  ? "👑 Emperor"
-                                  : user.role === "ADMIN"
-                                    ? "✨ Prince / Princess"
-                                    : user.role === "MODERATOR"
-                                      ? "⚔️ Lord Commander"
-                                      : "🎮 Adventurer"}
-                              </p>
-                              <span className="text-[10px] font-mono px-1.5 py-0.2 bg-slate-100 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2A1B42] text-emerald-600 dark:text-[#10B981] font-bold rounded">
-                                Lv. {user.level ?? 1}
-                              </span>
-                            </div>
+                  <AnimatePresence>
+                    {dropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] p-2 shadow-2xl z-50 space-y-1 divide-y divide-slate-100 dark:divide-[#2A1B42]/60 select-none"
+                        role="menu"
+                      >
+                        <div className="px-3 py-2 pb-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-900 dark:text-[#F8FAFC] truncate">
+                              {user.username ?? user.name ?? "Gamer"}
+                            </span>
+                            {isOwner && <Crown size={12} className="text-amber-500 shrink-0" />}
                           </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <p className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]">
+                              {isOwner
+                                ? "👑 Emperor"
+                                : user.role === "ADMIN"
+                                  ? "✨ Prince / Princess"
+                                  : user.role === "MODERATOR"
+                                    ? "⚔️ Lord Commander"
+                                    : "🎮 Adventurer"}
+                            </p>
+                            <span className="text-[10px] font-mono px-1.5 py-0.2 bg-slate-100 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2A1B42] text-emerald-600 dark:text-[#10B981] font-bold rounded">
+                              Lv. {user.level ?? 1}
+                            </span>
+                          </div>
+                        </div>
 
-                          <div className="py-1 pt-1.5 space-y-0.5">
-                            {(isStaff || isOwner) && (
-                              <Link
-                                href="/admin"
-                                onClick={() => setDropdownOpen(false)}
-                                className="flex items-center justify-between px-3 py-2 rounded-md text-xs font-mono font-semibold text-slate-700 dark:text-[#A78BFA] hover:text-[#7C3AED] dark:hover:text-[#F8FAFC] hover:bg-slate-50 dark:hover:bg-[#1A0E2E] transition-colors group"
-                                role="menuitem"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <ShieldAlert size={14} className="shrink-0 text-[#7C3AED] dark:text-[#C4B5FD] group-hover:scale-110 transition-transform" />
-                                  <span>Dashboard Admin</span>
-                                </div>
-                                {adminPendingCount > 0 ? (
-                                  <span className="flex items-center gap-1">
-                                    <span className="relative flex h-2 w-2">
-                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-                                    </span>
-                                    <span className="px-1.5 py-0.5 bg-rose-500 text-white rounded text-[10px] font-mono font-bold leading-none">
-                                      {adminPendingCount}
-                                    </span>
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 font-mono">Akses ➔</span>
-                                )}
-                              </Link>
-                            )}
+                        <div className="py-1 pt-1.5 space-y-0.5">
+                          {(isStaff || isOwner) && (
                             <Link
-                              href="/profile"
+                              href="/admin"
                               onClick={() => setDropdownOpen(false)}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono text-slate-700 dark:text-[#F8FAFC] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] hover:bg-slate-50 dark:hover:bg-[#1A0E2E] transition-colors"
+                              className="flex items-center justify-between px-3 py-2 rounded-md text-xs font-mono font-semibold text-slate-700 dark:text-[#A78BFA] hover:text-[#7C3AED] dark:hover:text-[#F8FAFC] hover:bg-slate-50 dark:hover:bg-[#1A0E2E] transition-colors group"
                               role="menuitem"
                             >
-                              <Settings size={14} className="shrink-0 text-[#7C3AED] dark:text-[#A78BFA]" />
-                              <span>Profil &amp; Pengaturan</span>
+                              <div className="flex items-center gap-2">
+                                <ShieldAlert size={14} className="shrink-0 text-[#7C3AED] dark:text-[#C4B5FD] group-hover:scale-110 transition-transform" />
+                                <span>Dashboard Admin</span>
+                              </div>
+                              {adminPendingCount > 0 ? (
+                                <span className="flex items-center gap-1">
+                                  <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                                  </span>
+                                  <span className="px-1.5 py-0.5 bg-rose-500 text-white rounded text-[10px] font-mono font-bold leading-none">
+                                    {adminPendingCount}
+                                  </span>
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 font-mono">Akses ➔</span>
+                              )}
                             </Link>
-                          </div>
+                          )}
+                          <Link
+                            href="/profile"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono text-slate-700 dark:text-[#F8FAFC] hover:text-[#7C3AED] dark:hover:text-[#A78BFA] hover:bg-slate-50 dark:hover:bg-[#1A0E2E] transition-colors"
+                            role="menuitem"
+                          >
+                            <Settings size={14} className="shrink-0 text-[#7C3AED] dark:text-[#A78BFA]" />
+                            <span>Profil &amp; Pengaturan</span>
+                          </Link>
+                        </div>
 
-                          <div className="pt-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setDropdownOpen(false);
-                                void signOut();
-                              }}
-                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
-                              role="menuitem"
-                            >
-                              <LogOut size={14} className="shrink-0" />
-                              <span>Sign Out</span>
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDropdownOpen(false);
+                              void signOut();
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-mono text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                            role="menuitem"
+                          >
+                            <LogOut size={14} className="shrink-0" />
+                            <span>Sign Out</span>
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               ) : (
                 <motion.button
@@ -705,20 +719,20 @@ export function Navbar() {
                   whileTap={{ scale: 0.98 }}
                   type="button"
                   onClick={() => void signIn("discord")}
-                  className="inline-flex items-center gap-2 px-4 h-10 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition-all border border-[#5865F2] shrink-0"
+                  className="inline-flex items-center gap-2 px-3 sm:px-4 h-9 sm:h-10 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition-all border border-[#5865F2] shrink-0"
                 >
                   <span className="text-sm leading-none">◉</span>
-                  <span>Connect Discord</span>
+                  <span className="whitespace-nowrap">Connect Discord</span>
                 </motion.button>
               )}
             </div>
 
-            {/* Mobile Actions (Pesan, Notifikasi & Hamburger Menu) */}
-            <div className="flex md:hidden items-center gap-1.5">
+            {/* Mobile Actions (Pesan, Notifikasi & Hamburger Menu pada < md) */}
+            <div className="flex md:hidden items-center gap-1.5 shrink-0">
               {user ? (
                 <Link
                   href="/messages"
-                  className="relative w-10 h-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white flex items-center justify-center hover:border-[#7C3AED] transition-colors shrink-0 shadow-sm dark:shadow-none"
+                  className="relative size-9 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white flex items-center justify-center hover:border-[#7C3AED] transition-colors shrink-0 shadow-xs"
                   aria-label="Pesan &amp; Obrolan Komunitas"
                 >
                   <MessageSquare size={16} />
@@ -732,7 +746,7 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => void signIn("discord")}
-                  className="px-2.5 h-10 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-[11px] font-mono font-bold border border-[#5865F2] shrink-0"
+                  className="px-2.5 h-9 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-[11px] font-mono font-bold border border-[#5865F2] shrink-0"
                 >
                   Masuk
                 </button>
@@ -743,7 +757,7 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="mobile-only w-10 h-10 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] text-slate-700 dark:text-[#F8FAFC] flex items-center justify-center hover:border-[#7C3AED] transition-colors shrink-0 shadow-sm dark:shadow-none"
+                className="size-9 rounded-lg border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] text-slate-700 dark:text-[#F8FAFC] flex items-center justify-center hover:border-[#7C3AED] transition-colors shrink-0 shadow-xs cursor-pointer"
                 aria-label="Buka menu navigasi"
                 aria-expanded={mobileOpen}
               >
@@ -755,33 +769,37 @@ export function Navbar() {
       </header>
 
       {/* ========================================================================= */}
-      {/* 2. TAMPILAN MOBILE: OFFCANVAS SLIDEBAR MENU (Brutalism Accordion)          */}
+      {/* 2. TAMPILAN MOBILE & TABLET: OFFCANVAS SLIDEBAR MENU MODERN & SOLID        */}
       {/* ========================================================================= */}
       <AnimatePresence>
         {mobileOpen && (
           <>
+            {/* Backdrop Gelap Anti-Tembus */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 md:hidden mobile-only"
+              className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 md:hidden"
               aria-hidden="true"
             />
 
+            {/* Slidebar Modern Solid */}
             <motion.aside
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] bg-white dark:bg-[#09040F] border-l border-slate-200 dark:border-[#2E1E45] p-5 flex flex-col justify-between shadow-2xl md:hidden mobile-slidebar overflow-y-auto rounded-none"
+              className="fixed inset-y-0 right-0 z-50 w-84 sm:w-96 max-w-[90vw] bg-white dark:bg-[#0B0614] border-l border-slate-200 dark:border-[#7C3AED]/40 flex flex-col justify-between shadow-2xl md:hidden overflow-y-auto select-none"
               aria-label="Menu navigasi mobile"
             >
-              <div>
-                <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-[#2E1E45]">
+              {/* Konten Atas & Tengah */}
+              <div className="p-4 sm:p-5 space-y-4">
+                {/* Header Laci: Logo + Tutup */}
+                <div className="flex items-center justify-between pb-3.5 border-b border-slate-200 dark:border-[#2E1E45]">
                   <div className="flex items-center gap-2.5">
-                    <div className="relative size-8 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-100 dark:bg-[#130921] flex items-center justify-center overflow-hidden">
+                    <div className="relative size-8 rounded-lg border border-slate-200 dark:border-[#2E1E45] bg-slate-100 dark:bg-[#130921] flex items-center justify-center overflow-hidden">
                       <Image src="/loghorizon-logo.png" alt="LogHorizon" fill className="object-cover" />
                     </div>
                     <span className="font-display font-bold text-sm text-slate-900 dark:text-[#F8FAFC] tracking-wider uppercase">
@@ -792,20 +810,85 @@ export function Navbar() {
                   <button
                     type="button"
                     onClick={() => setMobileOpen(false)}
-                    className="size-8 rounded-none border border-slate-200 dark:border-[#2E1E45] text-slate-500 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] flex items-center justify-center transition"
+                    className="size-8 rounded-lg border border-slate-200 dark:border-[#2E1E45] text-slate-500 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:border-[#7C3AED] flex items-center justify-center transition cursor-pointer"
                     aria-label="Tutup menu navigasi"
                   >
                     <X size={16} />
                   </button>
                 </div>
 
-                {/* Switcher Bahasa & Mata Uang Mobile */}
-                <div className="mt-3">
-                  <LocaleSwitcher isMobileDrawer />
-                </div>
+                {/* Kartu Profil Mini di Bagian Paling Atas Slidebar */}
+                {user ? (
+                  <div className="p-3.5 rounded-xl border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#130921] shadow-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="relative size-11 rounded-xl border-2 border-[#7C3AED] bg-slate-100 dark:bg-[#1A0E2E] shrink-0 overflow-hidden shadow-sm">
+                        {user.avatar ? (
+                          <Image src={user.avatar} alt={user.username ?? "User"} fill className="object-cover" unoptimized />
+                        ) : (
+                          <span className="grid place-items-center h-full text-sm font-bold text-[#7C3AED] dark:text-[#A78BFA]">
+                            {(user.username ?? user.name ?? "G").slice(0, 1).toUpperCase()}
+                          </span>
+                        )}
+                        {isOwner && (
+                          <span className="absolute bottom-0 right-0 size-3.5 bg-amber-400 border border-black flex items-center justify-center rounded-tl-sm">
+                            <Crown size={9} className="text-black" />
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 font-mono">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-bold text-sm text-slate-900 dark:text-[#F8FAFC] truncate">
+                            {user.username ?? user.name ?? "Gamer"}
+                          </p>
+                          <span className="size-2 rounded-full bg-[#10B981] shrink-0" title="Online" />
+                          {isOwner && <Crown size={12} className="text-amber-500 shrink-0" />}
+                        </div>
+                        <p className="text-[11px] text-[#7C3AED] dark:text-[#A78BFA] font-semibold">
+                          {isOwner
+                            ? "👑 Emperor"
+                            : user.role === "ADMIN"
+                              ? "✨ Prince / Princess"
+                              : user.role === "MODERATOR"
+                                ? "⚔️ Lord Commander"
+                                : "🎮 Adventurer"}
+                        </p>
+                        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+                          <span className="px-1.5 py-0.2 bg-[#7C3AED]/15 border border-[#7C3AED]/30 text-[#7C3AED] dark:text-[#C4B5FD] font-bold rounded">
+                            Lv. {user.level ?? 1}
+                          </span>
+                          <span>•</span>
+                          <span>{user.xp ?? 0} XP</span>
+                        </div>
+                      </div>
+                    </div>
 
-                {/* Global Member Search Mobile */}
-                <div className="mt-3">
+                    <Link
+                      href="/profile"
+                      onClick={() => setMobileOpen(false)}
+                      className="mt-3 w-full h-9 rounded-lg border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#1A0E2E] hover:border-[#7C3AED] flex items-center justify-center gap-2 text-xs font-mono font-bold text-slate-800 dark:text-[#F8FAFC] transition shadow-xs"
+                    >
+                      <Settings size={14} className="text-[#7C3AED] dark:text-[#A78BFA]" />
+                      <span>Profil &amp; Pengaturan</span>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-xl border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#130921]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileOpen(false);
+                        void signIn("discord");
+                      }}
+                      className="w-full h-11 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition flex items-center justify-center gap-2.5 shadow-md border border-[#5865F2]"
+                    >
+                      <span className="text-base leading-none">◉</span>
+                      <span>Login dengan Discord</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Pencarian Cepat Mobile */}
+                <div>
                   <GlobalUserSearch
                     variant="mobile"
                     placeholder={t("Cari petualang...", "Search Adventurers...")}
@@ -816,234 +899,328 @@ export function Navbar() {
                 {/* Banner Pasang PWA di Layar Utama HP */}
                 <PwaInstallBanner isDrawer />
 
-                {/* Kartu Info User Mobile */}
-                {user ? (
-                  <div className="mt-4 p-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#130921]">
-                    <div className="flex items-center gap-3">
-                      <div className="relative size-10 rounded-none border border-[#7C3AED]/60 bg-slate-100 dark:bg-[#1A0E2E] shrink-0 overflow-hidden">
-                        {user.avatar ? (
-                          <Image src={user.avatar} alt={user.username ?? "User"} fill className="object-cover" unoptimized />
-                        ) : (
-                          <span className="grid place-items-center h-full text-xs font-bold text-[#7C3AED] dark:text-[#A78BFA]">
-                            {(user.username ?? user.name ?? "G").slice(0, 1).toUpperCase()}
-                          </span>
-                        )}
-                        {isOwner && (
-                          <span className="absolute bottom-0 right-0 size-3 bg-amber-400 border border-black flex items-center justify-center">
-                            <Crown size={8} className="text-black" />
-                          </span>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1 font-mono">
-                        <div className="flex items-center gap-1.5">
-                          <p className="font-bold text-sm text-slate-900 dark:text-[#F8FAFC] truncate">
-                            {user.username ?? user.name ?? "Gamer"}
-                          </p>
-                          <span className="size-2 rounded-full bg-[#10B981] shrink-0" />
-                          {isOwner && <Crown size={12} className="text-amber-500 shrink-0" />}
-                        </div>
-                        <p className="text-[11px] text-slate-500 dark:text-[#A78BFA]">
-                          {isOwner
-                            ? "👑 Emperor"
-                            : user.role === "ADMIN"
-                              ? "✨ Prince / Princess"
-                              : user.role === "MODERATOR"
-                                ? "⚔️ Lord Commander"
-                                : "🎮 Adventurer"}
-                        </p>
-                        <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-[#A78BFA]">
-                          <span className="px-1.5 py-0.2 bg-slate-100 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45] text-emerald-600 dark:text-[#10B981] font-bold">
-                            Lv. {user.level ?? 1}
-                          </span>
-                          <span>•</span>
-                          <span>{user.xp ?? 0} XP</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Link
-                      href="/messages"
-                      onClick={() => setMobileOpen(false)}
-                      className="mt-2.5 flex items-center justify-between p-2.5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#1A0E2E] text-xs font-mono font-bold text-slate-900 dark:text-[#F8FAFC] hover:border-[#7C3AED] transition"
-                    >
-                      <div className="flex items-center gap-2">
-                        <MessageSquare size={14} className="text-[#7C3AED] dark:text-[#A78BFA]" />
-                        <span>Pesan &amp; Obrolan Komunitas</span>
-                      </div>
-                      {unreadMessages > 0 ? (
-                        <span className="px-1.5 py-0.5 rounded-none text-[10px] font-bold bg-[#7C3AED] text-white">
-                          {unreadMessages} baru
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-[#7C3AED] dark:text-[#A78BFA]">Buka ➔</span>
-                      )}
-                    </Link>
-
-                    {(isStaff || isOwner) && (
+                {/* ================================================================= */}
+                {/* 3 KELOMPOK MENU BERJARAK LEGA (EYE-CATCHING & ANTI-PUSING)         */}
+                {/* ================================================================= */}
+                <nav className="space-y-4 pt-1" aria-label="Navigasi Menu Mobile">
+                  {/* KELOMPOK 1: ⚔️ ARENA & KOMUNITAS */}
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-mono font-bold text-slate-400 dark:text-[#A78BFA] tracking-wider uppercase px-1">
+                      ⚔️ Arena &amp; Komunitas
+                    </p>
+                    <div className="space-y-1">
                       <Link
-                        href="/admin"
+                        href="/"
                         onClick={() => setMobileOpen(false)}
-                        className="mt-2 flex items-center justify-between p-2.5 rounded-none border border-[#7C3AED] bg-[#7C3AED]/15 text-xs font-mono font-bold text-[#7C3AED] dark:text-[#C4B5FD] hover:bg-[#7C3AED] hover:text-white transition"
+                        className={`h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border ${
+                          isHomeActive
+                            ? "border-[#7C3AED] bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#F8FAFC] font-bold"
+                            : "border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                        }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <ShieldAlert size={14} className="text-[#7C3AED] dark:text-[#A78BFA]" />
-                          <span>ADMIN COMMAND CENTER</span>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <Home size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Beranda</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Halaman utama &amp; feed guild</span>
+                          </div>
                         </div>
-                        {adminPendingCount > 0 ? (
-                          <span className="px-1.5 py-0.5 rounded-none text-[10px] font-bold bg-rose-500 text-white animate-pulse">
-                            {adminPendingCount} Pending
-                          </span>
-                        ) : (
-                          <span className="text-[10px]">Akses ➔</span>
-                        )}
+                        {isHomeActive && <span className="size-2 rounded-full bg-[#7C3AED] shrink-0" />}
                       </Link>
-                    )}
+
+                      <Link
+                        href="/forum"
+                        onClick={() => setMobileOpen(false)}
+                        className={`h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border ${
+                          pathname.startsWith("/forum")
+                            ? "border-[#7C3AED] bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#F8FAFC] font-bold"
+                            : "border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <MessageSquare size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Forum Diskusi</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Diskusi umum &amp; klip komunitas</span>
+                          </div>
+                        </div>
+                        {pathname.startsWith("/forum") && <span className="size-2 rounded-full bg-[#7C3AED] shrink-0" />}
+                      </Link>
+
+                      <Link
+                        href="/events?view=turnamen"
+                        onClick={() => setMobileOpen(false)}
+                        className={`h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border ${
+                          pathname === "/events" && (pathname.includes("view=turnamen") || !pathname.includes("view="))
+                            ? "border-[#7C3AED] bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#F8FAFC] font-bold"
+                            : "border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <Trophy size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Turnamen &amp; Bagan</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Kompetisi resmi &amp; bracket live</span>
+                          </div>
+                        </div>
+                      </Link>
+
+                      <Link
+                        href="/events?view=mabar"
+                        onClick={() => setMobileOpen(false)}
+                        className="h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <Gamepad2 size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Cari Teman Mabar (LFG)</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Party mabar on-demand</span>
+                          </div>
+                        </div>
+                      </Link>
+
+                      <Link
+                        href="/events?view=party"
+                        onClick={() => setMobileOpen(false)}
+                        className="h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <Users size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Guild Party / Squad</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Tim &amp; skuad petualang</span>
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
                   </div>
-                ) : (
-                  <div className="mt-4">
+
+                  {/* KELOMPOK 2: 🛡️ EKONOMI & KEAMANAN */}
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-mono font-bold text-slate-400 dark:text-[#A78BFA] tracking-wider uppercase px-1">
+                      🛡️ Ekonomi &amp; Keamanan
+                    </p>
+                    <div className="space-y-1">
+                      <Link
+                        href="/marketplace"
+                        onClick={() => setMobileOpen(false)}
+                        className={`h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border ${
+                          isMarketplaceActive
+                            ? "border-[#7C3AED] bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#F8FAFC] font-bold"
+                            : "border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <Store size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Marketplace &amp; Rekber</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Jual beli akun &amp; item aman</span>
+                          </div>
+                        </div>
+                        {isMarketplaceActive && <span className="size-2 rounded-full bg-[#7C3AED] shrink-0" />}
+                      </Link>
+
+                      <Link
+                        href="/profile?tab=armory"
+                        onClick={() => setMobileOpen(false)}
+                        className="h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <Sparkles size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Guild Armory Shop</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Bingkai avatar &amp; gelar eksklusif</span>
+                          </div>
+                        </div>
+                      </Link>
+
+                      <Link
+                        href="/dungeon"
+                        onClick={() => setMobileOpen(false)}
+                        className={`h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border ${
+                          pathname.startsWith("/dungeon")
+                            ? "border-[#7C3AED] bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#F8FAFC] font-bold"
+                            : "border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <Skull size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Penjara &amp; Papan Buronan</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Daftar buronan &amp; vonis tahanan</span>
+                          </div>
+                        </div>
+                        {pathname.startsWith("/dungeon") && <span className="size-2 rounded-full bg-[#7C3AED] shrink-0" />}
+                      </Link>
+
+                      <Link
+                        href="/rules"
+                        onClick={() => setMobileOpen(false)}
+                        className={`h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border ${
+                          pathname.startsWith("/rules")
+                            ? "border-[#7C3AED] bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#F8FAFC] font-bold"
+                            : "border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <BookOpen size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Aturan &amp; FAQ</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Pedoman &amp; hierarki kasta guild</span>
+                          </div>
+                        </div>
+                        {pathname.startsWith("/rules") && <span className="size-2 rounded-full bg-[#7C3AED] shrink-0" />}
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* KELOMPOK 3: 👑 PERINGKAT & KONTROL */}
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-mono font-bold text-slate-400 dark:text-[#A78BFA] tracking-wider uppercase px-1">
+                      👑 Peringkat &amp; Kontrol
+                    </p>
+                    <div className="space-y-1">
+                      <Link
+                        href="/leaderboard"
+                        onClick={() => setMobileOpen(false)}
+                        className={`h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border ${
+                          pathname.startsWith("/leaderboard")
+                            ? "border-[#7C3AED] bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#F8FAFC] font-bold"
+                            : "border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <Crown size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Papan Peringkat</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Top XP petualang &amp; donatur</span>
+                          </div>
+                        </div>
+                        {pathname.startsWith("/leaderboard") && <span className="size-2 rounded-full bg-[#7C3AED] shrink-0" />}
+                      </Link>
+
+                      <Link
+                        href="/hall-of-winners"
+                        onClick={() => setMobileOpen(false)}
+                        className={`h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border ${
+                          pathname.startsWith("/hall-of-winners")
+                            ? "border-[#7C3AED] bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#F8FAFC] font-bold"
+                            : "border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <Award size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Hall of Winners</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Aula juara turnamen resmi</span>
+                          </div>
+                        </div>
+                        {pathname.startsWith("/hall-of-winners") && <span className="size-2 rounded-full bg-[#7C3AED] shrink-0" />}
+                      </Link>
+
+                      <Link
+                        href="/donate"
+                        onClick={() => setMobileOpen(false)}
+                        className={`h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border ${
+                          pathname.startsWith("/donate")
+                            ? "border-[#7C3AED] bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#F8FAFC] font-bold"
+                            : "border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <HeartHandshake size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Donasi Kas Guild</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Dukung kas operasional guild</span>
+                          </div>
+                        </div>
+                        {pathname.startsWith("/donate") && <span className="size-2 rounded-full bg-[#7C3AED] shrink-0" />}
+                      </Link>
+
+                      {/* Khusus Staf / Admin */}
+                      {(isStaff || isOwner) && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setMobileOpen(false)}
+                          className="h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-semibold transition-colors border border-[#7C3AED] bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#C4B5FD] hover:bg-[#7C3AED] hover:text-white"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="size-7 rounded-lg bg-[#7C3AED] text-white flex items-center justify-center shrink-0">
+                              <ShieldAlert size={15} />
+                            </div>
+                            <div className="truncate text-left">
+                              <span className="block leading-tight font-bold">Dashboard Admin</span>
+                              <span className="block text-[10px] opacity-80 font-normal">Pusat kendali staf &amp; moderasi</span>
+                            </div>
+                          </div>
+                          {adminPendingCount > 0 ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white animate-pulse">
+                              {adminPendingCount}
+                            </span>
+                          ) : (
+                            <span className="text-xs">➔</span>
+                          )}
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </nav>
+              </div>
+
+              {/* Bagian Bawah Laci: Bahasa, Tema & Sign Out */}
+              <div className="p-4 border-t border-slate-200 dark:border-[#211C2B] space-y-3 bg-slate-50/70 dark:bg-[#080310]">
+                {/* Switcher Bahasa & Mata Uang Mobile */}
+                <LocaleSwitcher isMobileDrawer />
+
+                {/* Baris Kontrol Tema & Sign Out */}
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center gap-2">
+                    <ThemeToggle />
+                    <span className="text-xs font-mono text-slate-600 dark:text-slate-400">Ganti Tema</span>
+                  </div>
+
+                  {user ? (
                     <button
                       type="button"
                       onClick={() => {
                         setMobileOpen(false);
-                        void signIn("discord");
+                        void signOut();
                       }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-none bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-mono font-bold transition border border-[#5865F2]"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition cursor-pointer"
                     >
-                      <span className="text-sm leading-none">◉</span>
-                      <span>Connect Discord</span>
+                      <LogOut size={14} />
+                      <span>Sign Out</span>
                     </button>
-                  </div>
-                )}
-
-                {/* Daftar Menu Navigasi Vertikal Accordion */}
-                <nav className="mt-5 flex flex-col space-y-1.5" aria-label="Navigasi Menu Mobile">
-                  {/* HOME */}
-                  <Link
-                    href="/"
-                    onClick={() => setMobileOpen(false)}
-                    className={`py-2.5 px-3.5 rounded-none border text-sm font-bold transition-colors flex items-center justify-between ${
-                      isHomeActive
-                        ? "bg-purple-50 dark:bg-[#1A0E2E] text-[#7C3AED] dark:text-[#F8FAFC] border-[#7C3AED]"
-                        : "border-slate-200 dark:border-[#2E1E45] text-slate-700 dark:text-[#A78BFA] hover:bg-slate-100 dark:hover:bg-[#130921] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-                    }`}
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Home size={16} className={isHomeActive ? "text-[#7C3AED]" : "text-slate-400 dark:text-[#A78BFA]"} />
-                      <span>Home</span>
-                    </span>
-                    {isHomeActive && <span className="size-1.5 bg-[#7C3AED]" />}
-                  </Link>
-
-                  {/* ACCORDION GROUPS */}
-                  {navGroups.map((group) => {
-                    const isOpen = mobileAccordion[group.key] ?? false;
-                    const GroupIcon = group.icon;
-                    return (
-                      <div key={group.key} className="rounded-none border border-slate-200 dark:border-[#2E1E45] overflow-hidden">
-                        <button
-                          type="button"
-                          onClick={() => toggleMobileGroup(group.key)}
-                          className="w-full py-2.5 px-3.5 flex items-center justify-between bg-slate-50 dark:bg-[#130921] text-sm font-bold text-slate-900 dark:text-[#F8FAFC] hover:text-[#7C3AED] dark:hover:text-[#A78BFA]"
-                        >
-                          <span className="flex items-center gap-2.5">
-                            <GroupIcon size={16} className="text-[#7C3AED]" />
-                            <span>{t(group.title)}</span>
-                          </span>
-                          <ChevronDown size={14} className={`transition-transform duration-200 text-slate-400 dark:text-[#A78BFA] ${isOpen ? "rotate-180 text-[#7C3AED]" : ""}`} />
-                        </button>
-
-                        <AnimatePresence>
-                          {isOpen && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.15 }}
-                              className="p-1 space-y-0.5 bg-white dark:bg-[#09040F] divide-y divide-slate-100 dark:divide-[#2E1E45]/40"
-                            >
-                              {group.items.map((subItem) => {
-                                const SubIcon = subItem.icon;
-                                const isSubActive = pathname === subItem.href || (subItem.href.includes("?") && pathname === subItem.href.split("?")[0]);
-                                return (
-                                   <Link
-                                    key={subItem.href}
-                                    href={subItem.href}
-                                    onClick={() => setMobileOpen(false)}
-                                    className={`py-2 px-3 rounded-none text-xs font-medium transition-colors flex items-start gap-2.5 ${
-                                      isSubActive
-                                        ? "bg-purple-50 dark:bg-[#1A0E2E] text-[#7C3AED] dark:text-[#F8FAFC] font-bold"
-                                        : "text-slate-600 dark:text-[#A78BFA] hover:bg-slate-100 dark:hover:bg-[#130921] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-                                    }`}
-                                  >
-                                    <SubIcon size={14} className="shrink-0 mt-0.5 text-[#7C3AED]" />
-                                    <div>
-                                      <p>{t(subItem.label)}</p>
-                                      <p className="text-[10px] text-slate-500 dark:text-[#A78BFA]/80 line-clamp-1">{t(subItem.desc)}</p>
-                                    </div>
-                                  </Link>
-                                );
-                              })}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })}
-
-                  {/* MARKETPLACE */}
-                  <Link
-                    href="/marketplace"
-                    onClick={() => setMobileOpen(false)}
-                    className={`py-2.5 px-3.5 rounded-none border text-sm font-bold transition-colors flex items-center justify-between ${
-                      isMarketplaceActive
-                        ? "bg-purple-50 dark:bg-[#1A0E2E] text-[#7C3AED] dark:text-[#F8FAFC] border-[#7C3AED]"
-                        : "border-slate-200 dark:border-[#2E1E45] text-slate-700 dark:text-[#A78BFA] hover:bg-slate-100 dark:hover:bg-[#130921] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-                    }`}
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Store size={16} className={isMarketplaceActive ? "text-[#7C3AED]" : "text-slate-400 dark:text-[#A78BFA]"} />
-                      <span>Marketplace</span>
-                    </span>
-                    {isMarketplaceActive && <span className="size-1.5 bg-[#7C3AED]" />}
-                  </Link>
-
-                  {/* Profile & Settings (jika login) */}
-                  {user && (
-                    <Link
-                      href="/profile"
-                      onClick={() => setMobileOpen(false)}
-                      className={`py-2.5 px-3.5 rounded-none border border-slate-200 dark:border-[#2E1E45] text-sm font-bold transition-colors flex items-center gap-2.5 ${
-                        pathname === "/profile"
-                          ? "bg-purple-50 dark:bg-[#1A0E2E] text-[#7C3AED] dark:text-[#F8FAFC] border-[#7C3AED]"
-                          : "text-slate-700 dark:text-[#A78BFA] hover:bg-slate-100 dark:hover:bg-[#130921] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-                      }`}
-                    >
-                      <Settings size={16} className={pathname === "/profile" ? "text-[#7C3AED]" : "text-slate-400 dark:text-[#A78BFA]"} />
-                      <span>Profil &amp; Pengaturan</span>
-                    </Link>
+                  ) : (
+                    <p className="text-[10px] text-gray-400 font-mono">
+                      LogHorizon HQ
+                    </p>
                   )}
-                </nav>
-              </div>
-
-              {/* Footer Slidebar (Sign Out jika Login) */}
-              <div className="pt-5 border-t border-slate-200 dark:border-[#211C2B] mt-6">
-                {user ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileOpen(false);
-                      void signOut();
-                    }}
-                    className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-md text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/25 border border-red-200/50 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-950/40 transition"
-                  >
-                    <LogOut size={16} />
-                    <span>Sign Out</span>
-                  </button>
-                ) : (
-                  <p className="text-[11px] text-center text-gray-400 font-mono">
-                    LogHorizon • Cyber Gaming Guild
-                  </p>
-                )}
+                </div>
               </div>
             </motion.aside>
           </>
