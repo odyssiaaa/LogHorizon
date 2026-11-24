@@ -229,13 +229,14 @@ type DashboardData = {
 type Tab =
   | "overview"
   | "ai_command"
-  | "settings"
   | "tournaments"
+  | "finance"
+  | "moderation"
+  | "settings"
   | "hall_of_winners"
   | "treasury"
   | "members"
   | "verified_sellers"
-  | "moderation"
   | "security_logs";
 
 const formatMoney = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
@@ -243,6 +244,24 @@ const formatMoney = new Intl.NumberFormat("id-ID", { style: "currency", currency
 export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?: boolean }) {
   const isAdmin = role === "ADMIN";
   const [tab, setTab] = useState<Tab>("overview");
+  const [tournamentsSubTab, setTournamentsSubTab] = useState<"tournaments" | "hall_of_winners">("tournaments");
+  const [financeSubTab, setFinanceSubTab] = useState<"donations" | "escrow" | "verified_sellers">("donations");
+  const [moderationSubTab, setModerationSubTab] = useState<"dungeon" | "reports" | "members" | "security_logs" | "settings">("dungeon");
+
+  // Derive activeMainTab to support backwards-compatible navigation
+  const activeMainTab: "overview" | "ai_command" | "tournaments" | "finance" | "moderation" =
+    tab === "hall_of_winners" ? "tournaments"
+    : (tab === "treasury" || tab === "verified_sellers" || tab === "finance") ? "finance"
+    : (tab === "members" || tab === "settings" || tab === "security_logs" || tab === "moderation") ? "moderation"
+    : (tab as any);
+
+  const effectiveTournamentsSubTab = tab === "hall_of_winners" ? "hall_of_winners" : tournamentsSubTab;
+  const effectiveFinanceSubTab = tab === "verified_sellers" ? "verified_sellers" : financeSubTab;
+  const effectiveModerationSubTab =
+    tab === "members" ? "members"
+    : tab === "settings" ? "settings"
+    : tab === "security_logs" ? "security_logs"
+    : moderationSubTab;
   const [data, setData] = useState<DashboardData | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -749,21 +768,27 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
     loadDashboard();
     fetchTournaments();
     fetchDungeonBounties();
+    if (isAdmin) {
+      fetchSellerVerifications();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search]);
+  }, [page, search, isAdmin]);
 
   // Strict Moderator Guard: Ensure non-admins never access admin-only tabs
   useEffect(() => {
-    if (!isAdmin && (tab === "settings" || tab === "treasury" || tab === "ai_command" || tab === "verified_sellers")) {
-      setTab("moderation");
+    if (!isAdmin && (tab === "settings" || tab === "treasury" || tab === "ai_command" || tab === "verified_sellers" || tab === "finance")) {
+      setTab("overview");
     }
-    if (tab === "verified_sellers") {
+    if (!isAdmin && moderationSubTab === "settings") {
+      setModerationSubTab("dungeon");
+    }
+    if (effectiveFinanceSubTab === "verified_sellers" || tab === "verified_sellers") {
       fetchSellerVerifications();
     }
-    if (tab === "moderation") {
+    if (effectiveModerationSubTab === "dungeon" || tab === "moderation") {
       fetchDungeonBounties();
     }
-  }, [isAdmin, tab, fetchSellerVerifications, fetchDungeonBounties]);
+  }, [isAdmin, tab, moderationSubTab, effectiveFinanceSubTab, effectiveModerationSubTab, fetchSellerVerifications, fetchDungeonBounties]);
 
   useLiveSync(() => {
     const query = new URLSearchParams({ page: String(page), search });
@@ -774,10 +799,10 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
       })
       .catch(() => {});
     fetchTournaments();
-    if (tab === "verified_sellers") {
+    if (effectiveFinanceSubTab === "verified_sellers" || tab === "verified_sellers") {
       fetchSellerVerifications();
     }
-    if (tab === "moderation") {
+    if (effectiveModerationSubTab === "dungeon" || tab === "moderation") {
       fetchDungeonBounties();
     }
   }, { intervalMs: 12000, revalidateOnFocus: true });
@@ -1199,6 +1224,227 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
       0
     );
 
+  // Flatten pending tournament participants for 1-Click Action Queue
+  const pendingTournamentTeams: Array<any & { tournamentId: string; tournamentTitle: string }> =
+    tournamentsList.flatMap((t: any) =>
+      (t.participants || [])
+        .filter((p: any) => p.paymentStatus === "PENDING_PAYMENT")
+        .map((p: any) => ({
+          ...p,
+          tournamentId: t.id,
+          tournamentTitle: t.title,
+        }))
+    );
+
+  const pendingDungeonBounties = dungeonBounties.filter((b: any) => b.status === "PENDING_REVIEW");
+  const pendingSellerRequests = isAdmin ? sellerVerifications.pendingRequests : [];
+  const pendingReportsList = data?.reports ?? [];
+
+  const totalPendingActionCount =
+    (isAdmin ? pendingDonationsList.length : 0) +
+    pendingTournamentTeams.length +
+    (isAdmin ? pendingSellerRequests.length : 0) +
+    pendingDungeonBounties.length +
+    pendingReportsList.length;
+
+  const tournamentsSubtabsBar = (
+    <div className="flex items-center gap-2 border-b border-gray-200 dark:border-[#2E1E45] pb-3 overflow-x-auto">
+      <button
+        type="button"
+        onClick={() => {
+          setTournamentsSubTab("tournaments");
+          setTab("tournaments");
+        }}
+        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+          effectiveTournamentsSubTab === "tournaments"
+            ? "bg-[#9D4EDD] text-white shadow-sm"
+            : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-gray-300 hover:text-white"
+        }`}
+      >
+        <Trophy size={14} />
+        <span>Turnamen &amp; Peserta</span>
+        {totalPendingTournament > 0 && (
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">
+            {totalPendingTournament}
+          </span>
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setTournamentsSubTab("hall_of_winners");
+          setTab("hall_of_winners");
+        }}
+        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+          effectiveTournamentsSubTab === "hall_of_winners"
+            ? "bg-[#9D4EDD] text-white shadow-sm"
+            : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-gray-300 hover:text-white"
+        }`}
+      >
+        <Crown size={14} />
+        <span>Hall of Winners (Arsip Juara)</span>
+      </button>
+    </div>
+  );
+
+  const financeSubtabsBar = (
+    <div className="flex items-center gap-2 border-b border-gray-200 dark:border-[#2E1E45] pb-3 overflow-x-auto">
+      <button
+        type="button"
+        onClick={() => {
+          setFinanceSubTab("donations");
+          setTab("treasury");
+        }}
+        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+          effectiveFinanceSubTab === "donations"
+            ? "bg-[#9D4EDD] text-white shadow-sm"
+            : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-gray-300 hover:text-white"
+        }`}
+      >
+        <Coins size={14} />
+        <span>Kas Donasi QRIS</span>
+        {(data?.stats.pendingDonations || 0) > 0 && (
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">
+            {data?.stats.pendingDonations}
+          </span>
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setFinanceSubTab("escrow");
+          setTab("treasury");
+        }}
+        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+          effectiveFinanceSubTab === "escrow"
+            ? "bg-[#9D4EDD] text-white shadow-sm"
+            : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-gray-300 hover:text-white"
+        }`}
+      >
+        <ShieldAlert size={14} />
+        <span>Rekber 3-Pihak (Escrow)</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setFinanceSubTab("verified_sellers");
+          setTab("verified_sellers");
+        }}
+        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+          effectiveFinanceSubTab === "verified_sellers"
+            ? "bg-[#9D4EDD] text-white shadow-sm"
+            : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-gray-300 hover:text-white"
+        }`}
+      >
+        <CheckCircle size={14} />
+        <span>Verifikasi Penjual</span>
+        {sellerVerifications.pendingRequests.length > 0 && (
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">
+            {sellerVerifications.pendingRequests.length}
+          </span>
+        )}
+      </button>
+    </div>
+  );
+
+  const moderationSubtabsBar = (
+    <DraggableScrollRow className="pb-3 border-b border-gray-200 dark:border-[#2E1E45]">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setModerationSubTab("dungeon");
+            setTab("moderation");
+          }}
+          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+            effectiveModerationSubTab === "dungeon"
+              ? "bg-[#9D4EDD] text-white shadow-sm"
+              : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-gray-300 hover:text-white"
+          }`}
+        >
+          <Skull size={14} />
+          <span>Penjara &amp; Buronan (/dungeon)</span>
+          {dungeonPendingCount > 0 && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 font-mono font-bold animate-pulse">
+              {dungeonPendingCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setModerationSubTab("reports");
+            setTab("moderation");
+          }}
+          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+            effectiveModerationSubTab === "reports"
+              ? "bg-[#9D4EDD] text-white shadow-sm"
+              : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-gray-300 hover:text-white"
+          }`}
+        >
+          <Flag size={14} />
+          <span>Laporan Komunitas</span>
+          {(data?.stats.pendingReports || 0) > 0 && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">
+              {data?.stats.pendingReports}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setModerationSubTab("members");
+            setTab("members");
+          }}
+          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+            effectiveModerationSubTab === "members"
+              ? "bg-[#9D4EDD] text-white shadow-sm"
+              : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-gray-300 hover:text-white"
+          }`}
+        >
+          <Users size={14} />
+          <span>Member &amp; Kasta</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setModerationSubTab("security_logs");
+            setTab("security_logs");
+          }}
+          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+            effectiveModerationSubTab === "security_logs"
+              ? "bg-[#9D4EDD] text-white shadow-sm"
+              : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-gray-300 hover:text-white"
+          }`}
+        >
+          <ShieldCheck size={14} />
+          <span>Log Satpam AI</span>
+        </button>
+
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => {
+              setModerationSubTab("settings");
+              setTab("settings");
+            }}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+              effectiveModerationSubTab === "settings"
+                ? "bg-[#9D4EDD] text-white shadow-sm"
+                : "bg-slate-100 dark:bg-[#1A0E2E] text-slate-600 dark:text-gray-300 hover:text-white"
+            }`}
+          >
+            <Settings size={14} />
+            <span>Web CMS &amp; Discord Bot</span>
+          </button>
+        )}
+      </div>
+    </DraggableScrollRow>
+  );
+
   return (
     <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 overflow-x-hidden">
       <div>
@@ -1270,18 +1516,39 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
         {/* ========================================================================= */}
         <div className="lg:flex lg:gap-8 items-start">
           {/* DESKTOP SIDEBAR (< lg hidden) */}
-          <aside className="hidden lg:flex flex-col w-64 shrink-0 space-y-1 sticky top-24 p-3 rounded-lg border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm">
+          <aside className="hidden lg:flex flex-col w-64 shrink-0 space-y-1.5 sticky top-24 p-3 rounded-xl border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-sm">
             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 py-1.5">
-              {isAdmin ? "MODUL COMMAND CENTER" : "MODUL MODERASI & WASIT"}
+              {isAdmin ? "5 MODUL UTAMA COMMAND CENTER" : "MODUL OPERASIONAL WASIT & MODERASI"}
             </p>
 
-            {/* AI COMMAND ASSISTANT (KHUSUS ADMIN) */}
+            {/* 1. RINGKASAN & AKSI CEPAT */}
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                activeMainTab === "overview"
+                  ? "bg-[#9D4EDD] text-white shadow-sm"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
+              }`}
+              onClick={() => setTab("overview")}
+            >
+              <div className="flex items-center gap-2.5">
+                <LayoutDashboard size={16} />
+                <span>Ringkasan &amp; Aksi Cepat</span>
+              </div>
+              {totalPendingActionCount > 0 && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${activeMainTab === "overview" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400 animate-pulse"}`}>
+                  {totalPendingActionCount}
+                </span>
+              )}
+            </button>
+
+            {/* 2. AI COMMAND ASSISTANT (KHUSUS ADMIN) */}
             {isAdmin && (
               <button
                 type="button"
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
-                  tab === "ai_command"
-                    ? "bg-[#9D4EDD] text-white"
+                  activeMainTab === "ai_command"
+                    ? "bg-[#9D4EDD] text-white shadow-sm"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
                 }`}
                 onClick={() => setTab("ai_command")}
@@ -1290,34 +1557,18 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   <Terminal size={16} />
                   <span>AI Command Assistant</span>
                 </div>
-                <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-bold ${tab === "ai_command" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-bold ${activeMainTab === "ai_command" ? "bg-white text-[#9D4EDD]" : "bg-purple-500/20 text-purple-300"}`}>
                   AI
                 </span>
               </button>
             )}
 
-            {/* 1. RINGKASAN & KEUANGAN */}
+            {/* 3. TURNAMEN & ARENA */}
             <button
               type="button"
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
-                tab === "overview"
-                  ? "bg-[#9D4EDD] text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
-              }`}
-              onClick={() => setTab("overview")}
-            >
-              <div className="flex items-center gap-2.5">
-                <LayoutDashboard size={16} />
-                <span>{isAdmin ? "Ringkasan & Keuangan" : "Ringkasan & Moderasi"}</span>
-              </div>
-            </button>
-
-            {/* 2. TURNAMEN & VERIFIKASI PESERTA */}
-            <button
-              type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
-                tab === "tournaments" || tab === "hall_of_winners"
-                  ? "bg-[#9D4EDD] text-white"
+                activeMainTab === "tournaments"
+                  ? "bg-[#9D4EDD] text-white shadow-sm"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
               }`}
               onClick={() => {
@@ -1327,89 +1578,48 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             >
               <div className="flex items-center gap-2.5">
                 <Trophy size={16} />
-                <span>Turnamen &amp; Peserta</span>
+                <span>Turnamen &amp; Arena</span>
               </div>
-              {(() => {
-                const totalPending = tournamentsList.reduce((acc, t) => acc + (t.participants?.filter((p: any) => p.paymentStatus === "PENDING_PAYMENT").length || 0), 0);
-                return totalPending > 0 ? (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${tab === "tournaments" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
-                    {totalPending}
-                  </span>
-                ) : null;
-              })()}
+              {totalPendingTournament > 0 && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${activeMainTab === "tournaments" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                  {totalPendingTournament}
+                </span>
+              )}
             </button>
 
-            {/* 3. VERIFIKASI KAS DONASI & REKBER (KHUSUS ADMIN) */}
+            {/* 4. KEUANGAN, REKBER & VERIFIED SELLER (KHUSUS ADMIN) */}
             {isAdmin && (
               <button
                 type="button"
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
-                  tab === "treasury"
-                    ? "bg-[#9D4EDD] text-white"
+                  activeMainTab === "finance"
+                    ? "bg-[#9D4EDD] text-white shadow-sm"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
                 }`}
-                onClick={() => setTab("treasury")}
+                onClick={() => setTab("finance")}
               >
                 <div className="flex items-center gap-2.5">
                   <Coins size={16} />
-                  <span>Kas Donasi &amp; Rekber</span>
+                  <span>Keuangan, Rekber &amp; Seller</span>
                 </div>
-                {Boolean(data?.stats.pendingDonations) && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${tab === "treasury" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
-                    {data?.stats.pendingDonations}
+                {Boolean((data?.stats.pendingDonations || 0) + (sellerVerifications.pendingRequests.length || 0)) && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${activeMainTab === "finance" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
+                    {(data?.stats.pendingDonations || 0) + (sellerVerifications.pendingRequests.length || 0)}
                   </span>
                 )}
               </button>
             )}
 
-            {/* 4. MANAJEMEN MEMBER & KASTA */}
+
+
+
+
+            {/* 5. MODERASI, MEMBER & PENGATURAN */}
             <button
               type="button"
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
-                tab === "members"
-                  ? "bg-[#9D4EDD] text-white"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
-              }`}
-              onClick={() => setTab("members")}
-            >
-              <div className="flex items-center gap-2.5">
-                <Users size={16} />
-                <span>Member, Kasta &amp; Staf</span>
-              </div>
-            </button>
-
-            {/* VERIFIKASI PENJUAL (KHUSUS ADMIN) */}
-            {isAdmin && (
-              <button
-                type="button"
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
-                  tab === "verified_sellers"
-                    ? "bg-[#9D4EDD] text-white"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
-                }`}
-                onClick={() => {
-                  setTab("verified_sellers");
-                  fetchSellerVerifications();
-                }}
-              >
-                <div className="flex items-center gap-2.5">
-                  <ShieldCheck size={16} />
-                  <span>Verifikasi Penjual</span>
-                </div>
-                {Boolean(data?.stats.pendingSellerVerifications || sellerVerifications.pendingRequests.length) && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${tab === "verified_sellers" ? "bg-white text-[#9D4EDD]" : "bg-amber-500/20 text-amber-400"}`}>
-                    {data?.stats.pendingSellerVerifications || sellerVerifications.pendingRequests.length}
-                  </span>
-                )}
-              </button>
-            )}
-
-            {/* 5. MODERASI & LOG KEAMANAN SATPAM AI */}
-            <button
-              type="button"
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
-                tab === "moderation" || tab === "security_logs"
-                  ? "bg-[#9D4EDD] text-white"
+                activeMainTab === "moderation"
+                  ? "bg-[#9D4EDD] text-white shadow-sm"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
               }`}
               onClick={() => {
@@ -1419,32 +1629,14 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             >
               <div className="flex items-center gap-2.5">
                 <ShieldAlert size={16} />
-                <span>Operasional Moderasi</span>
+                <span>{isAdmin ? "Moderasi, Member & Pengaturan" : "Moderasi & Member"}</span>
               </div>
               {Boolean((data?.stats.pendingReports || 0) + dungeonPendingCount) && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${tab === "moderation" ? "bg-white text-[#9D4EDD]" : "bg-rose-500/20 text-rose-400"}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${activeMainTab === "moderation" ? "bg-white text-[#9D4EDD]" : "bg-rose-500/20 text-rose-400"}`}>
                   {(data?.stats.pendingReports || 0) + dungeonPendingCount}
                 </span>
               )}
             </button>
-
-            {/* 6. PENGATURAN WEB (CMS), OTAK AI & BROADCAST */}
-            {isAdmin && (
-              <button
-                type="button"
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
-                  tab === "settings"
-                    ? "bg-[#9D4EDD] text-white"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724]"
-                }`}
-                onClick={() => setTab("settings")}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Settings size={16} />
-                  <span>Pengaturan Web &amp; AI</span>
-                </div>
-              </button>
-            )}
 
             <Link
               href="/events?view=turnamen"
@@ -1461,125 +1653,90 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
           {/* MOBILE HORIZONTAL SCROLLABLE TABS (>= lg hidden) */}
           <DraggableScrollRow className="lg:hidden pb-2 mb-6 border-b border-gray-200 dark:border-[#2E1E45] w-full">
             <div className="flex items-center gap-2">
+            {/* 1. Ringkasan & Aksi Cepat */}
+            <button
+              type="button"
+              className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
+                activeMainTab === "overview" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+              }`}
+              onClick={() => setTab("overview")}
+            >
+              <LayoutDashboard size={14} /> <span>1. Ringkasan &amp; Aksi</span>
+              {totalPendingActionCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500 text-black font-extrabold animate-pulse">
+                  {totalPendingActionCount}
+                </span>
+              )}
+            </button>
+
+            {/* 2. AI Command Assistant (Admin only) */}
             {isAdmin && (
               <button
                 type="button"
                 className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
-                  tab === "ai_command" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                  activeMainTab === "ai_command" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
                 }`}
                 onClick={() => setTab("ai_command")}
               >
-                <Terminal size={14} /> <span>⚡ AI Command</span>
+                <Terminal size={14} /> <span>2. AI Command</span>
               </button>
             )}
 
+            {/* 3. Turnamen & Arena */}
             <button
               type="button"
               className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
-                tab === "overview" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
-              }`}
-              onClick={() => setTab("overview")}
-            >
-              <LayoutDashboard size={14} /> <span>{isAdmin ? "1. Ringkasan" : "1. Ringkasan & Wasit"}</span>
-            </button>
-
-            <button
-              type="button"
-              className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
-                tab === "tournaments" || tab === "hall_of_winners" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                activeMainTab === "tournaments" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => {
                 setTab("tournaments");
                 fetchTournaments();
               }}
             >
-              <Trophy size={14} /> <span>2. Turnamen</span>
-              {(() => {
-                const totalPending = tournamentsList.reduce((acc, t) => acc + (t.participants?.filter((p: any) => p.paymentStatus === "PENDING_PAYMENT").length || 0), 0);
-                return totalPending > 0 ? (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500 text-black font-extrabold">
-                    {totalPending}
-                  </span>
-                ) : null;
-              })()}
+              <Trophy size={14} /> <span>{isAdmin ? "3. Turnamen & Arena" : "2. Turnamen & Arena"}</span>
+              {totalPendingTournament > 0 && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500 text-black font-extrabold">
+                  {totalPendingTournament}
+                </span>
+              )}
             </button>
 
+            {/* 4. Keuangan, Rekber & Seller (Admin only) */}
             {isAdmin && (
               <button
                 type="button"
                 className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
-                  tab === "treasury" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                  activeMainTab === "finance" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
                 }`}
-                onClick={() => setTab("treasury")}
+                onClick={() => setTab("finance")}
               >
-                <Coins size={14} /> <span>3. Kas &amp; Rekber</span>
-                {Boolean(data?.stats.pendingDonations) && (
+                <Coins size={14} /> <span>4. Keuangan &amp; Rekber</span>
+                {Boolean((data?.stats.pendingDonations || 0) + (sellerVerifications.pendingRequests.length || 0)) && (
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500 text-black font-extrabold">
-                    {data?.stats.pendingDonations}
+                    {(data?.stats.pendingDonations || 0) + (sellerVerifications.pendingRequests.length || 0)}
                   </span>
                 )}
               </button>
             )}
 
+            {/* 5. Moderasi & Member */}
             <button
               type="button"
               className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
-                tab === "members" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
-              }`}
-              onClick={() => setTab("members")}
-            >
-              <Users size={14} /> <span>4. Member &amp; Kasta</span>
-            </button>
-
-            {isAdmin && (
-              <button
-                type="button"
-                className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
-                  tab === "verified_sellers" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
-                }`}
-                onClick={() => {
-                  setTab("verified_sellers");
-                  fetchSellerVerifications();
-                }}
-              >
-                <ShieldCheck size={14} /> <span>Verifikasi Penjual</span>
-                {Boolean(data?.stats.pendingSellerVerifications || sellerVerifications.pendingRequests.length) && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500 text-black font-extrabold">
-                    {data?.stats.pendingSellerVerifications || sellerVerifications.pendingRequests.length}
-                  </span>
-                )}
-              </button>
-            )}
-
-            <button
-              type="button"
-              className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
-                tab === "moderation" || tab === "security_logs" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
+                activeMainTab === "moderation" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
               }`}
               onClick={() => {
                 setTab("moderation");
                 fetchDungeonBounties();
               }}
             >
-              <ShieldAlert size={14} /> <span>5. Moderasi</span>
+              <ShieldAlert size={14} /> <span>{isAdmin ? "5. Moderasi & CMS" : "3. Moderasi & Member"}</span>
               {Boolean((data?.stats.pendingReports || 0) + dungeonPendingCount) && (
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-extrabold">
                   {(data?.stats.pendingReports || 0) + dungeonPendingCount}
                 </span>
               )}
             </button>
-
-            {isAdmin && (
-              <button
-                type="button"
-                className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition ${
-                  tab === "settings" ? "bg-[#9D4EDD] text-white shadow-sm" : "bg-gray-100 dark:bg-[#130921] text-gray-700 dark:text-gray-300"
-                }`}
-                onClick={() => setTab("settings")}
-              >
-                <Settings size={14} /> <span>6. Web CMS &amp; AI</span>
-              </button>
-            )}
 
             <Link
               href="/events?view=turnamen"
@@ -1595,7 +1752,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {/* ========================================================================= */}
             {/* TAB: AI ADMIN COMMAND ASSISTANT TERMINAL (EXCLUSIVE ADMIN) */}
             {/* ========================================================================= */}
-            {tab === "ai_command" && isAdmin && (
+            {activeMainTab === "ai_command" && isAdmin && (
               <section className="space-y-6 pb-28 lg:pb-24" role="tabpanel">
                 <AiAdminTerminal
                   onActionExecuted={() => {
@@ -1609,7 +1766,7 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {/* ========================================================================= */}
             {/* TAB 1: OVERVIEW & STATISTIK GUILD */}
             {/* ========================================================================= */}
-            {tab === "overview" && (
+            {activeMainTab === "overview" && (
               <section className="space-y-6" role="tabpanel">
                 {/* EXECUTIVE HEADER WITH CSV EXPORT */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
@@ -1637,162 +1794,618 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
                   )}
                 </div>
 
-                {/* 5 METRIC CARDS */}
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-                  <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
-                    <div className="flex items-center justify-between text-[#9D4EDD]">
-                      <Users size={20} />
-                    </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Total Member</span>
-                    <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-                      {data?.stats.totalMembers ?? "0"}
-                    </strong>
-                  </article>
-
+                {/* 4 SPACIOUS METRIC CARDS */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Card 1: Donasi Menunggu ACC (Admin) / Laporan Konten (Mod) */}
                   {isAdmin ? (
-                    <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
-                      <div className="flex items-center justify-between text-purple-400">
-                        <DollarSign size={20} />
+                    <article
+                      onClick={() => {
+                        setTab("finance");
+                        setFinanceSubTab("donations");
+                      }}
+                      className={`p-4 sm:p-5 rounded-xl border transition-all cursor-pointer ${
+                        pendingDonationsList.length > 0
+                          ? "border-amber-500/60 bg-amber-500/5 dark:bg-amber-500/10 shadow-lg shadow-amber-500/10"
+                          : "border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#9D4EDD]/40"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className={`p-2.5 rounded-lg ${pendingDonationsList.length > 0 ? "bg-amber-500/20 text-amber-400" : "bg-purple-500/10 text-purple-400"}`}>
+                          <Coins size={20} />
+                        </div>
+                        {pendingDonationsList.length > 0 ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500 text-black animate-pulse">
+                            AKSI DIPERLUKAN
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
+                            <Check size={12} /> Bersih
+                          </span>
+                        )}
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Kas Terverifikasi</span>
-                      <strong className="text-base sm:text-lg font-black text-purple-600 dark:text-purple-300 block mt-0.5 truncate">
-                        {data ? formatMoney.format(data.stats.totalDonations) : "Rp 0"}
-                      </strong>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-3 font-semibold">Donasi Menunggu ACC</span>
+                      <div className="flex items-baseline justify-between mt-0.5">
+                        <strong className={`text-2xl sm:text-3xl font-black ${pendingDonationsList.length > 0 ? "text-amber-400" : "text-gray-900 dark:text-white"}`}>
+                          {pendingDonationsList.length}
+                        </strong>
+                        <span className="text-[11px] text-gray-400 font-mono">Total {formatMoney.format(data?.stats.totalDonations || 0)}</span>
+                      </div>
                     </article>
                   ) : (
-                    <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
-                      <div className="flex items-center justify-between text-rose-500">
-                        <ShieldAlert size={20} />
+                    <article
+                      onClick={() => {
+                        setTab("moderation");
+                        setModerationSubTab("reports");
+                      }}
+                      className={`p-4 sm:p-5 rounded-xl border transition-all cursor-pointer ${
+                        pendingReportsList.length > 0
+                          ? "border-rose-500/60 bg-rose-500/5 dark:bg-rose-500/10 shadow-lg shadow-rose-500/10"
+                          : "border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#9D4EDD]/40"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className={`p-2.5 rounded-lg ${pendingReportsList.length > 0 ? "bg-rose-500/20 text-rose-400" : "bg-gray-100 dark:bg-white/5 text-gray-400"}`}>
+                          <Flag size={20} />
+                        </div>
+                        {pendingReportsList.length > 0 ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-500 text-white animate-pulse">
+                            AKSI DIPERLUKAN
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
+                            <Check size={12} /> Bersih
+                          </span>
+                        )}
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Laporan Konten</span>
-                      <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-                        {data?.stats.pendingReports ?? 0}
+                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-3 font-semibold">Laporan Konten Masuk</span>
+                      <strong className={`text-2xl sm:text-3xl font-black block mt-0.5 ${pendingReportsList.length > 0 ? "text-rose-400" : "text-gray-900 dark:text-white"}`}>
+                        {pendingReportsList.length}
                       </strong>
                     </article>
                   )}
 
+                  {/* Card 2: Tim Turnamen Pending */}
+                  <article
+                    onClick={() => {
+                      setTab("tournaments");
+                      setTournamentsSubTab("tournaments");
+                    }}
+                    className={`p-4 sm:p-5 rounded-xl border transition-all cursor-pointer ${
+                      pendingTournamentTeams.length > 0
+                        ? "border-amber-500/60 bg-amber-500/5 dark:bg-amber-500/10 shadow-lg shadow-amber-500/10"
+                        : "border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#9D4EDD]/40"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className={`p-2.5 rounded-lg ${pendingTournamentTeams.length > 0 ? "bg-amber-500/20 text-amber-400" : "bg-purple-500/10 text-purple-400"}`}>
+                        <Trophy size={20} />
+                      </div>
+                      {pendingTournamentTeams.length > 0 ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500 text-black animate-pulse">
+                          AKSI DIPERLUKAN
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
+                          <Check size={12} /> Bersih
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-3 font-semibold">Tim Turnamen Pending</span>
+                    <div className="flex items-baseline justify-between mt-0.5">
+                      <strong className={`text-2xl sm:text-3xl font-black ${pendingTournamentTeams.length > 0 ? "text-amber-400" : "text-gray-900 dark:text-white"}`}>
+                        {pendingTournamentTeams.length}
+                      </strong>
+                      <span className="text-[11px] text-gray-400">{tournamentsList.length} Turnamen</span>
+                    </div>
+                  </article>
+
+                  {/* Card 3: Rekber Aktif (Admin) / Turnamen Aktif (Mod) */}
                   {isAdmin ? (
-                    <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
-                      <div className="flex items-center justify-between text-amber-500">
-                        <Coins size={20} />
-                        {Boolean(data?.stats.pendingDonations) && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/20 text-amber-400">
-                            AKSI
+                    <article
+                      onClick={() => {
+                        setTab("finance");
+                        setFinanceSubTab("escrow");
+                      }}
+                      className={`p-4 sm:p-5 rounded-xl border transition-all cursor-pointer ${
+                        (data?.stats.activeEscrows || 0) > 0
+                          ? "border-blue-500/60 bg-blue-500/5 dark:bg-blue-500/10 shadow-lg shadow-blue-500/10"
+                          : "border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#9D4EDD]/40"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className={`p-2.5 rounded-lg ${(data?.stats.activeEscrows || 0) > 0 ? "bg-blue-500/20 text-blue-400" : "bg-gray-100 dark:bg-white/5 text-gray-400"}`}>
+                          <Store size={20} />
+                        </div>
+                        {(data?.stats.activeEscrows || 0) > 0 ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/40">
+                            AKTIF
                           </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-gray-400">0 Tiket</span>
                         )}
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Donasi Pending</span>
-                      <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-                        {data?.stats.pendingDonations ?? 0}
+                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-3 font-semibold">Transaksi Rekber Aktif</span>
+                      <strong className={`text-2xl sm:text-3xl font-black block mt-0.5 ${(data?.stats.activeEscrows || 0) > 0 ? "text-blue-400" : "text-gray-900 dark:text-white"}`}>
+                        {data?.stats.activeEscrows ?? 0}
                       </strong>
                     </article>
                   ) : (
-                    <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
-                      <div className="flex items-center justify-between text-purple-400">
-                        <Trophy size={20} />
+                    <article
+                      onClick={() => {
+                        setTab("tournaments");
+                        setTournamentsSubTab("tournaments");
+                      }}
+                      className="p-4 sm:p-5 rounded-xl border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#9D4EDD]/40 transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="p-2.5 rounded-lg bg-purple-500/20 text-purple-400">
+                          <Trophy size={20} />
+                        </div>
+                        <span className="text-[10px] font-bold text-purple-400">ARENA</span>
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Turnamen Aktif</span>
-                      <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-3 font-semibold">Turnamen Aktif</span>
+                      <strong className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white block mt-0.5">
                         {tournamentsList.length}
                       </strong>
                     </article>
                   )}
 
-                  {isAdmin ? (
-                    <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
-                      <div className="flex items-center justify-between text-blue-500">
-                        <Store size={20} />
+                  {/* Card 4: Laporan & Buronan Pending */}
+                  <article
+                    onClick={() => {
+                      setTab("moderation");
+                      setModerationSubTab("dungeon");
+                    }}
+                    className={`p-4 sm:p-5 rounded-xl border transition-all cursor-pointer ${
+                      (pendingReportsList.length + dungeonPendingCount) > 0
+                        ? "border-rose-500/60 bg-rose-500/5 dark:bg-rose-500/10 shadow-lg shadow-rose-500/10"
+                        : "border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#9D4EDD]/40"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className={`p-2.5 rounded-lg ${(pendingReportsList.length + dungeonPendingCount) > 0 ? "bg-rose-500/20 text-rose-400" : "bg-gray-100 dark:bg-white/5 text-gray-400"}`}>
+                        <Skull size={20} />
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Rekber Aktif</span>
-                      <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-                        {data?.stats.activeEscrows ?? 0}
-                      </strong>
-                    </article>
-                  ) : (
-                    <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
-                      <div className="flex items-center justify-between text-blue-500">
-                        <Store size={20} />
-                      </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Lapak Komunitas</span>
-                      <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-                        {data?.stats.activeMarketplaceListings ?? 0}
-                      </strong>
-                    </article>
-                  )}
-
-                  <article className="p-4 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] col-span-2 lg:col-span-1">
-                    <div className="flex items-center justify-between text-amber-400">
-                      <Trophy size={20} />
-                      {Boolean(totalPendingTournament) && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/20 text-amber-400">
-                          AKSI
+                      {(pendingReportsList.length + dungeonPendingCount) > 0 ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-500 text-white animate-pulse">
+                          AKSI DIPERLUKAN
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
+                          <Check size={12} /> Bersih
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-2">Antrean Pendaftar Turnamen</span>
-                    <strong className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white block mt-0.5">
-                      {totalPendingTournament}
-                    </strong>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block mt-3 font-semibold">Laporan &amp; Buronan Pending</span>
+                    <div className="flex items-baseline justify-between mt-0.5">
+                      <strong className={`text-2xl sm:text-3xl font-black ${(pendingReportsList.length + dungeonPendingCount) > 0 ? "text-rose-400" : "text-gray-900 dark:text-white"}`}>
+                        {pendingReportsList.length + dungeonPendingCount}
+                      </strong>
+                      <span className="text-[11px] text-gray-400">{dungeonPendingCount} Buronan • {pendingReportsList.length} Laporan</span>
+                    </div>
                   </article>
                 </div>
 
-                {/* QUICK ACTIONS & STATUS */}
+                {/* ⚡ ANTREAN TUGAS PRIORITAS (1-CLICK ACTION QUEUE) */}
+                <div className="p-5 sm:p-6 rounded-xl border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-[#2E1E45] pb-4">
+                    <div>
+                      <h2 className="text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
+                        <Zap size={18} className="text-[#9D4EDD]" />
+                        <span>Antrean Tugas Prioritas Hari Ini (1-Click Action Queue)</span>
+                      </h2>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Tinjau dan eksekusi permohonan yang menunggu ACC hari ini secara langsung tanpa harus berpindah-pindah menu.
+                      </p>
+                    </div>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-black self-start sm:self-auto uppercase tracking-wider ${
+                        totalPendingActionCount > 0
+                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/40 animate-pulse"
+                          : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                      }`}
+                    >
+                      {totalPendingActionCount > 0 ? `⚡ ${totalPendingActionCount} TUGAS MENUNGGU TINDAKAN` : "✅ SEMUA ANTREAN BERSIH"}
+                    </span>
+                  </div>
+
+                  {totalPendingActionCount === 0 ? (
+                    <div className="py-12 px-4 text-center rounded-xl border border-dashed border-gray-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] space-y-3">
+                      <div className="w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
+                        <CheckCircle size={26} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900 dark:text-white">Semua Antrean Bersih &amp; Tidak Ada Tugas Tertunda</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mt-1">
+                          Seluruh permohonan donasi, pendaftaran turnamen, verifikasi penjual, laporan buronan, dan aduan komunitas telah selesai diproses. Ekosistem guild LogHorizon berjalan aman dan kondusif!
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-center gap-2 flex-wrap pt-2 text-[11px] text-gray-400">
+                        <span className="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-[#1C1724]">0 Donasi Pending</span>
+                        <span>•</span>
+                        <span className="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-[#1C1724]">0 Tim Turnamen Pending</span>
+                        <span>•</span>
+                        <span className="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-[#1C1724]">0 Verifikasi Penjual</span>
+                        <span>•</span>
+                        <span className="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-[#1C1724]">0 Pengajuan Buronan</span>
+                        <span>•</span>
+                        <span className="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-[#1C1724]">0 Laporan Masuk</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* 1. Pending Donations */}
+                      {isAdmin &&
+                        pendingDonationsList.map((d) => (
+                          <article
+                            key={`queue-don-${d.id}`}
+                            className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/[0.03] flex flex-col md:flex-row md:items-center justify-between gap-4 transition hover:border-amber-500/50"
+                          >
+                            <div className="space-y-1.5 min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                  KAS DONASI QRIS
+                                </span>
+                                <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                                  <span>{d.user?.username || "Member"}</span>
+                                  <span className="text-xs font-black text-purple-400 font-mono">
+                                    {formatMoney.format(d.amount)}
+                                  </span>
+                                </h4>
+                              </div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Pengirim: <strong className="text-gray-700 dark:text-gray-300">{d.senderName || "-"}</strong>
+                                {d.notes && <span className="italic ml-2 text-gray-400">&ldquo;{d.notes}&rdquo;</span>}
+                              </p>
+                              <div className="flex items-center gap-3 pt-0.5 text-[11px]">
+                                {d.proofUrl ? (
+                                  <a
+                                    href={d.proofUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[#9D4EDD] dark:text-[#C77DFF] font-bold hover:underline inline-flex items-center gap-1"
+                                  >
+                                    <span>Lihat Bukti Transfer QRIS</span>
+                                    <ExternalLink size={11} />
+                                  </a>
+                                ) : (
+                                  <span className="text-gray-400 italic">Tanpa link bukti</span>
+                                )}
+                                <span className="text-gray-400">•</span>
+                                <span className="text-gray-400">{new Date(d.createdAt).toLocaleString("id-ID")}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                disabled={busyId === d.id}
+                                onClick={() => void verifyDonation(d.id, "APPROVED")}
+                                className="px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition disabled:opacity-50 flex items-center gap-1.5"
+                              >
+                                <Check size={14} />
+                                <span>ACC Donasi</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busyId === d.id}
+                                onClick={() => void verifyDonation(d.id, "REJECTED")}
+                                className="px-3.5 py-2 text-xs font-bold rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white transition disabled:opacity-50 flex items-center gap-1.5"
+                              >
+                                <X size={14} />
+                                <span>Tolak</span>
+                              </button>
+                            </div>
+                          </article>
+                        ))}
+
+                      {/* 2. Pending Tournament Teams */}
+                      {pendingTournamentTeams.map((team) => (
+                        <article
+                          key={`queue-team-${team.id}`}
+                          className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/[0.03] flex flex-col md:flex-row md:items-center justify-between gap-4 transition hover:border-purple-500/50"
+                        >
+                          <div className="space-y-1.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                TIM TURNAMEN
+                              </span>
+                              <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+                                Turnamen: <strong>{team.tournamentTitle}</strong>
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-sm font-black text-gray-900 dark:text-white flex items-center gap-1.5">
+                                {team.teamTag && (
+                                  <span className="text-xs font-mono font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
+                                    [{team.teamTag}]
+                                  </span>
+                                )}
+                                <span>{team.teamName}</span>
+                              </h4>
+                              <span className="text-xs text-gray-500">•</span>
+                              <span className="text-xs text-gray-500">
+                                Kapten: <strong>{team.captainName || (team.leader ? `@${team.leader.username || team.leader.name}` : "Guest")}</strong>
+                              </span>
+                              {team.phone && (
+                                <a
+                                  href={`https://wa.me/${team.phone.replace(/\D/g, "")}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-emerald-500 hover:underline flex items-center gap-1 text-xs font-semibold"
+                                >
+                                  <Phone size={11} />
+                                  <span>{team.phone}</span>
+                                </a>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 pt-0.5 text-[11px]">
+                              {team.paymentProof ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setAdminProofLightbox(team.paymentProof)}
+                                  className="text-[#9D4EDD] dark:text-[#C77DFF] font-bold hover:underline inline-flex items-center gap-1"
+                                >
+                                  <Eye size={12} />
+                                  <span>Lihat Bukti Transfer ↗</span>
+                                </button>
+                              ) : (
+                                <span className="text-gray-400 italic">Free Entry / Tanpa bukti</span>
+                              )}
+                              <span className="text-gray-400">•</span>
+                              <span className="text-gray-400">Pengirim: {team.senderName || "-"}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              disabled={adminVerificationLoading === team.id}
+                              onClick={() => void handleAdminVerification(team.tournamentId, team.id, "APPROVE")}
+                              className="px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition disabled:opacity-50 flex items-center gap-1.5"
+                            >
+                              <Check size={14} />
+                              <span>ACC Tim</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={adminVerificationLoading === team.id}
+                              onClick={() => void handleAdminVerification(team.tournamentId, team.id, "REJECT")}
+                              className="px-3.5 py-2 text-xs font-bold rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white transition disabled:opacity-50 flex items-center gap-1.5"
+                            >
+                              <X size={14} />
+                              <span>Tolak</span>
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+
+                      {/* 3. Pending Seller Requests */}
+                      {isAdmin &&
+                        pendingSellerRequests.map((req: any) => (
+                          <article
+                            key={`queue-seller-${req.id}`}
+                            className="p-4 rounded-xl border border-blue-500/30 bg-blue-500/[0.03] flex flex-col md:flex-row md:items-center justify-between gap-4 transition hover:border-blue-500/50"
+                          >
+                            <div className="space-y-1.5 min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                                  VERIFIKASI PENJUAL
+                                </span>
+                                <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                                  @{req.username || "Member"}
+                                </h4>
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                Permohonan Verified Seller: akun telah menyetujui Pakta Pedagang LogHorizon.
+                              </p>
+                              {req.sellerVerificationNote && (
+                                <p className="text-xs text-gray-400 italic">
+                                  Catatan: &ldquo;{req.sellerVerificationNote}&rdquo;
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                disabled={busyId === req.id}
+                                onClick={() => void handleSellerVerificationAction(req.id, "APPROVE")}
+                                className="px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition disabled:opacity-50 flex items-center gap-1.5"
+                              >
+                                <ShieldCheck size={14} />
+                                <span>Setujui Verified</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busyId === req.id}
+                                onClick={() => void handleSellerVerificationAction(req.id, "REJECT")}
+                                className="px-3.5 py-2 text-xs font-bold rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white transition disabled:opacity-50 flex items-center gap-1.5"
+                              >
+                                <X size={14} />
+                                <span>Tolak</span>
+                              </button>
+                            </div>
+                          </article>
+                        ))}
+
+                      {/* 4. Pending Dungeon Bounties */}
+                      {pendingDungeonBounties.map((bounty: any) => (
+                        <article
+                          key={`queue-bounty-${bounty.id}`}
+                          className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/[0.03] flex flex-col md:flex-row md:items-center justify-between gap-4 transition hover:border-rose-500/50"
+                        >
+                          <div className="space-y-1.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                                BURONAN &amp; DUNGEON ({bounty.category})
+                              </span>
+                              <h4 className="text-sm font-black text-gray-900 dark:text-white">
+                                Target: <span className="text-rose-400">{bounty.targetName}</span>
+                              </h4>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              Pelapor: <strong>@{bounty.submittedBy?.username || "Member"}</strong> • Kronologi:{" "}
+                              <span className="text-gray-700 dark:text-gray-300 line-clamp-1">{bounty.crimeDescription}</span>
+                            </p>
+                            {bounty.evidenceImage && (
+                              <button
+                                type="button"
+                                onClick={() => setAdminProofLightbox(bounty.evidenceImage)}
+                                className="text-rose-400 text-xs font-bold hover:underline inline-flex items-center gap-1 pt-0.5"
+                              >
+                                <Eye size={12} />
+                                <span>Lihat Bukti Lampiran ↗</span>
+                              </button>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                            <button
+                              type="button"
+                              disabled={busyId === bounty.id}
+                              onClick={() => void handleDungeonAction(bounty.id, "APPROVE_WANTED")}
+                              className="px-3 py-1.5 text-xs font-black rounded-lg bg-amber-500 hover:bg-amber-400 text-black shadow-sm transition disabled:opacity-50 flex items-center gap-1"
+                            >
+                              <Flame size={13} />
+                              <span>ACC WANTED</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busyId === bounty.id}
+                              onClick={() => void handleDungeonAction(bounty.id, "APPROVE_IMPRISON")}
+                              className="px-3 py-1.5 text-xs font-black rounded-lg bg-rose-600 hover:bg-rose-500 text-white shadow-sm transition disabled:opacity-50 flex items-center gap-1"
+                            >
+                              <Lock size={13} />
+                              <span>Vonis Penjara</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busyId === bounty.id}
+                              onClick={() => void handleDungeonAction(bounty.id, "REJECT")}
+                              className="px-3 py-1.5 text-xs font-bold rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition"
+                            >
+                              Tolak
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+
+                      {/* 5. Pending Community Reports */}
+                      {pendingReportsList.map((report) => (
+                        <article
+                          key={`queue-report-${report.id}`}
+                          className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/[0.03] flex flex-col md:flex-row md:items-center justify-between gap-4 transition hover:border-amber-500/50"
+                        >
+                          <div className="space-y-1.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                LAPORAN FORUM / KONTEN
+                              </span>
+                              <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                                {report.post?.title || report.targetName || `Target #${report.id.slice(0, 8)}`}
+                              </h4>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              Alasan: <strong className="text-gray-700 dark:text-gray-300">{report.reason}</strong> • Pelapor:{" "}
+                              <strong>@{report.reporter?.username || "Gamer"}</strong>
+                            </p>
+                            {report.proofUrl && (
+                              <a
+                                href={report.proofUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[#9D4EDD] dark:text-[#C77DFF] font-bold text-xs hover:underline inline-flex items-center gap-1 pt-0.5"
+                              >
+                                <span>Lihat Bukti Screenshot ↗</span>
+                              </a>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              disabled={busyId === report.id}
+                              onClick={() => void handleReport(report, "dismiss")}
+                              className="px-3 py-1.5 text-xs font-bold rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition"
+                            >
+                              Abaikan
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busyId === report.id}
+                              onClick={() => void handleReport(report, "delete-post")}
+                              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white transition flex items-center gap-1"
+                            >
+                              <Trash2 size={13} />
+                              <span>Hapus Post</span>
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* MODULE QUICK JUMP & STATUS ECOSYSTEM */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
-                    <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
-                      <Sparkles size={18} className="text-[#9D4EDD]" /> Pintasan Manajemen
-                    </h2>
-                    <div className="space-y-2">
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => setTab("ai_command")}
-                          className="w-full text-left px-3.5 py-2.5 rounded-none border border-purple-500/30 bg-purple-500/5 hover:border-[#9D4EDD] text-xs font-semibold text-purple-700 dark:text-purple-300 flex items-center justify-between transition-colors"
-                        >
-                          <span className="flex items-center gap-2">
-                            <Terminal size={14} className="text-[#9D4EDD]" />
-                            <span>⚡ Buka AI Admin Command Assistant</span>
-                          </span>
-                          <ChevronRight size={14} className="text-gray-400" />
-                        </button>
-                      )}
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => setTab("settings")}
-                          className="w-full text-left px-3.5 py-2.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
-                        >
-                          <span>⚙️ Pengaturan Konten Website (CMS)</span>
-                          <ChevronRight size={14} className="text-gray-400" />
-                        </button>
-                      )}
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => setTab("treasury")}
-                          className="w-full text-left px-3.5 py-2.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
-                        >
-                          <span>💎 Verifikasi Kas Donasi &amp; Rekber</span>
-                          <span className="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold">
-                            {data?.stats.pendingDonations ?? 0} pending
-                          </span>
-                        </button>
-                      )}
+                  {/* Module Quick Jumps */}
+                  <div className="p-6 rounded-xl border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] space-y-3">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Sparkles size={18} className="text-[#9D4EDD]" />
+                      <span>Pintasan Modul Kerja</span>
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Buka modul lengkap untuk konfigurasi mendalam, pengundian bagan, atau manajemen member:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                       <button
                         type="button"
-                        onClick={() => setTab("members")}
-                        className="w-full text-left px-3.5 py-2.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                        onClick={() => {
+                          setTab("tournaments");
+                          setTournamentsSubTab("tournaments");
+                        }}
+                        className="p-3 rounded-lg border border-gray-200 dark:border-white/5 hover:border-[#9D4EDD] bg-gray-50 dark:bg-[#160D25] text-left transition"
                       >
-                        <span>👥 Kelola Member, Kasta &amp; Status Banned</span>
-                        <ChevronRight size={14} className="text-gray-400" />
+                        <Trophy size={16} className="text-purple-400 mb-1" />
+                        <span className="text-xs font-bold block text-gray-900 dark:text-white">Turnamen &amp; Arena</span>
+                        <span className="text-[11px] text-gray-500">Kelola turnamen &amp; bagan</span>
                       </button>
+
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTab("finance");
+                            setFinanceSubTab("donations");
+                          }}
+                          className="p-3 rounded-lg border border-gray-200 dark:border-white/5 hover:border-[#9D4EDD] bg-gray-50 dark:bg-[#160D25] text-left transition"
+                        >
+                          <Coins size={16} className="text-amber-400 mb-1" />
+                          <span className="text-xs font-bold block text-gray-900 dark:text-white">Keuangan &amp; Rekber</span>
+                          <span className="text-[11px] text-gray-500">Donasi, escrow &amp; seller</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
-                        onClick={() => setTab("moderation")}
-                        className="w-full text-left px-3.5 py-2.5 rounded-none border border-gray-200 dark:border-[#2E1E45] hover:border-[#9D4EDD] text-xs font-semibold text-gray-800 dark:text-gray-200 flex items-center justify-between"
+                        onClick={() => {
+                          setTab("moderation");
+                          setModerationSubTab("dungeon");
+                        }}
+                        className="p-3 rounded-lg border border-gray-200 dark:border-white/5 hover:border-[#9D4EDD] bg-gray-50 dark:bg-[#160D25] text-left transition"
                       >
-                        <span>🛡️ Moderasi Konten, Sponsor &amp; Broadcast</span>
-                        <ChevronRight size={14} className="text-gray-400" />
+                        <Skull size={16} className="text-rose-400 mb-1" />
+                        <span className="text-xs font-bold block text-gray-900 dark:text-white">Penjara &amp; Buronan</span>
+                        <span className="text-[11px] text-gray-500">Daftar hitam &amp; vonis dungeon</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTab("moderation");
+                          setModerationSubTab("members");
+                        }}
+                        className="p-3 rounded-lg border border-gray-200 dark:border-white/5 hover:border-[#9D4EDD] bg-gray-50 dark:bg-[#160D25] text-left transition"
+                      >
+                        <Users size={16} className="text-blue-400 mb-1" />
+                        <span className="text-xs font-bold block text-gray-900 dark:text-white">Member &amp; Kasta</span>
+                        <span className="text-[11px] text-gray-500">Atur kasta, ban &amp; staf</span>
                       </button>
                     </div>
                   </div>
@@ -1833,8 +2446,10 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
             {/* ========================================================================= */}
             {/* TAB 2: PENGATURAN KONTEN WEBSITE (SITE SETTINGS CMS) */}
             {/* ========================================================================= */}
-            {tab === "settings" && isAdmin && (
-              <section className="space-y-6" role="tabpanel">
+            {activeMainTab === "moderation" && effectiveModerationSubTab === "settings" && isAdmin && (
+              <div className="space-y-6">
+                {moderationSubtabsBar}
+                <section className="space-y-6" role="tabpanel">
                 <div className="p-6 sm:p-8 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <div className="mb-6">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -2487,13 +3102,17 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                   </div>
                 )}
               </section>
-            )}
+            </div>
+          )}
 
             {/* ========================================================================= */}
             {/* TAB: KELOLA TURNAMEN & ANTREAN VERIFIKASI QRIS */}
             {/* ========================================================================= */}
-            {tab === "tournaments" && (
-              <section className="space-y-6" role="tabpanel">
+            {activeMainTab === "tournaments" && (
+              <div className="space-y-6">
+                {tournamentsSubtabsBar}
+                {effectiveTournamentsSubTab === "tournaments" && (
+                  <section className="space-y-6" role="tabpanel">
                 {/* TOOLBAR TURNAMEN */}
                 <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
@@ -2934,14 +3553,14 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                     })()}
                   </div>
                 )}
-              </section>
-            )}
+                  </section>
+                )}
 
-            {/* ========================================================================= */}
-            {/* TAB: KELOLA HALL OF WINNERS (AULA PARA JUARA) */}
-            {/* ========================================================================= */}
-            {tab === "hall_of_winners" && (
-              <section className="space-y-6" role="tabpanel">
+                {/* ========================================================================= */}
+                {/* TAB: KELOLA HALL OF WINNERS (AULA PARA JUARA) */}
+                {/* ========================================================================= */}
+                {effectiveTournamentsSubTab === "hall_of_winners" && (
+                  <section className="space-y-6" role="tabpanel">
                 <div className="p-5 sm:p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
@@ -3232,12 +3851,17 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                 </div>
               </section>
             )}
+              </div>
+            )}
 
             {/* ========================================================================= */}
             {/* TAB 3: VERIFIKASI DONASI & TRANSAKSI REKBER (KHUSUS ADMIN) */}
             {/* ========================================================================= */}
-            {tab === "treasury" && isAdmin && (
-              <section className="space-y-8" role="tabpanel">
+            {activeMainTab === "finance" && isAdmin && (effectiveFinanceSubTab === "donations" || effectiveFinanceSubTab === "escrow") && (
+              <div className="space-y-6">
+                {financeSubtabsBar}
+                {effectiveFinanceSubTab === "donations" && (
+                  <section className="space-y-8" role="tabpanel">
                 {/* TOOLBAR & RESET DATA SIMULASI */}
                 <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
@@ -3494,7 +4118,11 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                     </table>
                   </DragScrollContainer>
                 </div>
+              </section>
+            )}
 
+            {effectiveFinanceSubTab === "escrow" && (
+              <section className="space-y-8" role="tabpanel">
                 {/* 3. TIKET REKBER 3-PIHAK (CLAIM & RUANG CHAT) */}
                 <div className="p-5 rounded-none border border-purple-500/30 bg-white dark:bg-[#130921] shadow-lg">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
@@ -3760,12 +4388,16 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                 </div>
               </section>
             )}
+              </div>
+            )}
 
             {/* ========================================================================= */}
             {/* TAB 4: MANAJEMEN MEMBER & KASTA ROLE */}
             {/* ========================================================================= */}
-            {tab === "members" && (
-              <section className="space-y-6" role="tabpanel">
+            {activeMainTab === "moderation" && effectiveModerationSubTab === "members" && (
+              <div className="space-y-6">
+                {moderationSubtabsBar}
+                <section className="space-y-6" role="tabpanel">
                 <div className="p-5 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                     <div>
@@ -4085,13 +4717,16 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                   )}
                 </div>
               </section>
-            )}
+            </div>
+          )}
 
             {/* ========================================================================= */}
             {/* TAB: PANEL VERIFIKASI PENJUAL TERPERCAYA (MANUAL STAFF VERIFICATION) */}
             {/* ========================================================================= */}
-            {tab === "verified_sellers" && isAdmin && (
-              <section className="space-y-6" role="tabpanel">
+            {activeMainTab === "finance" && isAdmin && effectiveFinanceSubTab === "verified_sellers" && (
+              <div className="space-y-6">
+                {financeSubtabsBar}
+                <section className="space-y-6" role="tabpanel">
                 {/* Header Banner */}
                 <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -4307,13 +4942,17 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                   )}
                 </div>
               </section>
-            )}
+            </div>
+          )}
 
             {/* ========================================================================= */}
-            {/* TAB 5: MODERASI KONTEN & LOG KEAMANAN SATPAM AI */}
+            {/* TAB 5: MODERASI KONTEN (DUNGEON & LAPORAN) */}
             {/* ========================================================================= */}
-            {(tab === "moderation" || tab === "security_logs") && (
-              <section className="space-y-8" role="tabpanel">
+            {activeMainTab === "moderation" && (effectiveModerationSubTab === "dungeon" || effectiveModerationSubTab === "reports") && (
+              <div className="space-y-6">
+                {moderationSubtabsBar}
+                {effectiveModerationSubTab === "dungeon" && (
+                  <section className="space-y-8" role="tabpanel">
                 {/* 0. PENGAJUAN PENJARA & PAPAN BURONAN GUILD (/dungeon) */}
                 <div className="p-6 rounded-none border border-rose-200 dark:border-rose-950/60 bg-white dark:bg-[#130718]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
@@ -4526,7 +5165,11 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                     </div>
                   )}
                 </div>
+              </section>
+            )}
 
+            {effectiveModerationSubTab === "reports" && (
+              <section className="space-y-8" role="tabpanel">
                 {/* 1. LAPORAN PELANGGARAN FORUM */}
                 <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
@@ -4731,12 +5374,16 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                 </div>
               </section>
             )}
+              </div>
+            )}
 
             {/* ========================================================================= */}
             {/* TAB 7: LOG KEAMANAN SATPAM AI */}
             {/* ========================================================================= */}
-            {tab === "security_logs" && (
-              <section className="space-y-6" role="tabpanel">
+            {activeMainTab === "moderation" && effectiveModerationSubTab === "security_logs" && (
+              <div className="space-y-6">
+                {moderationSubtabsBar}
+                <section className="space-y-6" role="tabpanel">
                 {/* Header Banner */}
                 <div className="p-6 rounded-none border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -4898,7 +5545,8 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                   )}
                 </div>
               </section>
-            )}
+            </div>
+          )}
           </div>
         </div>
       </div>

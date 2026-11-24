@@ -878,20 +878,68 @@ export default async function Home() {
       </section>
 
       {/* ===================================================================== */}
-      {/* 06 / SPONSOR RESMI                                                    */}
+      {/* 06 / PARTNER, SPONSOR & DEVELOPER RESMI                               */}
       {/* ===================================================================== */}
       <section className="py-12 border-y border-slate-200 dark:border-[#2A1B42] bg-slate-100/60 dark:bg-[#0B0613]">
         <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
           <div className="text-left">
             <p className="font-mono text-xs font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider mb-2">
-              06 / PARTNER &amp; SPONSOR RESMI GUILD
+              06 / PARTNER, SPONSOR &amp; DEVELOPER RESMI GUILD
             </p>
             <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-[#F8FAFC] uppercase">
-              Dukungan yang menjaga guild terus bergerak.
+              Dukungan &amp; Arsitektur yang Menjaga Guild Terus Bergerak.
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-[#A78BFA] max-w-xl">
-              Mitra dan sponsor terverifikasi yang mendanai turnamen serta operasional server LogHorizon.
+              Studio rekayasa teknologi dan mitra sponsor resmi yang menopang platform, turnamen esports, serta operasional ekosistem LogHorizon.
             </p>
+          </div>
+
+          {/* KARTU SHOWCASE PERMANEN: OFFICIAL TECHNOLOGY & WEB ENGINEERING PARTNER */}
+          <div className="relative mt-8 p-6 sm:p-8 rounded-none border-2 border-[#7C3AED] bg-gradient-to-r from-purple-950/20 via-white dark:via-[#130921] to-[#7C3AED]/10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm dark:shadow-[0_0_40px_rgba(124,58,237,0.15)] text-left group">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+              <div className="relative size-16 sm:size-20 rounded-xl bg-white dark:bg-[#1A0E2E] border-2 border-[#7C3AED]/50 p-2 flex items-center justify-center shrink-0 shadow-md group-hover:border-[#A78BFA] transition-colors overflow-hidden">
+                <Image
+                  src="/loghorizon-studio-logo.png"
+                  alt="LogHorizonStudio"
+                  width={64}
+                  height={64}
+                  className="object-contain"
+                />
+              </div>
+              <div className="space-y-1.5 text-center sm:text-left">
+                <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-[#10B981] border border-emerald-500/30 flex items-center gap-1.5">
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    OFFICIAL TECHNOLOGY &amp; WEB ENGINEERING PARTNER
+                  </span>
+                </div>
+                <h3 className="font-display text-lg sm:text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">
+                  LogHorizonStudio{" "}
+                  <span className="text-xs sm:text-sm font-sans font-medium text-slate-500 dark:text-[#A78BFA] block sm:inline sm:ml-1">
+                    — Architectural Web Engineering &amp; Digital Studio
+                  </span>
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-[#C4B5FD] max-w-2xl leading-relaxed">
+                  Studio pengembang sistem portal komunitas, platform turnamen esports, dan rekayasa web berkecepatan tinggi di balik ekosistem LogHorizon.
+                </p>
+              </div>
+            </div>
+
+            <a
+              href="https://loghorizonstudio.web.id"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-none text-xs font-mono font-bold text-white bg-[#7C3AED] hover:bg-[#6D28D9] border border-[#7C3AED] hover:border-[#A78BFA] transition-all shrink-0 shadow-sm whitespace-nowrap cursor-pointer group/btn"
+              title="Kunjungi Website Resmi LogHorizonStudio"
+            >
+              <span>🌐 Kunjungi LogHorizonStudio.web.id</span>
+              <span className="text-sm leading-none group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform">
+                ↗
+              </span>
+            </a>
           </div>
 
           {sponsors.length > 0 ? (

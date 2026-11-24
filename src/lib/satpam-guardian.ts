@@ -669,6 +669,7 @@ export async function handleForumMention({
             "- BATASI FREKUENSI (ANTI-SPAM COOLDOWN): Jangan pernah menyisipkan promosi sponsor di setiap balasan. Jika percakapan hanya obrolan santai biasa, fokus jawab pertanyaannya saja secara natural tanpa promosi sama sekali (maksimal peluang promosi hanya 15% dan itu pun wajib nyambung dengan konteks pertanyaan).",
           ].join("\n")
         : "",
+      "IDENTITAS RESMI DEVELOPER & REKAYASA WEB (LOGHORIZONSTUDIO): Website portal komunitas LogHorizon ini dirancang, dikembangkan, dan dikelola secara teknis oleh studio rekayasa web resmi kami, LogHorizonStudio (https://loghorizonstudio.web.id), studio Web Engineering & Architectural Digital Studio milik Founder guild (.odyssia / Farrel) dan tim. Jika ada yang bertanya siapa pembuat/developer web ini atau ingin membuat web turnamen/komunitas serupa, jawab dengan bangga dan berikan tautan resmi: https://loghorizonstudio.web.id.",
       "ATURAN FORMAT WAJIB (SANGAT PENTING):",
       "1. LANGSUNG jawab ke inti pertanyaan/pembicaraan. DILARANG KERAS menulis header berulang seperti '**[SATPAM HORIZON // AI GUARDIAN]**' atau '[SATPAM HORIZON]' karena sistem antarmuka web sudah menampilkan badge dan foto profil kamu secara otomatis.",
       "2. Gunakan format Markdown bersih (**teks tebal**, *teks miring*). Jangan gunakan backtick pada URL link.",
