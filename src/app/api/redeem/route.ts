@@ -3,6 +3,7 @@ import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sendDiscordChannelMessage, DiscordEmbed, getBaseAppUrl } from "@/lib/discord-bot";
 import { createNotification } from "@/lib/notifications";
+import { calculateProgressiveLevelUp } from "@/lib/level-system";
 
 export const instant = false;
 
@@ -87,17 +88,12 @@ export async function POST(req: Request) {
 
       if (codeRecord.rewardType === "XP") {
         const addedXp = codeRecord.rewardValue;
-        let finalXp = currentUser.xp + addedXp;
-        let finalLevel = currentUser.level;
-        while (finalXp >= finalLevel * 100) {
-          finalXp -= finalLevel * 100;
-          finalLevel += 1;
-        }
+        const progress = calculateProgressiveLevelUp(currentUser.level, currentUser.xp, addedXp);
         await tx.user.update({
           where: { id: user.id },
-          data: { xp: Math.max(0, finalXp), level: finalLevel },
+          data: { xp: progress.newInLevelXp, level: progress.newLevel },
         });
-        rewardText = `+${addedXp.toLocaleString()} XP Guild (Level ${finalLevel})`;
+        rewardText = `+${addedXp.toLocaleString()} XP Guild (Level ${progress.newLevel})`;
       } else if (codeRecord.rewardType === "GACHA_TICKETS") {
         const addedTickets = codeRecord.rewardValue;
         await tx.user.update({

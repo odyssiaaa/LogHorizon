@@ -49,6 +49,7 @@ import { getCustomTitleBadge } from "@/lib/armory-catalog";
 import { VerifiedSellerModal } from "@/components/verified-seller-modal";
 import { isGuildOwner } from "@/lib/caste-hierarchy";
 import { getEuropeanNobilityRank } from "@/lib/nobility-ranks";
+import { calculateLevelFromXp, getLevelProgress } from "@/lib/level-system";
 import { useLocale, SUPPORTED_LANGUAGES, SUPPORTED_CURRENCIES } from "@/context/locale-context";
 import { FlagIcon } from "@/components/locale-switcher";
 import { openLoginModal } from "@/components/login-modal";
@@ -487,9 +488,10 @@ export function SettingsDashboard() {
   const { locale, setLocale, currency, setCurrency, t } = useLocale();
   const currentLevel = profile?.level ?? 1;
   const currentXp = profile?.xp ?? 0;
-  const xpInLevel = currentXp % 100;
-  const xpPercent = Math.min(100, Math.max(0, Math.round((xpInLevel / 100) * 100)));
-  const nobility = getEuropeanNobilityRank(currentLevel);
+  const xpProgress = getLevelProgress(currentLevel, currentXp);
+  const xpInLevel = xpProgress.currentLevelXp;
+  const xpPercent = xpProgress.progressPercent;
+  const nobility = getEuropeanNobilityRank(xpProgress.level);
   const isOwner = isGuildOwner(session?.user || profile);
 
   return (
@@ -701,18 +703,18 @@ export function SettingsDashboard() {
                       <Zap size={14} className="text-[#9D4EDD]" /> Progres Pengalaman (XP)
                     </span>
                     <span className="font-mono text-purple-300 font-bold">
-                      {xpInLevel} / 100 XP ({currentXp} Total)
+                      {xpProgress.currentLevelXp.toLocaleString("id-ID")} / {xpProgress.nextLevelXp.toLocaleString("id-ID")} XP
                     </span>
                   </div>
                   <div className="w-full h-3 bg-[#1A102E] rounded-full overflow-hidden p-0.5 border border-purple-900/30">
                     <div
                       className="h-full bg-gradient-to-r from-[#7C3AED] via-[#9D4EDD] to-[#C77DFF] rounded-full transition-all duration-500 shadow-sm shadow-purple-500/50"
-                      style={{ width: `${xpPercent}%` }}
+                      style={{ width: `${xpProgress.progressPercent}%` }}
                     />
                   </div>
                   <p className="text-[11px] text-gray-400 mt-1.5">
-                    Raih {100 - xpInLevel} XP lagi dari forum, turnamen, atau absen harian untuk mencapai Level{" "}
-                    {currentLevel + 1}.
+                    Raih {Math.max(0, xpProgress.nextLevelXp - xpProgress.currentLevelXp).toLocaleString("id-ID")} XP lagi dari forum, turnamen, atau absen harian untuk mencapai Level{" "}
+                    {xpProgress.level + 1}.
                   </p>
                 </div>
               </div>

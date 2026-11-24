@@ -473,6 +473,7 @@ model SiteConfig {
   featureGuestTournamentEnabled  Boolean  @default(true)
   featurePartyEnabled            Boolean  @default(true)
   maintenanceMode                Boolean  @default(false)
+  hideStaffFromLeaderboard       Boolean  @default(false)
 
   aiKnowledgeBase  String?  @db.Text
   updatedAt        DateTime @updatedAt

@@ -20,6 +20,7 @@ export async function GET(req: Request) {
         featureGuestTournamentEnabled: true,
         featurePartyEnabled: true,
         maintenanceMode: true,
+        hideStaffFromLeaderboard: true,
         updatedAt: true,
       },
     });
@@ -35,6 +36,7 @@ export async function GET(req: Request) {
           featureGuestTournamentEnabled: true,
           featurePartyEnabled: true,
           maintenanceMode: true,
+          hideStaffFromLeaderboard: true,
           updatedAt: true,
         },
       });
@@ -60,6 +62,7 @@ export async function PATCH(req: Request) {
     "featureGuestTournamentEnabled",
     "featurePartyEnabled",
     "maintenanceMode",
+    "hideStaffFromLeaderboard",
   ] as const;
 
   const updateData: Record<string, boolean> = {};
@@ -92,6 +95,7 @@ export async function PATCH(req: Request) {
         featureGuestTournamentEnabled: true,
         featurePartyEnabled: true,
         maintenanceMode: true,
+        hideStaffFromLeaderboard: true,
         updatedAt: true,
       },
     });

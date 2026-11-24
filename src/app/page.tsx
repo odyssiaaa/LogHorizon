@@ -155,8 +155,11 @@ type MarketSummary = {
 export default async function Home() {
   await connection();
   const now = new Date();
+  const config = await prisma.siteConfig.findUnique({ where: { id: "default" } }).catch(() => null);
+  const hideStaff = Boolean(config?.hideStaffFromLeaderboard);
+
   const [
-    config,
+    _configPlaceholder,
     sponsorsData,
     totalMembers,
     activeTournamentsData,
@@ -169,7 +172,7 @@ export default async function Home() {
     rawPartiesData,
     latestChampionsData,
   ] = await Promise.all([
-    prisma.siteConfig.findUnique({ where: { id: "default" } }).catch(() => null),
+    Promise.resolve(config),
     prisma.sponsor.findMany({ orderBy: { createdAt: "desc" } }).catch(() => []),
     prisma.user.count().catch(() => 0),
     prisma.tournament.findMany({
@@ -228,6 +231,18 @@ export default async function Home() {
       },
     }).catch(() => []),
     prisma.user.findMany({
+      where: hideStaff
+        ? {
+            isBanned: false,
+            username: { notIn: ["satpam-horizon", "Satpam Horizon", ".odyssia"] },
+            role: { notIn: ["ADMIN", "MODERATOR"] },
+            NOT: [{ email: { endsWith: "@system.local" } }, { badges: { has: "SATPAM_AI" } }],
+          }
+        : {
+            isBanned: false,
+            username: { notIn: ["satpam-horizon", "Satpam Horizon"] },
+            NOT: [{ email: { endsWith: "@system.local" } }, { badges: { has: "SATPAM_AI" } }],
+          },
       orderBy: [{ level: "desc" }, { xp: "desc" }],
       take: 3,
       select: {

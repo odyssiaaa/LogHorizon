@@ -34,6 +34,7 @@ import { DiscordAvatar } from "@/components/discord-avatar";
 import { ShareButton } from "@/components/share-button";
 import { UniversalReportDialog } from "@/components/universal-report-dialog";
 import { getEuropeanNobilityRank } from "@/lib/nobility-ranks";
+import { getLevelProgress } from "@/lib/level-system";
 
 export type PublicProfileProps = {
   user: {
@@ -157,9 +158,10 @@ export function PublicProfileClient({
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportNotice, setReportNotice] = useState("");
 
-  const xpNeeded = user.level * 100;
-  const xpProgress = Math.min(100, Math.round(((user.xp % 100) / 100) * 100));
-  const nobility = getEuropeanNobilityRank(user.level ?? 1);
+  const xpMetrics = getLevelProgress(user.level ?? 1, user.xp ?? 0);
+  const xpNeeded = xpMetrics.nextLevelXp;
+  const xpProgress = xpMetrics.progressPercent;
+  const nobility = getEuropeanNobilityRank(xpMetrics.level);
 
   async function handleToggleFollow() {
     if (!currentUserId) {
@@ -398,16 +400,16 @@ export function PublicProfileClient({
         <div className="mt-6 pt-6 border-t border-slate-100 dark:border-[#2E1E45]">
           <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
             <span className="flex items-center gap-1.5 font-mono">
-              <Zap size={14} className="text-[#7C3AED]" /> Level {user.level} • {nobility.name}
+              <Zap size={14} className="text-[#7C3AED]" /> Level {xpMetrics.level} • {nobility.name}
             </span>
             <span className="font-mono text-slate-500 dark:text-slate-400">
-              {user.xp} XP / {xpNeeded} XP
+              {xpMetrics.currentLevelXp.toLocaleString("id-ID")} XP / {xpMetrics.nextLevelXp.toLocaleString("id-ID")} XP
             </span>
           </div>
           <div className="w-full h-2.5 rounded-full bg-slate-100 dark:bg-[#1A1526] overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] rounded-full transition-all duration-500"
-              style={{ width: `${Math.max(5, xpProgress)}%` }}
+              style={{ width: `${Math.max(5, xpMetrics.progressPercent)}%` }}
             />
           </div>
         </div>

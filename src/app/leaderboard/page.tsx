@@ -7,16 +7,33 @@ export const metadata = { title: "Guild Leaderboard | LogHorizon" };
 export const instant = false;
 
 export default async function LeaderboardPage() {
+  const siteConfig = await prisma.siteConfig.findUnique({
+    where: { id: "default" },
+    select: { hideStaffFromLeaderboard: true },
+  });
+  const hideStaff = Boolean(siteConfig?.hideStaffFromLeaderboard);
+
+  const excludedUsernames = ["satpam-horizon", "Satpam Horizon"];
+  if (hideStaff) {
+    excludedUsernames.push(".odyssia");
+  }
+
+  const memberWhere: any = {
+    isBanned: false,
+    username: { notIn: excludedUsernames },
+    NOT: [
+      { email: { endsWith: "@system.local" } },
+      { badges: { has: "SATPAM_AI" } },
+    ],
+  };
+
+  if (hideStaff) {
+    memberWhere.role = { notIn: ["ADMIN", "MODERATOR"] };
+  }
+
   const [rawMembers, donorTotals] = await Promise.all([
     prisma.user.findMany({
-      where: {
-        isBanned: false,
-        username: { notIn: ["satpam-horizon", "Satpam Horizon"] },
-        NOT: [
-          { email: { endsWith: "@system.local" } },
-          { badges: { has: "SATPAM_AI" } },
-        ],
-      },
+      where: memberWhere,
       select: {
         id: true,
         username: true,
@@ -43,19 +60,34 @@ export default async function LeaderboardPage() {
       orderBy: [{ level: "desc" }, { xp: "desc" }, { joinedAt: "asc" }],
       take: 5,
     }),
-    prisma.$queryRaw<{ id: string; username: string | null; badges: string[]; total: string }[]>`
-      SELECT u."id", u."username", u."badges", SUM(d."amount")::text AS "total"
-      FROM "User" u
-      INNER JOIN "Donation" d ON d."userId" = u."id"
-      WHERE u."isBanned" = false
-        AND u."username" NOT IN ('satpam-horizon', 'Satpam Horizon')
-        AND (u."email" IS NULL OR u."email" NOT LIKE '%@system.local')
-        AND d."status" = 'SUCCEEDED'::"DonationStatus"
-        AND (d."gatewayRef" IS NULL OR d."gatewayRef" NOT LIKE 'mock-%')
-      GROUP BY u."id"
-      ORDER BY SUM(d."amount") DESC, u."joinedAt" ASC, u."id" ASC
-      LIMIT 10
-    `,
+    hideStaff
+      ? prisma.$queryRaw<{ id: string; username: string | null; badges: string[]; total: string }[]>`
+          SELECT u."id", u."username", u."badges", SUM(d."amount")::text AS "total"
+          FROM "User" u
+          INNER JOIN "Donation" d ON d."userId" = u."id"
+          WHERE u."isBanned" = false
+            AND u."username" NOT IN ('satpam-horizon', 'Satpam Horizon', '.odyssia')
+            AND u."role" NOT IN ('ADMIN'::"Role", 'MODERATOR'::"Role")
+            AND (u."email" IS NULL OR u."email" NOT LIKE '%@system.local')
+            AND d."status" = 'SUCCEEDED'::"DonationStatus"
+            AND (d."gatewayRef" IS NULL OR d."gatewayRef" NOT LIKE 'mock-%')
+          GROUP BY u."id"
+          ORDER BY SUM(d."amount") DESC, u."joinedAt" ASC, u."id" ASC
+          LIMIT 10
+        `
+      : prisma.$queryRaw<{ id: string; username: string | null; badges: string[]; total: string }[]>`
+          SELECT u."id", u."username", u."badges", SUM(d."amount")::text AS "total"
+          FROM "User" u
+          INNER JOIN "Donation" d ON d."userId" = u."id"
+          WHERE u."isBanned" = false
+            AND u."username" NOT IN ('satpam-horizon', 'Satpam Horizon')
+            AND (u."email" IS NULL OR u."email" NOT LIKE '%@system.local')
+            AND d."status" = 'SUCCEEDED'::"DonationStatus"
+            AND (d."gatewayRef" IS NULL OR d."gatewayRef" NOT LIKE 'mock-%')
+          GROUP BY u."id"
+          ORDER BY SUM(d."amount") DESC, u."joinedAt" ASC, u."id" ASC
+          LIMIT 10
+        `,
   ]);
 
   const members = rawMembers.map((m) => {

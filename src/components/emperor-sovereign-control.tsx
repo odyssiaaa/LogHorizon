@@ -65,6 +65,7 @@ interface FeatureFlags {
   featureGuestTournamentEnabled: boolean;
   featurePartyEnabled: boolean;
   maintenanceMode: boolean;
+  hideStaffFromLeaderboard: boolean;
   updatedAt?: string;
 }
 
@@ -96,6 +97,7 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
     featureGuestTournamentEnabled: true,
     featurePartyEnabled: true,
     maintenanceMode: false,
+    hideStaffFromLeaderboard: false,
   });
   const [loadingFeatures, setLoadingFeatures] = useState(false);
   const [savingFeatureKey, setSavingFeatureKey] = useState<string | null>(null);
@@ -1040,6 +1042,13 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                 desc: "Fitur rekrutmen rekan mabar real-time dengan sinkronisasi channel gaming Discord.",
                 route: "/events?view=mabar",
                 color: "indigo",
+              },
+              {
+                key: "hideStaffFromLeaderboard" as keyof FeatureFlags,
+                title: "Sembunyikan Bot & Staf dari Leaderboard",
+                desc: "Saring akun bot Satpam AI dan jajaran Staf/Admin (.odyssia, Prince, Lord Commander) agar podium murni diperebutkan member reguler.",
+                route: "/leaderboard",
+                color: "amber",
               },
               {
                 key: "maintenanceMode" as keyof FeatureFlags,
