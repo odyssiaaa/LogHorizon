@@ -103,6 +103,38 @@ export async function requireOwner() {
 }
 
 /**
+ * Strict Owner Odyssia Guard:
+ * Strictly limited to the sole Guild Owner account (.odyssia).
+ * Verifies directly against DB. Rejects all others (even ADMIN/MODERATOR) with 403 Forbidden.
+ */
+export async function requireOwnerOdyssia() {
+  const user = await authenticatedUser();
+  if (!user) return { user: null, response: jsonError("Login diperlukan.", 401) } as const;
+
+  const isOwner =
+    isGuildOwner(user) ||
+    (user.username && user.username.toLowerCase() === ".odyssia") ||
+    (user.username && user.username.toLowerCase() === "odyssia");
+
+  if (!isOwner) {
+    void logSecurityIncident({
+      userId: user.id,
+      username: user.username ?? user.name ?? "Unauthorized User",
+      action: "UNAUTHORIZED_EMPEROR_ACCESS_ATTEMPT",
+      reason: "Percobaan akses panel mutlak Emperor Sovereign oleh non-owner",
+      content: `User @${user.username} (ID: ${user.id}, Role: ${user.role}) mencoba mengakses Emperor Sovereign Control tanpa wewenang mutlak.`,
+      severity: "CRITICAL",
+    });
+    return {
+      user: null,
+      response: jsonError("Akses ditolak: Hanya pemilik tunggal (.odyssia) yang memiliki wewenang Emperor Sovereign.", 403),
+    } as const;
+  }
+
+  return { user, response: null } as const;
+}
+
+/**
  * Anti-IDOR Guard:
  * Asserts that the authenticated user owns the resource, or has staff privileges if allowed.
  * Automatically logs security incident if an unauthorized access is attempted.

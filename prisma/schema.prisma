@@ -464,6 +464,15 @@ model SiteConfig {
   discordLfgChannelId            String?  @default("1547552498833825874")
   discordModLogChannelId         String?  @default("1547552557868777552")
 
+  // Live Feature Toggles & Sovereign Switchboard (Owner / Emperor)
+  featureGachaEnabled            Boolean  @default(true)
+  featureArmoryEnabled           Boolean  @default(true)
+  featureMarketplaceEnabled      Boolean  @default(true)
+  featureDungeonEnabled          Boolean  @default(true)
+  featureGuestTournamentEnabled  Boolean  @default(true)
+  featurePartyEnabled            Boolean  @default(true)
+  maintenanceMode                Boolean  @default(false)
+
   aiKnowledgeBase  String?  @db.Text
   updatedAt        DateTime @updatedAt
 }

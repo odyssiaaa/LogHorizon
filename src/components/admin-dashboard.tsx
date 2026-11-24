@@ -65,6 +65,7 @@ import { RosterPlayerRow } from "@/components/roster-player-row";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
 import { AiAdminTerminal } from "@/components/ai-admin-terminal";
+import { EmperorSovereignControl } from "@/components/emperor-sovereign-control";
 
 type Role = "MEMBER" | "MODERATOR" | "ADMIN";
 
@@ -241,11 +242,20 @@ type Tab =
   | "treasury"
   | "members"
   | "verified_sellers"
-  | "security_logs";
+  | "security_logs"
+  | "emperor_control";
 
 const formatMoney = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
-export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?: boolean }) {
+export function AdminDashboard({
+  role,
+  isOwner = false,
+  currentUsername,
+}: {
+  role: Role;
+  isOwner?: boolean;
+  currentUsername?: string | null;
+}) {
   const isAdmin = role === "ADMIN";
   const [tab, setTab] = useState<Tab>("overview");
   const [tournamentsSubTab, setTournamentsSubTab] = useState<"tournaments" | "hall_of_winners">("tournaments");
@@ -253,8 +263,9 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
   const [moderationSubTab, setModerationSubTab] = useState<"dungeon" | "reports" | "members" | "security_logs" | "settings">("dungeon");
 
   // Derive activeMainTab to support backwards-compatible navigation
-  const activeMainTab: "overview" | "ai_command" | "tournaments" | "finance" | "moderation" =
-    tab === "hall_of_winners" ? "tournaments"
+  const activeMainTab: "overview" | "ai_command" | "tournaments" | "finance" | "moderation" | "emperor_control" =
+    tab === "emperor_control" ? "emperor_control"
+    : tab === "hall_of_winners" ? "tournaments"
     : (tab === "treasury" || tab === "verified_sellers" || tab === "finance") ? "finance"
     : (tab === "members" || tab === "settings" || tab === "security_logs" || tab === "moderation") ? "moderation"
     : (tab as any);
@@ -1707,6 +1718,27 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               )}
             </button>
 
+            {/* 6. EMPEROR SOVEREIGN CONTROL (MUTLAK KHUSUS .ODYSSIA) */}
+            {isOwner && (
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all border ${
+                  activeMainTab === "emperor_control"
+                    ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black border-amber-400 shadow-md shadow-amber-500/20"
+                    : "border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:text-white"
+                }`}
+                onClick={() => setTab("emperor_control")}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Crown size={16} className="text-amber-400" />
+                  <span>👑 Emperor Control</span>
+                </div>
+                <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-black uppercase tracking-wider bg-black/40 text-amber-300">
+                  ODYSSEA
+                </span>
+              </button>
+            )}
+
             <Link
               href="/events?view=turnamen"
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1C1724] border border-dashed border-[#9D4EDD]/40 mt-3 bg-[#9D4EDD]/5 transition-colors"
@@ -1807,6 +1839,21 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
               )}
             </button>
 
+            {/* 6. Emperor Control (Mobile) */}
+            {isOwner && (
+              <button
+                type="button"
+                className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition border ${
+                  activeMainTab === "emperor_control"
+                    ? "bg-amber-500 text-black border-amber-400 shadow-sm"
+                    : "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                }`}
+                onClick={() => setTab("emperor_control")}
+              >
+                <Crown size={14} className="text-amber-400" /> <span>6. 👑 Emperor Control</span>
+              </button>
+            )}
+
             <Link
               href="/events?view=turnamen"
               className="whitespace-nowrap shrink-0 px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-[#9D4EDD]/10 text-[#9D4EDD] border border-[#9D4EDD]/30"
@@ -1818,6 +1865,15 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
 
           {/* MAIN TAB CONTENT */}
           <div className="min-w-0 flex-1">
+            {/* ========================================================================= */}
+            {/* TAB: EMPEROR SOVEREIGN CONTROL (EXCLUSIVE OWNER .ODYSSIA) */}
+            {/* ========================================================================= */}
+            {activeMainTab === "emperor_control" && isOwner && (
+              <section className="space-y-6 pb-28 lg:pb-24" role="tabpanel">
+                <EmperorSovereignControl currentUsername={currentUsername} />
+              </section>
+            )}
+
             {/* ========================================================================= */}
             {/* TAB: AI ADMIN COMMAND ASSISTANT TERMINAL (EXCLUSIVE ADMIN) */}
             {/* ========================================================================= */}

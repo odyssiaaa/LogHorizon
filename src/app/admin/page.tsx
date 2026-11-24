@@ -19,5 +19,5 @@ export default async function AdminPage() {
 
   const isOwner = isGuildOwner(user);
 
-  return <AdminDashboard role={user.role} isOwner={isOwner} />;
+  return <AdminDashboard role={user.role} isOwner={isOwner} currentUsername={user.username} />;
 }

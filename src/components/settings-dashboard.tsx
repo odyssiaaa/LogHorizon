@@ -33,6 +33,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import { EmperorSovereignControl } from "@/components/emperor-sovereign-control";
 import { useSearchParams } from "next/navigation";
 import { readApiResponse } from "@/lib/api-response";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -173,8 +174,8 @@ export function SettingsDashboard() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  // Sub-tabs: "profile" | "badges" | "armory" | "gacha" | "settings"
-  const [activeTab, setActiveTab] = useState<"profile" | "badges" | "armory" | "gacha" | "settings">("profile");
+  // Sub-tabs: "profile" | "badges" | "armory" | "gacha" | "settings" | "emperor"
+  const [activeTab, setActiveTab] = useState<"profile" | "badges" | "armory" | "gacha" | "settings" | "emperor">("profile");
 
   // Linked Accounts State (Multi-Provider Login)
   const [linkedAccounts, setLinkedAccounts] = useState<{
@@ -243,6 +244,7 @@ export function SettingsDashboard() {
     else if (tabParam === "gacha") setActiveTab("gacha");
     else if (tabParam === "badges") setActiveTab("badges");
     else if (tabParam === "settings") setActiveTab("settings");
+    else if (tabParam === "emperor") setActiveTab("emperor");
     else if (tabParam === "profile") setActiveTab("profile");
   }, [tabParam]);
 
@@ -486,6 +488,7 @@ export function SettingsDashboard() {
   const xpInLevel = currentXp % 100;
   const xpPercent = Math.min(100, Math.max(0, Math.round((xpInLevel / 100) * 100)));
   const nobility = getEuropeanNobilityRank(currentLevel);
+  const isOwner = isGuildOwner(session?.user || profile);
 
   return (
     <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 min-w-0 overflow-x-hidden">
@@ -563,6 +566,20 @@ export function SettingsDashboard() {
             <Shield size={16} />
             <span>Pengaturan Akun</span>
           </button>
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => setActiveTab("emperor")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 border ${
+                activeTab === "emperor"
+                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black border-amber-400 shadow-md shadow-amber-500/25"
+                  : "border-amber-500/40 bg-amber-500/10 text-amber-300 hover:text-white hover:bg-amber-500/20"
+              }`}
+            >
+              <Crown size={16} className="text-amber-400" />
+              <span>👑 Emperor Control</span>
+            </button>
+          )}
         </div>
       </DraggableScrollRow>
 
@@ -1617,6 +1634,13 @@ export function SettingsDashboard() {
               </table>
             </div>
           </section>
+        </div>
+      )}
+
+      {/* TAB 6: EMPEROR SOVEREIGN CONTROL (MUTLAK KHUSUS .ODYSSIA) */}
+      {activeTab === "emperor" && isOwner && (
+        <div className="space-y-6">
+          <EmperorSovereignControl currentUsername={profile?.username ?? session?.user?.username} />
         </div>
       )}
 

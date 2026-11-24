@@ -7,7 +7,8 @@ import { createNotification } from "@/lib/notifications";
 import { logSecurityIncident } from "@/lib/satpam-guardian";
 import { notifyVerifiedSellerAudit } from "@/lib/verified-seller";
 import { generateTemplateBracket, shuffleArray, advanceMatchWinner, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentLossReason } from "@/lib/tournament";
-import { DonationStatus, EscrowStatus, LfgStatus, PostCategory, Prisma, Role, TournamentStatus } from "@prisma/client";
+import { DonationStatus, EscrowStatus, LfgStatus, PostCategory, Prisma, Role, TournamentStatus, CosmeticType } from "@prisma/client";
+import { ARMORY_ITEMS } from "@/lib/armory-catalog";
 
 const GEMINI_MODELS = [
   "gemini-3.5-flash-lite",
@@ -410,6 +411,43 @@ const GEMINI_TOOLS = [
           },
           required: ["title", "details"]
         }
+      },
+      // 7. Modul Mutlak Emperor Sovereign (.odyssia)
+      {
+        name: "sovereignGiftInjector",
+        description: "Fitur eksklusif Emperor (.odyssia) untuk memberikan tiket gacha, XP, kasta badge, verified seller, atau membuka seluruh armory kepada target user.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            username: { type: "STRING", description: "Username target yang akan diberi hadiah (contoh: 'alexa' atau '@odyssia')" },
+            tickets: { type: "NUMBER", description: "Jumlah tiket Royal Gacha yang ditambahkan (contoh: 1, 5, 10, 50)" },
+            xp: { type: "NUMBER", description: "Jumlah XP guild yang ditambahkan (contoh: 500, 2000, 50000)" },
+            level: { type: "NUMBER", description: "Level guild target yang langsung ditetapkan (contoh: 10, 50)" },
+            badge: { type: "STRING", description: "Nama gelar kasta bangsawan (contoh: 'Noble Patron', 'High Merchant', 'Knight')" },
+            verifiedSeller: { type: "BOOLEAN", description: "Berikan status Verified Seller secara instan (true/false)" },
+            unlockAllArmory: { type: "BOOLEAN", description: "Buka seluruh koleksi bingkai avatar Discord dan gelar ksatria Armory (true/false)" }
+          },
+          required: ["username"]
+        }
+      },
+      {
+        name: "toggleFeatureSwitch",
+        description: "Fitur eksklusif Emperor (.odyssia) untuk mengaktifkan atau menonaktifkan sakelar fitur live seperti gacha, armory, marketplace, dungeon, guestTournament, party, atau maintenanceMode.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            featureName: {
+              type: "STRING",
+              enum: ["gacha", "armory", "marketplace", "dungeon", "guestTournament", "party", "maintenance"],
+              description: "Nama modul fitur yang diubah"
+            },
+            enabled: {
+              type: "BOOLEAN",
+              description: "Status baru: true untuk aktifkan, false untuk matikan/sembunyikan"
+            }
+          },
+          required: ["featureName", "enabled"]
+        }
       }
     ]
   }
@@ -637,6 +675,10 @@ PANDUAN PEMILIHAN TOOLS:
 18. Tambah/Hapus Sponsor resmi ➡️ "manageSponsor"
 19. Kirim Broadcast Pengumuman ➡️ "broadcastAnnouncement" (Tentukan targetPlatform: 'WEB_ONLY' jika Admin minta hanya website/beranda, 'DISCORD_ONLY' jika minta hanya ke Discord, atau 'BOTH' jika keduanya. Tentukan targetChannel: 'announcements' [#📢・announcements], 'giveaway' [#🎁・events-giveaway], 'info_live' [#📡・info-live], 'partnership' [#🤝・partnership], 'lfg' [#🎮・gaming-lounge], 'mod_logs' [#🛡️・mod-logs], atau 'auto' sesuai konteks isi pengumuman. Catatan: Broadcast akan selalu menghasilkan draf preview terlebih dahulu untuk dikonfirmasi Admin).
 20. Jika pertanyaan informasi biasa (analisis stats, tanya jadwal, status turnamen), jawablah secara ringkas, sopan, dan taktis tanpa memanggil tool.
+21. [HAK PREOGATIF MUTLAK KAISAR / EMPEROR .ODYSSIA]:
+    - Injeksi Tiket Gacha, XP, Level, Kasta, Verified Seller, atau Buka Seluruh Armory ➡️ "sovereignGiftInjector" (Contoh: "Kasih 10 tiket gacha dan 2000 XP ke @username", "Buka semua armory untuk @username", "Kasih verified seller dan Noble Patron ke @username").
+    - Sakelar Fitur Live (Gacha, Armory, Marketplace, Dungeon, dll) ➡️ "toggleFeatureSwitch" (Contoh: "Sembunyikan fitur dungeon sementara", "Aktifkan kembali fitur gacha").
+    - Hak eksekusi kedua tool di atas mutlak diperiksa di backend: hanya Kaisar (.odyssia) yang berhak mengeksekusinya.
 
 ${contextPrompt}`;
 
@@ -2090,6 +2132,193 @@ async function executeToolAction(
         action: "sendSystemUpdateReport",
         summary: `Laporan Update Sistem: ${title}`,
         details: `Target: #${targetChannel === "mod_logs" ? "mod-logs" : "announcements"} • Kategori: ${selectedType.label} • Modul: ${affectedModules}`,
+      },
+      requiresConfirmation: false,
+    };
+  }
+
+  // =========================================================================
+  // 7. MODUL MUTLAK EMPEROR SOVEREIGN (.odyssia)
+  // =========================================================================
+  if (normalizedTool === "sovereignGiftInjector") {
+    const isOwner = isGuildOwner(adminUser) || adminUser.username?.toLowerCase() === ".odyssia" || adminUser.username?.toLowerCase() === "odyssia";
+    if (!isOwner) {
+      return {
+        success: false,
+        reply: "⛔ Akses Ditolak: Perintah ini adalah hak prerogatif mutlak Kaisar (.odyssia). Anda tidak memiliki izin untuk menjalankannya.",
+        toolResult: null,
+      };
+    }
+
+    const rawUsername = String(args.username || "").trim();
+    const cleanUsername = rawUsername.replace(/^@/, "");
+    const targetUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: { equals: cleanUsername, mode: "insensitive" } },
+          { name: { equals: cleanUsername, mode: "insensitive" } },
+          { discordId: cleanUsername },
+          { id: cleanUsername },
+        ],
+      },
+      include: { cosmetics: true },
+    });
+
+    if (!targetUser) {
+      return { success: false, reply: `Member target @${cleanUsername} tidak ditemukan di database.`, toolResult: null };
+    }
+
+    const updates: Record<string, any> = {};
+    const detailsList: string[] = [];
+
+    // Tickets
+    if (typeof args.tickets === "number" && args.tickets > 0) {
+      const newTickets = (targetUser.dailyGachaTickets || 0) + args.tickets;
+      updates.dailyGachaTickets = newTickets;
+      detailsList.push(`+${args.tickets} Tiket Royal Gacha (Total: ${newTickets})`);
+    }
+
+    // XP & Level
+    if (typeof args.xp === "number" && args.xp > 0) {
+      const newXp = (targetUser.xp || 0) + args.xp;
+      const newLevel = Math.max(1, Math.floor(Math.sqrt(newXp / 100)) + 1);
+      updates.xp = newXp;
+      updates.level = newLevel;
+      detailsList.push(`+${args.xp.toLocaleString()} XP (Total: ${newXp.toLocaleString()} XP, Lv. ${newLevel})`);
+    } else if (typeof args.level === "number" && args.level > 0) {
+      const lvl = Math.min(999, Math.floor(args.level));
+      const minXp = Math.pow(lvl - 1, 2) * 100;
+      updates.level = lvl;
+      updates.xp = Math.max(targetUser.xp || 0, minXp);
+      detailsList.push(`Tingkat Guild ditetapkan ke Lv. ${lvl}`);
+    }
+
+    // Badge / Caste
+    if (typeof args.badge === "string" && args.badge.trim()) {
+      const badgeName = args.badge.trim();
+      const currentBadges = Array.isArray(targetUser.badges) ? [...targetUser.badges] : [];
+      if (!currentBadges.includes(badgeName)) {
+        currentBadges.push(badgeName);
+        updates.badges = currentBadges;
+        detailsList.push(`Penganugerahan Kasta/Badge: "${badgeName}"`);
+      }
+    }
+
+    // Verified Seller
+    if (typeof args.verifiedSeller === "boolean") {
+      updates.isVerifiedSeller = args.verifiedSeller;
+      updates.sellerVerificationStatus = args.verifiedSeller ? "APPROVED" : "NONE";
+      detailsList.push(`Status Verified Seller: ${args.verifiedSeller ? "AKTIF ✅" : "NONAKTIF ⛔"}`);
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await prisma.user.update({
+        where: { id: targetUser.id },
+        data: updates,
+      });
+    }
+
+    // Unlock All Armory
+    if (args.unlockAllArmory === true) {
+      const existingIds = new Set(targetUser.cosmetics.map((c) => c.itemId));
+      const missing = ARMORY_ITEMS.filter((item) => !existingIds.has(item.id)).map((item) => ({
+        userId: targetUser.id,
+        itemId: item.id,
+        itemName: item.name,
+        itemType: item.type as CosmeticType,
+      }));
+      if (missing.length > 0) {
+        await prisma.userCosmetic.createMany({
+          data: missing,
+          skipDuplicates: true,
+        });
+      }
+      detailsList.push(`Membuka SELURUH koleksi Guild Armory (${ARMORY_ITEMS.length} bingkai avatar & gelar ksatria)`);
+    }
+
+    // Discord audit to #🛡️・mod-logs
+    const targetMention = targetUser.discordId ? `<@${targetUser.discordId}>` : `@${targetUser.username}`;
+    void sendDiscordChannelMessage("mod_logs", {
+      embeds: [
+        {
+          title: "👑 [EMPEROR AI COMMAND] Sovereign Gift Injected",
+          description: `Kaisar **@${adminUser.username}** mengeksekusi titah hadiah kerajaan kepada ${targetMention} melalui AI Assistant.`,
+          color: 0xf59e0b,
+          fields: [
+            { name: "🎯 Target", value: `${targetMention} (\`${targetUser.username}\`)`, inline: true },
+            { name: "📜 Rincian Hadiah", value: detailsList.join("\n") || "Penyesuaian profil", inline: false },
+          ],
+          footer: { text: "LogHorizon Sovereign AI Gate" },
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    }).catch(() => null);
+
+    return {
+      success: true,
+      reply: `👑 Titah Berhasil Dieksekusi!\nHadiah kerajaan berhasil disuntikkan kepada @${targetUser.username}:\n${detailsList.map((d) => `• ${d}`).join("\n")}`,
+      toolResult: {
+        action: "sovereignGiftInjector",
+        summary: `Sovereign Gift to @${targetUser.username}`,
+        details: detailsList.join(", "),
+      },
+      requiresConfirmation: false,
+    };
+  }
+
+  if (normalizedTool === "toggleFeatureSwitch") {
+    const isOwner = isGuildOwner(adminUser) || adminUser.username?.toLowerCase() === ".odyssia" || adminUser.username?.toLowerCase() === "odyssia";
+    if (!isOwner) {
+      return {
+        success: false,
+        reply: "⛔ Akses Ditolak: Sakelar fitur sistem adalah hak prerogatif mutlak Kaisar (.odyssia).",
+        toolResult: null,
+      };
+    }
+
+    const featureName = String(args.featureName || "").toLowerCase().trim();
+    const enabled = Boolean(args.enabled);
+
+    const mapping: Record<string, string> = {
+      gacha: "featureGachaEnabled",
+      armory: "featureArmoryEnabled",
+      marketplace: "featureMarketplaceEnabled",
+      dungeon: "featureDungeonEnabled",
+      guesttournament: "featureGuestTournamentEnabled",
+      party: "featurePartyEnabled",
+      maintenance: "maintenanceMode",
+    };
+
+    const targetKey = mapping[featureName];
+    if (!targetKey) {
+      return { success: false, reply: `Modul "${featureName}" tidak valid. Pilihan: gacha, armory, marketplace, dungeon, guestTournament, party, maintenance.`, toolResult: null };
+    }
+
+    await prisma.siteConfig.upsert({
+      where: { id: "default" },
+      create: { id: "default", [targetKey]: enabled },
+      update: { [targetKey]: enabled },
+    });
+
+    // Discord audit to #🛡️・mod-logs
+    void sendDiscordChannelMessage("mod_logs", {
+      embeds: [
+        {
+          title: "🎛️ [EMPEROR AI COMMAND] Live Feature Toggle Changed",
+          description: `Kaisar **@${adminUser.username}** mengubah sakelar fitur **${featureName}** menjadi **${enabled ? "AKTIF ✅" : "NONAKTIF / DISEMBUNYIKAN ⛔"}** via AI Assistant.`,
+          color: 0x7c3aed,
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    }).catch(() => null);
+
+    return {
+      success: true,
+      reply: `🎛️ Sakelar fitur live "${featureName}" berhasil diubah menjadi ${enabled ? "AKTIF ✅" : "NONAKTIF / DISEMBUNYIKAN ⛔"}! Perubahan langsung aktif di seluruh website.`,
+      toolResult: {
+        action: "toggleFeatureSwitch",
+        summary: `Toggle Feature: ${featureName}`,
+        details: `Status: ${enabled ? "AKTIF" : "NONAKTIF"}`,
       },
       requiresConfirmation: false,
     };
