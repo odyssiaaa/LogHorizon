@@ -1328,7 +1328,7 @@ export function AdminDashboard({
     pendingReportsList.length;
 
   const tournamentsSubtabsBar = (
-    <div className="flex items-center gap-2 border-b border-gray-200 dark:border-[#2E1E45] pb-3 overflow-x-auto">
+    <div className="flex items-center gap-2 border-b border-gray-200 dark:border-[#2E1E45] pb-3 overflow-x-auto no-scrollbar">
       <button
         type="button"
         onClick={() => {
@@ -1368,7 +1368,7 @@ export function AdminDashboard({
   );
 
   const financeSubtabsBar = (
-    <div className="flex items-center gap-2 border-b border-gray-200 dark:border-[#2E1E45] pb-3 overflow-x-auto">
+    <div className="flex items-center gap-2 border-b border-gray-200 dark:border-[#2E1E45] pb-3 overflow-x-auto no-scrollbar">
       <button
         type="button"
         onClick={() => {

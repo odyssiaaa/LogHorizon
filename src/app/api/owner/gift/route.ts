@@ -143,7 +143,21 @@ export async function POST(req: Request) {
           },
         });
 
-        auditActionTitle = `🛡️ Penganugerahan Item Armory: ${item.name}`;
+        if (body.equipImmediately !== false) {
+          if (item.type === "AVATAR_FRAME") {
+            await prisma.user.update({
+              where: { id: target.id },
+              data: { equippedAvatarFrame: item.id },
+            });
+          } else if (item.type === "CUSTOM_TITLE") {
+            await prisma.user.update({
+              where: { id: target.id },
+              data: { equippedCustomTitle: item.name },
+            });
+          }
+        }
+
+        auditActionTitle = `🛡️ Penganugerahan & Pemasangan Item Armory: ${item.name}`;
         auditDetails = `Item ID: ${item.id} (${item.type})`;
         notificationMessage = `👑 Emperor menghadiahkan item eksklusif Armory: "${item.name}" kepada Anda! Cek di Pengaturan Akun.`;
       }
