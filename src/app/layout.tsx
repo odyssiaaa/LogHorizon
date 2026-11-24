@@ -48,7 +48,11 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "LogHorizon",
   },
-  icons: { icon: "/loghorizon-logo.png", apple: "/loghorizon-logo.png" },
+  icons: {
+    icon: "/loghorizon-logo.png?v=2",
+    shortcut: "/loghorizon-logo.png?v=2",
+    apple: "/loghorizon-logo.png?v=2",
+  },
   openGraph: {
     title: "LogHorizon | Find Your Party",
     description: "Satu guild untuk semua petualang.",
