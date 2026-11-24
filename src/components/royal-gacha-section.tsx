@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, Zap, Ticket, Crown, ShieldAlert, Award, Gift, RefreshCw, ChevronRight } from "lucide-react";
+import { Sparkles, Zap, Ticket, Crown, ShieldAlert, Award, Gift, RefreshCw, ChevronRight, ExternalLink } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
+import { RedeemCodeBox } from "@/components/redeem-code-box";
 
 interface GachaDrop {
   id: string;
@@ -13,8 +14,21 @@ interface GachaDrop {
   amountXp?: number;
   cosmeticId?: string;
   trialDurationDays?: number;
+  sponsorCode?: string;
+  claimSerial?: string;
+  sponsorName?: string;
+  sponsorActionUrl?: string;
   icon: string;
   glowColor: string;
+}
+
+interface SponsorDropInfo {
+  id: string;
+  sponsorName: string;
+  title: string;
+  rewardValue: number;
+  maxUses: number;
+  usedCount: number;
 }
 
 interface GachaUserData {
@@ -31,6 +45,8 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
   const [userData, setUserData] = useState<GachaUserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [summoning, setSummoning] = useState(false);
+  const [hasActiveSponsorDrop, setHasActiveSponsorDrop] = useState(false);
+  const [activeSponsorDrops, setActiveSponsorDrops] = useState<SponsorDropInfo[]>([]);
   const [recentDrops, setRecentDrops] = useState<GachaDrop[] | null>(null);
   const [summonFeedback, setSummonFeedback] = useState<{
     message: string;
@@ -42,13 +58,20 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
   async function fetchGachaData() {
     try {
       const res = await fetch("/api/armory/gacha");
-      const data = await readApiResponse<{ isLoggedIn: boolean; user: GachaUserData | null }>(
+      const data = await readApiResponse<{
+        isLoggedIn: boolean;
+        user: GachaUserData | null;
+        hasActiveSponsorDrop?: boolean;
+        activeSponsorDrops?: SponsorDropInfo[];
+      }>(
         res,
         "Gagal memuat Royal Gacha"
       );
       if (data.user) {
         setUserData(data.user);
       }
+      setHasActiveSponsorDrop(Boolean(data.hasActiveSponsorDrop));
+      setActiveSponsorDrops(data.activeSponsorDrops || []);
     } catch (err: any) {
       console.warn("Gacha fetch error:", err);
     } finally {
@@ -174,6 +197,39 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
           </div>
         </div>
       </div>
+
+      {/* Dynamic Sponsor Drop Banner */}
+      {hasActiveSponsorDrop && (
+        <div className="p-4 rounded-xl border border-amber-400/50 bg-gradient-to-r from-[#2A1600] via-[#1F0E30] to-[#140824] shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 border border-amber-400/40">
+              <Gift size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/30 text-amber-200 border border-amber-400/50 uppercase tracking-wider">
+                  🔥 SPECIAL SPONSOR DROP AKTIF
+                </span>
+                <span className="text-[11px] font-mono text-gray-300">
+                  {activeSponsorDrops.map((d) => d.sponsorName).join(", ") || "OdyssiaVault"}
+                </span>
+              </div>
+              <p className="text-xs text-white font-medium mt-1">
+                Menangkan Voucher Diskon Sponsor langsung di slot <strong>LEGENDARY</strong> Royal Gacha!
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://odyssiavault.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-amber-400/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 text-xs font-mono font-bold transition-colors"
+          >
+            <span>Kunjungi Sponsor</span>
+            <ExternalLink size={12} />
+          </a>
+        </div>
+      )}
 
       {/* Error / Alert Display */}
       {error && (
@@ -305,6 +361,19 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
                     <p className="text-[10px] text-gray-400 line-clamp-2 leading-relaxed">
                       {drop.description}
                     </p>
+                    {drop.type === "SPONSOR_VOUCHER" && drop.claimSerial && (
+                      <div className="mt-2 w-full p-2 rounded-lg bg-amber-500/15 border border-amber-400/30 text-center space-y-1">
+                        <p className="text-[10px] font-mono text-amber-300 font-bold">
+                          Serial: {drop.claimSerial}
+                        </p>
+                        <a
+                          href="/profile?tab=profile"
+                          className="inline-flex items-center gap-1 text-[10px] text-amber-200 hover:text-white underline font-medium"
+                        >
+                          Buka Dompet Voucher <ChevronRight size={10} />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -322,6 +391,9 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
           <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
             <div className="font-bold text-amber-400">🌟 LEGENDARY (7%)</div>
             <div className="text-gray-300 text-[10px] mt-1 space-y-0.5">
+              {hasActiveSponsorDrop && (
+                <p className="text-amber-300 font-bold">🔥 Voucher Mitra (OdyssiaVault)</p>
+              )}
               <p>• 7-Hari VIP Noble Patron Trial</p>
               <p>• Bingkai Avatar Permanen</p>
               <p>• JACKPOT +1,000 XP</p>
@@ -350,6 +422,17 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Quick Redeem Code Box Integration */}
+      <div className="pt-2">
+        <RedeemCodeBox
+          variant="compact"
+          onSuccess={() => {
+            void fetchGachaData();
+            onUpdate?.();
+          }}
+        />
       </div>
     </div>
   );

@@ -27,6 +27,7 @@ import {
   ChevronRight,
   User,
   Wand2,
+  Ticket,
 } from "lucide-react";
 import { ARMORY_ITEMS, ArmoryItem } from "@/lib/armory-catalog";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -68,7 +69,7 @@ interface FeatureFlags {
 }
 
 export function EmperorSovereignControl({ currentUsername }: EmperorControlProps) {
-  const [activeSubTab, setActiveSubTab] = useState<"injector" | "switchboard" | "self">("injector");
+  const [activeSubTab, setActiveSubTab] = useState<"injector" | "switchboard" | "self" | "vouchers">("injector");
 
   // Module A: Target User Selection & Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -105,6 +106,20 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
   const [selfTickets, setSelfTickets] = useState<number>(100);
   const [selfXp, setSelfXp] = useState<number>(100000);
   const [selfLevel, setSelfLevel] = useState<number>(99);
+
+  // Module D: Redeem Codes & Sponsor Vouchers
+  const [redeemCodes, setRedeemCodes] = useState<any[]>([]);
+  const [loadingCodes, setLoadingCodes] = useState(false);
+  const [codeCategory, setCodeCategory] = useState<"SPONSOR_VOUCHER" | "GUILD_REWARD">("SPONSOR_VOUCHER");
+  const [newCode, setNewCode] = useState("");
+  const [newTitle, setNewTitle] = useState("Diskon 20% Top-Up & Jasa OdyssiaVault");
+  const [newSponsorName, setNewSponsorName] = useState("OdyssiaVault");
+  const [newRewardType, setNewRewardType] = useState<"SPONSOR_DISCOUNT" | "GACHA_TICKETS" | "XP" | "VIP_TRIAL_DAYS">("SPONSOR_DISCOUNT");
+  const [newRewardValue, setNewRewardValue] = useState<number>(20);
+  const [newSponsorUrl, setNewSponsorUrl] = useState("https://odyssiavault.com");
+  const [newMaxUses, setNewMaxUses] = useState<number>(20);
+  const [newIncludeGachaPool, setNewIncludeGachaPool] = useState<boolean>(true);
+  const [newExpiresInDays, setNewExpiresInDays] = useState<number>(30);
 
   // Status & Feedback
   const [loadingAction, setLoadingAction] = useState(false);
@@ -149,6 +164,113 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
     }
   }, []);
 
+  // Fetch redeem codes
+  const fetchRedeemCodes = useCallback(async () => {
+    try {
+      setLoadingCodes(true);
+      const res = await fetch("/api/owner/redeem-codes");
+      if (res.ok) {
+        const json = await res.json();
+        setRedeemCodes(json.codes || []);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingCodes(false);
+    }
+  }, []);
+
+  const handleCreateCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = newCode.trim().toUpperCase().replace(/\s+/g, "");
+    if (!clean) {
+      showStatus("Kode voucher/redeem wajib diisi!", "error");
+      return;
+    }
+    try {
+      setLoadingAction(true);
+      const expiresAt = newExpiresInDays > 0 ? new Date(Date.now() + newExpiresInDays * 86400000).toISOString() : null;
+      const res = await fetch("/api/owner/redeem-codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: clean,
+          category: codeCategory,
+          sponsorName: newSponsorName,
+          title: newTitle,
+          rewardType: newRewardType,
+          rewardValue: newRewardValue,
+          sponsorActionUrl: newSponsorUrl,
+          includeInGachaPool: newIncludeGachaPool,
+          maxUses: newMaxUses,
+          expiresAt,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal menerbitkan kode.");
+
+      showStatus(`Kode ${clean} berhasil diterbitkan!`, "success");
+      setNewCode("");
+      fetchRedeemCodes();
+    } catch (err: any) {
+      showStatus(err.message, "error");
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const handleToggleCodeActive = async (id: string, currentActive: boolean) => {
+    try {
+      const res = await fetch("/api/owner/redeem-codes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, isActive: !currentActive }),
+      });
+      if (res.ok) {
+        setRedeemCodes((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, isActive: !currentActive } : c))
+        );
+        showStatus("Status kode diperbarui!", "success");
+      }
+    } catch (err: any) {
+      showStatus(err.message, "error");
+    }
+  };
+
+  const handleDeleteCode = async (id: string, codeName: string) => {
+    if (!confirm(`Hapus kode ${codeName} secara permanen?`)) return;
+    try {
+      const res = await fetch(`/api/owner/redeem-codes?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setRedeemCodes((prev) => prev.filter((c) => c.id !== id));
+        showStatus(`Kode ${codeName} berhasil dihapus.`, "success");
+      }
+    } catch (err: any) {
+      showStatus(err.message, "error");
+    }
+  };
+
+  const applyPreset = (preset: {
+    code: string;
+    category: "SPONSOR_VOUCHER" | "GUILD_REWARD";
+    sponsorName: string;
+    title: string;
+    rewardType: "SPONSOR_DISCOUNT" | "GACHA_TICKETS" | "XP" | "VIP_TRIAL_DAYS";
+    rewardValue: number;
+    maxUses: number;
+    includeInGachaPool: boolean;
+  }) => {
+    setNewCode(preset.code);
+    setCodeCategory(preset.category);
+    setNewSponsorName(preset.sponsorName);
+    setNewTitle(preset.title);
+    setNewRewardType(preset.rewardType);
+    setNewRewardValue(preset.rewardValue);
+    setNewMaxUses(preset.maxUses);
+    setNewIncludeGachaPool(preset.includeInGachaPool);
+  };
+
   // Shortcut: select .odyssia
   const selectSelfAccount = useCallback(async () => {
     try {
@@ -174,7 +296,8 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
   useEffect(() => {
     fetchFeatures();
     selectSelfAccount();
-  }, [fetchFeatures, selectSelfAccount]);
+    fetchRedeemCodes();
+  }, [fetchFeatures, selectSelfAccount, fetchRedeemCodes]);
 
   // Execute Sovereign Gift / Action
   const executeGiftAction = async (payload: Record<string, any>) => {
@@ -367,6 +490,18 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
         >
           <Wand2 className="w-4 h-4" />
           Modul C: 🧙‍♂️ Full Self-Account Customizer
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab("vouchers")}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
+            activeSubTab === "vouchers"
+              ? "bg-gradient-to-r from-cyan-500 via-teal-500 to-blue-600 text-black shadow-lg shadow-cyan-500/20"
+              : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+          }`}
+        >
+          <Award className="w-4 h-4" />
+          Modul D: 🎟️ Terbitkan Kode Redeem &amp; Voucher Sponsor
         </button>
       </div>
 
@@ -1141,6 +1276,434 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                   />
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODUL D: REDEEM CODES & SPONSOR VOUCHERS (ODYSSIAVAULT) */}
+      {/* ========================================================================= */}
+      {activeSubTab === "vouchers" && (
+        <div className="space-y-6">
+          {/* HEADER BANNER */}
+          <div className="p-5 sm:p-6 rounded-2xl border border-cyan-500/30 bg-[#120824]/90 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-extrabold text-white flex items-center gap-2">
+                  <Award className="w-5 h-5 text-cyan-400" />
+                  Pusat Penerbitan Kode Redeem &amp; Voucher Sponsor
+                </h2>
+                <p className="text-xs text-gray-300 max-w-2xl leading-relaxed mt-1">
+                  Terbitkan kode hadiah internal guild (Tiket Gacha, XP, VIP) serta **Voucher Diskon Promo Mitra Sponsor (<span className="text-cyan-400 font-bold">OdyssiaVault</span>)**.
+                  Voucher sponsor dapat diatur agar otomatis masuk ke slot **Legendary Drop Royal Gacha** selama stok tersedia.
+                </p>
+              </div>
+
+              <button
+                onClick={fetchRedeemCodes}
+                disabled={loadingCodes}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 transition-all self-start sm:self-center"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingCodes ? "animate-spin" : ""}`} />
+                Segarkan Kode ({redeemCodes.length})
+              </button>
+            </div>
+
+            {/* PRESET CHIPS */}
+            <div className="pt-2 border-t border-white/5 space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
+                ⚡ Preset Cepat Sekali-Klik:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyPreset({
+                      code: "ODYSSIA15",
+                      category: "SPONSOR_VOUCHER",
+                      sponsorName: "OdyssiaVault",
+                      title: "Diskon 15% Top-Up & Jasa OdyssiaVault",
+                      rewardType: "SPONSOR_DISCOUNT",
+                      rewardValue: 15,
+                      maxUses: 20,
+                      includeInGachaPool: true,
+                    })
+                  }
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold border border-cyan-500/40 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 transition-all"
+                >
+                  🏷️ OdyssiaVault Diskon 15% (ODYSSIA15)
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyPreset({
+                      code: "ODYSSIA25",
+                      category: "SPONSOR_VOUCHER",
+                      sponsorName: "OdyssiaVault",
+                      title: "Diskon 25% Jasa/Top-Up OdyssiaVault",
+                      rewardType: "SPONSOR_DISCOUNT",
+                      rewardValue: 25,
+                      maxUses: 10,
+                      includeInGachaPool: true,
+                    })
+                  }
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold border border-cyan-500/40 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 transition-all"
+                >
+                  🏷️ OdyssiaVault Diskon 25% (ODYSSIA25)
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyPreset({
+                      code: "MABAR3X",
+                      category: "GUILD_REWARD",
+                      sponsorName: "LogHorizon",
+                      title: "3x Tiket Royal Gacha Summon",
+                      rewardType: "GACHA_TICKETS",
+                      rewardValue: 3,
+                      maxUses: 50,
+                      includeInGachaPool: false,
+                    })
+                  }
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold border border-amber-500/40 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20 transition-all"
+                >
+                  🎁 Hadiah Mabar 3x Gacha (MABAR3X)
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyPreset({
+                      code: "BONUSXP",
+                      category: "GUILD_REWARD",
+                      sponsorName: "LogHorizon",
+                      title: "Bonus +2.000 XP Guild",
+                      rewardType: "XP",
+                      rewardValue: 2000,
+                      maxUses: 100,
+                      includeInGachaPool: false,
+                    })
+                  }
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold border border-purple-500/40 bg-purple-500/10 text-purple-200 hover:bg-purple-500/20 transition-all"
+                >
+                  ✨ Bonus XP 2.000 (BONUSXP)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* FORM CREATOR (1 Col) */}
+            <form
+              onSubmit={handleCreateCode}
+              className="lg:col-span-1 p-5 rounded-2xl border border-cyan-500/30 bg-[#160B2A]/90 space-y-4 shadow-xl"
+            >
+              <div className="flex items-center gap-2 text-sm font-bold text-cyan-300">
+                <Ticket className="w-4 h-4 text-cyan-400" />
+                Terbitkan Kode Baru
+              </div>
+
+              {/* CATEGORY SWITCH */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-gray-400 uppercase">Kategori Kode</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCodeCategory("SPONSOR_VOUCHER");
+                      setNewRewardType("SPONSOR_DISCOUNT");
+                      setNewTitle("Diskon 20% Top-Up & Jasa OdyssiaVault");
+                      setNewIncludeGachaPool(true);
+                    }}
+                    className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition-all text-center ${
+                      codeCategory === "SPONSOR_VOUCHER"
+                        ? "border-cyan-500 bg-cyan-500/20 text-cyan-200 shadow-sm"
+                        : "border-purple-500/20 bg-black/20 text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    🏷️ Voucher Sponsor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCodeCategory("GUILD_REWARD");
+                      setNewRewardType("GACHA_TICKETS");
+                      setNewTitle("Hadiah 2x Tiket Royal Gacha");
+                      setNewIncludeGachaPool(false);
+                    }}
+                    className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition-all text-center ${
+                      codeCategory === "GUILD_REWARD"
+                        ? "border-amber-500 bg-amber-500/20 text-amber-200 shadow-sm"
+                        : "border-purple-500/20 bg-black/20 text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    🎁 Hadiah Guild
+                  </button>
+                </div>
+              </div>
+
+              {/* CODE INPUT */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-gray-400 uppercase">
+                  Kode Promo / Redeem (Kapital, Tanpa Spasi)
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newCode}
+                  onChange={(e) => setNewCode(e.target.value.toUpperCase().replace(/\s+/g, ""))}
+                  placeholder="Contoh: ODYSSIA20, GACHAFREE"
+                  className="w-full px-3 py-2 rounded-xl border border-cyan-500/30 bg-[#1A0E30] text-sm text-white font-mono uppercase tracking-wider"
+                />
+              </div>
+
+              {/* TITLE */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-gray-400 uppercase">Judul Hadiah / Promo</label>
+                <input
+                  type="text"
+                  required
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="Contoh: Diskon 20% Top-Up OdyssiaVault"
+                  className="w-full px-3 py-2 rounded-xl border border-cyan-500/30 bg-[#1A0E30] text-xs text-white"
+                />
+              </div>
+
+              {codeCategory === "SPONSOR_VOUCHER" && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-gray-400 uppercase">Nama Sponsor</label>
+                      <input
+                        type="text"
+                        value={newSponsorName}
+                        onChange={(e) => setNewSponsorName(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-cyan-500/30 bg-[#1A0E30] text-xs text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-gray-400 uppercase">Diskon (%)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={newRewardValue}
+                        onChange={(e) => setNewRewardValue(Number(e.target.value))}
+                        className="w-full px-3 py-2 rounded-xl border border-cyan-500/30 bg-[#1A0E30] text-xs text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-400 uppercase">Tautan Aksi Sponsor</label>
+                    <input
+                      type="url"
+                      value={newSponsorUrl}
+                      onChange={(e) => setNewSponsorUrl(e.target.value)}
+                      placeholder="https://odyssiavault.com"
+                      className="w-full px-3 py-2 rounded-xl border border-cyan-500/30 bg-[#1A0E30] text-xs text-white"
+                    />
+                  </div>
+                </>
+              )}
+
+              {codeCategory === "GUILD_REWARD" && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-400 uppercase">Tipe Hadiah</label>
+                    <select
+                      value={newRewardType}
+                      onChange={(e) => setNewRewardType(e.target.value as any)}
+                      className="w-full px-3 py-2 rounded-xl border border-amber-500/30 bg-[#1A0E30] text-xs text-white"
+                    >
+                      <option value="GACHA_TICKETS">Tiket Gacha</option>
+                      <option value="XP">Bonus XP</option>
+                      <option value="VIP_TRIAL_DAYS">Hari Trial VIP</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-400 uppercase">Jumlah Hadiah</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={newRewardValue}
+                      onChange={(e) => setNewRewardValue(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl border border-amber-500/30 bg-[#1A0E30] text-xs text-white"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* QUOTA & EXPIRY */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase">Batas Kuota Stok</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newMaxUses}
+                    onChange={(e) => setNewMaxUses(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl border border-cyan-500/30 bg-[#1A0E30] text-xs text-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase">Berlaku (Hari)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newExpiresInDays}
+                    onChange={(e) => setNewExpiresInDays(Number(e.target.value))}
+                    placeholder="0 = Selamanya"
+                    className="w-full px-3 py-2 rounded-xl border border-cyan-500/30 bg-[#1A0E30] text-xs text-white"
+                  />
+                </div>
+              </div>
+
+              {/* CHECKBOX GACHA POOL */}
+              {codeCategory === "SPONSOR_VOUCHER" && (
+                <label className="flex items-start gap-2.5 p-3 rounded-xl border border-cyan-500/30 bg-cyan-950/20 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newIncludeGachaPool}
+                    onChange={(e) => setNewIncludeGachaPool(e.target.checked)}
+                    className="mt-0.5 rounded text-cyan-500 focus:ring-cyan-400"
+                  />
+                  <div className="text-xs text-gray-300">
+                    <span className="font-bold text-white block">
+                      🎰 Masukkan ke Pool Hadiah Legendary Royal Gacha
+                    </span>
+                    <span className="text-[11px] text-gray-400">
+                      Voucher ini bisa keluar sebagai Jackpot Langka saat petualang summon di gacha shrine selama stok masih ada.
+                    </span>
+                  </div>
+                </label>
+              )}
+
+              <button
+                type="submit"
+                disabled={loadingAction || !newCode.trim()}
+                className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-cyan-500 to-blue-600 text-black shadow-lg shadow-cyan-500/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+              >
+                {loadingAction ? "Menerbitkan..." : "⚡ Terbitkan Kode / Voucher"}
+              </button>
+            </form>
+
+            {/* LIST ACTIVE CODES (2 Cols) */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">
+                  Daftar Kode &amp; Voucher Terbit ({redeemCodes.length})
+                </span>
+              </div>
+
+              {loadingCodes ? (
+                <div className="p-8 text-center text-xs text-gray-400 font-mono">
+                  <RefreshCw className="w-5 h-5 text-cyan-400 animate-spin mx-auto mb-2" />
+                  Memuat daftar kode...
+                </div>
+              ) : redeemCodes.length === 0 ? (
+                <div className="p-8 rounded-2xl border border-dashed border-gray-800 bg-[#120824]/50 text-center text-xs text-gray-400">
+                  Belum ada kode redeem atau voucher sponsor yang diterbitkan. Gunakan preset di atas untuk mulai membuat kode promo.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[680px] overflow-y-auto pr-1">
+                  {redeemCodes.map((code) => {
+                    const isSponsor = code.category === "SPONSOR_VOUCHER";
+                    const isExhausted = code.usedCount >= code.maxUses;
+                    const percent = Math.min(100, Math.round((code.usedCount / code.maxUses) * 100));
+
+                    return (
+                      <div
+                        key={code.id}
+                        className={`p-4 rounded-2xl border space-y-3 transition-all ${
+                          !code.isActive
+                            ? "border-gray-800 bg-[#0E0617]/70 opacity-60"
+                            : isSponsor
+                            ? "border-cyan-500/40 bg-gradient-to-br from-[#130E26] to-[#0D061C]"
+                            : "border-amber-500/30 bg-[#160B2A]/90"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                                  isSponsor
+                                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                                    : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                }`}
+                              >
+                                {code.code}
+                              </span>
+                              {code.includeInGachaPool && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">
+                                  🎰 Gacha Pool
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="text-xs font-bold text-white mt-1 line-clamp-1">{code.title}</h4>
+                            <span className="text-[10px] text-gray-400 block">
+                              Hadiah: {code.rewardType} ({code.rewardValue})
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleCodeActive(code.id, code.isActive)}
+                              className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all ${
+                                code.isActive
+                                  ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                                  : "border-gray-700 bg-gray-800 text-gray-400"
+                              }`}
+                              title="Klik untuk nyalakan / matikan"
+                            >
+                              {code.isActive ? "AKTIF" : "OFF"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCode(code.id, code.code)}
+                              className="p-1 text-gray-500 hover:text-rose-400 rounded transition-all"
+                              title="Hapus Kode"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* USAGE PROGRESS BAR */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-gray-400">
+                            <span>Klaim: {code.usedCount} / {code.maxUses}</span>
+                            <span className={isExhausted ? "text-rose-400 font-bold" : "text-cyan-400"}>
+                              {isExhausted ? "KUOTA HABIS" : `${percent}%`}
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 rounded-full bg-black/60 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                isExhausted
+                                  ? "bg-rose-500"
+                                  : isSponsor
+                                  ? "bg-gradient-to-r from-cyan-500 to-blue-500"
+                                  : "bg-gradient-to-r from-amber-500 to-orange-500"
+                              }`}
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {code.expiresAt && (
+                          <div className="text-[9px] text-gray-500">
+                            Kadaluwarsa: {new Date(code.expiresAt).toLocaleDateString("id-ID")}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

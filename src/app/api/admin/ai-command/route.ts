@@ -448,6 +448,38 @@ const GEMINI_TOOLS = [
           },
           required: ["featureName", "enabled"]
         }
+      },
+      {
+        name: "createRedeemOrVoucherCode",
+        description: "Fitur eksklusif Emperor (.odyssia) untuk menerbitkan kode redeem hadiah internal guild (XP, tiket gacha, VIP trial) atau Voucher Diskon Sponsor (OdyssiaVault) lengkap dengan kuota stok dan opsi masuk pool Royal Gacha.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            code: { type: "STRING", description: "Kode unik voucher/redeem (huruf kapital tanpa spasi, misal: 'ODYSSIA15', 'GACHAFREE')" },
+            category: { type: "STRING", enum: ["GUILD_REWARD", "SPONSOR_VOUCHER"], description: "Kategori kode ('GUILD_REWARD' atau 'SPONSOR_VOUCHER')" },
+            title: { type: "STRING", description: "Judul promo/hadiah (misal: 'Diskon 15% Top-Up OdyssiaVault', '2x Tiket Royal Gacha')" },
+            sponsorName: { type: "STRING", description: "Nama mitra sponsor jika voucher sponsor (default: 'OdyssiaVault')" },
+            rewardType: { type: "STRING", enum: ["XP", "GACHA_TICKETS", "VIP_TRIAL_DAYS", "SPONSOR_DISCOUNT"], description: "Tipe hadiah/promo" },
+            rewardValue: { type: "NUMBER", description: "Nominal hadiah (cth: 15 untuk diskon 15%, 500 untuk XP, 2 untuk tiket gacha, 7 untuk hari trial VIP)" },
+            maxUses: { type: "NUMBER", description: "Batas total kuota penukar voucher/kode (default: 50)" },
+            includeInGachaPool: { type: "BOOLEAN", description: "True jika voucher sponsor ini juga dimasukkan ke pool hadiah Legendary Royal Gacha selama stok tersedia" },
+            expiresInDays: { type: "NUMBER", description: "Masa berlaku voucher dalam satuan hari (opsional)" },
+            sponsorActionUrl: { type: "STRING", description: "Tautan tujuan sponsor saat voucher diklaim (default: 'https://odyssiavault.com')" }
+          },
+          required: ["code", "category", "title", "rewardType", "rewardValue"]
+        }
+      },
+      {
+        name: "toggleRedeemCodeStatus",
+        description: "Fitur eksklusif Emperor (.odyssia) untuk mengaktifkan, menonaktifkan, atau menghapus kode redeem / voucher sponsor yang ada.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            code: { type: "STRING", description: "Kode promo yang ingin diubah statusnya (misal: 'ODYSSIA15')" },
+            action: { type: "STRING", enum: ["ACTIVATE", "DEACTIVATE", "DELETE"], description: "Aksi: ACTIVATE (nyalakan), DEACTIVATE (matikan sementara), atau DELETE (hapus permanen)" }
+          },
+          required: ["code", "action"]
+        }
       }
     ]
   }
@@ -678,7 +710,9 @@ PANDUAN PEMILIHAN TOOLS:
 21. [HAK PREOGATIF MUTLAK KAISAR / EMPEROR .ODYSSIA]:
     - Injeksi Tiket Gacha, XP, Level, Kasta, Verified Seller, atau Buka Seluruh Armory ➡️ "sovereignGiftInjector" (Contoh: "Kasih 10 tiket gacha dan 2000 XP ke @username", "Buka semua armory untuk @username", "Kasih verified seller dan Noble Patron ke @username").
     - Sakelar Fitur Live (Gacha, Armory, Marketplace, Dungeon, dll) ➡️ "toggleFeatureSwitch" (Contoh: "Sembunyikan fitur dungeon sementara", "Aktifkan kembali fitur gacha").
-    - Hak eksekusi kedua tool di atas mutlak diperiksa di backend: hanya Kaisar (.odyssia) yang berhak mengeksekusinya.
+    - Terbitkan Kode Redeem & Voucher Sponsor ➡️ "createRedeemOrVoucherCode" (Contoh: "Buatkan voucher OdyssiaVault kode ODYSSIA15 diskon 15% untuk 20 orang dan masukkan ke gacha", "Buat kode redeem MABAR50 hadiah 2 tiket gacha untuk 50 orang").
+    - Aktifkan/Matikan/Hapus Voucher Sponsor ➡️ "toggleRedeemCodeStatus" (Contoh: "Nonaktifkan voucher ODYSSIA15", "Hapus kode MABAR50").
+    - Hak eksekusi seluruh tool Kaisar di atas mutlak diperiksa di backend: hanya Kaisar (.odyssia) yang berhak mengeksekusinya.
 
 ${contextPrompt}`;
 
@@ -2319,6 +2353,128 @@ async function executeToolAction(
         action: "toggleFeatureSwitch",
         summary: `Toggle Feature: ${featureName}`,
         details: `Status: ${enabled ? "AKTIF" : "NONAKTIF"}`,
+      },
+      requiresConfirmation: false,
+    };
+  }
+
+  if (normalizedTool === "createRedeemOrVoucherCode") {
+    const isOwner = isGuildOwner(adminUser) || adminUser.username?.toLowerCase() === ".odyssia" || adminUser.username?.toLowerCase() === "odyssia";
+    if (!isOwner) {
+      return {
+        success: false,
+        reply: "⛔ Akses Ditolak: Penerbitan kode redeem & voucher sponsor adalah hak prerogatif mutlak Kaisar (.odyssia).",
+        toolResult: null,
+      };
+    }
+
+    const rawCode = String(args.code || "").trim().toUpperCase().replace(/\s+/g, "");
+    if (!rawCode) return { success: false, reply: "Kode voucher/redeem wajib disertakan.", toolResult: null };
+
+    const category = args.category === "SPONSOR_VOUCHER" ? "SPONSOR_VOUCHER" : "GUILD_REWARD";
+    const sponsorName = String(args.sponsorName || (category === "SPONSOR_VOUCHER" ? "OdyssiaVault" : "LogHorizon")).trim();
+    const title = String(args.title || (category === "SPONSOR_VOUCHER" ? `Diskon Top-Up di ${sponsorName}` : "Hadiah Spesial Guild")).trim();
+    const rewardType = String(args.rewardType || (category === "SPONSOR_VOUCHER" ? "SPONSOR_DISCOUNT" : "GACHA_TICKETS")).toUpperCase();
+    const rewardValue = Math.max(1, Number(args.rewardValue) || 1);
+    const maxUses = Math.max(1, Number(args.maxUses) || 50);
+    const includeInGachaPool = Boolean(args.includeInGachaPool);
+    const sponsorActionUrl = args.sponsorActionUrl ? String(args.sponsorActionUrl).trim() : (category === "SPONSOR_VOUCHER" ? "https://odyssiavault.com" : null);
+    const expiresInDays = typeof args.expiresInDays === "number" && args.expiresInDays > 0 ? args.expiresInDays : null;
+    const expiresAt = expiresInDays ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000) : null;
+
+    const existing = await prisma.redeemCode.findUnique({ where: { code: rawCode } });
+    if (existing) {
+      return { success: false, reply: `Kode "${rawCode}" sudah terdaftar sebelumnya. Gunakan kode lain.`, toolResult: null };
+    }
+
+    await prisma.redeemCode.create({
+      data: {
+        code: rawCode,
+        category,
+        sponsorName,
+        title,
+        rewardType,
+        rewardValue,
+        sponsorActionUrl,
+        includeInGachaPool,
+        maxUses,
+        expiresAt,
+      },
+    });
+
+    // Send Discord Audit to #mod-logs
+    void sendDiscordChannelMessage("mod_logs", {
+      embeds: [
+        {
+          title: `🎟️ [EMPEROR AI COMMAND] Kode Baru Diterbitkan: ${rawCode}`,
+          description: `Kaisar **@${adminUser.username}** menerbitkan kode via AI Assistant:`,
+          color: category === "SPONSOR_VOUCHER" ? 0x06b6d4 : 0xf59e0b,
+          fields: [
+            { name: "Kode Promo", value: `\`${rawCode}\``, inline: true },
+            { name: "Kategori", value: category === "SPONSOR_VOUCHER" ? `🏷️ Sponsor (${sponsorName})` : "🎁 Hadiah Guild", inline: true },
+            { name: "Judul", value: title, inline: false },
+            { name: "Hadiah", value: `${rewardType}: ${rewardValue}`, inline: true },
+            { name: "Kuota Stok", value: `${maxUses} Pengguna`, inline: true },
+            { name: "Pool Royal Gacha", value: includeInGachaPool ? "✅ AKTIF" : "❌ Tidak", inline: true },
+          ],
+          footer: { text: "LogHorizon Sovereign AI Gate" },
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    }).catch(() => null);
+
+    return {
+      success: true,
+      reply: `🎟️ Berhasil menerbitkan kode "${rawCode}"!\n• Kategori: ${category === "SPONSOR_VOUCHER" ? `Voucher Sponsor (${sponsorName})` : "Hadiah Guild"}\n• Judul: ${title}\n• Hadiah: ${rewardType} (${rewardValue})\n• Kuota: ${maxUses} orang\n• Pool Gacha: ${includeInGachaPool ? "Aktif di Royal Gacha (Legendary Slot) ✅" : "Khusus Tukar Kode"}`,
+      toolResult: {
+        action: "createRedeemOrVoucherCode",
+        summary: `Terbitkan Kode: ${rawCode}`,
+        details: `${category} • ${title} • Kuota ${maxUses}`,
+      },
+      requiresConfirmation: false,
+    };
+  }
+
+  if (normalizedTool === "toggleRedeemCodeStatus") {
+    const isOwner = isGuildOwner(adminUser) || adminUser.username?.toLowerCase() === ".odyssia" || adminUser.username?.toLowerCase() === "odyssia";
+    if (!isOwner) {
+      return {
+        success: false,
+        reply: "⛔ Akses Ditolak: Pengelolaan kode redeem & voucher adalah hak prerogatif mutlak Kaisar (.odyssia).",
+        toolResult: null,
+      };
+    }
+
+    const rawCode = String(args.code || "").trim().toUpperCase().replace(/\s+/g, "");
+    const action = String(args.action || "DEACTIVATE").toUpperCase();
+
+    const existing = await prisma.redeemCode.findUnique({ where: { code: rawCode } });
+    if (!existing) {
+      return { success: false, reply: `Kode "${rawCode}" tidak ditemukan di database.`, toolResult: null };
+    }
+
+    if (action === "DELETE") {
+      await prisma.redeemCode.delete({ where: { id: existing.id } });
+      return {
+        success: true,
+        reply: `🗑️ Kode "${rawCode}" berhasil dihapus permanen dari sistem.`,
+        toolResult: { action: "toggleRedeemCodeStatus", summary: `Hapus Kode: ${rawCode}` },
+        requiresConfirmation: false,
+      };
+    }
+
+    const nextActive = action === "ACTIVATE";
+    await prisma.redeemCode.update({
+      where: { id: existing.id },
+      data: { isActive: nextActive },
+    });
+
+    return {
+      success: true,
+      reply: `Status kode "${rawCode}" berhasil diubah menjadi ${nextActive ? "AKTIF ✅" : "NONAKTIF / DIMATIKAN ⛔"}.`,
+      toolResult: {
+        action: "toggleRedeemCodeStatus",
+        summary: `${nextActive ? "Aktifkan" : "Nonaktifkan"} Kode: ${rawCode}`,
       },
       requiresConfirmation: false,
     };

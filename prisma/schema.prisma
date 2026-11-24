@@ -152,6 +152,7 @@ model User {
   allowDirectMessages Boolean                  @default(true)
   followers           Follow[]                 @relation("UserFollowers")
   following           Follow[]                 @relation("UserFollowing")
+  redeemClaims        RedeemClaim[]
 
   // Verified Seller Program (Manual Staff Verification)
   isVerifiedSeller           Boolean   @default(false)
@@ -772,6 +773,44 @@ model DungeonBounty {
   @@index([category])
   @@index([submittedById])
 }
+
+model RedeemCode {
+  id                 String        @id @default(cuid())
+  code               String        @unique // Huruf kapital tanpa spasi, misal: "ODYSSIA20", "GACHAFREE"
+  category           String        // "GUILD_REWARD" | "SPONSOR_VOUCHER"
+  sponsorName        String?       // Misal: "OdyssiaVault" atau "LogHorizon"
+  title              String        // Judul singkat hadiah/promo
+  rewardType         String        // "XP" | "GACHA_TICKETS" | "VIP_TRIAL_DAYS" | "SPONSOR_DISCOUNT"
+  rewardValue        Int           // Nominal XP/tiket/hari, atau persentase/nominal diskon sponsor
+  sponsorActionUrl   String?       // Tautan web/kontak OdyssiaVault saat voucher dipakai
+  includeInGachaPool Boolean       @default(false) // Sakelar apakah dimasukkan ke pool hadiah Legendary Gacha
+  maxUses            Int           // Batas total kuota penukar
+  usedCount          Int           @default(0)
+  isActive           Boolean       @default(true)
+  expiresAt          DateTime?
+  createdAt          DateTime      @default(now())
+
+  claims             RedeemClaim[]
+
+  @@index([category, isActive])
+  @@index([code])
+}
+
+model RedeemClaim {
+  id                 String      @id @default(cuid())
+  redeemCodeId       String
+  userId             String
+  uniqueClaimSerial  String      @unique // Kode seri bukti klaim unik per user, misal: "LH-ODY-9482X"
+  source             String      // "REDEEM_CODE" | "ROYAL_GACHA"
+  claimedAt          DateTime    @default(now())
+
+  redeemCode         RedeemCode  @relation(fields: [redeemCodeId], references: [id], onDelete: Cascade)
+  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([redeemCodeId, userId])
+  @@index([userId])
+}
+
 
 
 

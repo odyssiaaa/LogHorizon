@@ -34,6 +34,8 @@ import {
   Zap,
 } from "lucide-react";
 import { EmperorSovereignControl } from "@/components/emperor-sovereign-control";
+import { RedeemCodeBox } from "@/components/redeem-code-box";
+import { UserVoucherWallet } from "@/components/user-voucher-wallet";
 import { useSearchParams } from "next/navigation";
 import { readApiResponse } from "@/lib/api-response";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -871,6 +873,12 @@ export function SettingsDashboard() {
               </p>
             )}
           </section>
+
+          {/* Kotak Tukar Kode Redeem & Voucher Sponsor */}
+          <RedeemCodeBox onSuccess={() => void fetchProfileData()} />
+
+          {/* Dompet Voucher Sponsor Saya */}
+          <UserVoucherWallet />
         </div>
       )}
 

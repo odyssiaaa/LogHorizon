@@ -12,10 +12,14 @@ export interface GachaDrop {
   name: string;
   description: string;
   rarity: GachaRarity;
-  type: "XP" | "TEMP_TITLE" | "PERM_TITLE" | "PERM_FRAME" | "TRIAL_VIP" | "TRIAL_FRAMES";
+  type: "XP" | "TEMP_TITLE" | "PERM_TITLE" | "PERM_FRAME" | "TRIAL_VIP" | "TRIAL_FRAMES" | "SPONSOR_VOUCHER";
   amountXp?: number;
   cosmeticId?: string;
   trialDurationDays?: number;
+  sponsorCode?: string;
+  claimSerial?: string;
+  sponsorName?: string;
+  sponsorActionUrl?: string;
   icon: string;
   glowColor: string;
 }
@@ -165,6 +169,24 @@ export async function GET() {
     },
   });
 
+  const activeSponsorCodes = await prisma.redeemCode.findMany({
+    where: {
+      category: "SPONSOR_VOUCHER",
+      includeInGachaPool: true,
+      isActive: true,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    },
+    select: {
+      id: true,
+      sponsorName: true,
+      title: true,
+      rewardValue: true,
+      maxUses: true,
+      usedCount: true,
+    },
+  });
+  const availableSponsorDrops = activeSponsorCodes.filter((c) => c.usedCount < c.maxUses);
+
   return NextResponse.json({
     isLoggedIn: true,
     user: dbUser,
@@ -175,6 +197,8 @@ export async function GET() {
       common: "50%",
       pityGuarantee: "Pasti Epic / Legendary pada Tarikan ke-10 (Pity 10)",
     },
+    activeSponsorDrops: availableSponsorDrops,
+    hasActiveSponsorDrop: availableSponsorDrops.length > 0,
   });
 }
 
@@ -235,6 +259,31 @@ export async function POST(req: Request) {
 
       const ownedCosmeticIds = new Set(dbUser.cosmetics.map((c) => c.itemId));
 
+      // Dynamic Sponsor Voucher Gacha Pool
+      const activeSponsorCodes = await tx.redeemCode.findMany({
+        where: {
+          category: "SPONSOR_VOUCHER",
+          includeInGachaPool: true,
+          isActive: true,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+      });
+
+      const userClaimedCodeIds = new Set(
+        (
+          await tx.redeemClaim.findMany({
+            where: { userId: dbUser.id },
+            select: { redeemCodeId: true },
+          })
+        ).map((c) => c.redeemCodeId)
+      );
+
+      let availableSponsors = activeSponsorCodes.filter(
+        (c) => c.usedCount < c.maxUses && !userClaimedCodeIds.has(c.id)
+      );
+
+      const wonSponsorVouchersList: { title: string; code: string; serial: string; sponsor: string }[] = [];
+
       for (let i = 0; i < pullCount; i++) {
         currentPity += 1;
         let rarity: GachaRarity = "COMMON";
@@ -262,7 +311,58 @@ export async function POST(req: Request) {
         if (rarity === "LEGENDARY") {
           wonLegendary = true;
           highestRarity = "LEGENDARY";
-          chosenDrop = LEGENDARY_DROPS[Math.floor(Math.random() * LEGENDARY_DROPS.length)];
+
+          // Dynamic Sponsor Drop Chance (If available sponsor vouchers exist, 35% chance to win sponsor jackpot)
+          if (availableSponsors.length > 0 && Math.random() < 0.35) {
+            const pickedIndex = Math.floor(Math.random() * availableSponsors.length);
+            const targetSponsor = availableSponsors[pickedIndex];
+
+            // Atomically increment usage
+            await tx.redeemCode.update({
+              where: { id: targetSponsor.id },
+              data: { usedCount: { increment: 1 } },
+            });
+
+            // Generate claim serial
+            const serial = `LH-ODY-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+            // Create claim record
+            await tx.redeemClaim.create({
+              data: {
+                redeemCodeId: targetSponsor.id,
+                userId: dbUser.id,
+                uniqueClaimSerial: serial,
+                source: "ROYAL_GACHA",
+              },
+            });
+
+            chosenDrop = {
+              id: `sponsor_voucher_${targetSponsor.id}`,
+              name: `🏷️ ${targetSponsor.title}`,
+              description: `Voucher Eksklusif ${targetSponsor.sponsorName || "OdyssiaVault"}. Kode Promo: ${targetSponsor.code} (No. Seri: ${serial}). Tersimpan di Dompet Voucher Saya.`,
+              rarity: "LEGENDARY",
+              type: "SPONSOR_VOUCHER",
+              sponsorCode: targetSponsor.code,
+              claimSerial: serial,
+              sponsorName: targetSponsor.sponsorName || "OdyssiaVault",
+              sponsorActionUrl: targetSponsor.sponsorActionUrl || "https://odyssiavault.com",
+              icon: "🏷️",
+              glowColor: "#F59E0B",
+            };
+
+            wonSponsorVouchersList.push({
+              title: targetSponsor.title,
+              code: targetSponsor.code,
+              serial,
+              sponsor: targetSponsor.sponsorName || "OdyssiaVault",
+            });
+
+            // Remove from pool for remaining pulls in this batch
+            availableSponsors.splice(pickedIndex, 1);
+            userClaimedCodeIds.add(targetSponsor.id);
+          } else {
+            chosenDrop = LEGENDARY_DROPS[Math.floor(Math.random() * LEGENDARY_DROPS.length)];
+          }
         } else if (rarity === "EPIC") {
           if (highestRarity !== "LEGENDARY") highestRarity = "EPIC";
           chosenDrop = EPIC_DROPS[Math.floor(Math.random() * EPIC_DROPS.length)];
@@ -353,6 +453,7 @@ export async function POST(req: Request) {
         totalXpGained,
         wonLegendary,
         highestRarity,
+        wonSponsorVouchers: wonSponsorVouchersList,
       };
     });
 
