@@ -28,6 +28,8 @@ import {
   User,
   Wand2,
   Ticket,
+  Edit2,
+  Save,
 } from "lucide-react";
 import { ARMORY_ITEMS, ArmoryItem } from "@/lib/armory-catalog";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -115,6 +117,74 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
   const [newMaxUses, setNewMaxUses] = useState<number>(20);
   const [newIncludeGachaPool, setNewIncludeGachaPool] = useState<boolean>(true);
   const [newExpiresInDays, setNewExpiresInDays] = useState<number>(30);
+
+  // Edit Voucher Modal State
+  const [editingCode, setEditingCode] = useState<any | null>(null);
+  const [editCodeValue, setEditCodeValue] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editCategory, setEditCategory] = useState<"SPONSOR_VOUCHER" | "GUILD_REWARD">("SPONSOR_VOUCHER");
+  const [editSponsorName, setEditSponsorName] = useState("");
+  const [editRewardType, setEditRewardType] = useState<string>("SPONSOR_DISCOUNT");
+  const [editRewardValue, setEditRewardValue] = useState<number>(20);
+  const [editSponsorUrl, setEditSponsorUrl] = useState("");
+  const [editMaxUses, setEditMaxUses] = useState<number>(20);
+  const [editIsActive, setEditIsActive] = useState<boolean>(true);
+  const [editIncludeGachaPool, setEditIncludeGachaPool] = useState<boolean>(true);
+  const [editExpiresAt, setEditExpiresAt] = useState<string>("");
+  const [savingEdit, setSavingEdit] = useState<boolean>(false);
+
+  const openEditModal = (code: any) => {
+    setEditingCode(code);
+    setEditCodeValue(code.code);
+    setEditTitle(code.title);
+    setEditCategory(code.category || "SPONSOR_VOUCHER");
+    setEditSponsorName(code.sponsorName || "OdyssiaVault");
+    setEditRewardType(code.rewardType || "SPONSOR_DISCOUNT");
+    setEditRewardValue(code.rewardValue || 20);
+    setEditSponsorUrl(code.sponsorActionUrl || "");
+    setEditMaxUses(code.maxUses || 50);
+    setEditIsActive(Boolean(code.isActive));
+    setEditIncludeGachaPool(Boolean(code.includeInGachaPool));
+    setEditExpiresAt(
+      code.expiresAt ? new Date(code.expiresAt).toISOString().split("T")[0] : ""
+    );
+  };
+
+  const handleSaveEditCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCode) return;
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`/api/owner/redeem-codes/${editingCode.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: editCodeValue.trim().toUpperCase().replace(/\s+/g, ""),
+          title: editTitle.trim(),
+          category: editCategory,
+          sponsorName: editCategory === "SPONSOR_VOUCHER" ? editSponsorName.trim() : null,
+          rewardType: editRewardType,
+          rewardValue: Number(editRewardValue),
+          sponsorActionUrl: editCategory === "SPONSOR_VOUCHER" ? editSponsorUrl.trim() : null,
+          maxUses: Number(editMaxUses),
+          isActive: editIsActive,
+          includeInGachaPool: editCategory === "SPONSOR_VOUCHER" ? editIncludeGachaPool : false,
+          expiresAt: editExpiresAt ? new Date(`${editExpiresAt}T23:59:59.999Z`).toISOString() : null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || "Gagal memperbarui voucher.");
+      }
+      showStatus(`Kode ${json.code?.code || editCodeValue} berhasil diperbarui!`, "success");
+      setEditingCode(null);
+      fetchRedeemCodes();
+    } catch (err: any) {
+      showStatus(err.message, "error");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   // Status & Feedback
   const [loadingAction, setLoadingAction] = useState(false);
@@ -1086,8 +1156,8 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                   Pusat Penerbitan Kode Redeem &amp; Voucher Sponsor
                 </h2>
                 <p className="text-xs text-gray-300 max-w-2xl leading-relaxed mt-1">
-                  Terbitkan kode hadiah internal guild (Tiket Gacha, XP, VIP) serta **Voucher Diskon Promo Mitra Sponsor (<span className="text-cyan-400 font-bold">OdyssiaVault</span>)**.
-                  Voucher sponsor dapat diatur agar otomatis masuk ke slot **Legendary Drop Royal Gacha** selama stok tersedia.
+                  Terbitkan kode hadiah internal guild (Tiket Gacha, XP, VIP) serta <strong>Voucher Diskon Promo Mitra Sponsor (<span className="text-cyan-400 font-bold">OdyssiaVault</span>)</strong>.
+                  Voucher sponsor dapat diatur agar otomatis masuk ke slot <strong>Legendary Drop Royal Gacha</strong> selama stok tersedia.
                 </p>
               </div>
 
@@ -1439,7 +1509,16 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(code)}
+                              className="px-2 py-1 rounded-md text-[10px] font-bold border border-cyan-500/40 bg-cyan-500/15 text-cyan-300 hover:bg-cyan-500/30 transition-all flex items-center gap-1 cursor-pointer"
+                              title="Edit rincian voucher / kode"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                              <span>Edit</span>
+                            </button>
                             <button
                               type="button"
                               onClick={() => handleToggleCodeActive(code.id, code.isActive)}
@@ -1455,7 +1534,7 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                             <button
                               type="button"
                               onClick={() => handleDeleteCode(code.id, code.code)}
-                              className="p-1 text-gray-500 hover:text-rose-400 rounded transition-all"
+                              className="p-1 text-gray-500 hover:text-rose-400 rounded transition-all cursor-pointer"
                               title="Hapus Kode"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -1496,6 +1575,236 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {/* ========================================================================= */}
+      {/* MODAL EDIT VOUCHER / KODE REDEEM */}
+      {/* ========================================================================= */}
+      {editingCode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl border border-[#7C3AED]/60 bg-[#11091D] dark:bg-[#11091D] p-5 sm:p-7 text-left shadow-2xl space-y-5">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  <Edit2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white">
+                    Edit Voucher / Kode: <span className="font-mono text-cyan-300">{editingCode.code}</span>
+                  </h3>
+                  <p className="text-[11px] text-gray-400">
+                    Ubah rincian, batas kuota stok, masa berlaku, atau status aktif voucher.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingCode(null)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditCode} className="space-y-4">
+              {/* Kode Promo & Kategori */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-300 uppercase">
+                    Kode Promo (Kapital) <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editCodeValue}
+                    onChange={(e) => setEditCodeValue(e.target.value.toUpperCase().replace(/\s+/g, ""))}
+                    className="w-full h-11 px-3.5 rounded-xl border border-cyan-500/30 bg-[#1A0E30] text-sm font-mono text-white tracking-wider focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-300 uppercase">Kategori Voucher</label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value as any)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-purple-500/30 bg-[#1A0E30] text-xs text-white focus:outline-none focus:border-purple-400"
+                  >
+                    <option value="SPONSOR_VOUCHER">🏷️ Sponsor Voucher (Mitra)</option>
+                    <option value="GUILD_REWARD">🎁 Hadiah Guild Internal</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Judul Hadiah */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-gray-300 uppercase">
+                  Judul Hadiah / Promo <span className="text-rose-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-xl border border-purple-500/30 bg-[#1A0E30] text-xs text-white focus:outline-none focus:border-purple-400"
+                />
+              </div>
+
+              {/* Sponsor Name & Action URL (Jika Sponsor Voucher) */}
+              {editCategory === "SPONSOR_VOUCHER" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-300 uppercase">Nama Mitra Sponsor</label>
+                    <input
+                      type="text"
+                      value={editSponsorName}
+                      onChange={(e) => setEditSponsorName(e.target.value)}
+                      placeholder="Contoh: OdyssiaVault"
+                      className="w-full h-11 px-3.5 rounded-xl border border-cyan-500/30 bg-[#1A0E30] text-xs text-white focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-gray-300 uppercase">Link Website Mitra Sponsor</label>
+                    <input
+                      type="url"
+                      value={editSponsorUrl}
+                      onChange={(e) => setEditSponsorUrl(e.target.value)}
+                      placeholder="https://odyssiavault.com"
+                      className="w-full h-11 px-3.5 rounded-xl border border-cyan-500/30 bg-[#1A0E30] text-xs text-white focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Reward Type & Value */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-300 uppercase">Tipe Hadiah</label>
+                  <select
+                    value={editRewardType}
+                    onChange={(e) => setEditRewardType(e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-purple-500/30 bg-[#1A0E30] text-xs text-white focus:outline-none focus:border-purple-400"
+                  >
+                    {editCategory === "SPONSOR_VOUCHER" ? (
+                      <>
+                        <option value="SPONSOR_DISCOUNT">Diskon Persen / Nominal (%)</option>
+                        <option value="GACHA_TICKETS">Tiket Gacha</option>
+                        <option value="XP">Bonus XP</option>
+                        <option value="VIP_TRIAL_DAYS">Hari Trial VIP</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="GACHA_TICKETS">Tiket Gacha</option>
+                        <option value="XP">Bonus XP</option>
+                        <option value="VIP_TRIAL_DAYS">Hari Trial VIP</option>
+                        <option value="SPONSOR_DISCOUNT">Diskon Mitra</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-gray-300 uppercase">Nilai / Nominal Hadiah</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editRewardValue}
+                    onChange={(e) => setEditRewardValue(Number(e.target.value))}
+                    className="w-full h-11 px-3.5 rounded-xl border border-purple-500/30 bg-[#1A0E30] text-xs text-white focus:outline-none focus:border-purple-400"
+                  />
+                </div>
+              </div>
+
+              {/* Max Uses & Expire Date */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-gray-300 uppercase">Total Kuota Stok</label>
+                    <span className="text-[10px] text-cyan-400 font-mono">Terklaim: {editingCode.usedCount}</span>
+                  </div>
+                  <input
+                    type="number"
+                    min={editingCode.usedCount || 1}
+                    value={editMaxUses}
+                    onChange={(e) => setEditMaxUses(Number(e.target.value))}
+                    className="w-full h-11 px-3.5 rounded-xl border border-purple-500/30 bg-[#1A0E30] text-xs text-white focus:outline-none focus:border-purple-400"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-gray-300 uppercase">Masa Berlaku</label>
+                    {editExpiresAt && (
+                      <button
+                        type="button"
+                        onClick={() => setEditExpiresAt("")}
+                        className="text-[10px] text-rose-400 hover:underline cursor-pointer"
+                      >
+                        Set Permanen
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="date"
+                    value={editExpiresAt}
+                    onChange={(e) => setEditExpiresAt(e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-purple-500/30 bg-[#1A0E30] text-xs text-white focus:outline-none focus:border-purple-400"
+                  />
+                </div>
+              </div>
+
+              {/* Switches: Active & Gacha Pool */}
+              <div className="space-y-2 pt-2 border-t border-white/10">
+                <label className="flex items-center justify-between p-3 rounded-xl border border-purple-500/30 bg-purple-950/20 cursor-pointer">
+                  <div>
+                    <span className="text-xs font-bold text-white block">Status Aktif Voucher</span>
+                    <span className="text-[11px] text-gray-400">
+                      Nonaktifkan jika voucher sedang ditahan atau tidak boleh diklaim sementara waktu.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={editIsActive}
+                    onChange={(e) => setEditIsActive(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#7C3AED] focus:ring-[#7C3AED]"
+                  />
+                </label>
+
+                {editCategory === "SPONSOR_VOUCHER" && (
+                  <label className="flex items-center justify-between p-3 rounded-xl border border-cyan-500/30 bg-cyan-950/20 cursor-pointer">
+                    <div>
+                      <span className="text-xs font-bold text-white block">🎰 Masukkan ke Pool Royal Gacha</span>
+                      <span className="text-[11px] text-gray-400">
+                        Dapat keluar sebagai Legendary Jackpot saat petualang summon di gacha shrine.
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={editIncludeGachaPool}
+                      onChange={(e) => setEditIncludeGachaPool(e.target.checked)}
+                      className="w-4 h-4 rounded text-cyan-500 focus:ring-cyan-400"
+                    />
+                  </label>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setEditingCode(null)}
+                  className="px-4 h-11 rounded-xl text-xs font-bold text-gray-300 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="px-6 h-11 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-600 text-black hover:brightness-110 shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{savingEdit ? "Menyimpan..." : "💾 Simpan Perubahan"}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
