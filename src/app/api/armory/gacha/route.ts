@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { ARMORY_ITEMS } from "@/lib/armory-catalog";
 import { sendDiscordChannelMessage, DiscordEmbed } from "@/lib/discord-bot-sender";
 import { createNotification } from "@/lib/notifications";
+import { randomInt } from "crypto";
 
 export type GachaRarity = "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
 
@@ -12,77 +13,125 @@ export interface GachaDrop {
   name: string;
   description: string;
   rarity: GachaRarity;
-  type: "XP" | "TEMP_TITLE" | "PERM_TITLE" | "PERM_FRAME" | "TRIAL_VIP" | "TRIAL_FRAMES" | "SPONSOR_VOUCHER";
+  type:
+    | "XP"
+    | "FREE_TICKET"
+    | "TEMP_TITLE"
+    | "PERM_TITLE"
+    | "PERM_FRAME"
+    | "TRIAL_VIP"
+    | "TRIAL_FRAMES"
+    | "SPONSOR_VOUCHER"
+    | "JACKPOT";
   amountXp?: number;
+  bonusTickets?: number;
+  tempTitleValue?: string;
   cosmeticId?: string;
   trialDurationDays?: number;
   sponsorCode?: string;
   claimSerial?: string;
   sponsorName?: string;
   sponsorActionUrl?: string;
+  isDuplicate?: boolean;
+  convertedXp?: number;
   icon: string;
   glowColor: string;
 }
 
+// ========================================================
+// EXPANDED PRIZE POOL (15+ DISTINCT ITEMS WITH CRYPTO RNG)
+// ========================================================
+
 const COMMON_DROPS: GachaDrop[] = [
   {
-    id: "drop_xp_75",
-    name: "Kantong XP Kecil (+75 XP)",
-    description: "Kantong kulit berisi kristal energi petualang pemula.",
+    id: "drop_xp_coin_75",
+    name: "💰 Kantong Koin Perunggu (+75 XP)",
+    description: "Pundi-pundi koin perunggu bekal dasar petualang pemula.",
     rarity: "COMMON",
     type: "XP",
     amountXp: 75,
-    icon: "🪙",
+    icon: "💰",
     glowColor: "#94A3B8",
   },
   {
-    id: "drop_xp_120",
-    name: "Pundi XP Petualang (+120 XP)",
-    description: "Pundi-pundi kristal perak penyokong ekspedisi guild.",
+    id: "drop_xp_guild_120",
+    name: "💎 Serpihan Kristal Guild (+120 XP)",
+    description: "Serpihan kristal energi penyokong ekspedisi guild LogHorizon.",
     rarity: "COMMON",
     type: "XP",
     amountXp: 120,
-    icon: "💰",
+    icon: "💎",
+    glowColor: "#94A3B8",
+  },
+  {
+    id: "drop_xp_scroll_150",
+    name: "📜 Gulungan Latihan Petualang (+150 XP)",
+    description: "Gulungan perkamen kuno berisi teknik dasar penjelajah ruang LogHorizon.",
+    rarity: "COMMON",
+    type: "XP",
+    amountXp: 150,
+    icon: "📜",
     glowColor: "#94A3B8",
   },
 ];
 
 const RARE_DROPS: GachaDrop[] = [
   {
-    id: "drop_xp_250",
-    name: "Kotak Harta Emas (+250 XP)",
-    description: "Harta rampasan berharga dari reruntuhan kuno LogHorizon.",
+    id: "drop_xp_treasure_250",
+    name: "🎁 Peti Harta Kerajaan (+250 XP)",
+    description: "Peti harta rampasan berharga dari reruntuhan kuno LogHorizon.",
     rarity: "RARE",
     type: "XP",
     amountXp: 250,
-    icon: "✨",
+    icon: "🎁",
     glowColor: "#38BDF8",
   },
   {
-    id: "drop_title_fortune_seeker",
-    name: "Gelar 24 Jam: 🍀 Fortune Seeker",
+    id: "drop_ticket_extra_1",
+    name: "🎟️ Tiket Gacha Ekstra (+1 Free Summon Ticket)",
+    description: "Tiket pemanggilan kerajaan ekstra. Dapat langsung digunakan untuk memanggil lagi!",
+    rarity: "RARE",
+    type: "FREE_TICKET",
+    bonusTickets: 1,
+    icon: "🎟️",
+    glowColor: "#38BDF8",
+  },
+  {
+    id: "drop_title_temp_fortune",
+    name: "⏳ Gelar 24 Jam: 🍀 Fortune Seeker",
     description: "Gelar kehormatan pembawa keberuntungan selama 24 jam penuh.",
     rarity: "RARE",
     type: "TEMP_TITLE",
+    tempTitleValue: "🍀 Fortune Seeker",
     icon: "🍀",
+    glowColor: "#38BDF8",
+  },
+  {
+    id: "drop_title_temp_vanguard",
+    name: "⏳ Gelar 24 Jam: ⚡ Swift Vanguard",
+    description: "Gelar kehormatan pelopor kilat terdepan selama 24 jam penuh.",
+    rarity: "RARE",
+    type: "TEMP_TITLE",
+    tempTitleValue: "⚡ Swift Vanguard",
+    icon: "⚡",
     glowColor: "#38BDF8",
   },
 ];
 
 const EPIC_DROPS: GachaDrop[] = [
   {
-    id: "drop_xp_500",
-    name: "Relik Kristal Arcane (+500 XP)",
-    description: "Kristal sihir murni berkekuatan dahsyat bernilai 500 XP.",
+    id: "drop_title_shadow_assassin",
+    name: "🗡️ Gelar Permanen: Shadow Assassin",
+    description: "Gelar ksatria bayangan abadi di profil dan papan peringkat LogHorizon.",
     rarity: "EPIC",
-    type: "XP",
-    amountXp: 500,
-    icon: "🔮",
+    type: "PERM_TITLE",
+    cosmeticId: "title_shadow_assassin",
+    icon: "🗡️",
     glowColor: "#A855F7",
   },
   {
     id: "drop_title_arcane_striker",
-    name: "Gelar Permanen: ⚡ Arcane Striker",
+    name: "⚡ Gelar Permanen: Arcane Striker",
     description: "Gelar ksatria petir abadi eksklusif dari Royal Gacha Summon.",
     rarity: "EPIC",
     type: "PERM_TITLE",
@@ -91,31 +140,41 @@ const EPIC_DROPS: GachaDrop[] = [
     glowColor: "#A855F7",
   },
   {
+    id: "drop_title_royal_alchemist",
+    name: "🧪 Gelar Permanen: Royal Alchemist",
+    description: "Gelar pakar ramuan mistis abadi di profil dan papan peringkat LogHorizon.",
+    rarity: "EPIC",
+    type: "PERM_TITLE",
+    cosmeticId: "title_royal_alchemist",
+    icon: "🧪",
+    glowColor: "#A855F7",
+  },
+  {
     id: "drop_trial_frames_3d",
-    name: "3-Hari Trial: Seluruh Bingkai Avatar",
-    description: "Akses bebas menggunakan seluruh 8 Bingkai Efek Avatar Guild Armory selama 3 hari.",
+    name: "🖼️ Trial 3 Hari: Semua Bingkai Efek Discord",
+    description: "Akses bebas menggunakan seluruh Bingkai Efek Avatar Guild Armory selama 3 hari.",
     rarity: "EPIC",
     type: "TRIAL_FRAMES",
     trialDurationDays: 3,
-    icon: "🎭",
+    icon: "🖼️",
+    glowColor: "#A855F7",
+  },
+  {
+    id: "drop_xp_elite_500",
+    name: "🔥 Pundi XP Elit (+500 XP)",
+    description: "Kristal sihir murni berkekuatan dahsyat bernilai 500 XP instan.",
+    rarity: "EPIC",
+    type: "XP",
+    amountXp: 500,
+    icon: "🔥",
     glowColor: "#A855F7",
   },
 ];
 
 const LEGENDARY_DROPS: GachaDrop[] = [
   {
-    id: "drop_jackpot_1000",
-    name: "JACKPOT KERAJAAN (+1,000 XP)!",
-    description: "Harta karun tertinggi perbendaharaan LogHorizon!",
-    rarity: "LEGENDARY",
-    type: "XP",
-    amountXp: 1000,
-    icon: "👑",
-    glowColor: "#F59E0B",
-  },
-  {
     id: "drop_trial_vip_7d",
-    name: "7-Hari VIP Noble Patron Trial",
+    name: "💎 Trial 7 Hari: VIP Noble Patron",
     description: "Status kebangsawanan eksklusif VIP Noble Patron lengkap dengan lencana berkilau selama 7 hari.",
     rarity: "LEGENDARY",
     type: "TRIAL_VIP",
@@ -125,7 +184,7 @@ const LEGENDARY_DROPS: GachaDrop[] = [
   },
   {
     id: "drop_perm_frame_royal",
-    name: "Bingkai Permanen: 🔮 Royal Arcane Vortex",
+    name: "🔮 Bingkai Efek Permanen: Royal Arcane Vortex",
     description: "Bingkai Avatar animasi Discord-style 🔮 Royal Arcane Vortex permanen di Guild Armory.",
     rarity: "LEGENDARY",
     type: "PERM_FRAME",
@@ -134,16 +193,39 @@ const LEGENDARY_DROPS: GachaDrop[] = [
     glowColor: "#F59E0B",
   },
   {
-    id: "drop_perm_frame_cyber",
-    name: "Bingkai Permanen: ⚡ Cyber Valkyrie Halo",
-    description: "Bingkai Avatar animasi Discord-style ⚡ Cyber Valkyrie Halo permanen di Guild Armory.",
+    id: "drop_perm_frame_crimson",
+    name: "🐉 Bingkai Efek Permanen: Crimson Dragon Crest",
+    description: "Bingkai Avatar animasi Discord-style 🐉 Crimson Dragon Crest permanen di Guild Armory.",
     rarity: "LEGENDARY",
     type: "PERM_FRAME",
-    cosmeticId: "frame_cyber_pulse",
-    icon: "⚡",
+    cosmeticId: "frame_crimson_dragon",
+    icon: "🐉",
+    glowColor: "#F59E0B",
+  },
+  {
+    id: "drop_jackpot_1500_tickets",
+    name: "👑 JACKPOT KERAJAAN (+1.500 XP + 2 Tiket Gacha)",
+    description: "Harta karun tertinggi perbendaharaan LogHorizon! 1.500 XP + 2 Tiket Pemanggilan Gratis!",
+    rarity: "LEGENDARY",
+    type: "JACKPOT",
+    amountXp: 1500,
+    bonusTickets: 2,
+    icon: "👑",
     glowColor: "#F59E0B",
   },
 ];
+
+/**
+ * Pick drop from pool with cryptographic randomness, avoiding consecutive repeat when pool > 1
+ */
+function pickDropFromPool(pool: GachaDrop[], lastPickedId?: string): GachaDrop {
+  if (pool.length === 1) return pool[0];
+  const candidates =
+    lastPickedId && pool.length > 1 ? pool.filter((item) => item.id !== lastPickedId) : pool;
+  const list = candidates.length > 0 ? candidates : pool;
+  const index = randomInt(0, list.length);
+  return list[index];
+}
 
 export async function GET() {
   const user = await activeUser();
@@ -193,9 +275,10 @@ export async function GET() {
     rates: {
       legendary: "7%",
       epic: "18%",
-      rare: "25%",
-      common: "50%",
+      rare: "27%",
+      common: "48%",
       pityGuarantee: "Pasti Epic / Legendary pada Tarikan ke-10 (Pity 10)",
+      duplicateConversion: "Duplikat Rare (+200 XP), Epic (+450 XP), Legendary (+1.200 XP)",
     },
     activeSponsorDrops: availableSponsorDrops,
     hasActiveSponsorDrop: availableSponsorDrops.length > 0,
@@ -254,9 +337,12 @@ export async function POST(req: Request) {
       let currentPity = dbUser.gachaPityCounter ?? 0;
       const drops: GachaDrop[] = [];
       let totalXpGained = 0;
+      let totalBonusTickets = 0;
       let highestRarity: GachaRarity = "COMMON";
       let wonLegendary = false;
+      let lastPickedId: string | undefined;
 
+      // Track owned permanent items to prevent duplicates within this user's account & within the same batch
       const ownedCosmeticIds = new Set(dbUser.cosmetics.map((c) => c.itemId));
 
       // Dynamic Sponsor Voucher Gacha Pool
@@ -291,30 +377,35 @@ export async function POST(req: Request) {
         // Guaranteed Epic/Legendary on Pity 10
         if (currentPity >= 10) {
           currentPity = 0;
-          const pityRoll = Math.random();
-          rarity = pityRoll < 0.28 ? "LEGENDARY" : "EPIC";
+          const pityRoll = randomInt(0, 100);
+          rarity = pityRoll < 28 ? "LEGENDARY" : "EPIC";
         } else {
-          const roll = Math.random() * 100;
-          if (roll < 7) {
+          // Cryptographically secure weighted roll out of 10,000
+          // Common: 48% (0..4799)
+          // Rare: 27% (4800..7499)
+          // Epic: 18% (7500..9299)
+          // Legendary: 7% (9300..9999)
+          const roll = randomInt(0, 10000);
+          if (roll >= 9300) {
             rarity = "LEGENDARY";
             currentPity = 0; // Reset pity on Legendary
-          } else if (roll < 25) {
+          } else if (roll >= 7500) {
             rarity = "EPIC";
-          } else if (roll < 50) {
+          } else if (roll >= 4800) {
             rarity = "RARE";
           } else {
             rarity = "COMMON";
           }
         }
 
-        let chosenDrop: GachaDrop;
+        let chosenTemplate: GachaDrop;
         if (rarity === "LEGENDARY") {
           wonLegendary = true;
           highestRarity = "LEGENDARY";
 
-          // Dynamic Sponsor Drop Chance (If available sponsor vouchers exist, 35% chance to win sponsor jackpot)
-          if (availableSponsors.length > 0 && Math.random() < 0.35) {
-            const pickedIndex = Math.floor(Math.random() * availableSponsors.length);
+          // Dynamic Sponsor Drop Chance (35% if sponsor voucher exists with stock)
+          if (availableSponsors.length > 0 && randomInt(0, 100) < 35) {
+            const pickedIndex = randomInt(0, availableSponsors.length);
             const targetSponsor = availableSponsors[pickedIndex];
 
             // Atomically increment usage
@@ -336,7 +427,7 @@ export async function POST(req: Request) {
               },
             });
 
-            chosenDrop = {
+            chosenTemplate = {
               id: `sponsor_voucher_${targetSponsor.id}`,
               name: `🏷️ ${targetSponsor.title}`,
               description: `Voucher Eksklusif ${targetSponsor.sponsorName || "OdyssiaVault"}. Kode Promo: ${targetSponsor.code} (No. Seri: ${serial}). Tersimpan di Dompet Voucher Saya.`,
@@ -361,59 +452,76 @@ export async function POST(req: Request) {
             availableSponsors.splice(pickedIndex, 1);
             userClaimedCodeIds.add(targetSponsor.id);
           } else {
-            chosenDrop = LEGENDARY_DROPS[Math.floor(Math.random() * LEGENDARY_DROPS.length)];
+            chosenTemplate = pickDropFromPool(LEGENDARY_DROPS, lastPickedId);
           }
         } else if (rarity === "EPIC") {
           if (highestRarity !== "LEGENDARY") highestRarity = "EPIC";
-          chosenDrop = EPIC_DROPS[Math.floor(Math.random() * EPIC_DROPS.length)];
+          chosenTemplate = pickDropFromPool(EPIC_DROPS, lastPickedId);
         } else if (rarity === "RARE") {
           if (highestRarity === "COMMON") highestRarity = "RARE";
-          chosenDrop = RARE_DROPS[Math.floor(Math.random() * RARE_DROPS.length)];
+          chosenTemplate = pickDropFromPool(RARE_DROPS, lastPickedId);
         } else {
-          chosenDrop = COMMON_DROPS[Math.floor(Math.random() * COMMON_DROPS.length)];
+          chosenTemplate = pickDropFromPool(COMMON_DROPS, lastPickedId);
         }
 
-        drops.push(chosenDrop);
+        lastPickedId = chosenTemplate.id;
 
-        if (chosenDrop.amountXp) {
-          totalXpGained += chosenDrop.amountXp;
-        }
+        // Clone drop object for individual pull modification
+        const dropResult: GachaDrop = { ...chosenTemplate };
 
-        // Apply item reward directly
-        if (chosenDrop.type === "TEMP_TITLE") {
+        // Duplicate Check & Conversion for Permanent Items (Custom Title / Avatar Frame)
+        if (dropResult.type === "PERM_TITLE" || dropResult.type === "PERM_FRAME") {
+          if (dropResult.cosmeticId && ownedCosmeticIds.has(dropResult.cosmeticId)) {
+            // DUPLICATE DETECTED!
+            const duplicateXp =
+              dropResult.rarity === "LEGENDARY" ? 1200 : dropResult.rarity === "EPIC" ? 450 : 200;
+            dropResult.isDuplicate = true;
+            dropResult.convertedXp = duplicateXp;
+            totalXpGained += duplicateXp;
+            dropResult.description = `${dropResult.description} (Item permanen sudah dimiliki. Otomatis dikonversi menjadi +${duplicateXp.toLocaleString("id-ID")} Bonus XP!)`;
+          } else if (dropResult.cosmeticId) {
+            // First time getting this item: add to owned set and create record
+            ownedCosmeticIds.add(dropResult.cosmeticId);
+            await tx.userCosmetic
+              .create({
+                data: {
+                  userId: dbUser.id,
+                  itemId: dropResult.cosmeticId,
+                  itemName: dropResult.name,
+                  itemType: dropResult.type === "PERM_FRAME" ? "AVATAR_FRAME" : "CUSTOM_TITLE",
+                },
+              })
+              .catch(() => null);
+          }
+        } else if (dropResult.type === "JACKPOT") {
+          if (dropResult.amountXp) totalXpGained += dropResult.amountXp;
+          if (dropResult.bonusTickets) totalBonusTickets += dropResult.bonusTickets;
+        } else if (dropResult.type === "FREE_TICKET") {
+          if (dropResult.bonusTickets) totalBonusTickets += dropResult.bonusTickets;
+        } else if (dropResult.type === "XP") {
+          if (dropResult.amountXp) totalXpGained += dropResult.amountXp;
+        } else if (dropResult.type === "TEMP_TITLE") {
+          const titleValue = dropResult.tempTitleValue || "🍀 Fortune Seeker";
           const tempExpire = new Date(Date.now() + 24 * 60 * 60 * 1000);
           await tx.user.update({
             where: { id: dbUser.id },
-            data: { tempTitle: "🍀 Fortune Seeker", tempTitleExpiresAt: tempExpire },
+            data: { tempTitle: titleValue, tempTitleExpiresAt: tempExpire },
           });
-        } else if (chosenDrop.type === "TRIAL_VIP") {
+        } else if (dropResult.type === "TRIAL_VIP") {
           const trialExpire = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
           await tx.user.update({
             where: { id: dbUser.id },
             data: { trialType: "VIP_PREMIUM", trialExpiresAt: trialExpire, trialGrantedBy: "Royal Gacha" },
           });
-        } else if (chosenDrop.type === "TRIAL_FRAMES") {
+        } else if (dropResult.type === "TRIAL_FRAMES") {
           const trialExpire = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
           await tx.user.update({
             where: { id: dbUser.id },
             data: { trialType: "ALL_FRAMES", trialExpiresAt: trialExpire, trialGrantedBy: "Royal Gacha" },
           });
-        } else if ((chosenDrop.type === "PERM_FRAME" || chosenDrop.type === "PERM_TITLE") && chosenDrop.cosmeticId) {
-          if (!ownedCosmeticIds.has(chosenDrop.cosmeticId)) {
-            ownedCosmeticIds.add(chosenDrop.cosmeticId);
-            await tx.userCosmetic.create({
-              data: {
-                userId: dbUser.id,
-                itemId: chosenDrop.cosmeticId,
-                itemName: chosenDrop.name,
-                itemType: chosenDrop.type === "PERM_FRAME" ? "AVATAR_FRAME" : "CUSTOM_TITLE",
-              },
-            }).catch(() => null);
-          } else {
-            // Already owned: convert to bonus XP
-            totalXpGained += 300;
-          }
         }
+
+        drops.push(dropResult);
       }
 
       // Calculate final XP and Level progression
@@ -424,12 +532,14 @@ export async function POST(req: Request) {
         finalLevel += 1;
       }
 
+      const finalTickets = Math.max(0, availableTickets - usedTickets + totalBonusTickets);
+
       const updatedUser = await tx.user.update({
         where: { id: dbUser.id },
         data: {
           xp: Math.max(0, finalXp),
           level: finalLevel,
-          dailyGachaTickets: Math.max(0, availableTickets - usedTickets),
+          dailyGachaTickets: finalTickets,
           gachaPityCounter: currentPity,
         },
         select: {
@@ -451,6 +561,7 @@ export async function POST(req: Request) {
         usedTickets,
         usedXp,
         totalXpGained,
+        totalBonusTickets,
         wonLegendary,
         highestRarity,
         wonSponsorVouchers: wonSponsorVouchersList,
@@ -458,24 +569,28 @@ export async function POST(req: Request) {
     });
 
     // Notify target user
+    const bonusTicketText = result.totalBonusTickets > 0 ? ` & +${result.totalBonusTickets} Tiket Ekstra` : "";
     await createNotification({
       userId: user.id,
       type: "SYSTEM",
-      message: `🔮 Hasil Royal Gacha Summon: Kamu telah memanggil ${pullCount} item. Total perolehan XP: +${result.totalXpGained} XP.`,
+      message: `🔮 Hasil Royal Gacha Summon: Kamu telah memanggil ${pullCount} item. Total perolehan: +${result.totalXpGained} XP${bonusTicketText}.`,
       link: "/profile?tab=gacha",
     }).catch(() => null);
 
-    // If Legendary pulled: Discord Announcement to #🎮・gaming-lounge
+    // If Legendary pulled: Discord Announcement to #🎮・gaming-lounge / #lfg
     if (result.wonLegendary) {
       const legendaryItem = result.drops.find((d) => d.rarity === "LEGENDARY");
+      const isDuplicateNote = legendaryItem?.isDuplicate
+        ? ` [Duplikat ➔ Dikonversi +${legendaryItem.convertedXp} XP]`
+        : "";
       const embed: DiscordEmbed = {
         title: "👑 ROYAL GACHA SUMMON: LEGENDARY DROP!",
-        description: `Lonceng istana berdentang! Petualang **@${result.updatedUser.username}** baru saja memperoleh hadiah **LEGENDARY** dari Royal Gacha Summon!\n\n🎁 **Hadiah:** ${legendaryItem?.name ?? "Hadiah Legendaris"}\n✨ *Kemegahan takdir berpihak pada yang berani!*`,
+        description: `Lonceng istana berdentang! Petualang **@${result.updatedUser.username}** baru saja memperoleh hadiah **LEGENDARY** dari Royal Gacha Summon!\n\n🎁 **Hadiah:** ${legendaryItem?.name ?? "Hadiah Legendaris"}${isDuplicateNote}\n✨ *Kemegahan takdir berpihak pada yang berani!*`,
         color: 0xf59e0b, // Amber Gold
         fields: [
           { name: "👤 Petualang Beruntung", value: `@${result.updatedUser.username}`, inline: true },
           { name: "🌟 Kategori Rarity", value: "🌟 LEGENDARY (7%)", inline: true },
-          { name: "⚡ Bonus XP Didapat", value: `+${result.totalXpGained} XP`, inline: true },
+          { name: "⚡ Total Bonus XP", value: `+${result.totalXpGained} XP`, inline: true },
         ],
         footer: { text: "LogHorizon Royal Gacha • /profile?tab=gacha" },
         timestamp: new Date().toISOString(),
@@ -488,12 +603,13 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Berhasil memanggil ${pullCount}x Royal Gacha!`,
+      message: `Berhasil memanggil ${pullCount}x Royal Gacha! (+${result.totalXpGained} XP${bonusTicketText})`,
       drops: result.drops,
       user: result.updatedUser,
       usedTickets: result.usedTickets,
       usedXp: result.usedXp,
       totalXpGained: result.totalXpGained,
+      totalBonusTickets: result.totalBonusTickets,
       wonLegendary: result.wonLegendary,
     });
   } catch (error: any) {

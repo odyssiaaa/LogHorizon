@@ -12,12 +12,16 @@ interface GachaDrop {
   rarity: "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
   type: string;
   amountXp?: number;
+  bonusTickets?: number;
+  tempTitleValue?: string;
   cosmeticId?: string;
   trialDurationDays?: number;
   sponsorCode?: string;
   claimSerial?: string;
   sponsorName?: string;
   sponsorActionUrl?: string;
+  isDuplicate?: boolean;
+  convertedXp?: number;
   icon: string;
   glowColor: string;
 }
@@ -51,6 +55,7 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
   const [summonFeedback, setSummonFeedback] = useState<{
     message: string;
     totalXp: number;
+    bonusTickets?: number;
     wonLegendary: boolean;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +106,7 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
         drops: GachaDrop[];
         user: GachaUserData;
         totalXpGained: number;
+        totalBonusTickets?: number;
         wonLegendary: boolean;
       }>(res, "Gagal memanggil Royal Gacha");
 
@@ -109,6 +115,7 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
       setSummonFeedback({
         message: data.message,
         totalXp: data.totalXpGained,
+        bonusTickets: data.totalBonusTickets || 0,
         wonLegendary: data.wonLegendary,
       });
       onUpdate?.();
@@ -307,7 +314,7 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
       {/* Recent Summon Result Cards */}
       {recentDrops && recentDrops.length > 0 && (
         <div className="p-5 sm:p-6 rounded-2xl border border-purple-500/30 bg-[#120721]/90 backdrop-blur-md space-y-4 shadow-2xl">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Award size={18} className="text-amber-400" />
               <h3 className="text-sm sm:text-base font-black text-white uppercase font-mono tracking-wider">
@@ -315,9 +322,16 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
               </h3>
             </div>
             {summonFeedback && (
-              <span className="text-xs font-mono font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-3 py-1 rounded-full">
-                Total Perolehan: +{summonFeedback.totalXp} XP
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-3 py-1 rounded-full">
+                  Total Perolehan: +{summonFeedback.totalXp.toLocaleString("id-ID")} XP
+                </span>
+                {Boolean(summonFeedback.bonusTickets) && (
+                  <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-500/15 border border-cyan-500/30 px-3 py-1 rounded-full">
+                    +{summonFeedback.bonusTickets} Tiket Ekstra!
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
@@ -341,7 +355,7 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
                   }`}
                 >
                   <div className="text-3xl my-1">{drop.icon}</div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 w-full">
                     <span
                       className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full uppercase ${
                         isLegendary
@@ -355,12 +369,30 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
                     >
                       {drop.rarity}
                     </span>
-                    <h5 className="text-xs font-bold text-white leading-tight line-clamp-2">
+                    <h5 className="text-xs font-bold text-white leading-tight line-clamp-2 mt-1">
                       {drop.name}
                     </h5>
                     <p className="text-[10px] text-gray-400 line-clamp-2 leading-relaxed">
                       {drop.description}
                     </p>
+
+                    {/* Duplicate to XP badge */}
+                    {drop.isDuplicate && drop.convertedXp && (
+                      <div className="mt-2 w-full px-2 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-amber-500/20 border border-amber-400/50 text-center animate-pulse shadow-sm">
+                        <p className="text-[10px] font-mono font-black text-amber-300 flex items-center justify-center gap-1">
+                          <span>♻️ SUDAH DIMILIKI ➔ +{drop.convertedXp.toLocaleString("id-ID")} XP</span>
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Bonus Ticket badge */}
+                    {Boolean(drop.bonusTickets) && (
+                      <div className="mt-1.5 px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-[10px] font-mono text-cyan-300 font-bold">
+                        +{drop.bonusTickets} Tiket Gacha Ekstra!
+                      </div>
+                    )}
+
+                    {/* Sponsor Voucher serial */}
                     {drop.type === "SPONSOR_VOUCHER" && drop.claimSerial && (
                       <div className="mt-2 w-full p-2 rounded-lg bg-amber-500/15 border border-amber-400/30 text-center space-y-1">
                         <p className="text-[10px] font-mono text-amber-300 font-bold">
@@ -384,41 +416,66 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
 
       {/* Rarity Rates & Rewards Legend */}
       <div className="p-4 sm:p-5 rounded-xl border border-[#2A1B42] bg-[#120B1E]/60 text-xs space-y-3">
-        <h4 className="font-bold text-gray-300 uppercase tracking-wider font-mono text-[11px] flex items-center gap-2">
-          <span>Peluang &amp; Daftar Hadiah (Drop Table)</span>
-        </h4>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px] font-mono">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h4 className="font-bold text-gray-300 uppercase tracking-wider font-mono text-[11px] flex items-center gap-2">
+            <span>Peluang &amp; Daftar Hadiah (Drop Table)</span>
+          </h4>
+          <span className="text-[10px] font-mono text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
+            Weighted Crypto-RNG Protected
+          </span>
+        </div>
+
+        {/* Anti-Mubazir Notice */}
+        <div className="p-2.5 rounded-lg border border-purple-500/30 bg-purple-500/10 flex items-center gap-2 text-purple-200 font-mono text-[11px]">
+          <RefreshCw size={14} className="text-purple-400 shrink-0" />
+          <span>
+            <strong>♻️ Konversi Anti-Mubazir:</strong> Hadiah permanen (Gelar / Bingkai) yang sudah dimiliki otomatis dikonversi menjadi Bonus XP (Rare: +200 XP, Epic: +450 XP, Legendary: +1.200 XP)!
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-[11px] font-mono pt-1">
           <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
-            <div className="font-bold text-amber-400">🌟 LEGENDARY (7%)</div>
-            <div className="text-gray-300 text-[10px] mt-1 space-y-0.5">
+            <div className="font-bold text-amber-400 flex items-center justify-between">
+              <span>🌟 LEGENDARY (7%)</span>
+            </div>
+            <div className="text-gray-300 text-[10px] mt-1.5 space-y-1">
+              <p className="text-amber-300 font-bold">👑 JACKPOT (+1.500 XP + 2 Tiket)</p>
+              <p>• 💎 7-Hari VIP Noble Patron Trial</p>
+              <p>• 🔮 Bingkai: Royal Arcane Vortex</p>
+              <p>• 🐉 Bingkai: Crimson Dragon Crest</p>
               {hasActiveSponsorDrop && (
                 <p className="text-amber-300 font-bold">🔥 Voucher Mitra (OdyssiaVault)</p>
               )}
-              <p>• 7-Hari VIP Noble Patron Trial</p>
-              <p>• Bingkai Avatar Permanen</p>
-              <p>• JACKPOT +1,000 XP</p>
             </div>
           </div>
+
           <div className="p-3 rounded-lg border border-purple-500/30 bg-purple-500/10">
             <div className="font-bold text-purple-400">🔮 EPIC (18%)</div>
-            <div className="text-gray-300 text-[10px] mt-1 space-y-0.5">
-              <p>• Gelar Tetap: Arcane Striker</p>
-              <p>• 3-Hari Trial Semua Bingkai</p>
-              <p>• Kantong +500 XP</p>
+            <div className="text-gray-300 text-[10px] mt-1.5 space-y-1">
+              <p>• 🗡️ Gelar: Shadow Assassin</p>
+              <p>• ⚡ Gelar: Arcane Striker</p>
+              <p>• 🧪 Gelar: Royal Alchemist</p>
+              <p>• 🖼️ Trial 3 Hari: Semua Bingkai</p>
+              <p>• 🔥 Pundi XP Elit (+500 XP)</p>
             </div>
           </div>
+
           <div className="p-3 rounded-lg border border-sky-500/30 bg-sky-500/10">
-            <div className="font-bold text-sky-400">🔷 RARE (25%)</div>
-            <div className="text-gray-300 text-[10px] mt-1 space-y-0.5">
-              <p>• Gelar 24 Jam: Fortune Seeker</p>
-              <p>• Kotak Harta +250 XP</p>
+            <div className="font-bold text-sky-400">🔷 RARE (27%)</div>
+            <div className="text-gray-300 text-[10px] mt-1.5 space-y-1">
+              <p>• 🎁 Peti Harta Kerajaan (+250 XP)</p>
+              <p className="text-sky-300 font-bold">• 🎟️ Tiket Gacha Ekstra (+1 Tiket)</p>
+              <p>• ⏳ Gelar 24 Jam: 🍀 Fortune Seeker</p>
+              <p>• ⏳ Gelar 24 Jam: ⚡ Swift Vanguard</p>
             </div>
           </div>
+
           <div className="p-3 rounded-lg border border-slate-700 bg-slate-800/40">
-            <div className="font-bold text-slate-300">⚪ COMMON (50%)</div>
-            <div className="text-gray-400 text-[10px] mt-1 space-y-0.5">
-              <p>• Pundi XP (+120 XP)</p>
-              <p>• Kantong XP (+75 XP)</p>
+            <div className="font-bold text-slate-300">⚪ COMMON (48%)</div>
+            <div className="text-gray-400 text-[10px] mt-1.5 space-y-1">
+              <p>• 📜 Gulungan Petualang (+150 XP)</p>
+              <p>• 💎 Kristal Guild (+120 XP)</p>
+              <p>• 💰 Koin Perunggu (+75 XP)</p>
             </div>
           </div>
         </div>
