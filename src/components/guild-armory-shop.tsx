@@ -271,6 +271,13 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
               <Shield size={15} />
               <span>Gelar Kustom</span>
             </button>
+            <Link
+              href="/profile?tab=gacha"
+              className="ml-auto px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 shadow-sm"
+            >
+              <Zap size={13} className="text-amber-400" />
+              <span>🔮 Royal Gacha Summon</span>
+            </Link>
           </div>
 
           {/* Items Grid */}

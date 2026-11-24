@@ -2,6 +2,7 @@ import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { getArmoryItem } from "@/lib/armory-catalog";
 import { isGuildOwner } from "@/lib/auth-guard";
+import { hasAllFramesTrial } from "@/lib/trial-helper";
 
 export async function POST(request: Request) {
   const user = await activeUser();
@@ -42,9 +43,10 @@ export async function POST(request: Request) {
   }
 
   const isOwner = isGuildOwner(user);
+  const trialHasAllFrames = type === "AVATAR_FRAME" && hasAllFramesTrial(user);
 
-  // Equip: verify ownership (Bypassed for Guild Owner / Emperor .odyssia)
-  if (!isOwner) {
+  // Equip: verify ownership (Bypassed for Guild Owner / Emperor .odyssia or active Trial)
+  if (!isOwner && !trialHasAllFrames) {
     const owned = await prisma.userCosmetic.findUnique({
       where: {
         userId_itemId: {

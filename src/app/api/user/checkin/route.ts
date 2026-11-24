@@ -121,6 +121,7 @@ export async function POST() {
         badges: [...badges],
         lastCheckInAt: now,
         checkInStreak: newStreak,
+        dailyGachaTickets: { increment: 1 },
       },
       select: {
         id: true,
@@ -128,6 +129,7 @@ export async function POST() {
         level: true,
         lastCheckInAt: true,
         checkInStreak: true,
+        dailyGachaTickets: true,
       },
     });
 
@@ -135,16 +137,18 @@ export async function POST() {
       updatedUser,
       newStreak,
       xpGained: 15,
+      gachaTickets: updatedUser.dailyGachaTickets,
     };
   });
 
   return NextResponse.json({
     success: true,
-    message: `Berhasil absen harian! Kamu memperoleh +15 XP. Streak saat ini: ${result.newStreak} hari.`,
+    message: `Berhasil absen harian! Kamu memperoleh +15 XP dan +1 Tiket Royal Gacha. Streak saat ini: ${result.newStreak} hari.`,
     xpGained: result.xpGained,
     streak: result.newStreak,
     level: result.updatedUser.level,
     xp: result.updatedUser.xp,
     lastCheckInAt: result.updatedUser.lastCheckInAt,
+    dailyGachaTickets: result.gachaTickets,
   });
 }

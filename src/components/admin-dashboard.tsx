@@ -21,6 +21,7 @@ import {
   ExternalLink,
   Flag,
   Flame,
+  Gift,
   ImageIcon,
   LayoutDashboard,
   Lock,
@@ -108,6 +109,9 @@ type Member = {
   level?: number;
   badges?: string[];
   joinedAt: string;
+  trialType?: string | null;
+  trialExpiresAt?: string | Date | null;
+  trialGrantedBy?: string | null;
 };
 
 type MarketplaceListing = {
@@ -328,6 +332,71 @@ export function AdminDashboard({ role, isOwner = false }: { role: Role; isOwner?
       setLoadingDungeon(false);
     }
   }, [dungeonStatusFilter]);
+
+  // Admin Trial Granter State
+  const [trialModalOpen, setTrialModalOpen] = useState(false);
+  const [selectedTrialMember, setSelectedTrialMember] = useState<Member | null>(null);
+  const [trialTypeInput, setTrialTypeInput] = useState<"VIP_PREMIUM" | "ALL_FRAMES" | "VERIFIED_SELLER_TRIAL">("VIP_PREMIUM");
+  const [trialDurationInput, setTrialDurationInput] = useState<number>(7);
+  const [trialReasonInput, setTrialReasonInput] = useState<string>("");
+  const [trialSubmitting, setTrialSubmitting] = useState(false);
+
+  function handleOpenTrialModal(member: Member) {
+    setSelectedTrialMember(member);
+    setTrialTypeInput(
+      member.trialType === "ALL_FRAMES" || member.trialType === "VERIFIED_SELLER_TRIAL"
+        ? (member.trialType as any)
+        : "VIP_PREMIUM"
+    );
+    setTrialDurationInput(7);
+    setTrialReasonInput("");
+    setTrialModalOpen(true);
+  }
+
+  async function handleGrantTrialSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedTrialMember) return;
+    setTrialSubmitting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/trial", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: selectedTrialMember.username,
+          trialType: trialTypeInput,
+          durationDays: trialDurationInput,
+          reason: trialReasonInput || undefined,
+        }),
+      });
+      const resp = await readApiResponse<{ success: boolean; message: string }>(res, "Gagal memberikan trial");
+      setTrialModalOpen(false);
+      setSelectedTrialMember(null);
+      await loadDashboard();
+      window.alert(resp.message);
+    } catch (err: any) {
+      setError(err?.message || "Gagal memberikan trial");
+    } finally {
+      setTrialSubmitting(false);
+    }
+  }
+
+  async function handleRevokeTrial(member: Member) {
+    if (!window.confirm(`Cabut akses trial dari @${member.username ?? "Member"}?`)) return;
+    setBusyId(member.id);
+    try {
+      const res = await fetch(`/api/admin/trial?username=${encodeURIComponent(member.username ?? "")}`, {
+        method: "DELETE",
+      });
+      const resp = await readApiResponse<{ success: boolean; message: string }>(res, "Gagal mencabut trial");
+      await loadDashboard();
+      window.alert(resp.message);
+    } catch (err: any) {
+      setError(err?.message || "Gagal mencabut trial");
+    } finally {
+      setBusyId("");
+    }
+  }
 
   async function handleDungeonAction(
     bountyId: string,
@@ -4497,15 +4566,25 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
 
                           <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200 dark:border-[#2E1E45]">
                             {isAdmin && !isOwnerMember && (
-                              <button
-                                type="button"
-                                disabled={busyId === member.id}
-                                onClick={() => void handleEditXpLevel(member)}
-                                className="h-9 px-3 text-xs font-bold border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 rounded-md flex items-center justify-center gap-1 transition shadow-sm"
-                              >
-                                <Edit3 size={13} className="text-purple-400" />
-                                <span>Edit XP</span>
-                              </button>
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={busyId === member.id}
+                                  onClick={() => void handleEditXpLevel(member)}
+                                  className="h-9 px-3 text-xs font-bold border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 rounded-md flex items-center justify-center gap-1 transition shadow-sm"
+                                >
+                                  <Edit3 size={13} className="text-purple-400" />
+                                  <span>Edit XP</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={busyId === member.id}
+                                  onClick={() => handleOpenTrialModal(member)}
+                                  className="h-9 px-3 text-xs font-bold border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 rounded-md flex items-center justify-center gap-1 transition shadow-sm"
+                                >
+                                  <span>🎁 Trial</span>
+                                </button>
+                              </>
                             )}
                             {isOwnerMember ? (
                               <span className="h-9 px-3 text-xs font-bold text-amber-400 bg-amber-500/10 rounded-md border border-amber-500/20 flex items-center justify-center col-span-2 sm:col-span-1">
@@ -4619,6 +4698,33 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                                   >
                                     {member.isPremium ? "★ Premium Aktif" : "Standar"}
                                   </button>
+                                  {member.trialType && member.trialExpiresAt && new Date(member.trialExpiresAt) > new Date() ? (
+                                    <div className="mt-1 flex items-center gap-1">
+                                      <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 whitespace-nowrap">
+                                        ⏳ {member.trialType}
+                                      </span>
+                                      {isAdmin && !isOwnerMember && (
+                                        <button
+                                          type="button"
+                                          disabled={busyId === member.id}
+                                          onClick={() => void handleRevokeTrial(member)}
+                                          className="text-[9px] text-red-400 hover:underline"
+                                          title="Cabut Trial"
+                                        >
+                                          ✕
+                                        </button>
+                                      )}
+                                    </div>
+                                  ) : isAdmin && !isOwnerMember ? (
+                                    <button
+                                      type="button"
+                                      disabled={busyId === member.id}
+                                      onClick={() => handleOpenTrialModal(member)}
+                                      className="mt-1 px-1.5 py-0.5 text-[9px] font-bold border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 rounded transition block"
+                                    >
+                                      🎁 Beri Trial
+                                    </button>
+                                  ) : null}
                                 </td>
 
                                 <td className="py-3">
@@ -5783,6 +5889,105 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                 >
                   <Plus size={14} />
                   <span>{creatingTournament ? "Membuat Bagan..." : "Terbitkan Turnamen"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ADMIN TRIAL GRANTER */}
+      {trialModalOpen && selectedTrialMember && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative w-[calc(100vw-1.5rem)] max-w-lg bg-white dark:bg-[#11091D] border border-amber-500/40 rounded-xl p-5 sm:p-6 shadow-2xl my-auto max-h-[85vh] overflow-y-auto space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-[#2E1E45]">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                  <Gift size={18} />
+                </span>
+                <div>
+                  <h3 className="font-bold text-base text-gray-900 dark:text-white">
+                    Beri Akses Trial Eksklusif
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    Penerima: <strong className="text-purple-400">@{selectedTrialMember.username}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTrialModalOpen(false)}
+                className="text-gray-400 hover:text-white p-1 text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleGrantTrialSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px] mb-1.5">
+                  Tipe Akses Trial *
+                </label>
+                <select
+                  value={trialTypeInput}
+                  onChange={(e) => setTrialTypeInput(e.target.value as any)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white font-bold text-xs focus:outline-none focus:border-amber-400"
+                >
+                  <option value="VIP_PREMIUM">💎 VIP Noble Patron Trial (Pangkat &amp; Lencana Bangsawan)</option>
+                  <option value="ALL_FRAMES">🔮 Royal Armory Frames Trial (Seluruh 8 Bingkai Discord)</option>
+                  <option value="VERIFIED_SELLER_TRIAL">✅ Verified Seller Trial (Lencana Penjual Terpercaya)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px] mb-1.5">
+                  Durasi Masa Trial *
+                </label>
+                <select
+                  value={trialDurationInput}
+                  onChange={(e) => setTrialDurationInput(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white font-bold text-xs focus:outline-none focus:border-amber-400"
+                >
+                  <option value={1}>1 Hari (Trial Kilat)</option>
+                  <option value={3}>3 Hari</option>
+                  <option value={7}>7 Hari (Standar Rekomendasi)</option>
+                  <option value={14}>14 Hari (2 Minggu)</option>
+                  <option value={30}>30 Hari (1 Bulan Penuh)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px] mb-1.5">
+                  Catatan / Alasan Pemberian (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={trialReasonInput}
+                  onChange={(e) => setTrialReasonInput(e.target.value)}
+                  placeholder="Contoh: Reward keaktifan mabar / event mingguan"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#2E1E45] bg-white dark:bg-[#08060B] text-gray-900 dark:text-white text-xs focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="p-3 rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-300 text-[11px] leading-relaxed">
+                ℹ️ Status trial akan kedaluwarsa secara otomatis sesuai durasi tanpa perlu dicabut manual. Laporan audit resmi akan dikirim otomatis ke Discord <strong>#🛡️・mod-logs</strong>.
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-200 dark:border-[#2E1E45]">
+                <button
+                  type="button"
+                  onClick={() => setTrialModalOpen(false)}
+                  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-[#2E1E45] text-gray-600 dark:text-gray-300 font-bold"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={trialSubmitting}
+                  className="px-5 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-bold inline-flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  <Gift size={14} />
+                  <span>{trialSubmitting ? "Memproses Trial..." : "Terbitkan Trial"}</span>
                 </button>
               </div>
             </form>

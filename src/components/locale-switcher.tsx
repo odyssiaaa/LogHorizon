@@ -8,6 +8,7 @@ import { useLocale, LOCALES, Locale } from "@/context/locale-context";
 interface LocaleSwitcherProps {
   className?: string;
   isMobileDrawer?: boolean;
+  direction?: "up" | "down";
 }
 
 // Crisp, standalone SVG Flag component for pixel-perfect cross-platform rendering
@@ -76,7 +77,7 @@ export function FlagIcon({
   }
 }
 
-export function LocaleSwitcher({ className = "", isMobileDrawer = false }: LocaleSwitcherProps) {
+export function LocaleSwitcher({ className = "", isMobileDrawer = false, direction = "up" }: LocaleSwitcherProps) {
   const { locale, currency, setLocale } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -149,15 +150,17 @@ export function LocaleSwitcher({ className = "", isMobileDrawer = false }: Local
         <ChevronDown size={11} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
-      {/* Popover compact w-56 right-0 top-full mt-2 solid background */}
+      {/* Popover compact w-56 right-0 opening up or down with solid anti-translucent background */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 4, scale: 0.98 }}
+            initial={{ opacity: 0, y: direction === "up" ? -4 : 4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+            exit={{ opacity: 0, y: direction === "up" ? -4 : 4, scale: 0.98 }}
             transition={{ duration: 0.12 }}
-            className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] p-2.5 shadow-2xl z-50 space-y-2 select-none"
+            className={`absolute right-0 ${
+              direction === "up" ? "bottom-full mb-2" : "top-full mt-2"
+            } w-56 rounded-lg border border-slate-200 dark:border-[#7C3AED]/60 bg-white dark:bg-[#11091D] p-2.5 shadow-2xl z-50 space-y-2 select-none`}
           >
             {/* Header */}
             <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-[#2A1B42]/60">

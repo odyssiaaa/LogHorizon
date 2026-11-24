@@ -9,12 +9,20 @@ export interface ArmoryItem {
   previewColor: string;
   badgeText?: string;
   frameClasses?: string;
-  discordEffectType?: "arcane_vortex" | "cyber_valkyrie" | "crimson_dragon" | "golden_sovereign";
+  discordEffectType?:
+    | "arcane_vortex"
+    | "cyber_valkyrie"
+    | "crimson_dragon"
+    | "golden_sovereign"
+    | "frost_monarch"
+    | "emerald_spirit"
+    | "celestial_astral"
+    | "thunder_sovereign";
 }
 
 export const ARMORY_ITEMS: ArmoryItem[] = [
   // ==========================================
-  // DISCORD-STYLE ANIMATED AVATAR FRAMES
+  // 8 DISCORD-STYLE ANIMATED AVATAR FRAMES
   // ==========================================
   {
     id: "frame_royal_purple",
@@ -37,6 +45,26 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     discordEffectType: "cyber_valkyrie",
   },
   {
+    id: "frame_frost_monarch",
+    name: "❄️ Frost Monarch Ring",
+    description: "Mahkota kristal es kutub utara berputar dingin dengan kristal salju abadi dan aura pembeku waktu.",
+    type: "AVATAR_FRAME",
+    priceXp: 900,
+    previewColor: "#38BDF8",
+    frameClasses: "ring-2 ring-sky-400 shadow-[0_0_18px_rgba(56,189,248,0.9)]",
+    discordEffectType: "frost_monarch",
+  },
+  {
+    id: "frame_emerald_spirit",
+    name: "🌿 Emerald Forest Spirit",
+    description: "Sulur daun zamrud magis hutan purba dengan kelopak bercahaya dan spora hijau mistis yang berkedip lembut.",
+    type: "AVATAR_FRAME",
+    priceXp: 1000,
+    previewColor: "#10B981",
+    frameClasses: "ring-2 ring-emerald-400 shadow-[0_0_18px_rgba(16,185,129,0.9)]",
+    discordEffectType: "emerald_spirit",
+  },
+  {
     id: "frame_crimson_dragon",
     name: "🐉 Crimson Dragon Crest",
     description: "Tanduk naga purba megah dan kobaran api merah membara yang menyelimuti seluruh tepi lingkaran avatar.",
@@ -45,6 +73,26 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     previewColor: "#EF4444",
     frameClasses: "ring-2 ring-rose-500 shadow-[0_0_18px_rgba(239,68,68,0.9)]",
     discordEffectType: "crimson_dragon",
+  },
+  {
+    id: "frame_celestial_astral",
+    name: "🌌 Celestial Astral Orbit",
+    description: "Orbit galaksi kosmik bertahtakan gugusan bintang galaksi dalam perputaran rasi bintang legendaris.",
+    type: "AVATAR_FRAME",
+    priceXp: 1600,
+    previewColor: "#818CF8",
+    frameClasses: "ring-2 ring-indigo-400 shadow-[0_0_20px_rgba(129,140,248,0.9)]",
+    discordEffectType: "celestial_astral",
+  },
+  {
+    id: "frame_thunder_sovereign",
+    name: "⚡ Thunder Sovereign Aura",
+    description: "Kilatan petir emas-kuning menyambar di sekeliling avatar dengan lonjakan plasma listrik bertenaga dewa.",
+    type: "AVATAR_FRAME",
+    priceXp: 2000,
+    previewColor: "#EAB308",
+    frameClasses: "ring-2 ring-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.95)]",
+    discordEffectType: "thunder_sovereign",
   },
   {
     id: "frame_golden_sovereign",
@@ -58,14 +106,14 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
   },
 
   // ==========================================
-  // CUSTOM JOB / CLASS & REPUTATION TITLES
+  // 8 EUROPEAN JOB / CLASS & REPUTATION TITLES
   // ==========================================
   {
     id: "title_royal_alchemist",
     name: "🧪 Royal Alchemist",
     description: "Pakar ramuan mistis dan alkimia kerajaan peramu elixir kemenangan pertempuran.",
     type: "CUSTOM_TITLE",
-    priceXp: 400,
+    priceXp: 300,
     previewColor: "#10B981",
     badgeText: "🧪 Royal Alchemist",
   },
@@ -74,36 +122,63 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     name: "🗡️ Shadow Assassin",
     description: "Pembunuh bayangan senyap yang melenyapkan musuh dalam sekejap mata tanpa jejak.",
     type: "CUSTOM_TITLE",
-    priceXp: 600,
+    priceXp: 450,
     previewColor: "#8B5CF6",
     badgeText: "🗡️ Shadow Assassin",
   },
   {
-    id: "title_dragon_slayer",
-    name: "🐉 Dragon Slayer",
-    description: "Penakluk binatang purba dan naga legendaris pemegang kehormatan tertinggi ksatria.",
+    id: "title_iron_vanguard",
+    name: "🛡️ Iron Vanguard",
+    description: "Benteng pertahanan terdepan berkepribadian baja pelindung garda guild.",
     type: "CUSTOM_TITLE",
-    priceXp: 800,
-    previewColor: "#EF4444",
-    badgeText: "🐉 Dragon Slayer",
+    priceXp: 500,
+    previewColor: "#64748B",
+    badgeText: "🛡️ Iron Vanguard",
   },
   {
     id: "title_master_merchant",
     name: "⚖️ Master Merchant",
     description: "Saudagar ulung penguasa pasar rekber dan transaksi terpercaya di seluruh LogHorizon.",
     type: "CUSTOM_TITLE",
-    priceXp: 1000,
+    priceXp: 600,
     previewColor: "#F59E0B",
     badgeText: "⚖️ Master Merchant",
+  },
+  {
+    id: "title_grand_ranger",
+    name: "🏹 Grand Ranger",
+    description: "Pemanah ulung penjaga rimba dan penembak sasaran akurat dari kejauhan tanpa luput.",
+    type: "CUSTOM_TITLE",
+    priceXp: 750,
+    previewColor: "#10B981",
+    badgeText: "🏹 Grand Ranger",
   },
   {
     id: "title_arcane_sage",
     name: "📖 Arcane Sage",
     description: "Cendekiawan sihir purba pemegang rahasia semesta dan strategi agung guild.",
     type: "CUSTOM_TITLE",
-    priceXp: 1200,
+    priceXp: 900,
     previewColor: "#3B82F6",
     badgeText: "📖 Arcane Sage",
+  },
+  {
+    id: "title_dragon_slayer",
+    name: "🐉 Dragon Slayer",
+    description: "Penakluk binatang purba dan naga legendaris pemegang kehormatan tertinggi ksatria.",
+    type: "CUSTOM_TITLE",
+    priceXp: 1200,
+    previewColor: "#EF4444",
+    badgeText: "🐉 Dragon Slayer",
+  },
+  {
+    id: "title_mythic_chronicle",
+    name: "🌟 Mythic Chronicle",
+    description: "Sang pencatat sejarah abadi pencapaian legenda terbesar seluruh kerajaan LogHorizon.",
+    type: "CUSTOM_TITLE",
+    priceXp: 1500,
+    previewColor: "#EC4899",
+    badgeText: "🌟 Mythic Chronicle",
   },
 
   // Legacy Titles (Backwards Compatibility)
@@ -150,10 +225,16 @@ export function getArmoryItem(id: string): ArmoryItem | undefined {
   if (id === "frame_cyber_valkyrie_halo") return ARMORY_ITEMS.find((i) => i.id === "frame_cyber_pulse");
   if (id === "frame_crimson_dragon_crest") return ARMORY_ITEMS.find((i) => i.id === "frame_crimson_dragon");
   if (id === "frame_golden_sovereign_wings") return ARMORY_ITEMS.find((i) => i.id === "frame_golden_sovereign");
+  if (id === "frame_frost_monarch_ring") return ARMORY_ITEMS.find((i) => i.id === "frame_frost_monarch");
+  if (id === "frame_emerald_spirit_crest") return ARMORY_ITEMS.find((i) => i.id === "frame_emerald_spirit");
+  if (id === "frame_celestial_astral_orbit") return ARMORY_ITEMS.find((i) => i.id === "frame_celestial_astral");
+  if (id === "frame_thunder_sovereign_aura") return ARMORY_ITEMS.find((i) => i.id === "frame_thunder_sovereign");
   return ARMORY_ITEMS.find((item) => item.id === id);
 }
 
-export function getAvatarFrameEffectType(frameId?: string | null): "arcane_vortex" | "cyber_valkyrie" | "crimson_dragon" | "golden_sovereign" | null {
+export function getAvatarFrameEffectType(
+  frameId?: string | null
+): ArmoryItem["discordEffectType"] | null {
   if (!frameId) return null;
   const item = getArmoryItem(frameId);
   return item?.discordEffectType ?? null;

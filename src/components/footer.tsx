@@ -103,9 +103,9 @@ export function Footer() {
           </Link>
         </div>
 
-        {/* Right / Footer Locale Switcher */}
+        {/* Right / Footer Locale Switcher (Opens upward to prevent clipping & collision with Satpam AI) */}
         <div className="shrink-0 flex items-center justify-center gap-2">
-          <LocaleSwitcher />
+          <LocaleSwitcher direction="up" />
         </div>
       </div>
     </footer>

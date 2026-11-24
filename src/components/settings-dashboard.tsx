@@ -41,6 +41,7 @@ import { DailyQuestsWidget } from "@/components/daily-quests-widget";
 import { RoyalChestWidget } from "@/components/royal-chest-widget";
 import { ReferralInviteCard } from "@/components/referral-invite-card";
 import { GuildArmoryShop } from "@/components/guild-armory-shop";
+import { RoyalGachaSection } from "@/components/royal-gacha-section";
 import { getCustomTitleBadge } from "@/lib/armory-catalog";
 import { VerifiedSellerModal } from "@/components/verified-seller-modal";
 import { isGuildOwner } from "@/lib/caste-hierarchy";
@@ -172,8 +173,8 @@ export function SettingsDashboard() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  // Sub-tabs: "profile" | "badges" | "armory" | "settings"
-  const [activeTab, setActiveTab] = useState<"profile" | "badges" | "armory" | "settings">("profile");
+  // Sub-tabs: "profile" | "badges" | "armory" | "gacha" | "settings"
+  const [activeTab, setActiveTab] = useState<"profile" | "badges" | "armory" | "gacha" | "settings">("profile");
 
   // Linked Accounts State (Multi-Provider Login)
   const [linkedAccounts, setLinkedAccounts] = useState<{
@@ -239,6 +240,7 @@ export function SettingsDashboard() {
 
   useEffect(() => {
     if (tabParam === "armory") setActiveTab("armory");
+    else if (tabParam === "gacha") setActiveTab("gacha");
     else if (tabParam === "badges") setActiveTab("badges");
     else if (tabParam === "settings") setActiveTab("settings");
     else if (tabParam === "profile") setActiveTab("profile");
@@ -536,6 +538,18 @@ export function SettingsDashboard() {
           >
             <ShoppingBag size={16} />
             <span>Guild Armory</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("gacha")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
+              activeTab === "gacha"
+                ? "bg-gradient-to-r from-amber-500 to-purple-600 text-white shadow-md shadow-amber-500/25"
+                : "border border-[#2A1B42] bg-[#120B1E]/60 text-gray-400 hover:text-white hover:border-amber-500/50"
+            }`}
+          >
+            <Crown size={16} className="text-amber-400" />
+            <span>Royal Gacha</span>
           </button>
           <button
             type="button"
@@ -957,7 +971,12 @@ export function SettingsDashboard() {
         <GuildArmoryShop onEquipChange={() => void fetchProfileData()} />
       )}
 
-      {/* TAB 4: PENGATURAN AKUN */}
+      {/* TAB 4: ROYAL GACHA SUMMON */}
+      {activeTab === "gacha" && (
+        <RoyalGachaSection onUpdate={() => void fetchProfileData()} />
+      )}
+
+      {/* TAB 5: PENGATURAN AKUN */}
       {activeTab === "settings" && (
         <div className="space-y-6">
           {/* 1. KARTU TAUTAN AKUN & KEAMANAN LOGIN (DISCORD & GOOGLE MULTI-PROVIDER) */}

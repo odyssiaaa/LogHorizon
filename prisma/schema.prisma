@@ -120,6 +120,15 @@ model User {
   tempTitle          String?
   tempTitleExpiresAt DateTime?
 
+  // Admin Trial Granter
+  trialType          String?
+  trialExpiresAt     DateTime?
+  trialGrantedBy     String?
+
+  // Royal Gacha Summon
+  gachaPityCounter   Int       @default(0)
+  dailyGachaTickets  Int       @default(0)
+
   // Quests & Chest Claims
   questClaims    DailyQuestClaim[]
   chestClaims    DailyChestClaim[]

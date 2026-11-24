@@ -289,6 +289,32 @@ const GEMINI_TOOLS = [
           required: ["username", "isVerified"]
         }
       },
+      {
+        name: "grantMemberTrial",
+        description: "Memberikan akses masa uji coba (trial) VIP Premium, All Frames, atau Verified Seller kepada member selama jangka waktu tertentu (1-30 hari).",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            username: { type: "STRING", description: "Username akun member penerima trial (contoh: 'alexa' atau '@alexa')" },
+            trialType: { type: "STRING", description: "Tipe trial: 'VIP_PREMIUM' (Noble Patron), 'ALL_FRAMES' (Semua Bingkai Avatar), atau 'VERIFIED_SELLER_TRIAL' (Lapak Verified)" },
+            durationDays: { type: "NUMBER", description: "Durasi aktif trial dalam satuan hari (contoh: 1, 3, 7, 14, 30). Default: 7" },
+            reason: { type: "STRING", description: "Alasan atau catatan pemberian trial (opsional)" }
+          },
+          required: ["username", "trialType"]
+        }
+      },
+      {
+        name: "revokeMemberTrial",
+        description: "Mencabut akses masa trial aktif dari akun member.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            username: { type: "STRING", description: "Username akun member yang akan dicabut trial-nya" },
+            reason: { type: "STRING", description: "Alasan pencabutan trial (opsional)" }
+          },
+          required: ["username"]
+        }
+      },
 
       // 6. Modul CMS, Sponsor, Knowledge Base & Broadcast
       {
@@ -605,10 +631,12 @@ PANDUAN PEMILIHAN TOOLS:
 12. Ubah Role/XP Member ➡️ "updateUserRoleOrXp" (Perlindungan: Akun Founder/Emperor .odyssia TIDAK BISA diubah)
 13. Ban/Unban Member ➡️ "toggleUserBan" (Perlindungan: Akun Founder/Emperor .odyssia TIDAK BISA diban)
 14. Berikan / Cabut Lencana Verified Seller ➡️ "toggleVerifiedSeller" (Memberikan atau mencabut status lencana resmi ✅ VERIFIED SELLER pada akun marketplace & profil)
-15. Ubah pengaturan SiteConfig / Knowledge Base AI ➡️ "updateSiteConfig"
-16. Tambah/Hapus Sponsor resmi ➡️ "manageSponsor"
-17. Kirim Broadcast Pengumuman ➡️ "broadcastAnnouncement" (Tentukan targetPlatform: 'WEB_ONLY' jika Admin minta hanya website/beranda, 'DISCORD_ONLY' jika minta hanya ke Discord, atau 'BOTH' jika keduanya. Tentukan targetChannel: 'announcements' [#📢・announcements], 'giveaway' [#🎁・events-giveaway], 'info_live' [#📡・info-live], 'partnership' [#🤝・partnership], 'lfg' [#🎮・gaming-lounge], 'mod_logs' [#🛡️・mod-logs], atau 'auto' sesuai konteks isi pengumuman. Catatan: Broadcast akan selalu menghasilkan draf preview terlebih dahulu untuk dikonfirmasi Admin).
-18. Jika pertanyaan informasi biasa (analisis stats, tanya jadwal, status turnamen), jawablah secara ringkas, sopan, dan taktis tanpa memanggil tool.
+15. Berikan Trial Akses Eksklusif Member ➡️ "grantMemberTrial" (Beri trial VIP_PREMIUM, ALL_FRAMES, atau VERIFIED_SELLER_TRIAL untuk 1-30 hari)
+16. Cabut Trial Member ➡️ "revokeMemberTrial" (Nonaktifkan akses masa uji coba aktif member)
+17. Ubah pengaturan SiteConfig / Knowledge Base AI ➡️ "updateSiteConfig"
+18. Tambah/Hapus Sponsor resmi ➡️ "manageSponsor"
+19. Kirim Broadcast Pengumuman ➡️ "broadcastAnnouncement" (Tentukan targetPlatform: 'WEB_ONLY' jika Admin minta hanya website/beranda, 'DISCORD_ONLY' jika minta hanya ke Discord, atau 'BOTH' jika keduanya. Tentukan targetChannel: 'announcements' [#📢・announcements], 'giveaway' [#🎁・events-giveaway], 'info_live' [#📡・info-live], 'partnership' [#🤝・partnership], 'lfg' [#🎮・gaming-lounge], 'mod_logs' [#🛡️・mod-logs], atau 'auto' sesuai konteks isi pengumuman. Catatan: Broadcast akan selalu menghasilkan draf preview terlebih dahulu untuk dikonfirmasi Admin).
+20. Jika pertanyaan informasi biasa (analisis stats, tanya jadwal, status turnamen), jawablah secara ringkas, sopan, dan taktis tanpa memanggil tool.
 
 ${contextPrompt}`;
 
@@ -1626,6 +1654,120 @@ async function executeToolAction(
         summary: `${isVerified ? "Beri Verified Seller" : "Cabut Verified Seller"}: @${targetUser.username}`,
         before: { isVerifiedSeller: targetUser.isVerifiedSeller },
         after: { isVerifiedSeller: isVerified },
+        details: reason,
+      },
+      requiresConfirmation: false,
+    };
+  }
+
+  if (normalizedTool === "grantMemberTrial") {
+    const rawUsername = String(args.username || "").trim();
+    const cleanUsername = rawUsername.replace(/^@/, "");
+    const trialType = String(args.trialType || "VIP_PREMIUM").toUpperCase();
+    const durationDays = typeof args.durationDays === "number" && args.durationDays > 0 ? Math.min(90, Math.floor(args.durationDays)) : 7;
+    const reason = typeof args.reason === "string" && args.reason.trim() ? args.reason.trim() : "Pemberian masa uji coba eksklusif oleh Admin.";
+
+    const targetUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: { equals: cleanUsername, mode: "insensitive" } },
+          { discordId: cleanUsername },
+          { id: cleanUsername },
+        ],
+      },
+      select: { id: true, username: true, name: true, trialType: true, trialExpiresAt: true, role: true },
+    });
+
+    if (!targetUser) {
+      return { success: false, reply: `Member @${cleanUsername} tidak ditemukan di database.`, toolResult: null };
+    }
+
+    if (isGuildOwner(targetUser)) {
+      return { success: false, reply: `Akun Founder / Emperor .odyssia sudah memiliki akses permanen mutlak tanpa batas.`, toolResult: null };
+    }
+
+    const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+    const trialLabel =
+      trialType === "VIP_PREMIUM"
+        ? "💎 VIP Noble Patron"
+        : trialType === "ALL_FRAMES"
+          ? "🔮 Seluruh Bingkai Avatar Guild Armory"
+          : "✅ Verified Seller Marketplace";
+
+    await prisma.user.update({
+      where: { id: targetUser.id },
+      data: {
+        trialType,
+        trialExpiresAt: expiresAt,
+        trialGrantedBy: adminUser.username ?? adminUser.name ?? "Admin",
+      },
+    });
+
+    await createNotification({
+      userId: targetUser.id,
+      type: "SYSTEM",
+      message: `🎁 Admin @${adminUser.username} telah memberimu akses trial ${trialLabel} selama ${durationDays} hari (berlaku hingga ${expiresAt.toLocaleDateString("id-ID")}).`,
+      link: "/profile",
+    });
+
+    return {
+      success: true,
+      reply: `Berhasil! Akses trial ${trialLabel} selama ${durationDays} hari telah diberikan kepada @${targetUser.username}.`,
+      toolResult: {
+        action: "grantMemberTrial",
+        summary: `Beri Trial: ${trialLabel} (${durationDays} Hari) kepada @${targetUser.username}`,
+        before: { trialType: targetUser.trialType, trialExpiresAt: targetUser.trialExpiresAt },
+        after: { trialType, trialExpiresAt: expiresAt },
+        details: `Tipe: ${trialType} | Durasi: ${durationDays} Hari | Alasan: ${reason}`,
+      },
+      requiresConfirmation: false,
+    };
+  }
+
+  if (normalizedTool === "revokeMemberTrial") {
+    const rawUsername = String(args.username || "").trim();
+    const cleanUsername = rawUsername.replace(/^@/, "");
+    const reason = typeof args.reason === "string" && args.reason.trim() ? args.reason.trim() : "Pencabutan masa trial oleh staf Admin.";
+
+    const targetUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: { equals: cleanUsername, mode: "insensitive" } },
+          { discordId: cleanUsername },
+          { id: cleanUsername },
+        ],
+      },
+      select: { id: true, username: true, trialType: true, trialExpiresAt: true },
+    });
+
+    if (!targetUser) {
+      return { success: false, reply: `Member @${cleanUsername} tidak ditemukan di database.`, toolResult: null };
+    }
+
+    await prisma.user.update({
+      where: { id: targetUser.id },
+      data: {
+        trialType: null,
+        trialExpiresAt: null,
+        trialGrantedBy: null,
+      },
+    });
+
+    await createNotification({
+      userId: targetUser.id,
+      type: "SYSTEM",
+      message: `⏳ Akses trial akun kamu telah dinonaktifkan oleh Admin @${adminUser.username}. Terima kasih telah mencoba fitur eksklusif LogHorizon!`,
+      link: "/profile",
+    });
+
+    return {
+      success: true,
+      reply: `Akses trial untuk @${targetUser.username} berhasil dicabut.`,
+      toolResult: {
+        action: "revokeMemberTrial",
+        summary: `Cabut Trial dari @${targetUser.username}`,
+        before: { trialType: targetUser.trialType, trialExpiresAt: targetUser.trialExpiresAt },
+        after: { trialType: null, trialExpiresAt: null },
         details: reason,
       },
       requiresConfirmation: false,

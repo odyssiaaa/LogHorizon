@@ -9,6 +9,8 @@ export type CasteUserLike = {
   badges?: string[] | null;
   tempTitle?: string | null;
   tempTitleExpiresAt?: Date | string | null;
+  trialType?: string | null;
+  trialExpiresAt?: Date | string | null;
 };
 
 /**
@@ -60,6 +62,13 @@ export function getCasteTitle(user?: CasteUserLike | null): string {
   if (user?.isPremium) {
     return "💎 Noble Patron";
   }
+  if (
+    user?.trialType === "VIP_PREMIUM" &&
+    user.trialExpiresAt &&
+    new Date(user.trialExpiresAt).getTime() > Date.now()
+  ) {
+    return "💎 Noble Patron (⏳ Trial)";
+  }
   return "🎮 Adventurer";
 }
 
@@ -96,7 +105,12 @@ export function getCasteBadgeStyle(user?: CasteUserLike | null): {
       glow: "shadow-[0_0_8px_rgba(59,130,246,0.25)]",
     };
   }
-  if (user?.isPremium) {
+  if (
+    user?.isPremium ||
+    (user?.trialType === "VIP_PREMIUM" &&
+      user.trialExpiresAt &&
+      new Date(user.trialExpiresAt).getTime() > Date.now())
+  ) {
     return {
       bg: "bg-emerald-500/20",
       text: "text-emerald-300 font-bold",
