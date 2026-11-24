@@ -142,6 +142,12 @@ const navGroups: NavGroup[] = [
         icon: HeartHandshake,
       },
       {
+        label: "Kemitraan & Sponsor",
+        href: "/partnership",
+        desc: "Peluang sponsorship & proposal brand",
+        icon: Sparkles,
+      },
+      {
         label: "Aturan & FAQ",
         href: "/rules",
         desc: "Pedoman & hierarki kasta guild",
@@ -1072,6 +1078,27 @@ export function Navbar() {
                           </div>
                         </div>
                         {pathname.startsWith("/dungeon") && <span className="size-2 rounded-full bg-[#7C3AED] shrink-0" />}
+                      </Link>
+
+                      <Link
+                        href="/partnership"
+                        onClick={() => setMobileOpen(false)}
+                        className={`h-11 px-3.5 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium transition-colors border ${
+                          pathname.startsWith("/partnership")
+                            ? "border-[#7C3AED] bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#F8FAFC] font-bold"
+                            : "border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A0E2E]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-7 rounded-lg bg-slate-100 dark:bg-[#1A0E2E] flex items-center justify-center text-[#7C3AED] shrink-0">
+                            <Sparkles size={15} />
+                          </div>
+                          <div className="truncate text-left">
+                            <span className="block leading-tight font-semibold">Kemitraan &amp; Sponsor</span>
+                            <span className="block text-[10px] text-slate-400 font-normal">Peluang sponsorship &amp; proposal brand</span>
+                          </div>
+                        </div>
+                        {pathname.startsWith("/partnership") && <span className="size-2 rounded-full bg-[#7C3AED] shrink-0" />}
                       </Link>
 
                       <Link

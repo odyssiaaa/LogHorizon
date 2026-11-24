@@ -5,6 +5,8 @@ import { GuildAnnouncementCard } from "@/components/guild-announcement-card";
 import { AnnouncementPopupModal } from "@/components/announcement-popup-modal";
 import { StarterGuideCard } from "@/components/starter-guide-card";
 import { DailyQuestsWidget } from "@/components/daily-quests-widget";
+import { HomepagePodiumShowcase } from "@/components/homepage-podium-showcase";
+import { DiscordLiveBanner } from "@/components/discord-live-banner";
 import { PriceDisplay } from "@/context/locale-context";
 import {
   ArrowUpRight,
@@ -163,6 +165,9 @@ export default async function Home() {
     latestLfgListData,
     latestForumPostsData,
     latestMarketplaceData,
+    topAdventurersData,
+    rawPartiesData,
+    latestChampionsData,
   ] = await Promise.all([
     prisma.siteConfig.findUnique({ where: { id: "default" } }).catch(() => null),
     prisma.sponsor.findMany({ orderBy: { createdAt: "desc" } }).catch(() => []),
@@ -222,6 +227,60 @@ export default async function Home() {
         marketData: true,
       },
     }).catch(() => []),
+    prisma.user.findMany({
+      orderBy: [{ level: "desc" }, { xp: "desc" }],
+      take: 3,
+      select: {
+        id: true,
+        username: true,
+        avatar: true,
+        level: true,
+        xp: true,
+        role: true,
+        isPremium: true,
+        trialType: true,
+        trialExpiresAt: true,
+        equippedAvatarFrame: true,
+        equippedCustomTitle: true,
+        partyMembership: {
+          select: {
+            party: {
+              select: {
+                name: true,
+                tag: true,
+              },
+            },
+          },
+        },
+      },
+    }).catch(() => []),
+    prisma.guildParty.findMany({
+      orderBy: { totalPartyXp: "desc" },
+      take: 2,
+      select: {
+        id: true,
+        name: true,
+        tag: true,
+        primaryGame: true,
+        emblemColor: true,
+        totalPartyXp: true,
+        _count: { select: { members: true } },
+      },
+    }).catch(() => []),
+    prisma.hallOfWinner.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 2,
+      select: {
+        id: true,
+        tournamentTitle: true,
+        game: true,
+        season: true,
+        championTeam: true,
+        prizePool: true,
+        eventDate: true,
+        createdAt: true,
+      },
+    }).catch(() => []),
   ]);
 
   const sponsors = sponsorsData as any[];
@@ -230,6 +289,26 @@ export default async function Home() {
   const latestLfgList = latestLfgListData as LfgSummary[];
   const latestForumPosts = latestForumPostsData as ForumPostSummary[];
   const latestMarketplaceItems = latestMarketplaceData as MarketSummary[];
+  const topAdventurers = topAdventurersData as any[];
+  const rawParties = rawPartiesData as any[];
+  const topParties = rawParties.map((p) => ({
+    id: p.id,
+    name: p.name,
+    tag: p.tag,
+    primaryGame: p.primaryGame,
+    emblemColor: p.emblemColor,
+    totalPartyXp: p.totalPartyXp,
+    membersCount: p._count?.members || 0,
+  }));
+  const latestChampions = (latestChampionsData as any[]).map((c) => ({
+    id: c.id,
+    tournamentTitle: c.tournamentTitle,
+    game: c.game,
+    season: c.season,
+    championTeam: c.championTeam,
+    prizePool: c.prizePool,
+    crownedAt: c.eventDate || c.createdAt || new Date(),
+  }));
 
   const totalPrizePool = activeTournaments.reduce((acc: number, t: { prizePool: string | null }) => acc + parsePrizePool(t.prizePool), 0);
   const activeTournamentCount = activeTournaments.length;
@@ -692,6 +771,15 @@ export default async function Home() {
       </section>
 
       {/* ===================================================================== */}
+      {/* 👑 PODIUM LEADERBOARD & HALL OF FAME SHOWCASE                          */}
+      {/* ===================================================================== */}
+      <HomepagePodiumShowcase
+        topAdventurers={topAdventurers}
+        topParties={topParties}
+        latestChampions={latestChampions}
+      />
+
+      {/* ===================================================================== */}
       {/* 01 / TENTANG GUILD (Clean Editorial Block)                             */}
       {/* ===================================================================== */}
       <section className="py-12 md:py-16 border-b border-slate-200 dark:border-[#2E1E45]" id="about-section">
@@ -1006,12 +1094,21 @@ export default async function Home() {
               </p>
             </div>
             <Link
-              href="/donate"
+              href="/partnership"
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-none text-xs font-mono font-bold text-white bg-[#7C3AED] hover:bg-[#6D28D9] border border-[#7C3AED] transition-colors shrink-0 shadow-sm"
             >
               <span>Ajukan Kemitraan / Jadi Benefactor ➔</span>
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* ===================================================================== */}
+      {/* 🟢 DISCORD REAL-TIME ONLINE PULSE BANNER                              */}
+      {/* ===================================================================== */}
+      <section className="pt-8 pb-4">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
+          <DiscordLiveBanner inviteUrl={discordInviteUrl} />
         </div>
       </section>
 

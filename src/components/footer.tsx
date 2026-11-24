@@ -95,6 +95,9 @@ export function Footer() {
             <Smartphone size={13} />
             <span>{t("Pasang Aplikasi (PWA)", "Install App (PWA)")}</span>
           </button>
+          <Link href="/partnership" className="hover:text-slate-900 dark:hover:text-[#F8FAFC] transition-colors font-semibold text-[#7C3AED] dark:text-[#A78BFA]">
+            {t("Kemitraan", "Partnership")}
+          </Link>
           <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-[#F8FAFC] transition-colors">
             {t("Privasi", "Privacy")}
           </Link>
