@@ -50,7 +50,7 @@ export default function NotFound() {
         </div>
 
         {/* Footer Hint */}
-        <p className="mt-6 text-[11px] font-mono text-gray-400 dark:text-gray-500">
+        <p className="mt-6 text-[11px] font-mono text-slate-500 dark:text-slate-400">
           STATUS: 404_PAGE_NOT_FOUND • SECTOR_UNKNOWN
         </p>
       </div>

@@ -23,6 +23,7 @@ export function PartnershipProposalForm() {
   const [tier, setTier] = useState<string>("TIER_2_TOURNAMENT");
   const [estimatedValue, setEstimatedValue] = useState("");
   const [proposalDescription, setProposalDescription] = useState("");
+  const [websiteUrlHp, setWebsiteUrlHp] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -67,6 +68,7 @@ export function PartnershipProposalForm() {
           tier,
           estimatedValue: estimatedValue.trim() || undefined,
           proposalDescription: proposalDescription.trim(),
+          website_url_hp: websiteUrlHp,
         }),
       });
 
@@ -133,6 +135,17 @@ export function PartnershipProposalForm() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5 text-left">
+          {/* Anti-Bot Honeypot */}
+          <input
+            type="text"
+            name="website_url_hp"
+            value={websiteUrlHp}
+            onChange={(e) => setWebsiteUrlHp(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="hidden opacity-0 pointer-events-none absolute -left-[9999px]"
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Nama Brand / Perusahaan */}
             <div className="space-y-1.5">

@@ -46,6 +46,7 @@ export function TournamentRegistrationWizardModal({
   const [senderName, setSenderName] = useState("");
   const [paymentProof, setPaymentProof] = useState("");
   const [agreeRules, setAgreeRules] = useState(false);
+  const [websiteUrlHp, setWebsiteUrlHp] = useState("");
 
   const [mainPlayers, setMainPlayers] = useState<{ nickname: string; gameId: string }[]>([]);
   const [subPlayers, setSubPlayers] = useState<{ nickname: string; gameId: string }[]>([]);
@@ -79,6 +80,7 @@ export function TournamentRegistrationWizardModal({
       setSenderName("");
       setPaymentProof("");
       setAgreeRules(false);
+      setWebsiteUrlHp("");
 
       const mains: { nickname: string; gameId: string }[] = [];
       for (let i = 0; i < mainCount; i++) {
@@ -231,6 +233,7 @@ export function TournamentRegistrationWizardModal({
           captainIgn: cleanCap,
           senderName: isPaid ? senderName.trim() : undefined,
           paymentProof: isPaid ? paymentProof : undefined,
+          website_url_hp: websiteUrlHp,
           mainPlayers: mainPlayers.map((p) => ({
             name: p.nickname.trim(),
             nickname: p.nickname.trim(),
@@ -371,6 +374,17 @@ export function TournamentRegistrationWizardModal({
 
         {/* BODY CONTAINER */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+          {/* Anti-Bot Honeypot */}
+          <input
+            type="text"
+            name="website_url_hp"
+            value={websiteUrlHp}
+            onChange={(e) => setWebsiteUrlHp(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="hidden opacity-0 pointer-events-none absolute -left-[9999px]"
+          />
           {/* =================================================================== */}
           {/* STEP 1: IDENTITAS TIM & KONTAK KAPTEN                               */}
           {/* =================================================================== */}

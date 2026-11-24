@@ -2,7 +2,7 @@ import { Prisma, TournamentStatus } from "@prisma/client";
 import { activeUser, jsonError, requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { createSingleEliminationBracket, TournamentTeam, TournamentMatch, TournamentRosterPlayer } from "@/lib/tournament";
-import { sanitizePlainText, isValidSafeImage } from "@/lib/sanitize";
+import { sanitizePlainText, isValidSafeImage, validateHoneypot, sanitizeTextInput } from "@/lib/sanitize";
 import { notifyPaidTournamentRegistration, notifyTournamentTeamDecision } from "@/lib/discord-webhook";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -12,6 +12,11 @@ export async function POST(request: Request, { params }: RouteContext) {
   const { id } = await params;
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+
+  // Invisible Honeypot Anti-Bot Shield
+  if (!validateHoneypot(data)) {
+    return jsonError("Pendaftaran ditolak oleh filter anti-bot otomatis.", 400);
+  }
 
   // Extract client IP for anti-spam rate limiting
   const forwarded = request.headers.get("x-forwarded-for");
@@ -334,6 +339,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const { id } = await params;
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+
+  // Invisible Honeypot Anti-Bot Shield
+  if (!validateHoneypot(data)) {
+    return jsonError("Pendaftaran ditolak oleh filter anti-bot otomatis.", 400);
+  }
   const participantId = typeof data.participantId === "string" ? data.participantId : "";
   const action = typeof data.action === "string" ? data.action.toUpperCase() : "";
   const reason = sanitizePlainText(typeof data.reason === "string" ? data.reason.trim() : "");

@@ -502,7 +502,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
               ) : posts.length ? (
                 posts.map((post, index) => (
                   <motion.article
-                    className={`p-4 sm:p-5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#7C3AED] transition-all flex flex-col gap-2.5 shadow-sm dark:shadow-none text-left ${
+                    className={`p-4 sm:p-5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#8B5CF6]/70 active:scale-[0.98] flex flex-col gap-2.5 shadow-sm dark:shadow-none text-left ${
                       post.isPinned ? "border-l-4 border-l-[#7C3AED]" : ""
                     }`}
                     key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`}
@@ -596,7 +596,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                       return (
                         <>
                           {cleanText ? (
-                            <p className="text-xs sm:text-sm text-slate-600 dark:text-[#A78BFA] font-sans break-words leading-relaxed mt-1 line-clamp-2">
+                            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-sans break-words leading-relaxed mt-1 line-clamp-2">
                               {cleanText}
                             </p>
                           ) : null}
@@ -708,6 +708,24 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                     search
                       ? `Tidak ada thread yang cocok dengan kata kunci "${search}". Coba kata kunci lainnya.`
                       : `Belum ada thread di kategori ${activeCategory.slug}. Jadilah petualang pertama yang membuat obrolan!`
+                  }
+                  actionPrimary={{
+                    label: "+ Buat Thread Pertama",
+                    onClick: () => {
+                      if (!user) {
+                        setLoginAction("membuat thread");
+                      } else {
+                        setCompose(true);
+                      }
+                    },
+                  }}
+                  actionSecondary={
+                    search
+                      ? {
+                          label: "🔄 Reset Pencarian",
+                          onClick: () => setSearch(""),
+                        }
+                      : undefined
                   }
                 />
               )}

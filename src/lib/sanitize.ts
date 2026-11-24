@@ -1,6 +1,6 @@
 /**
- * Security Input Sanitizer for LogHorizon
- * Prevents Stored XSS, HTML injection, and malicious scripts in user submissions.
+ * Security Input Sanitizer & Anti-Bot Protection for LogHorizon
+ * Prevents Stored XSS, HTML injection, malicious script payloads, and automated spam bot submissions.
  */
 
 export function sanitizeText(input: unknown): string {
@@ -10,32 +10,83 @@ export function sanitizeText(input: unknown): string {
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
     // Strip <iframe> and </iframe>
     .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
-    // Strip <object>, <embed>, <applet>
-    .replace(/<(object|embed|applet)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>/gi, "")
-    // Strip javascript: pseudoprotocol
-    .replace(/javascript:\s*/gi, "")
-    // Strip inline event handlers (onload, onerror, onclick, etc.)
+    // Strip <object>, <embed>, <applet>, <style>, <link>, <meta>
+    .replace(/<(object|embed|applet|style|link|meta|base)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>/gi, "")
+    // Strip javascript: and vbscript: pseudoprotocols
+    .replace(/(javascript|vbscript|data):/gi, "")
+    // Strip inline event handlers (onload, onerror, onclick, onmouseover, etc.)
     .replace(/\son\w+\s*=\s*(['"]).*?\1/gi, "")
     .replace(/\son\w+\s*=\s*[^\s>]+/gi, "")
+    // Strip invisible/zero-width control characters except standard \n, \r, \t
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, "")
     .trim();
 }
 
 export function sanitizePlainText(input: unknown): string {
   if (typeof input !== "string") return "";
   const cleaned = sanitizeText(input);
-  // Also encode raw angle brackets to neutralize any leftover tags
-  return cleaned
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  // Neutralize raw angle brackets
+  return cleaned.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
+ * Universal text sanitizer with configurable constraints.
+ * Cleans dangerous HTML tags, inline event attributes, invisible control characters, and excess whitespace.
+ */
+export function sanitizeTextInput(
+  input: unknown,
+  options: {
+    maxLength?: number;
+    allowNewlines?: boolean;
+    trim?: boolean;
+  } = {}
+): string {
+  if (typeof input !== "string") {
+    if (input === null || input === undefined) return "";
+    return String(input);
+  }
+
+  const { maxLength, allowNewlines = true, trim = true } = options;
+
+  let cleaned = sanitizeText(input);
+
+  // If newlines are not allowed, replace newlines and multiple spaces with a single space
+  if (!allowNewlines) {
+    cleaned = cleaned.replace(/\s+/g, " ");
+  }
+
+  if (trim) {
+    cleaned = cleaned.trim();
+  }
+
+  if (typeof maxLength === "number" && maxLength > 0) {
+    cleaned = cleaned.slice(0, maxLength);
+  }
+
+  return cleaned;
+}
+
+/**
+ * Invisible Honeypot Anti-Bot Checker
+ * Returns true if submission is VALID (honeypot is empty/absent).
+ * Returns false if bot trapped (honeypot was filled out by an automated script).
+ */
+export function validateHoneypot(body: any, fieldName = "website_url_hp"): boolean {
+  if (!body || typeof body !== "object") return true;
+  const value = body[fieldName];
+  if (value && typeof value === "string" && value.trim().length > 0) {
+    return false; // Trapped bot!
+  }
+  return true;
 }
 
 const ALLOWED_IMAGE_MIMES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 /**
  * Validates image strings (base64 data URI or web URL) to prevent SSRF and malicious payload injection.
- * Rejects non-image mime types, oversized payloads (> 2MB), or embedded scripts.
+ * Rejects non-image mime types, oversized payloads (> 5MB), or embedded scripts.
  */
-export function isValidSafeImage(input: unknown, maxBytes = 2 * 1024 * 1024): boolean {
+export function isValidSafeImage(input: unknown, maxBytes = 5 * 1024 * 1024): boolean {
   if (typeof input !== "string") return false;
   const str = input.trim();
   if (!str) return false;
@@ -92,4 +143,3 @@ export function isValidSafeImage(input: unknown, maxBytes = 2 * 1024 * 1024): bo
     return false;
   }
 }
-

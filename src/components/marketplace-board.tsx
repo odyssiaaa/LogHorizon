@@ -777,7 +777,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
           {posts.map((post, index) => {
             if (!isPublicMarketData(post.marketData)) return <article className="market-card p-4 rounded-none border border-[#2E1E45] bg-[#130921]" key={post.id}><p className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none">Data lapak tidak valid.</p></article>;
             const market = post.marketData;
-            return <motion.article className={`market-card rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] hover:border-[#7C3AED] transition-all p-4 shadow-sm dark:shadow-none ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold opacity-60" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
+            return <motion.article className={`market-card rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#8B5CF6]/70 active:scale-[0.98] p-4 shadow-sm dark:shadow-none ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold opacity-60" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
               <div className="market-listing-labels flex flex-wrap items-center gap-1.5 mb-3 font-mono">
                 {post.isPinned && <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/40 whitespace-nowrap">PINNED</span>}
                 {(post.author.isVerifiedSeller || (post.author.successfulSales ?? 0) >= 3 || post.author.username === ".odyssia") && (
@@ -808,7 +808,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                   <PriceDisplay amountIdr={market.price} className="font-mono text-base font-extrabold text-emerald-600 dark:text-[#10B981]" />
                 </div>
                 <h2 className="font-display text-base font-bold uppercase tracking-tight break-words text-slate-900 dark:text-[#F8FAFC]">{post.title}</h2>
-                <p className="market-description break-words text-xs text-slate-600 dark:text-[#A78BFA] font-sans line-clamp-2 mt-1 leading-relaxed">{post.content}</p>
+                <p className="market-description break-words text-xs text-slate-600 dark:text-slate-300 font-sans line-clamp-2 mt-1 leading-relaxed">{post.content}</p>
                 <div className="market-card-meta flex flex-wrap items-center justify-between gap-2 mt-3 pt-2.5 border-t border-slate-200 dark:border-[#2E1E45] font-mono text-xs">
                   <span className="post-author flex items-center gap-2">
                     <DiscordAvatar src={post.author.avatar} username={post.author.username} size={22} frameId={post.author.equippedAvatarFrame} />
@@ -998,8 +998,35 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
     ) : (
       <TacticalEmptyState
         isSearch={Boolean(search.trim() || game.trim() || type !== "ALL")}
-        title={search.trim() ? `Pencarian "${search}" Tidak Ditemukan` : undefined}
-        description={search.trim() ? "Tidak ada lapak yang cocok dengan kata kunci pencarianmu. Coba ganti kata kunci atau reset filter." : "Belum ada lapak yang dibuka di kategori ini. Buka lapak pertamamu sekarang!"}
+        title={search.trim() ? `Pencarian "${search}" Tidak Ditemukan` : "Belum Ada Lapak Terbuka"}
+        description={
+          search.trim() || game.trim() || type !== "ALL"
+            ? "Tidak ada lapak yang cocok dengan filter atau kata kunci pencarianmu. Coba ganti kata kunci atau reset filter."
+            : "Belum ada lapak yang dibuka di kategori ini. Jadilah penjual pertama yang membuka lapak terpercaya!"
+        }
+        actionPrimary={{
+          label: "+ Pasang Lapak Pertama",
+          onClick: () => {
+            if (!user) {
+              setLoginAction("buka-lapak");
+            } else {
+              setCompose(true);
+            }
+          },
+        }}
+        actionSecondary={
+          search.trim() || game.trim() || type !== "ALL"
+            ? {
+                label: "🔄 Reset Filter",
+                onClick: () => {
+                  setSearch("");
+                  setGame("");
+                  setType("ALL");
+                  setSort("recommended");
+                },
+              }
+            : undefined
+        }
       />
     )}
   </div>

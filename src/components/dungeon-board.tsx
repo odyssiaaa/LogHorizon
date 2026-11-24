@@ -26,7 +26,9 @@ import {
   Shield,
   HelpCircle,
   Sparkles,
+  Target,
 } from "lucide-react";
+import { EmptyStateCard } from "@/components/empty-state-card";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { readApiResponse } from "@/lib/api-response";
@@ -414,13 +416,23 @@ export function DungeonBoard() {
           </div>
 
           {filteredImprisoned.length === 0 ? (
-            <div className="py-16 text-center rounded-2xl border border-dashed border-[#2A153A] bg-[#100414] p-8 space-y-2">
-              <CheckCircle2 size={36} className="text-emerald-500 mx-auto" />
-              <h3 className="text-base font-bold text-white">Sel Tahanan Bersih</h3>
-              <p className="text-xs text-gray-400 max-w-sm mx-auto">
-                Tidak ada terpidana yang cocok dengan filter pencarian ini. Ketertiban komunitas saat ini terjaga kondusif.
-              </p>
-            </div>
+            <EmptyStateCard
+              icon={CheckCircle2}
+              title="Sel Tahanan Bersih &amp; Tertib"
+              description="Tidak ada pelanggar aturan yang sedang menjalani masa hukuman di sel tahanan saat ini. Ketertiban komunitas LogHorizon terjaga kondusif."
+              actionPrimary={{
+                label: "+ Laporkan Kasus Pelanggaran",
+                onClick: () => setSubmitModalOpen(true),
+              }}
+              actionSecondary={
+                searchQuery
+                  ? {
+                      label: "🔄 Reset Filter",
+                      onClick: () => setSearchQuery(""),
+                    }
+                  : undefined
+              }
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredImprisoned.map((item) => {
@@ -428,7 +440,7 @@ export function DungeonBoard() {
                 return (
                   <div
                     key={item.id}
-                    className="relative rounded-2xl border-2 border-rose-500/40 bg-[#11091D] overflow-hidden shadow-xl flex flex-col justify-between"
+                    className="relative rounded-2xl border-2 border-rose-500/40 bg-[#11091D] overflow-hidden shadow-xl flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-rose-500/70 active:scale-[0.98]"
                   >
                     {/* Visual prison bars simulation */}
                     <div className="absolute inset-0 pointer-events-none opacity-[0.08] bg-[linear-gradient(to_right,#ffffff_2px,transparent_2px)] bg-[size:28px_100%]" />
@@ -512,17 +524,27 @@ export function DungeonBoard() {
           </div>
 
           {displayedBounties.length === 0 ? (
-            <div className="py-16 text-center rounded-2xl border border-dashed border-[#2A153A] bg-[#100414] p-8 space-y-2">
-              <CheckCircle2 size={36} className="text-emerald-500 mx-auto" />
-              <h3 className="text-base font-bold text-white">
-                {bountySubFilter === "CAPTURED" ? "Belum Ada Catatan Tertangkap" : "Tidak Ada Buronan Aktif"}
-              </h3>
-              <p className="text-xs text-gray-400 max-w-sm mx-auto">
-                {bountySubFilter === "CAPTURED"
+            <EmptyStateCard
+              icon={bountySubFilter === "CAPTURED" ? CheckCircle2 : Target}
+              title={bountySubFilter === "CAPTURED" ? "Belum Ada Catatan Tertangkap" : "Papan Buronan Bersih"}
+              description={
+                bountySubFilter === "CAPTURED"
                   ? "Arsip buronan tertangkap akan tampil di sini begitu staf menandai kasus selesai."
-                  : "Semua laporan terverifikasi telah diselesaikan atau dijebloskan ke sel penjara."}
-              </p>
-            </div>
+                  : "Tidak ada target buronan aktif yang belum ditangkap saat ini. Laporankan penipu jika kamu menemukan indikasi kecurangan."
+              }
+              actionPrimary={{
+                label: "+ Ajukan Laporan Buronan",
+                onClick: () => setSubmitModalOpen(true),
+              }}
+              actionSecondary={
+                searchQuery
+                  ? {
+                      label: "🔄 Reset Filter",
+                      onClick: () => setSearchQuery(""),
+                    }
+                  : undefined
+              }
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {displayedBounties.map((bounty) => {
@@ -532,10 +554,10 @@ export function DungeonBoard() {
                 return (
                   <div
                     key={bounty.id}
-                    className={`relative rounded-2xl border-2 overflow-hidden shadow-2xl flex flex-col justify-between transition-all hover:scale-[1.01] ${
+                    className={`relative rounded-2xl border-2 overflow-hidden shadow-2xl flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] ${
                       isCaptured
-                        ? "border-emerald-600/40 bg-gradient-to-b from-[#0E1F16] via-[#0A160F] to-[#070F0A]"
-                        : "border-amber-600/40 bg-gradient-to-b from-[#1F101A] via-[#160B12] to-[#0F050A]"
+                        ? "border-emerald-600/40 hover:border-emerald-500/70 bg-gradient-to-b from-[#0E1F16] via-[#0A160F] to-[#070F0A]"
+                        : "border-amber-600/40 hover:border-amber-500/70 bg-gradient-to-b from-[#1F101A] via-[#160B12] to-[#0F050A]"
                     }`}
                   >
                     {/* Top Wanted Poster Header */}

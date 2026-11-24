@@ -21,9 +21,9 @@ export interface ImageUploaderProps {
 
 export function compressImageFile(
   file: File,
-  maxWidth = 800,
-  maxHeight = 800,
-  quality = 0.75
+  maxWidth = 1280,
+  maxHeight = 1280,
+  quality = 0.82
 ): Promise<{ dataUrl: string; sizeKb: number }> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendDiscordChannelMessage, DiscordEmbed, getBaseAppUrl } from "@/lib/discord-bot";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
+import { validateHoneypot, sanitizeTextInput } from "@/lib/sanitize";
 
 export async function POST(request: Request) {
   try {
@@ -14,6 +15,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+
+    // Anti-bot honeypot protection
+    if (!validateHoneypot(body)) {
+      return NextResponse.json(
+        { error: "Pengajuan ditolak oleh filter keamanan bot otomatis." },
+        { status: 400 }
+      );
+    }
     const {
       companyName,
       picName,

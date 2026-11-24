@@ -22,6 +22,7 @@ import {
   FileCode,
   FileSpreadsheet,
   Flame,
+  Gamepad2,
   Headphones,
   ImageIcon,
   LogOut,
@@ -58,6 +59,7 @@ import { MatchLobbyModal } from "@/components/match-lobby-modal";
 import { BracketZoomControl } from "@/components/bracket-zoom-control";
 import { EditTournamentModal } from "@/components/edit-tournament-modal";
 import { TournamentBackupDropdown } from "@/components/tournament-backup-dropdown";
+import { EmptyStateCard } from "@/components/empty-state-card";
 import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown";
 import { exportTournamentToCsv, exportTournamentToJson } from "@/lib/tournament-export";
 import { useLiveSync } from "@/hooks/use-live-sync";
@@ -1506,11 +1508,31 @@ export function EventsBoard() {
           {/* LIST TURNAMEN DIREKTORI BERSTRUKTUR BERSIH */}
           <div>
             {directoryTournaments.length === 0 ? (
-              <p className="empty-state">
-                {search
-                  ? "Tidak ada turnamen yang cocok dengan kata kunci pencarian."
-                  : "Belum ada turnamen yang cocok dengan filter yang dipilih."}
-              </p>
+              <EmptyStateCard
+                icon={Trophy}
+                title={search ? "Turnamen Tidak Ditemukan" : "Belum Ada Turnamen Aktif"}
+                description={
+                  search
+                    ? "Tidak ada turnamen yang cocok dengan kata kunci pencarian atau filter yang dipilih. Coba reset filter."
+                    : "Saat ini belum ada turnamen resmi yang sedang membuka pendaftaran. Pantau pengumuman terbaru di Discord LogHorizon!"
+                }
+                actionPrimary={{
+                  label: "🚀 Gabung Discord untuk Info Event Pertama",
+                  href: "https://discord.gg/aJvbVyTxNb",
+                }}
+                actionSecondary={
+                  search
+                    ? {
+                        label: "🔄 Reset Filter",
+                        onClick: () => {
+                          setSearch("");
+                          setTournamentStatusFilter("ALL");
+                          setTournamentGameFilter("ALL");
+                        },
+                      }
+                    : undefined
+                }
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                 {directoryTournaments.map((tournament) => {
@@ -1536,7 +1558,7 @@ export function EventsBoard() {
                   return (
                     <article
                       key={tournament.id}
-                      className="p-5 sm:p-6 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-lg hover:border-[#7C3AED] transition-all flex flex-col justify-between relative group"
+                      className="p-5 sm:p-6 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] shadow-lg transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#8B5CF6]/70 active:scale-[0.98] flex flex-col justify-between relative group"
                     >
                       {/* Top Badges */}
                       <div>
@@ -1902,9 +1924,25 @@ export function EventsBoard() {
           {/* LIST POSTINGAN MABAR */}
           <div className="lfg-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {visibleLfgPosts.length === 0 && (
-              <p className="empty-state col-span-1 md:col-span-2 lg:col-span-3">
-                {search ? "Tidak ada party yang cocok dengan pencarian." : "Belum ada ajakan mabar aktif. Jadilah yang pertama membuat party!"}
-              </p>
+              <div className="col-span-1 md:col-span-2 lg:col-span-3">
+                <EmptyStateCard
+                  icon={Gamepad2}
+                  title={search ? "Party Mabar Tidak Ditemukan" : "Belum Ada Ajakan Mabar Aktif"}
+                  description={
+                    search
+                      ? "Tidak ada party yang cocok dengan pencarianmu. Coba ganti kata kunci atau pilih game lain."
+                      : "Belum ada ajakan mabar yang sedang aktif saat ini. Buka party pertamamu dan kumpulkan rekan guild!"
+                  }
+                  actionPrimary={{
+                    label: "+ Buat Ajakan Mabar",
+                    onClick: () => setShowLfgForm(true),
+                  }}
+                  actionSecondary={{
+                    label: "🚀 Gabung Discord LogHorizon",
+                    href: "https://discord.gg/aJvbVyTxNb",
+                  }}
+                />
+              </div>
             )}
 
             {visibleLfgPosts.map((post) => {
@@ -1913,8 +1951,8 @@ export function EventsBoard() {
 
               return (
                 <article
-                  className={`p-4 sm:p-5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col justify-between shadow-md transition-all text-left ${
-                    isFull ? "opacity-75" : "hover:border-[#7C3AED]"
+                  className={`p-4 sm:p-5 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] flex flex-col justify-between shadow-md transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#8B5CF6]/70 active:scale-[0.98] text-left ${
+                    isFull ? "opacity-75" : ""
                   }`}
                   key={post.id}
                 >

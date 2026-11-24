@@ -29,6 +29,7 @@ import { DiscordAvatar } from "@/components/discord-avatar";
 import { readApiResponse } from "@/lib/api-response";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useLiveSync } from "@/hooks/use-live-sync";
+import { EmptyStateCard } from "@/components/empty-state-card";
 
 type UserSummary = {
   id: string;
@@ -680,11 +681,24 @@ export function MessagesView() {
                 <span>Memuat pesan...</span>
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div className="p-8 text-center text-xs text-gray-400 space-y-2">
-                <p>Belum ada obrolan.</p>
-                <p className="text-[11px] text-gray-500">
-                  Mulai PM dari profil petualang, lapak marketplace, atau buat grup baru.
-                </p>
+              <div className="p-4">
+                <EmptyStateCard
+                  icon={MessageSquare}
+                  title="Belum Ada Obrolan"
+                  description="Mulai PM dari profil petualang, lapak marketplace, atau buat grup baru untuk koordinasi misi guild."
+                  actionPrimary={{
+                    label: "+ Buat Grup Baru",
+                    onClick: () => setShowCreateGroup(true),
+                  }}
+                  actionSecondary={
+                    searchFilter
+                      ? {
+                          label: "🔄 Reset Filter",
+                          onClick: () => setSearchFilter(""),
+                        }
+                      : undefined
+                  }
+                />
               </div>
             ) : (
               filteredConversations.map((conv) => {
@@ -871,9 +885,12 @@ export function MessagesView() {
                     <span>Memuat percakapan...</span>
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 space-y-1">
-                    <p className="text-xs font-bold text-gray-300">Belum ada percakapan.</p>
-                    <p className="text-[11px] text-gray-500">Kirim pesan pertama atau panggil @satpam untuk bantuan!</p>
+                  <div className="h-full flex items-center justify-center p-4">
+                    <EmptyStateCard
+                      icon={MessageSquare}
+                      title="Ruang Obrolan Siap"
+                      description="Kirim pesan pertama atau panggil @satpam untuk asisten bot AI LogHorizon."
+                    />
                   </div>
                 ) : (
                   messages.map((msg, index) => {

@@ -1,4 +1,5 @@
 import { Inbox, SearchCode } from "lucide-react";
+import { EmptyStateCard, EmptyStateAction } from "@/components/empty-state-card";
 
 export function SkeletonForumCard() {
   return (
@@ -34,23 +35,28 @@ export function TacticalEmptyState({
   title,
   description,
   isSearch = false,
+  actionPrimary,
+  actionSecondary,
 }: {
   title?: string;
   description?: string;
   isSearch?: boolean;
+  actionPrimary?: EmptyStateAction;
+  actionSecondary?: EmptyStateAction;
 }) {
   const Icon = isSearch ? SearchCode : Inbox;
   return (
-    <div className="my-8 flex flex-col items-center justify-center rounded-md border border-dashed border-gray-300 dark:border-[#211C2B] p-10 text-center">
-      <div className="grid size-14 place-items-center rounded-full bg-neutral-100 dark:bg-[#1A1526] text-gray-400 dark:text-purple-400/50 mb-3">
-        <Icon size={26} strokeWidth={1.75} />
-      </div>
-      <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">
-        {title ?? (isSearch ? "Pencarian Tidak Ditemukan" : "Belum Ada Data")}
-      </h3>
-      <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm leading-relaxed">
-        {description ?? (isSearch ? "Tidak ada petualang atau item di arena ini. Coba periksa kembali kata kunci pencarianmu." : "Arena saat ini sedang hening. Jadilah pelopor pertama untuk memulai!")}
-      </p>
-    </div>
+    <EmptyStateCard
+      icon={Icon}
+      title={title ?? (isSearch ? "Pencarian Tidak Ditemukan" : "Belum Ada Data")}
+      description={
+        description ??
+        (isSearch
+          ? "Tidak ada petualang atau item di arena ini. Coba periksa kembali kata kunci pencarianmu atau reset filter."
+          : "Arena saat ini sedang hening. Jadilah pelopor pertama untuk memulai aktivitas di sini!")
+      }
+      actionPrimary={actionPrimary}
+      actionSecondary={actionSecondary}
+    />
   );
 }
