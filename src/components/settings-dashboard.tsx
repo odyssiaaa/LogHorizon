@@ -53,6 +53,7 @@ import { calculateLevelFromXp, getLevelProgress } from "@/lib/level-system";
 import { useLocale, SUPPORTED_LANGUAGES, SUPPORTED_CURRENCIES } from "@/context/locale-context";
 import { FlagIcon } from "@/components/locale-switcher";
 import { openLoginModal } from "@/components/login-modal";
+import { useDiscordPresence } from "@/hooks/use-discord-presence";
 import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 
 type Achievement = {
@@ -494,6 +495,9 @@ export function SettingsDashboard() {
   const nobility = getEuropeanNobilityRank(xpProgress.level);
   const isOwner = isGuildOwner(session?.user || profile);
 
+  const activeDiscordId = profile?.discordId || linkedAccounts.discord.id || (session?.user as { discordId?: string })?.discordId;
+  const { presence: discordPresence } = useDiscordPresence(activeDiscordId);
+
   return (
     <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 min-w-0 overflow-x-hidden">
       {/* Page Title & Sub-tabs Header */}
@@ -613,6 +617,18 @@ export function SettingsDashboard() {
                   className="rounded-2xl border-2 border-[#7C3AED]/50 shadow-lg shadow-[#7C3AED]/20"
                   frameId={profile?.equippedAvatarFrame}
                 />
+                <span
+                  className={`absolute -top-1 -right-1 size-4 rounded-full border-2 border-[#120B1E] ${
+                    discordPresence?.status === "online"
+                      ? "bg-emerald-500 shadow-sm shadow-emerald-500/50"
+                      : discordPresence?.status === "idle"
+                      ? "bg-amber-400 shadow-sm shadow-amber-400/50"
+                      : discordPresence?.status === "dnd"
+                      ? "bg-rose-500 shadow-sm shadow-rose-500/50"
+                      : "bg-emerald-500 shadow-sm"
+                  }`}
+                  title={discordPresence?.status ? `Discord: ${discordPresence.statusLabel}` : "Online di Web"}
+                />
                 <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md bg-[#7C3AED] text-white text-[10px] font-black uppercase">
                   Lv.{currentLevel}
                 </span>
@@ -647,10 +663,34 @@ export function SettingsDashboard() {
                         {nobility.icon} {nobility.name}
                       </span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+
+                    {/* Discord Activity Pill if playing/listening */}
+                    {discordPresence?.activity && (
+                      <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5865F2]/15 border border-[#5865F2]/30 text-xs font-mono font-bold text-[#A78BFA] shadow-xs">
+                        <span className="size-2 rounded-full bg-[#5865F2] animate-pulse" />
+                        <span>{discordPresence.activity.display}</span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
                       <p className="text-xs text-gray-400 font-mono">
                         Discord ID: {profile?.discordId ?? "Tidak terhubung"}
                       </p>
+                      {discordPresence?.status && discordPresence.status !== "offline" && (
+                        <span
+                          className={`text-[11px] font-mono px-2 py-0.5 rounded border ${
+                            discordPresence.status === "online"
+                              ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                              : discordPresence.status === "idle"
+                              ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                              : "bg-rose-500/15 text-rose-400 border-rose-500/30"
+                          }`}
+                        >
+                          {discordPresence.status === "online" && "🟢 Discord: Online"}
+                          {discordPresence.status === "idle" && "🌙 Discord: Idle"}
+                          {discordPresence.status === "dnd" && "⛔ Discord: DND"}
+                        </span>
+                      )}
                       {!profile?.discordId && (
                         <button
                           type="button"

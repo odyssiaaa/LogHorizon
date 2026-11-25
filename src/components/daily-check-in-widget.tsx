@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { Flame, Zap, CheckCircle2, Clock, Sparkles } from "lucide-react";
+import { openLoginModal } from "@/components/login-modal";
 
 interface CheckInData {
   canCheckIn: boolean;
@@ -156,10 +157,10 @@ export function DailyCheckInWidget() {
         </div>
         <button
           type="button"
-          onClick={() => signIn("discord")}
-          className="px-4 py-2 rounded-none text-xs font-mono font-bold uppercase tracking-wider bg-[#7C3AED] text-white hover:bg-[#6D28D9] border border-[#7C3AED] transition whitespace-nowrap self-start sm:self-auto"
+          onClick={() => openLoginModal()}
+          className="px-4 py-2 rounded-none text-xs font-mono font-bold uppercase tracking-wider bg-[#7C3AED] text-white hover:bg-[#6D28D9] border border-[#7C3AED] transition whitespace-nowrap self-start sm:self-auto cursor-pointer"
         >
-          Masuk Discord
+          Masuk Guild
         </button>
       </div>
     );

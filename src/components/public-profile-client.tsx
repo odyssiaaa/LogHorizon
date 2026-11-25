@@ -35,6 +35,7 @@ import { ShareButton } from "@/components/share-button";
 import { UniversalReportDialog } from "@/components/universal-report-dialog";
 import { getEuropeanNobilityRank } from "@/lib/nobility-ranks";
 import { getLevelProgress } from "@/lib/level-system";
+import { useDiscordPresence } from "@/hooks/use-discord-presence";
 
 export type PublicProfileProps = {
   user: {
@@ -48,6 +49,7 @@ export type PublicProfileProps = {
     level: number;
     badges: string[];
     isPremium: boolean;
+    discordId?: string | null;
     isVerifiedSeller?: boolean;
     bio?: string | null;
     favoriteGames: string[];
@@ -163,6 +165,26 @@ export function PublicProfileClient({
   const xpProgress = xpMetrics.progressPercent;
   const nobility = getEuropeanNobilityRank(xpMetrics.level);
 
+  const { presence } = useDiscordPresence(user.discordId);
+
+  const liveStatusColor =
+    presence?.status === "online"
+      ? "bg-emerald-500 shadow-sm shadow-emerald-500/50"
+      : presence?.status === "idle"
+      ? "bg-amber-400 shadow-sm shadow-amber-400/50"
+      : presence?.status === "dnd"
+      ? "bg-rose-500 shadow-sm shadow-rose-500/50"
+      : isOnline
+      ? "bg-emerald-500 shadow-sm"
+      : "bg-slate-400 dark:bg-slate-600";
+
+  const liveStatusTitle =
+    presence?.status && presence.status !== "offline"
+      ? `Discord: ${presence.statusLabel}${presence.activity?.name ? ` • ${presence.activity.name}` : ""}`
+      : isOnline
+      ? "Online Sekarang di Web"
+      : lastSeenText;
+
   async function handleToggleFollow() {
     if (!currentUserId) {
       router.push("/api/auth/signin");
@@ -229,10 +251,8 @@ export function PublicProfileClient({
                 className="size-20 sm:size-24 rounded-full border-2 border-[#7C3AED] shadow-lg shadow-[#7C3AED]/20 object-cover"
               />
               <span
-                className={`absolute bottom-0 right-0 size-4 rounded-full border-2 border-white dark:border-[#130921] ${
-                  isOnline ? "bg-emerald-500 shadow-sm" : "bg-slate-400 dark:bg-slate-600"
-                }`}
-                title={isOnline ? "Online Sekarang" : lastSeenText}
+                className={`absolute bottom-0 right-0 size-4 rounded-full border-2 border-white dark:border-[#130921] ${liveStatusColor}`}
+                title={liveStatusTitle}
               />
               {isOwner && (
                 <span className="absolute -top-1 -right-1 p-1 bg-amber-400 rounded-full text-black shadow" title="Guild Emperor">
@@ -297,6 +317,14 @@ export function PublicProfileClient({
                 )}
               </div>
 
+              {/* Discord Live Activity Pill */}
+              {presence?.activity && (
+                <div className="mb-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5865F2]/15 border border-[#5865F2]/30 text-xs font-mono font-bold text-[#7C3AED] dark:text-[#C77DFF] shadow-xs">
+                  <span className="size-2 rounded-full bg-[#5865F2] animate-pulse" />
+                  <span>{presence.activity.display}</span>
+                </div>
+              )}
+
               {/* Caste Subtitle & Online Indicator */}
               <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm">
                 <span className="font-semibold text-[#7C3AED] dark:text-[#C77DFF] flex items-center gap-1.5">
@@ -312,8 +340,26 @@ export function PublicProfileClient({
 
                 <span className="text-slate-400">•</span>
 
-                <span className={`font-mono text-xs ${isOnline ? "text-emerald-500 font-bold" : "text-slate-400"}`}>
-                  {isOnline ? "🟢 Online Sekarang" : lastSeenText}
+                <span
+                  className={`font-mono text-xs ${
+                    presence?.status === "online" || (!presence && isOnline)
+                      ? "text-emerald-500 font-bold"
+                      : presence?.status === "idle"
+                      ? "text-amber-400 font-bold"
+                      : presence?.status === "dnd"
+                      ? "text-rose-500 font-bold"
+                      : "text-slate-400"
+                  }`}
+                >
+                  {presence?.status === "online"
+                    ? "🟢 Discord: Online"
+                    : presence?.status === "idle"
+                    ? "🌙 Discord: Idle"
+                    : presence?.status === "dnd"
+                    ? "⛔ Discord: DND"
+                    : isOnline
+                    ? "🟢 Online Sekarang"
+                    : lastSeenText}
                 </span>
 
                 <span className="text-slate-400">•</span>

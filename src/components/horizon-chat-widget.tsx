@@ -23,6 +23,7 @@ import { UniversalTextRenderer } from "@/lib/text-parser";
 import { RoyalKnightMascot } from "@/components/royal-knight-mascot";
 import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 import { useLocale } from "@/context/locale-context";
+import { openLoginModal } from "@/components/login-modal";
 
 export type MessageAction = {
   type: "navigate" | "party_created" | "thread_created" | "require_login" | "broadcast_preview" | "tournament_created" | string;
@@ -637,10 +638,10 @@ export function HorizonChatWidget() {
                           {m.action.type === "require_login" && (
                             <button
                               type="button"
-                              onClick={() => void signIn("discord")}
-                              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-xs shadow-md transition cursor-pointer"
+                              onClick={() => openLoginModal()}
+                              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold text-xs shadow-md transition cursor-pointer"
                             >
-                              <span>🔑 Login Discord Sekarang</span>
+                              <span>🔑 Masuk ke Akun Sekarang</span>
                             </button>
                           )}
 

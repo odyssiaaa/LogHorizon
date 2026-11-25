@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { BadgeCheck, Crown, Gem, HeartHandshake, QrCode, ShieldCheck, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { openLoginModal } from "@/components/login-modal";
 
 const formatMoney = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 });
 
@@ -101,7 +102,7 @@ export function DonationForm({ simulationEnabled: _simulationEnabled }: { simula
 
   async function submitTransferConfirmation() {
     if (!session?.user) {
-      await signIn("discord");
+      openLoginModal();
       return;
     }
     const numericAmount = Number(amount);

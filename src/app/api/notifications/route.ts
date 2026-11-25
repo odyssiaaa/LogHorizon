@@ -47,3 +47,14 @@ export async function PATCH(request: Request) {
 
   return jsonError("Parameter tidak valid.", 400);
 }
+
+export async function DELETE() {
+  const user = await activeUser();
+  if (!user) return jsonError("Login diperlukan.", 401);
+
+  await prisma.notification.deleteMany({
+    where: { userId: user.id },
+  });
+
+  return Response.json({ success: true, message: "Semua notifikasi telah dibersihkan." });
+}

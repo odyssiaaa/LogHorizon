@@ -64,6 +64,7 @@ import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown"
 import { exportTournamentToCsv, exportTournamentToJson } from "@/lib/tournament-export";
 import { useLiveSync } from "@/hooks/use-live-sync";
 import { GuildPartyDirectory } from "@/components/guild-party-directory";
+import { openLoginModal } from "@/components/login-modal";
 
 type Participant = {
   id: string;
@@ -1177,7 +1178,7 @@ export function EventsBoard() {
   async function createLfg(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!session?.user) {
-      await signIn("discord");
+      openLoginModal();
       return;
     }
     const gameToSave = lfgGame === "Game Lainnya" ? customGame.trim() || "Game Komunitas" : lfgGame;
@@ -1218,7 +1219,7 @@ export function EventsBoard() {
 
   async function toggleJoin(id: string, currentlyJoined: boolean) {
     if (!session?.user) {
-      await signIn("discord");
+      openLoginModal();
       return;
     }
     try {

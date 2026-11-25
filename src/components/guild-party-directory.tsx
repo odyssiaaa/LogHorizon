@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { openLoginModal } from "@/components/login-modal";
 import {
   Users,
   Shield,
@@ -226,7 +227,7 @@ export function GuildPartyDirectory() {
 
   async function handleApplyJoin(partyId: string) {
     if (!session?.user) {
-      void signIn("discord");
+      openLoginModal();
       return;
     }
 
@@ -325,7 +326,7 @@ export function GuildPartyDirectory() {
                 type="button"
                 onClick={() => {
                   if (!session?.user) {
-                    void signIn("discord");
+                    openLoginModal();
                     return;
                   }
                   setShowCreateModal(true);
