@@ -16,11 +16,15 @@ export function StaffCardModerationMenu({
   className = "",
   buttonClassName,
   label = "Moderasi",
+  openDirection = "up",
+  showHeader = false,
 }: {
   actions: StaffActionItem[];
   className?: string;
   buttonClassName?: string;
   label?: string;
+  openDirection?: "up" | "down";
+  showHeader?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -42,7 +46,7 @@ export function StaffCardModerationMenu({
   const hasCustomIcon = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(displayLabel);
 
   return (
-    <div className={`relative inline-block text-left ${className}`} ref={menuRef}>
+    <div className={`relative inline-block text-left overflow-visible ${className}`} ref={menuRef}>
       <button
         type="button"
         onClick={(e) => {
@@ -52,7 +56,7 @@ export function StaffCardModerationMenu({
         }}
         className={
           buttonClassName ||
-          "h-7 px-2 rounded-none font-mono text-[11px] font-bold inline-flex items-center gap-1 border border-[#7C3AED]/30 bg-purple-500/10 hover:bg-[#7C3AED]/20 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-sm shrink-0 whitespace-nowrap"
+          "h-7 px-2 rounded-lg font-mono text-[11px] font-bold inline-flex items-center gap-1 border border-[#7C3AED]/40 bg-purple-500/10 hover:bg-[#7C3AED]/25 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-xs shrink-0 whitespace-nowrap"
         }
         title="Opsi Moderasi Staf (Admin & Moderator)"
       >
@@ -63,12 +67,16 @@ export function StaffCardModerationMenu({
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-0 top-full mt-1 min-w-[260px] w-max whitespace-nowrap rounded-none bg-white dark:bg-[#11091D] border border-[#7C3AED]/60 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-150 text-left"
+          className={`absolute right-0 ${
+            openDirection === "up" ? "bottom-full mb-2" : "top-full mt-2"
+          } min-w-[240px] w-max whitespace-nowrap rounded-xl bg-[#11091D] dark:bg-[#11091D] bg-white border border-[#7C3AED]/60 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 text-left`}
         >
-          <div className="px-3 py-1.5 border-b border-slate-100 dark:border-[#1F1430] text-[10px] font-mono uppercase text-[#7C3AED] dark:text-[#A78BFA] font-bold flex items-center gap-1">
-            <Shield size={11} />
-            <span>Opsi Moderasi Staf</span>
-          </div>
+          {showHeader && (
+            <div className="px-3 py-1.5 border-b border-slate-100 dark:border-[#1F1430] text-[10px] font-mono uppercase text-[#7C3AED] dark:text-[#A78BFA] font-bold flex items-center gap-1">
+              <Shield size={11} />
+              <span>Opsi Moderasi Staf</span>
+            </div>
+          )}
 
           <div className="py-1">
             {actions.map((act, idx) => (

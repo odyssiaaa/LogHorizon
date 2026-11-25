@@ -708,7 +708,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                         <MarketImage src={market.imageUrl} alt={`Bukti lapak ${post.title}`} />
                       </div>
 
-                      <div className="market-card-body text-left">
+                      <div className="market-card-body text-left flex-1 flex flex-col min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <span className="font-mono text-xs text-slate-500 dark:text-[#A78BFA] uppercase">HARGA:</span>
                           <PriceDisplay amountIdr={market.price} className="font-mono text-base font-extrabold text-emerald-600 dark:text-[#10B981]" />
@@ -777,7 +777,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
           {posts.map((post, index) => {
             if (!isPublicMarketData(post.marketData)) return <article className="market-card p-4 rounded-none border border-[#2E1E45] bg-[#130921]" key={post.id}><p className="p-3 text-xs font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded-none">Data lapak tidak valid.</p></article>;
             const market = post.marketData;
-            return <motion.article className={`market-card rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#8B5CF6]/70 active:scale-[0.98] p-4 shadow-sm dark:shadow-none ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold opacity-60" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
+            return <motion.article className={`market-card rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#8B5CF6]/70 active:scale-[0.98] p-4 shadow-sm dark:shadow-none flex flex-col h-full overflow-visible ${market.status === "AVAILABLE" ? "market-card-available" : market.status === "SOLD" ? "market-card-sold opacity-60" : ""}`} key={`${post.id}-${post.likes}-${post.dislikes}-${post.votes?.[0]?.value ?? "none"}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.035 }}>
               <div className="market-listing-labels flex flex-wrap items-center gap-1.5 mb-3 font-mono">
                 {post.isPinned && <span className="px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/40 whitespace-nowrap">PINNED</span>}
                 {(post.author.isVerifiedSeller || (post.author.successfulSales ?? 0) >= 3 || post.author.username === ".odyssia") && (
@@ -802,7 +802,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                 </span>
               </div>
               <div className="market-image mb-3 rounded-none overflow-hidden border border-slate-200 dark:border-[#2E1E45] bg-slate-100 dark:bg-[#1A0E2E]"><MarketImage src={market.imageUrl} alt={`Bukti lapak ${post.title}`} /></div>
-              <div className="market-card-body text-left">
+              <div className="market-card-body text-left flex-1 flex flex-col min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="font-mono text-xs text-slate-500 dark:text-[#A78BFA] uppercase">HARGA:</span>
                   <PriceDisplay amountIdr={market.price} className="font-mono text-base font-extrabold text-emerald-600 dark:text-[#10B981]" />
@@ -859,137 +859,176 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
               )}
             </div>
             <PostReactions postId={post.id} likes={post.likes} dislikes={post.dislikes} reaction={post.votes?.[0]?.value ?? null} onLoginRequired={() => setLoginAction("memberi reaksi")} onChange={(result) => setPosts((current) => current.map((entry) => entry.id === post.id ? { ...entry, ...result, votes: result.reaction ? [{ value: result.reaction }] : [] } : entry))} />
-            {user && contacts[post.id]?.userId === user.id ? (
-              <div className="market-contact-revealed font-mono text-xs my-2 p-2 bg-slate-50 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45]">
-                <span className="text-slate-600 dark:text-[#A78BFA]">Kontak: <strong className="text-slate-900 dark:text-[#F8FAFC]">{contacts[post.id].contact}</strong></span>
-                <button
-                  className="mt-1.5 w-full py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] flex items-center justify-center gap-1.5 shadow-sm"
-                  onClick={() => void performContactAction(post.id, contacts[post.id])}
-                >
-                  {contacts[post.id].discordId ? "💬 Private Chat (PC) Discord" : "Hubungi / Salin Kontak"}
-                </button>
-              </div>
-            ) : (
-              <button
-                className="mt-2 w-full py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC] transition flex items-center justify-center gap-1.5"
-                disabled={contactLoading === post.id || status === "loading"}
-                onClick={() => void revealContact(post.id)}
-              >
-                {contactLoading === post.id
-                  ? "MEMUAT KONTAK…"
-                  : status === "loading"
-                    ? "MEMERIKSA AKUN…"
-                    : user
-                      ? "💬 Hubungi Penjual (PC Discord/WA)"
-                      : "Login untuk Lihat Kontak"}
-              </button>
-            )}
-            <div className="market-card-actions flex flex-wrap gap-2 mt-4 font-mono">
-              <ShareButton
-                url={`/marketplace?id=${post.id}`}
-                title={`[${market.type}] ${post.title} - Marketplace LogHorizon`}
-                text={`Cek lapak ${post.title} (${market.game}) di Marketplace LogHorizon: Rp ${market.price?.toLocaleString("id-ID")}`}
-                label="Bagikan"
-                variant="outline"
-              />
-              {user?.id !== post.authorId && (
-                <Link
-                  href={`/messages?user=${post.authorId}`}
-                  className="px-3 py-1.5 rounded-none font-mono text-xs font-semibold uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC] flex items-center gap-1"
-                  title="Kirim Pesan Langsung (PM) ke Penjual"
-                >
-                  <MessageSquare size={13} /> PM Penjual
-                </Link>
-              )}
-              {market.status === "AVAILABLE" && market.type === "WTS" && user?.id !== post.authorId && (
-                <button
-                  className="px-3.5 py-1.5 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED]"
-                  disabled={escrowLoading === post.id}
-                  onClick={() => void startEscrow(post.id)}
-                >
-                  {escrowLoading === post.id ? "Memproses…" : "🛡️ Beli via Rekber Guild"}
-                </button>
-              )}
-              {post.escrowTransactions?.map((transaction) => (
-                <button
-                  key={transaction.id}
-                  className="px-3 py-1.5 rounded-none font-mono text-xs font-semibold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-[#10B981] border border-emerald-500/30 flex items-center gap-1"
-                  onClick={() => setActiveEscrowModalId(transaction.id)}
-                >
-                  <ShieldCheck size={13} /> Ruang Rekber 3-Pihak
-                </button>
-              ))}
-              <button className="text-xs font-mono text-slate-500 dark:text-[#A78BFA] hover:text-rose-500 inline-flex items-center gap-1" onClick={() => void report(post.id)}><Flag size={14} /> Report</button>
 
-              {/* Author Actions (Non-Staff) */}
-              {user && !(user.role === "ADMIN" || user.role === "MODERATOR") && user.id === post.authorId && (
-                <div className="flex items-center gap-2 ml-auto">
-                  {market.status !== "IN_ESCROW" && (
-                    <button
-                      className="px-2.5 py-1 rounded-none font-mono text-xs uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED]"
-                      disabled={escrowLoading === post.id}
-                      onClick={() => void updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD")}
-                    >
-                      {market.status === "SOLD" ? "Tandai tersedia" : "Tandai terjual"}
-                    </button>
-                  )}
-                  {post.escrowTransactions?.filter((tr) => tr.sellerId === user.id).map((tr) => (
-                    <button
-                      key={tr.id}
-                      className="px-2.5 py-1 rounded-none font-mono text-xs uppercase tracking-wider bg-[#10B981] text-slate-900 font-bold"
-                      disabled={escrowLoading === post.id}
-                      onClick={() => void completeEscrow(tr.id, post.id)}
-                    >
-                      {escrowLoading === post.id ? "Memproses…" : "Konfirmasi selesai"}
-                    </button>
-                  ))}
+            {/* Blok Aksi Bawah Seragam (mt-auto) */}
+            <div className="market-card-actions-block mt-auto pt-4 space-y-2.5 overflow-visible">
+              {/* Baris 1: Tombol Utama Hubungi Penjual (Lebar Penuh) */}
+              {user && contacts[post.id]?.userId === user.id ? (
+                <div className="market-contact-revealed font-mono text-xs p-2.5 bg-slate-50 dark:bg-[#1A0E2E] border border-slate-200 dark:border-[#2E1E45] space-y-1.5 w-full">
+                  <span className="text-slate-600 dark:text-[#A78BFA] text-[11px] block truncate">
+                    Kontak: <strong className="text-slate-900 dark:text-[#F8FAFC]">{contacts[post.id].contact}</strong>
+                  </span>
                   <button
-                    className={`text-xs font-mono inline-flex items-center gap-1 transition-colors ${
-                      market.status === "IN_ESCROW"
-                        ? "text-slate-500 cursor-not-allowed opacity-50"
-                        : "text-rose-400 hover:text-rose-300"
-                    }`}
-                    disabled={escrowLoading === post.id || market.status === "IN_ESCROW"}
-                    onClick={() => void deleteListing(post.id)}
-                    title={market.status === "IN_ESCROW" ? "Lapak dalam transaksi aktif" : "Hapus lapak"}
+                    type="button"
+                    className="w-full py-2 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                    onClick={() => void performContactAction(post.id, contacts[post.id])}
                   >
-                    <Trash2 size={13} /> Hapus
+                    {contacts[post.id].discordId ? "💬 Private Chat (PC) Discord" : "Hubungi / Salin Kontak"}
                   </button>
                 </div>
+              ) : (
+                <button
+                  type="button"
+                  className="w-full py-2.5 px-3 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC] transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  disabled={contactLoading === post.id || status === "loading"}
+                  onClick={() => void revealContact(post.id)}
+                >
+                  {contactLoading === post.id
+                    ? "MEMUAT KONTAK…"
+                    : status === "loading"
+                      ? "MEMERIKSA AKUN…"
+                      : user
+                        ? "💬 HUBUNGI PENJUAL"
+                        : "Login untuk Lihat Kontak"}
+                </button>
               )}
 
-              {/* Staff Moderation Menu (Admin & Moderator) */}
-              {(user?.role === "ADMIN" || user?.role === "MODERATOR") && (
-                <div className="ml-auto">
-                  <StaffCardModerationMenu
-                    actions={[
-                      {
-                        label: market.status === "SOLD" ? "Tandai Tersedia" : "Tandai Terjual",
-                        disabled: market.status === "IN_ESCROW" || market.status === "FROZEN",
-                        onClick: () => updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD"),
-                      },
-                      {
-                        label: market.status === "FROZEN" ? "Buka Pembekuan Lapak" : "❄️ Bekukan Lapak (Investigasi)",
-                        disabled: market.status === "IN_ESCROW",
-                        danger: market.status !== "FROZEN",
-                        onClick: () => updateListingStatus(post.id, market.status === "FROZEN" ? "AVAILABLE" : "FROZEN"),
-                      },
-                      ...(post.escrowTransactions?.map((tr) => ({
-                        label: "Konfirmasi Selesai (Rekber)",
-                        icon: <ShieldCheck size={13} />,
-                        onClick: () => completeEscrow(tr.id, post.id),
-                      })) || []),
-                      {
-                        label: "Hapus Paksa Lapak",
-                        icon: <Trash2 size={13} />,
-                        danger: true,
-                        disabled: market.status === "IN_ESCROW",
-                        onClick: () => deleteListing(post.id),
-                      },
-                    ]}
-                  />
+              {/* Baris 2: Tombol Lebar Penuh Rekber (WTS) */}
+              {market.type === "WTS" && (
+                <div className="w-full space-y-1.5">
+                  {post.escrowTransactions && post.escrowTransactions.length > 0 ? (
+                    post.escrowTransactions.map((transaction) => (
+                      <button
+                        key={transaction.id}
+                        type="button"
+                        className="w-full py-2 px-3 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-[#10B981] border border-emerald-500/30 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                        onClick={() => setActiveEscrowModalId(transaction.id)}
+                      >
+                        <ShieldCheck size={14} />
+                        <span>RUANG REKBER 3-PIHAK</span>
+                      </button>
+                    ))
+                  ) : market.status === "AVAILABLE" && user?.id !== post.authorId ? (
+                    <button
+                      type="button"
+                      className="w-full py-2 px-3 rounded-none font-mono text-xs font-bold uppercase tracking-wider bg-[#7C3AED] hover:bg-[#6D28D9] text-white border border-[#7C3AED] flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer"
+                      disabled={escrowLoading === post.id}
+                      onClick={() => void startEscrow(post.id)}
+                    >
+                      <ShieldCheck size={14} />
+                      <span>{escrowLoading === post.id ? "Memproses…" : "🛡️ RUANG REKBER 3-PIHAK"}</span>
+                    </button>
+                  ) : null}
                 </div>
               )}
+
+              {/* Baris 3: Baris Utilitas Seragam di Paling Bawah (Bagikan, PM/Report, Moderasi) */}
+              <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-[#2E1E45]/80 font-mono text-xs overflow-visible">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <ShareButton
+                    url={`/marketplace?id=${post.id}`}
+                    title={`[${market.type}] ${post.title} - Marketplace LogHorizon`}
+                    text={`Cek lapak ${post.title} (${market.game}) di Marketplace LogHorizon: Rp ${market.price?.toLocaleString("id-ID")}`}
+                    label="Bagikan"
+                    variant="outline"
+                    className="h-7 px-2 text-[11px]"
+                  />
+                  {user?.id !== post.authorId && (
+                    <Link
+                      href={`/messages?user=${post.authorId}`}
+                      className="h-7 px-2 rounded-none font-mono text-[11px] font-semibold uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC] inline-flex items-center gap-1 transition"
+                      title="Kirim Pesan Langsung (PM) ke Penjual"
+                    >
+                      <MessageSquare size={12} />
+                      <span>PM</span>
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    className="h-7 px-1.5 text-xs font-mono text-slate-500 dark:text-[#A78BFA] hover:text-rose-500 inline-flex items-center gap-1 transition cursor-pointer"
+                    onClick={() => void report(post.id)}
+                    title="Laporkan Lapak"
+                  >
+                    <Flag size={13} />
+                    <span>Report</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 overflow-visible relative">
+                  {/* Author Actions (Non-Staff) */}
+                  {user && !(user.role === "ADMIN" || user.role === "MODERATOR") && user.id === post.authorId && (
+                    <div className="flex items-center gap-1.5">
+                      {market.status !== "IN_ESCROW" && (
+                        <button
+                          type="button"
+                          className="h-7 px-2 rounded-none font-mono text-[11px] uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] transition cursor-pointer"
+                          disabled={escrowLoading === post.id}
+                          onClick={() => void updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD")}
+                        >
+                          {market.status === "SOLD" ? "Tersedia" : "Terjual"}
+                        </button>
+                      )}
+                      {post.escrowTransactions?.filter((tr) => tr.sellerId === user.id).map((tr) => (
+                        <button
+                          key={tr.id}
+                          type="button"
+                          className="h-7 px-2 rounded-none font-mono text-[11px] uppercase tracking-wider bg-[#10B981] text-slate-900 font-bold cursor-pointer"
+                          disabled={escrowLoading === post.id}
+                          onClick={() => void completeEscrow(tr.id, post.id)}
+                        >
+                          {escrowLoading === post.id ? "…" : "Selesai"}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        className={`h-7 px-1.5 text-xs font-mono inline-flex items-center gap-1 transition-colors ${
+                          market.status === "IN_ESCROW"
+                            ? "text-slate-500 cursor-not-allowed opacity-50"
+                            : "text-rose-400 hover:text-rose-300 cursor-pointer"
+                        }`}
+                        disabled={escrowLoading === post.id || market.status === "IN_ESCROW"}
+                        onClick={() => void deleteListing(post.id)}
+                        title={market.status === "IN_ESCROW" ? "Lapak dalam transaksi aktif" : "Hapus lapak"}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Staff Moderation Menu (Admin & Moderator) */}
+                  {(user?.role === "ADMIN" || user?.role === "MODERATOR") && (
+                    <StaffCardModerationMenu
+                      label="⋮ Moderasi"
+                      openDirection="up"
+                      actions={[
+                        {
+                          label: market.status === "SOLD" ? "Tandai Tersedia" : "Tandai Terjual",
+                          disabled: market.status === "IN_ESCROW" || market.status === "FROZEN",
+                          onClick: () => updateListingStatus(post.id, market.status === "SOLD" ? "AVAILABLE" : "SOLD"),
+                        },
+                        {
+                          label: market.status === "FROZEN" ? "Buka Pembekuan Lapak" : "❄️ Bekukan Lapak (Investigasi)",
+                          disabled: market.status === "IN_ESCROW",
+                          danger: market.status !== "FROZEN",
+                          onClick: () => updateListingStatus(post.id, market.status === "FROZEN" ? "AVAILABLE" : "FROZEN"),
+                        },
+                        ...(post.escrowTransactions?.map((tr) => ({
+                          label: "Konfirmasi Selesai (Rekber)",
+                          icon: <ShieldCheck size={13} />,
+                          onClick: () => completeEscrow(tr.id, post.id),
+                        })) || []),
+                        {
+                          label: "Hapus Paksa Lapak",
+                          icon: <Trash2 size={13} />,
+                          danger: true,
+                          disabled: market.status === "IN_ESCROW",
+                          onClick: () => deleteListing(post.id),
+                        },
+                      ]}
+                    />
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </motion.article>
