@@ -36,6 +36,7 @@ import {
 import { EmperorSovereignControl } from "@/components/emperor-sovereign-control";
 import { RedeemCodeBox } from "@/components/redeem-code-box";
 import { UserVoucherWallet } from "@/components/user-voucher-wallet";
+import { UserCoinWallet } from "@/components/user-coin-wallet";
 import { useSearchParams } from "next/navigation";
 import { readApiResponse } from "@/lib/api-response";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -828,39 +829,11 @@ export function SettingsDashboard() {
             </div>
           </section>
 
-          {/* Kartu Saldo Horizon Coins (🪙 HC) */}
-          <section className="p-5 sm:p-6 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-[#180C2E] to-purple-900/20 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl shadow-inner shrink-0">
-                🪙
-              </div>
-              <div>
-                <p className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider">
-                  Mata Uang Virtual Resmi // LogHorizon Citadel
-                </p>
-                <div className="flex items-baseline gap-2 mt-0.5">
-                  <h3 className="text-2xl sm:text-3xl font-black text-white font-mono">
-                    {(profile?.horizonCoins ?? 0).toLocaleString("id-ID")}
-                  </h3>
-                  <span className="text-sm font-bold text-amber-400 font-mono">🪙 HC (Horizon Coins)</span>
-                </div>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Gunakan untuk kontrak misi antar-pemain, gacha eksklusif, belanja armory, atau klaim dari misi harian &amp; mingguan.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setActiveTab("quests")}
-                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs sm:text-sm transition-all shadow-md shadow-amber-500/20 flex items-center gap-1.5 cursor-pointer"
-              >
-                <span>📜</span>
-                <span>Papan Misi &amp; Kontrak</span>
-              </button>
-            </div>
-          </section>
+          {/* Dompet Horizon Coin (🪙 HC) & Riwayat 10 Mutasi */}
+          <UserCoinWallet
+            initialBalance={profile?.horizonCoins ?? 0}
+            onNavigateTab={(tab) => setActiveTab(tab)}
+          />
 
           {/* Tombol Klaim Absen Harian XP */}
           <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md space-y-5">

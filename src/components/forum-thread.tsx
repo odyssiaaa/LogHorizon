@@ -15,6 +15,7 @@ import { MentionHashtagInput, type MentionUser } from "@/components/mention-hash
 import { getActiveTempTitle } from "@/lib/caste";
 import { ForumPollWidget, type PollData } from "@/components/forum-poll-widget";
 import { getCustomTitleBadge } from "@/lib/armory-catalog";
+import { TipModal } from "@/components/tip-modal";
 
 type CommentRecord = {
   id: string;
@@ -23,6 +24,7 @@ type CommentRecord = {
   parentId: string | null;
   content: string;
   createdAt: string;
+  tipsTotal?: number;
   author: {
     id: string;
     username: string | null;
@@ -52,6 +54,7 @@ type ThreadRecord = {
   isPinned: boolean;
   likes: number;
   dislikes: number;
+  tipsTotal?: number;
   votes: { value: Exclude<PostReaction, null> }[];
   createdAt: string;
   authorId?: string;
@@ -98,6 +101,12 @@ export function ForumThread({ id }: { id: string }) {
   const [loginAction, setLoginAction] = useState("");
   const [reportOpen, setReportOpen] = useState(false);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+  const [tipTarget, setTipTarget] = useState<{
+    targetUser: { id: string; username: string | null; avatar?: string | null };
+    postId?: string;
+    commentId?: string;
+    contextTitle?: string;
+  } | null>(null);
   const { data: session } = useSession();
   const user = session?.user;
 
@@ -503,6 +512,11 @@ export function ForumThread({ id }: { id: string }) {
                   {getActiveTempTitle(item.author)}
                 </span>
               )}
+              {(item.tipsTotal ?? 0) > 0 && (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap">
+                  🪙 +{item.tipsTotal} HC
+                </span>
+              )}
               <span className="text-slate-400 dark:text-[#A78BFA]/40 text-[10px]">•</span>
               <time className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA]/70 whitespace-nowrap">{new Date(item.createdAt).toLocaleString("id-ID")}</time>
             </div>
@@ -521,6 +535,28 @@ export function ForumThread({ id }: { id: string }) {
                   onClick={() => handleStartReply(item)}
                 >
                   <MessageCircle size={13} /> {isSatpamBot ? "Balas Satpam AI" : "Balas"}
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-[11px] font-mono text-amber-500 hover:text-amber-400 transition-colors cursor-pointer"
+                  onClick={() => {
+                    if (!user) {
+                      setLoginAction("memberi tip apresiasi");
+                      return;
+                    }
+                    setTipTarget({
+                      targetUser: {
+                        id: item.author.id || item.authorId || "",
+                        username: item.author.username,
+                        avatar: item.author.avatar,
+                      },
+                      commentId: item.id,
+                      contextTitle: `Komentar oleh @${item.author.username ?? "Gamer"}`,
+                    });
+                  }}
+                  title="Beri Tip Komentar"
+                >
+                  <span>🪙</span> Tip
                 </button>
                 {canDeleteComment && (
                   <button
@@ -663,6 +699,11 @@ export function ForumThread({ id }: { id: string }) {
               </span>
               <span>•</span>
               <span>{new Date(thread.createdAt).toLocaleString("id-ID")}</span>
+              {(thread.tipsTotal ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 ml-1.5 shrink-0">
+                  🪙 +{thread.tipsTotal} HC Apresiasi
+                </span>
+              )}
             </div>
 
             {/* Polling Voting Interaktif jika tersedia */}
@@ -687,6 +728,29 @@ export function ForumThread({ id }: { id: string }) {
               />
 
               <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <button
+                  type="button"
+                  className="h-8 px-2.5 rounded-md border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-300 inline-flex items-center gap-1.5 transition-colors font-bold text-xs cursor-pointer"
+                  onClick={() => {
+                    if (!user) {
+                      setLoginAction("memberi tip apresiasi");
+                      return;
+                    }
+                    setTipTarget({
+                      targetUser: {
+                        id: thread.author.id || thread.authorId || "",
+                        username: thread.author.username,
+                        avatar: thread.author.avatar,
+                      },
+                      postId: thread.id,
+                      contextTitle: thread.title,
+                    });
+                  }}
+                  title="Beri Tip Pembuat Thread"
+                >
+                  <span>🪙</span>
+                  <span>Kirim Tip</span>
+                </button>
                 <ShareButton
                   url={`/forum/${thread.id}`}
                   title={thread.title}
@@ -865,6 +929,36 @@ export function ForumThread({ id }: { id: string }) {
           </div>
         </div>
       )}
+
+      {/* Modal Kirim Tip Apresiasi */}
+      <TipModal
+        isOpen={!!tipTarget}
+        onClose={() => setTipTarget(null)}
+        targetUser={tipTarget?.targetUser ?? null}
+        postId={tipTarget?.postId}
+        commentId={tipTarget?.commentId}
+        contextTitle={tipTarget?.contextTitle}
+        onSuccess={(amount) => {
+          if (tipTarget?.commentId) {
+            setThread((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    comments: prev.comments.map((c) =>
+                      c.id === tipTarget.commentId
+                        ? { ...c, tipsTotal: (c.tipsTotal ?? 0) + amount }
+                        : c
+                    ),
+                  }
+                : null
+            );
+          } else if (tipTarget?.postId) {
+            setThread((prev) =>
+              prev ? { ...prev, tipsTotal: (prev.tipsTotal ?? 0) + amount } : null
+            );
+          }
+        }}
+      />
     </main>
   );
 }

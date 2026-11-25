@@ -58,6 +58,9 @@ export default async function PublicProfilePage({ params }: PageProps) {
       lastActiveAt: true,
       joinedAt: true,
       discordId: true,
+      tipsSentTotal: true,
+      tipsReceivedTotal: true,
+      horizonCoins: true,
     },
   });
 

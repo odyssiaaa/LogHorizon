@@ -12,7 +12,9 @@ export type CoinTransactionType =
   | "GACHA_SUMMON"
   | "ARMORY_PURCHASE"
   | "EMPEROR_GIFT"
-  | "REDEEM_CODE";
+  | "REDEEM_CODE"
+  | "TIP_SENT"
+  | "TIP_RECEIVED";
 
 export interface CoinPackage {
   id: string;

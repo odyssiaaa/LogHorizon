@@ -40,6 +40,7 @@ export type ForumPostRecord = {
   isPinned: boolean;
   likes: number;
   dislikes: number;
+  tipsTotal?: number;
   createdAt: string;
   author: AuthorSummary;
   votes: { value: Exclude<ReactionType, null> }[];

@@ -36,6 +36,7 @@ import { UniversalReportDialog } from "@/components/universal-report-dialog";
 import { getEuropeanNobilityRank } from "@/lib/nobility-ranks";
 import { getLevelProgress } from "@/lib/level-system";
 import { useDiscordPresence } from "@/hooks/use-discord-presence";
+import { TipModal } from "@/components/tip-modal";
 
 export type PublicProfileProps = {
   user: {
@@ -61,6 +62,9 @@ export type PublicProfileProps = {
     showBirthDate?: boolean;
     equippedAvatarFrame?: string | null;
     equippedCustomTitle?: string | null;
+    tipsSentTotal?: number;
+    tipsReceivedTotal?: number;
+    horizonCoins?: number;
     lastActiveAt?: string | null;
     joinedAt: string;
   };
@@ -159,6 +163,7 @@ export function PublicProfileClient({
   const [copiedId, setCopiedId] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportNotice, setReportNotice] = useState("");
+  const [showTipModal, setShowTipModal] = useState(false);
 
   const xpMetrics = getLevelProgress(user.level ?? 1, user.xp ?? 0);
   const xpNeeded = xpMetrics.nextLevelXp;
@@ -315,6 +320,26 @@ export function PublicProfileClient({
                     <span>✅ VERIFIED SELLER</span>
                   </span>
                 )}
+
+                {(user.tipsSentTotal ?? 0) >= 250 && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-black bg-amber-400/20 text-amber-500 dark:text-amber-300 border border-amber-400/50 shadow-sm"
+                    title={`Dermawan Guild: Telah mengirim total ${user.tipsSentTotal} HC apresiasi kepada sesama petualang!`}
+                  >
+                    <span>💛</span>
+                    <span>Dermawan Guild</span>
+                  </span>
+                )}
+
+                {(user.tipsReceivedTotal ?? 0) > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-xs"
+                    title={`Menerima total ${user.tipsReceivedTotal} HC apresiasi dari anggota guild.`}
+                  >
+                    <span>🪙</span>
+                    <span>+{(user.tipsReceivedTotal ?? 0).toLocaleString("id-ID")} HC Apresiasi</span>
+                  </span>
+                )}
               </div>
 
               {/* Discord Live Activity Pill */}
@@ -387,6 +412,22 @@ export function PublicProfileClient({
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             {!isMe && (
               <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!currentUserId) {
+                      router.push("/api/auth/signin");
+                      return;
+                    }
+                    setShowTipModal(true);
+                  }}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-300 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap cursor-pointer"
+                  title={`Beri tip apresiasi Horizon Coin untuk @${user.username}`}
+                >
+                  <span>🪙</span>
+                  <span>Beri Tip Apresiasi</span>
+                </button>
+
                 <Link
                   href={`/messages?to=${user.id}`}
                   className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-[#7C3AED]/20 shrink-0 whitespace-nowrap"
@@ -855,6 +896,22 @@ export function PublicProfileClient({
           </button>
         </div>
       )}
+
+      {/* Modal Kirim Tip Apresiasi */}
+      <TipModal
+        isOpen={showTipModal}
+        onClose={() => setShowTipModal(false)}
+        targetUser={{
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          avatar: user.avatar,
+        }}
+        contextTitle={`Profil @${user.username ?? "Petualang"}`}
+        onSuccess={() => {
+          setReportNotice(`Tip berhasil dikirim ke @${user.username}!`);
+        }}
+      />
     </div>
   );
 }

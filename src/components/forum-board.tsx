@@ -19,6 +19,7 @@ import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown"
 import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 import { MentionHashtagInput } from "@/components/mention-hashtag-input";
 import { getCustomTitleBadge } from "@/lib/armory-catalog";
+import { TipModal } from "@/components/tip-modal";
 
 type Category = "GENERAL_CHAT" | "PROMOTION" | "FEEDBACK";
 type ForumLiveRow = { id: string };
@@ -52,6 +53,11 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [loginAction, setLoginAction] = useState("");
   const [reportId, setReportId] = useState<string | null>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+  const [tipTarget, setTipTarget] = useState<{
+    targetUser: { id: string; username: string | null; avatar?: string | null };
+    postId?: string;
+    contextTitle?: string;
+  } | null>(null);
   const [liveState, setLiveState] = useState<LiveState>("live");
   const [liveError, setLiveError] = useState("");
   const { data: session, status } = useSession();
@@ -545,6 +551,11 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                         ) : null}
                         <span>•</span>
                         <span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span>
+                        {(post.tipsTotal ?? 0) > 0 && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                            🪙 +{post.tipsTotal} HC Apresiasi
+                          </span>
+                        )}
                       </div>
                       {post.isPinned && (
                         <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#7C3AED] dark:text-[#A78BFA] uppercase tracking-wider shrink-0">
@@ -647,6 +658,30 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                           <MessageCircle size={13} />
                           <span>Diskusi</span>
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!user) {
+                              setLoginAction("memberi tip apresiasi");
+                              return;
+                            }
+                            setTipTarget({
+                              targetUser: {
+                                id: post.author.id,
+                                username: post.author.username,
+                                avatar: post.author.avatar,
+                              },
+                              postId: post.id,
+                              contextTitle: post.title,
+                            });
+                          }}
+                          className="h-8 px-2.5 rounded-md border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-300 inline-flex items-center gap-1.5 transition-colors font-bold text-xs cursor-pointer"
+                          title="Kirim Tip Horizon Coin"
+                        >
+                          <span>🪙</span>
+                          <span className="hidden sm:inline">Kirim Tip</span>
+                          <span className="sm:hidden">Tip</span>
+                        </button>
                         <ShareButton
                           url={`/forum/${post.id}`}
                           title={`[Forum] ${post.title}`}
@@ -825,6 +860,26 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
           </div>
         </div>
       )}
+
+      {/* Modal Kirim Tip Apresiasi Horizon Coin */}
+      <TipModal
+        isOpen={!!tipTarget}
+        onClose={() => setTipTarget(null)}
+        targetUser={tipTarget?.targetUser ?? null}
+        postId={tipTarget?.postId}
+        contextTitle={tipTarget?.contextTitle}
+        onSuccess={(amount) => {
+          if (tipTarget?.postId) {
+            setPosts((prev) =>
+              prev.map((p) =>
+                p.id === tipTarget.postId
+                  ? { ...p, tipsTotal: (p.tipsTotal ?? 0) + amount }
+                  : p
+              )
+            );
+          }
+        }}
+      />
     </main>
   );
 }

@@ -139,6 +139,8 @@ model User {
   questClaimsV2        QuestClaim[]
   createdPlayerQuests  PlayerQuest[]             @relation("PlayerQuestCreator")
   acceptedPlayerQuests PlayerQuest[]             @relation("PlayerQuestWorker")
+  tipsSentTotal        Int                       @default(0)
+  tipsReceivedTotal    Int                       @default(0)
 
   // Guild Armory (Avatar Frames & Custom Titles)
   equippedAvatarFrame String?
@@ -322,6 +324,7 @@ model Post {
   isPinned           Boolean             @default(false)
   likes              Int                 @default(0)
   dislikes           Int                 @default(0)
+  tipsTotal          Int                 @default(0)
   marketData         Json?
   createdAt          DateTime            @default(now())
   author             User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -342,6 +345,7 @@ model Comment {
   parentId  String?
   content   String    @db.Text
   upvotes   Int       @default(0)
+  tipsTotal Int       @default(0)
   createdAt DateTime  @default(now())
   post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -423,6 +427,7 @@ enum NotificationType {
   LIKE
   ESCROW
   SYSTEM
+  TIP
 }
 
 model Notification {
