@@ -169,6 +169,7 @@ export function SettingsDashboard() {
   const { data: session, status, update } = useSession();
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get("tab") ?? null;
+  const { locale, setLocale, currency, setCurrency, t } = useLocale();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -193,6 +194,13 @@ export function SettingsDashboard() {
     google: { connected: false, emailMasked: null },
     totalConnected: 0,
   });
+
+  const activeDiscordId =
+    profile?.discordId ||
+    linkedAccounts?.discord?.id ||
+    (session?.user as { discordId?: string })?.discordId ||
+    null;
+  const { presence: discordPresence } = useDiscordPresence(activeDiscordId);
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(null);
 
   const fetchLinkedAccounts = useCallback(async () => {
@@ -488,7 +496,6 @@ export function SettingsDashboard() {
     profile?.isPremium ?? session.user.isPremium
   );
 
-  const { locale, setLocale, currency, setCurrency, t } = useLocale();
   const currentLevel = profile?.level ?? 1;
   const currentXp = profile?.xp ?? 0;
   const xpProgress = getLevelProgress(currentLevel, currentXp);
@@ -496,13 +503,6 @@ export function SettingsDashboard() {
   const xpPercent = xpProgress.progressPercent;
   const nobility = getEuropeanNobilityRank(xpProgress.level);
   const isOwner = isGuildOwner(session?.user || profile);
-
-  const activeDiscordId =
-    profile?.discordId ||
-    linkedAccounts?.discord?.id ||
-    (session?.user as { discordId?: string })?.discordId ||
-    null;
-  const { presence: discordPresence } = useDiscordPresence(activeDiscordId);
 
   return (
     <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 min-w-0 overflow-x-hidden">
