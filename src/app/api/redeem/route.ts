@@ -30,6 +30,21 @@ export async function POST(req: Request) {
         throw new Error("KODE_NOT_FOUND");
       }
 
+      // Check if this is a SPONSOR_VOUCHER (e.g. OdyssiaVault)
+      // Sponsor vouchers are NOT redeemed internally on LogHorizon, but used at the sponsor's store!
+      if (codeRecord.category === "SPONSOR_VOUCHER") {
+        const rawUrl = codeRecord.sponsorActionUrl || "http://odyssiavault.kiospremium.site/";
+        const storeUrl = rawUrl.includes("odyssiavault.com") ? "http://odyssiavault.kiospremium.site/" : rawUrl;
+        const err = new Error("IS_SPONSOR_VOUCHER");
+        (err as any).sponsorData = {
+          code: codeRecord.code,
+          sponsorName: codeRecord.sponsorName || "OdyssiaVault",
+          storeUrl,
+          message: `Kode ini adalah Voucher Belanja ${codeRecord.sponsorName || "OdyssiaVault"}! Salin kodenya dan gunakan langsung saat checkout di toko resmi: ${storeUrl}`,
+        };
+        throw err;
+      }
+
       if (!codeRecord.isActive) {
         throw new Error("KODE_INACTIVE");
       }
@@ -157,6 +172,13 @@ export async function POST(req: Request) {
       sponsorActionUrl: claimResult.codeRecord.sponsorActionUrl,
     });
   } catch (error: any) {
+    if (error.message === "IS_SPONSOR_VOUCHER" && error.sponsorData) {
+      return NextResponse.json({
+        success: false,
+        isSponsorVoucher: true,
+        ...error.sponsorData,
+      }, { status: 400 });
+    }
     if (error.message === "KODE_NOT_FOUND") {
       return jsonError("Kode redeem / voucher tidak ditemukan atau salah ketik.", 404);
     }

@@ -464,7 +464,7 @@ const GEMINI_TOOLS = [
             maxUses: { type: "NUMBER", description: "Batas total kuota penukar voucher/kode (default: 50)" },
             includeInGachaPool: { type: "BOOLEAN", description: "True jika voucher sponsor ini juga dimasukkan ke pool hadiah Legendary Royal Gacha selama stok tersedia" },
             expiresInDays: { type: "NUMBER", description: "Masa berlaku voucher dalam satuan hari (opsional)" },
-            sponsorActionUrl: { type: "STRING", description: "Tautan tujuan sponsor saat voucher diklaim (default: 'https://odyssiavault.com')" }
+            sponsorActionUrl: { type: "STRING", description: "Tautan tujuan sponsor saat voucher diklaim (default: 'http://odyssiavault.kiospremium.site/')" }
           },
           required: ["code", "category", "title", "rewardType", "rewardValue"]
         }
@@ -2378,7 +2378,8 @@ async function executeToolAction(
     const rewardValue = Math.max(1, Number(args.rewardValue) || 1);
     const maxUses = Math.max(1, Number(args.maxUses) || 50);
     const includeInGachaPool = Boolean(args.includeInGachaPool);
-    const sponsorActionUrl = args.sponsorActionUrl ? String(args.sponsorActionUrl).trim() : (category === "SPONSOR_VOUCHER" ? "https://odyssiavault.com" : null);
+    const rawSponsorUrl = args.sponsorActionUrl ? String(args.sponsorActionUrl).trim() : (category === "SPONSOR_VOUCHER" ? "http://odyssiavault.kiospremium.site/" : null);
+    const sponsorActionUrl = rawSponsorUrl?.includes("odyssiavault.com") ? "http://odyssiavault.kiospremium.site/" : rawSponsorUrl;
     const expiresInDays = typeof args.expiresInDays === "number" && args.expiresInDays > 0 ? args.expiresInDays : null;
     const expiresAt = expiresInDays ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000) : null;
 
@@ -2425,7 +2426,7 @@ async function executeToolAction(
 
     return {
       success: true,
-      reply: `🎟️ Berhasil menerbitkan kode "${rawCode}"!\n• Kategori: ${category === "SPONSOR_VOUCHER" ? `Voucher Sponsor (${sponsorName})` : "Hadiah Guild"}\n• Judul: ${title}\n• Hadiah: ${rewardType} (${rewardValue})\n• Kuota: ${maxUses} orang\n• Pool Gacha: ${includeInGachaPool ? "Aktif di Royal Gacha (Legendary Slot) ✅" : "Khusus Tukar Kode"}`,
+      reply: `🎟️ Berhasil menerbitkan kode "${rawCode}"!\n• Kategori: ${category === "SPONSOR_VOUCHER" ? `Voucher Sponsor (${sponsorName})` : "Hadiah Guild"}\n• Judul: ${title}\n• Hadiah: ${rewardType} (${rewardValue})\n• Kuota: ${maxUses} orang\n• Pool Gacha: ${includeInGachaPool ? "Aktif di Royal Gacha (Legendary Slot) ✅" : "Khusus Tukar Kode"}${category === "SPONSOR_VOUCHER" ? `\n• ℹ️ Catatan Penting: Kode voucher ${sponsorName} ditukarkan/digunakan langsung saat belanja/checkout di website resmi ${sponsorActionUrl || "http://odyssiavault.kiospremium.site/"} (bukan di kotak redeem LogHorizon).` : ""}`,
       toolResult: {
         action: "createRedeemOrVoucherCode",
         summary: `Terbitkan Kode: ${rawCode}`,

@@ -70,7 +70,11 @@ export function UserVoucherWallet() {
 
   const handleClaimToSponsor = (url: string, code: string, id: string) => {
     copyCode(code, id);
-    window.open(url, "_blank", "noopener,noreferrer");
+    const targetUrl =
+      url && !url.includes("odyssiavault.com")
+        ? url
+        : "http://odyssiavault.kiospremium.site/";
+    window.open(targetUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -243,10 +247,9 @@ export function UserVoucherWallet() {
                   <button
                     type="button"
                     onClick={() => handleClaimToSponsor(v.sponsorActionUrl, v.promoCode, v.claimId)}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-600 text-black shadow-md shadow-cyan-500/20 hover:brightness-110 active:scale-95 transition-all"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-600 text-black shadow-md shadow-cyan-500/20 hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                   >
-                    <span>Salin &amp; Klaim ke Sponsor</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>📋 Salin Kode &amp; Buka {v.sponsorName || "OdyssiaVault"} ↗</span>
                   </button>
                 </div>
               </div>

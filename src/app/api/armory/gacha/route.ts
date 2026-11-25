@@ -437,7 +437,10 @@ export async function POST(req: Request) {
               sponsorCode: targetSponsor.code,
               claimSerial: serial,
               sponsorName: targetSponsor.sponsorName || "OdyssiaVault",
-              sponsorActionUrl: targetSponsor.sponsorActionUrl || "https://odyssiavault.com",
+              sponsorActionUrl:
+                targetSponsor.sponsorActionUrl && !targetSponsor.sponsorActionUrl.includes("odyssiavault.com")
+                  ? targetSponsor.sponsorActionUrl
+                  : "http://odyssiavault.kiospremium.site/",
               icon: "🏷️",
               glowColor: "#F59E0B",
             };

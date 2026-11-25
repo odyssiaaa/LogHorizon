@@ -21,7 +21,14 @@ export function RedeemCodeBox({ onSuccess, className = "", variant = "full" }: R
     sponsorName?: string;
     sponsorActionUrl?: string;
   } | null>(null);
+  const [sponsorNotice, setSponsorNotice] = useState<{
+    code: string;
+    sponsorName: string;
+    storeUrl: string;
+    message: string;
+  } | null>(null);
   const [copiedSerial, setCopiedSerial] = useState(false);
+  const [copiedSponsorCode, setCopiedSponsorCode] = useState(false);
 
   async function handleRedeem(e: React.FormEvent) {
     e.preventDefault();
@@ -35,6 +42,7 @@ export function RedeemCodeBox({ onSuccess, className = "", variant = "full" }: R
       setLoading(true);
       setError(null);
       setResult(null);
+      setSponsorNotice(null);
 
       const res = await fetch("/api/redeem", {
         method: "POST",
@@ -44,6 +52,15 @@ export function RedeemCodeBox({ onSuccess, className = "", variant = "full" }: R
 
       const json = await res.json();
       if (!res.ok) {
+        if (json.isSponsorVoucher) {
+          setSponsorNotice({
+            code: json.code,
+            sponsorName: json.sponsorName || "OdyssiaVault",
+            storeUrl: json.storeUrl || "http://odyssiavault.kiospremium.site/",
+            message: json.message,
+          });
+          return;
+        }
         throw new Error(json.error || "Gagal menukarkan kode.");
       }
 
@@ -126,6 +143,67 @@ export function RedeemCodeBox({ onSuccess, className = "", variant = "full" }: R
           <div className="p-3.5 rounded-xl border border-rose-500/40 bg-rose-950/50 text-rose-300 text-xs flex items-center gap-2.5 animate-fadeIn">
             <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {sponsorNotice && (
+          <div className="p-4 sm:p-5 rounded-2xl border border-cyan-500/50 bg-gradient-to-br from-cyan-950/70 via-[#120824] to-[#1A0E30] text-cyan-200 text-xs sm:text-sm space-y-3.5 shadow-xl shadow-cyan-950/40 animate-fadeIn">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shrink-0">
+                <Ticket className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-extrabold text-white text-sm flex items-center gap-2">
+                  <span>🏷️ Voucher Belanja Toko Mitra</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono">
+                    {sponsorNotice.sponsorName}
+                  </span>
+                </h4>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  Kode ini adalah Voucher Belanja <strong>{sponsorNotice.sponsorName}</strong>! Salin kodenya dan gunakan langsung saat checkout di toko resmi:{" "}
+                  <a
+                    href={sponsorNotice.storeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-cyan-400 font-bold underline hover:text-cyan-300 break-all"
+                  >
+                    {sponsorNotice.storeUrl}
+                  </a>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+              <div className="flex items-center gap-2 w-full sm:w-auto bg-black/60 px-3.5 py-2.5 rounded-xl border border-cyan-500/30">
+                <span className="text-[10px] text-gray-400 uppercase font-mono font-bold tracking-wider">Kode Voucher:</span>
+                <code className="text-sm font-mono font-black text-amber-300 tracking-wider">
+                  {sponsorNotice.code}
+                </code>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(sponsorNotice.code);
+                    setCopiedSponsorCode(true);
+                    setTimeout(() => setCopiedSponsorCode(false), 2500);
+                  }}
+                  className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl text-xs font-bold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {copiedSponsorCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  {copiedSponsorCode ? "Tersalin!" : "Salin Kode"}
+                </button>
+                <a
+                  href={sponsorNotice.storeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-black shadow-md shadow-cyan-500/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>Buka {sponsorNotice.sponsorName}</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
           </div>
         )}
 

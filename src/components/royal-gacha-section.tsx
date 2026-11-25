@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, Zap, Ticket, Crown, ShieldAlert, Award, Gift, RefreshCw, ChevronRight, ExternalLink } from "lucide-react";
+import { Sparkles, Zap, Ticket, Crown, ShieldAlert, Award, Gift, RefreshCw, ChevronRight, ExternalLink, Copy, Check } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { RedeemCodeBox } from "@/components/redeem-code-box";
 
@@ -59,6 +59,7 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
     wonLegendary: boolean;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copiedVoucherCode, setCopiedVoucherCode] = useState<string | null>(null);
 
   async function fetchGachaData() {
     try {
@@ -227,12 +228,12 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
             </div>
           </div>
           <a
-            href="https://odyssiavault.com"
+            href="http://odyssiavault.kiospremium.site/"
             target="_blank"
             rel="noopener noreferrer"
             className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-amber-400/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 text-xs font-mono font-bold transition-colors"
           >
-            <span>Kunjungi Sponsor</span>
+            <span>Kunjungi OdyssiaVault ↗</span>
             <ExternalLink size={12} />
           </a>
         </div>
@@ -392,18 +393,65 @@ export function RoyalGachaSection({ onUpdate }: { onUpdate?: () => void }) {
                       </div>
                     )}
 
-                    {/* Sponsor Voucher serial */}
-                    {drop.type === "SPONSOR_VOUCHER" && drop.claimSerial && (
-                      <div className="mt-2 w-full p-2 rounded-lg bg-amber-500/15 border border-amber-400/30 text-center space-y-1">
-                        <p className="text-[10px] font-mono text-amber-300 font-bold">
-                          Serial: {drop.claimSerial}
-                        </p>
+                    {/* Sponsor Voucher result card */}
+                    {drop.type === "SPONSOR_VOUCHER" && (
+                      <div className="mt-2.5 w-full p-2.5 rounded-xl bg-gradient-to-br from-amber-500/20 to-cyan-500/10 border border-amber-400/40 text-center space-y-2">
+                        {drop.sponsorCode && (
+                          <div className="p-2 rounded-lg bg-black/60 border border-amber-400/40 flex items-center justify-between gap-2">
+                            <div className="text-left">
+                              <span className="text-[9px] text-gray-400 block font-mono font-bold uppercase">Kode Voucher Toko:</span>
+                              <code className="text-xs font-mono font-black text-amber-300 tracking-wider">
+                                {drop.sponsorCode}
+                              </code>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!drop.sponsorCode) return;
+                                navigator.clipboard.writeText(drop.sponsorCode);
+                                setCopiedVoucherCode(drop.sponsorCode);
+                                setTimeout(() => setCopiedVoucherCode(null), 2500);
+                              }}
+                              className="px-2 py-1 rounded-md text-[10px] font-bold border border-amber-500/40 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                              {copiedVoucherCode === drop.sponsorCode ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  Tersalin!
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  Salin
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                        {drop.claimSerial && (
+                          <p className="text-[10px] font-mono text-cyan-300 font-semibold">
+                            Serial: {drop.claimSerial}
+                          </p>
+                        )}
+
                         <a
-                          href="/profile?tab=profile"
-                          className="inline-flex items-center gap-1 text-[10px] text-amber-200 hover:text-white underline font-medium"
+                          href={drop.sponsorActionUrl || "http://odyssiavault.kiospremium.site/"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-black text-xs font-black shadow-md shadow-amber-500/20 hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                         >
-                          Buka Dompet Voucher <ChevronRight size={10} />
+                          <span>📋 Salin Kode &amp; Buka OdyssiaVault ↗</span>
                         </a>
+
+                        <div className="pt-0.5">
+                          <a
+                            href="/profile?tab=profile"
+                            className="inline-flex items-center gap-1 text-[10px] text-cyan-300 hover:underline font-medium"
+                          >
+                            Tersimpan di Dompet Voucher <ChevronRight size={10} />
+                          </a>
+                        </div>
                       </div>
                     )}
                   </div>

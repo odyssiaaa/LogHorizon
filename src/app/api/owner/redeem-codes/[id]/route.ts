@@ -111,7 +111,11 @@ export async function PATCH(req: Request, context: RouteContext) {
 
     // 4. Action URL
     if (typeof body.sponsorActionUrl !== "undefined") {
-      updateData.sponsorActionUrl = body.sponsorActionUrl ? String(body.sponsorActionUrl).trim() : null;
+      let cleanUrl = body.sponsorActionUrl ? String(body.sponsorActionUrl).trim() : null;
+      if (cleanUrl?.includes("odyssiavault.com")) {
+        cleanUrl = "http://odyssiavault.kiospremium.site/";
+      }
+      updateData.sponsorActionUrl = cleanUrl;
     }
 
     // 5. Max Uses Validation (must be >= usedCount)

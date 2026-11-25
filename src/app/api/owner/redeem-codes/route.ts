@@ -51,7 +51,8 @@ export async function POST(req: Request) {
   const title = String(body.title || "").trim();
   const rewardType = String(body.rewardType || (category === "SPONSOR_VOUCHER" ? "SPONSOR_DISCOUNT" : "GACHA_TICKETS")).toUpperCase();
   const rewardValue = Math.max(1, Number(body.rewardValue) || 1);
-  const sponsorActionUrl = body.sponsorActionUrl ? String(body.sponsorActionUrl).trim() : null;
+  const rawSponsorUrl = body.sponsorActionUrl ? String(body.sponsorActionUrl).trim() : (category === "SPONSOR_VOUCHER" ? "http://odyssiavault.kiospremium.site/" : null);
+  const sponsorActionUrl = rawSponsorUrl?.includes("odyssiavault.com") ? "http://odyssiavault.kiospremium.site/" : rawSponsorUrl;
   const includeInGachaPool = Boolean(body.includeInGachaPool);
   const maxUses = Math.max(1, Number(body.maxUses) || 50);
   const expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;

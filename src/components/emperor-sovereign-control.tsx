@@ -113,7 +113,7 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
   const [newSponsorName, setNewSponsorName] = useState("OdyssiaVault");
   const [newRewardType, setNewRewardType] = useState<"SPONSOR_DISCOUNT" | "GACHA_TICKETS" | "XP" | "VIP_TRIAL_DAYS">("SPONSOR_DISCOUNT");
   const [newRewardValue, setNewRewardValue] = useState<number>(20);
-  const [newSponsorUrl, setNewSponsorUrl] = useState("https://odyssiavault.com");
+  const [newSponsorUrl, setNewSponsorUrl] = useState("http://odyssiavault.kiospremium.site/");
   const [newMaxUses, setNewMaxUses] = useState<number>(20);
   const [newIncludeGachaPool, setNewIncludeGachaPool] = useState<boolean>(true);
   const [newExpiresInDays, setNewExpiresInDays] = useState<number>(30);
@@ -334,6 +334,9 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
     setNewRewardValue(preset.rewardValue);
     setNewMaxUses(preset.maxUses);
     setNewIncludeGachaPool(preset.includeInGachaPool);
+    if (preset.category === "SPONSOR_VOUCHER") {
+      setNewSponsorUrl("http://odyssiavault.kiospremium.site/");
+    }
   };
 
   // Shortcut: select .odyssia
@@ -1357,14 +1360,20 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-gray-400 uppercase">Tautan Aksi Sponsor</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-gray-400 uppercase">Tautan Aksi Sponsor</label>
+                      <span className="text-[10px] text-cyan-400 font-mono">odyssiavault.kiospremium.site</span>
+                    </div>
                     <input
                       type="url"
                       value={newSponsorUrl}
                       onChange={(e) => setNewSponsorUrl(e.target.value)}
-                      placeholder="https://odyssiavault.com"
+                      placeholder="http://odyssiavault.kiospremium.site/"
                       className="w-full px-3 py-2 rounded-xl border border-cyan-500/30 bg-[#1A0E30] text-xs text-white"
                     />
+                    <p className="text-[10px] text-cyan-300/80">
+                      Kode Voucher Toko OdyssiaVault (Dipakai user saat checkout di odyssiavault.kiospremium.site)
+                    </p>
                   </div>
                 </>
               )}
@@ -1664,14 +1673,20 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-gray-300 uppercase">Link Website Mitra Sponsor</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-gray-300 uppercase">Link Website Mitra Sponsor</label>
+                      <span className="text-[10px] text-cyan-400 font-mono">odyssiavault.kiospremium.site</span>
+                    </div>
                     <input
                       type="url"
                       value={editSponsorUrl}
                       onChange={(e) => setEditSponsorUrl(e.target.value)}
-                      placeholder="https://odyssiavault.com"
+                      placeholder="http://odyssiavault.kiospremium.site/"
                       className="w-full h-11 px-3.5 rounded-xl border border-cyan-500/30 bg-[#1A0E30] text-xs text-white focus:outline-none focus:border-cyan-400"
                     />
+                    <p className="text-[10px] text-cyan-300/80">
+                      Kode Voucher Toko OdyssiaVault (Dipakai user saat checkout di odyssiavault.kiospremium.site)
+                    </p>
                   </div>
                 </div>
               )}

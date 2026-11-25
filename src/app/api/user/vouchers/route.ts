@@ -46,7 +46,10 @@ export async function GET(req: Request) {
       title: c.redeemCode.title,
       sponsorName: c.redeemCode.sponsorName || "OdyssiaVault",
       discountValue: c.redeemCode.rewardValue,
-      sponsorActionUrl: c.redeemCode.sponsorActionUrl || "https://odyssiavault.com",
+      sponsorActionUrl:
+        c.redeemCode.sponsorActionUrl && !c.redeemCode.sponsorActionUrl.includes("odyssiavault.com")
+          ? c.redeemCode.sponsorActionUrl
+          : "http://odyssiavault.kiospremium.site/",
       expiresAt: c.redeemCode.expiresAt,
     }));
 
