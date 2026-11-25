@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { isGuildOwner } from "@/lib/caste";
 import { logSecurityIncident } from "@/lib/satpam-guardian";
 import { notifyVerifiedSellerAudit } from "@/lib/verified-seller";
+import { getLevelProgressFromXp, getMinimumXpForLevel } from "@/lib/level-system";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -74,6 +75,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const xpVal = Number(data.xp);
     if (!Number.isSafeInteger(xpVal) || xpVal < 0) return Response.json({ error: "XP tidak valid." }, { status: 400 });
     updateData.xp = xpVal;
+    if (!Object.prototype.hasOwnProperty.call(data, "level")) {
+      updateData.level = getLevelProgressFromXp(xpVal).level;
+    }
   }
 
   // 5. Level adjustment (Admin only)
@@ -82,6 +86,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const lvlVal = Number(data.level);
     if (!Number.isSafeInteger(lvlVal) || lvlVal < 1 || lvlVal > 100) return Response.json({ error: "Level harus 1–100." }, { status: 400 });
     updateData.level = lvlVal;
+    if (!Object.prototype.hasOwnProperty.call(data, "xp")) {
+      updateData.xp = getMinimumXpForLevel(lvlVal);
+    }
   }
 
   // 6. Verified Seller Status (Admin only)
