@@ -70,6 +70,7 @@ model User {
   isBanned       Boolean             @default(false)
   xp             Int                 @default(0)
   level          Int                 @default(1)
+  horizonCoins   Int                 @default(0)
   badges         String[]            @default([])
   isPremium      Boolean             @default(false)
   joinedAt       DateTime            @default(now())
@@ -132,6 +133,12 @@ model User {
   // Quests & Chest Claims
   questClaims    DailyQuestClaim[]
   chestClaims    DailyChestClaim[]
+
+  // Horizon Coin Virtual Economy & P2P Quests
+  coinTransactions     CoinTransaction[]
+  questClaimsV2        QuestClaim[]
+  createdPlayerQuests  PlayerQuest[]             @relation("PlayerQuestCreator")
+  acceptedPlayerQuests PlayerQuest[]             @relation("PlayerQuestWorker")
 
   // Guild Armory (Avatar Frames & Custom Titles)
   equippedAvatarFrame String?
@@ -295,6 +302,8 @@ model Donation {
   senderName  String?
   notes       String?
   proofUrl    String?
+  coinAmount  Int?
+  isCoinTopup Boolean        @default(false)
   gatewayRef  String?        @unique
   createdAt   DateTime       @default(now())
   completedAt DateTime?
@@ -810,6 +819,56 @@ model RedeemClaim {
 
   @@unique([redeemCodeId, userId])
   @@index([userId])
+}
+
+// ==========================================
+// HORIZON COIN (🪙 HC) VIRTUAL ECONOMY & QUESTS
+// ==========================================
+
+model CoinTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Int      // Positif: Koin Masuk, Negatif: Koin Keluar
+  type        String   // "DAILY_QUEST" | "WEEKLY_QUEST" | "PLAYER_QUEST_REWARD" | "PLAYER_QUEST_ESCROW" | "PLAYER_QUEST_REFUND" | "TOPUP_QRIS" | "GACHA_SUMMON" | "ARMORY_PURCHASE" | "EMPEROR_GIFT" | "REDEEM_CODE"
+  description String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+}
+
+model QuestClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  questKey  String
+  periodKey String   // "2026-11-25" (harian) atau "2026-W48" (mingguan)
+  claimedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questKey, periodKey])
+  @@index([userId, periodKey])
+}
+
+model PlayerQuest {
+  id             String   @id @default(cuid())
+  creatorId      String
+  title          String
+  description    String   @db.Text
+  rewardCoins    Int      // Minimal 50 HC (di-escrow saat dibuat)
+  maxCompletions Int      @default(1)
+  completedCount Int      @default(0)
+  status         String   @default("OPEN") // "OPEN" | "IN_PROGRESS" | "SUBMITTED" | "COMPLETED" | "CANCELLED" | "DISPUTED"
+  workerId       String?
+  proofNote      String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  creator        User     @relation("PlayerQuestCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  worker         User?    @relation("PlayerQuestWorker", fields: [workerId], references: [id], onDelete: SetNull)
+
+  @@index([creatorId])
+  @@index([workerId])
+  @@index([status, createdAt])
 }
 
 

@@ -4,13 +4,16 @@ import { prisma } from "@/lib/prisma";
 import { getArmoryItem } from "@/lib/armory-catalog";
 import { createNotification } from "@/lib/notifications";
 import { isGuildOwner } from "@/lib/auth-guard";
+import { mutateHorizonCoinsInTransaction } from "@/lib/horizon-coin";
+import { getLevelProgressFromXp } from "@/lib/level-system";
 
 export async function POST(request: Request) {
   const user = await activeUser();
   if (!user) return jsonError("Login diperlukan untuk berbelanja di Armory.", 401);
 
   const body = await request.json().catch(() => ({}));
-  const { itemId } = body;
+  const { itemId, paymentMethod: rawMethod } = body;
+  const paymentMethod = String(rawMethod || "COIN").toUpperCase(); // "COIN" | "XP"
   if (!itemId || typeof itemId !== "string") {
     return jsonError("ID item kosmetik wajib disertakan.", 400);
   }
@@ -19,6 +22,8 @@ export async function POST(request: Request) {
   if (!catalogItem) {
     return jsonError("Item kosmetik tidak ditemukan dalam katalog Armory.", 404);
   }
+
+  const priceCoins = Math.max(50, Math.round(catalogItem.priceXp / 5));
 
   const isOwner = isGuildOwner(user);
   if (isOwner) {
@@ -72,6 +77,7 @@ export async function POST(request: Request) {
             id: true,
             username: true,
             xp: true,
+            horizonCoins: true,
             cosmetics: { where: { itemId }, select: { id: true } },
           },
         });
@@ -82,17 +88,37 @@ export async function POST(request: Request) {
           throw new Error("Kamu sudah memiliki item kosmetik ini.");
         }
 
-        if (currentUser.xp < catalogItem.priceXp) {
-          throw new Error(
-            `XP kamu tidak mencukupi. Butuh ${catalogItem.priceXp} XP, saat ini kamu memiliki ${currentUser.xp} XP.`
+        let remainingCoins = currentUser.horizonCoins || 0;
+        let remainingXp = currentUser.xp || 0;
+
+        if (paymentMethod === "COIN") {
+          const coinResult = await mutateHorizonCoinsInTransaction(
+            tx,
+            user.id,
+            -priceCoins,
+            "ARMORY_PURCHASE",
+            `Beli Item Armory: "${catalogItem.name}" (-${priceCoins} HC)`
           );
+          if (!coinResult.success) {
+            throw new Error(`Saldo Horizon Coins tidak mencukupi (Butuh ${priceCoins} HC, saldo saat ini ${currentUser.horizonCoins} HC).`);
+          }
+          remainingCoins = coinResult.newBalance;
+        } else {
+          if (currentUser.xp < catalogItem.priceXp) {
+            throw new Error(
+              `XP kamu tidak mencukupi. Butuh ${catalogItem.priceXp} XP, saat ini kamu memiliki ${currentUser.xp} XP.`
+            );
+          }
+          remainingXp = Math.max(0, currentUser.xp - catalogItem.priceXp);
         }
 
-        // Deduct XP atomically
+        const newLevel = getLevelProgressFromXp(remainingXp).level;
+
+        // Equip cosmetic item
         const updatedUser = await tx.user.update({
           where: { id: user.id },
           data: {
-            xp: { decrement: catalogItem.priceXp },
+            ...(paymentMethod === "XP" ? { xp: remainingXp, level: newLevel } : {}),
             ...(catalogItem.type === "AVATAR_FRAME"
               ? { equippedAvatarFrame: catalogItem.id }
               : { equippedCustomTitle: catalogItem.id }),
@@ -100,6 +126,8 @@ export async function POST(request: Request) {
           select: {
             id: true,
             xp: true,
+            level: true,
+            horizonCoins: true,
             equippedAvatarFrame: true,
             equippedCustomTitle: true,
           },

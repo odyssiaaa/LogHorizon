@@ -55,6 +55,7 @@ import { FlagIcon } from "@/components/locale-switcher";
 import { openLoginModal } from "@/components/login-modal";
 import { useDiscordPresence } from "@/hooks/use-discord-presence";
 import { DraggableScrollRow } from "@/components/draggable-scroll-row";
+import { QuestBoard } from "@/components/quest-board";
 
 type Achievement = {
   id: string;
@@ -79,6 +80,7 @@ type Profile = {
   avatar: string | null;
   level: number;
   xp: number;
+  horizonCoins?: number;
   role: string;
   badges?: string[];
   checkInStreak?: number;
@@ -178,8 +180,8 @@ export function SettingsDashboard() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  // Sub-tabs: "profile" | "badges" | "armory" | "gacha" | "settings" | "emperor"
-  const [activeTab, setActiveTab] = useState<"profile" | "badges" | "armory" | "gacha" | "settings" | "emperor">("profile");
+  // Sub-tabs: "profile" | "badges" | "armory" | "gacha" | "quests" | "settings" | "emperor"
+  const [activeTab, setActiveTab] = useState<"profile" | "badges" | "armory" | "gacha" | "quests" | "settings" | "emperor">("profile");
 
   // Linked Accounts State (Multi-Provider Login)
   const [linkedAccounts, setLinkedAccounts] = useState<{
@@ -245,6 +247,7 @@ export function SettingsDashboard() {
   useEffect(() => {
     if (tabParam === "armory") setActiveTab("armory");
     else if (tabParam === "gacha") setActiveTab("gacha");
+    else if (tabParam === "quests") setActiveTab("quests");
     else if (tabParam === "badges") setActiveTab("badges");
     else if (tabParam === "settings") setActiveTab("settings");
     else if (tabParam === "emperor") setActiveTab("emperor");
@@ -567,6 +570,18 @@ export function SettingsDashboard() {
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab("quests")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
+              activeTab === "quests"
+                ? "bg-amber-500 text-black shadow-md shadow-amber-500/25"
+                : "border border-amber-500/40 bg-amber-500/10 text-amber-400 hover:text-white hover:border-amber-500/70"
+            }`}
+          >
+            <span>🪙</span>
+            <span>Misi &amp; Kontrak (HC)</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab("settings")}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
               activeTab === "settings"
@@ -813,6 +828,40 @@ export function SettingsDashboard() {
             </div>
           </section>
 
+          {/* Kartu Saldo Horizon Coins (🪙 HC) */}
+          <section className="p-5 sm:p-6 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-[#180C2E] to-purple-900/20 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl shadow-inner shrink-0">
+                🪙
+              </div>
+              <div>
+                <p className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider">
+                  Mata Uang Virtual Resmi // LogHorizon Citadel
+                </p>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  <h3 className="text-2xl sm:text-3xl font-black text-white font-mono">
+                    {(profile?.horizonCoins ?? 0).toLocaleString("id-ID")}
+                  </h3>
+                  <span className="text-sm font-bold text-amber-400 font-mono">🪙 HC (Horizon Coins)</span>
+                </div>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Gunakan untuk kontrak misi antar-pemain, gacha eksklusif, belanja armory, atau klaim dari misi harian &amp; mingguan.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveTab("quests")}
+                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs sm:text-sm transition-all shadow-md shadow-amber-500/20 flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>📜</span>
+                <span>Papan Misi &amp; Kontrak</span>
+              </button>
+            </div>
+          </section>
+
           {/* Tombol Klaim Absen Harian XP */}
           <section className="p-5 sm:p-6 rounded-2xl border border-[#2A1B42] bg-[#120B1E]/80 backdrop-blur-md space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1049,6 +1098,11 @@ export function SettingsDashboard() {
       {/* TAB 4: ROYAL GACHA SUMMON */}
       {activeTab === "gacha" && (
         <RoyalGachaSection onUpdate={() => void fetchProfileData()} />
+      )}
+
+      {/* TAB 4.5: PAPAN MISI & KONTRAK PETUALANG (HORIZON COINS) */}
+      {activeTab === "quests" && (
+        <QuestBoard />
       )}
 
       {/* TAB 5: PENGATURAN AKUN */}

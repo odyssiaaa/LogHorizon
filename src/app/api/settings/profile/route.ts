@@ -165,6 +165,7 @@ export async function GET() {
     avatar: user.avatar,
     level: user.level,
     xp: user.xp,
+    horizonCoins: user.horizonCoins ?? 0,
     role: user.role,
     badges: user.badges ?? [],
     checkInStreak: user.checkInStreak ?? 0,

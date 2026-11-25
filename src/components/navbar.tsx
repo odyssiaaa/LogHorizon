@@ -174,6 +174,7 @@ export function Navbar() {
   });
   const [isDark, setIsDark] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [userCoins, setUserCoins] = useState<number>(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Poll unread messages count for active user
@@ -200,6 +201,20 @@ export function Navbar() {
 
     void checkUnread();
     const interval = setInterval(checkUnread, 15000);
+
+    // Fetch user Horizon Coins balance
+    const fetchUserCoins = async () => {
+      try {
+        const res = await fetch("/api/user/quests");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (active && typeof data.horizonCoins === "number") {
+          setUserCoins(data.horizonCoins);
+        }
+      } catch {}
+    };
+    void fetchUserCoins();
+
     return () => {
       active = false;
       clearInterval(interval);
@@ -588,6 +603,18 @@ export function Navbar() {
                 )}
               </Link>
 
+              {/* Saldo Horizon Coins (🪙 HC) */}
+              {user && (
+                <Link
+                  href="/profile?tab=quests"
+                  className="h-10 px-3 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-colors flex items-center gap-1.5 font-mono text-xs font-bold shadow-xs shrink-0 select-none cursor-pointer"
+                  title="Saldo Horizon Coins (🪙 HC). Klik untuk melihat Misi & Kontrak!"
+                >
+                  <span className="text-sm">🪙</span>
+                  <span>{userCoins.toLocaleString("id-ID")} HC</span>
+                </Link>
+              )}
+
               {/* Ikon Lonceng Notifikasi */}
               <NotificationBell />
 
@@ -693,6 +720,18 @@ export function Navbar() {
                           >
                             <Settings size={14} className="shrink-0 text-[#7C3AED] dark:text-[#A78BFA]" />
                             <span>Profil &amp; Pengaturan</span>
+                          </Link>
+                          <Link
+                            href="/profile?tab=quests"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex items-center justify-between px-3 py-2 rounded-md text-xs font-mono text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                            role="menuitem"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">🪙</span>
+                              <span>Papan Misi & Kontrak</span>
+                            </div>
+                            <span className="text-[11px] font-bold">{userCoins.toLocaleString("id-ID")} HC</span>
                           </Link>
                         </div>
 
@@ -859,18 +898,30 @@ export function Navbar() {
                           </span>
                           <span>•</span>
                           <span>{user.xp ?? 0} XP</span>
+                          <span>•</span>
+                          <span className="text-amber-500 dark:text-amber-400 font-bold">🪙 {userCoins.toLocaleString("id-ID")} HC</span>
                         </div>
                       </div>
                     </div>
 
-                    <Link
-                      href="/profile"
-                      onClick={() => setMobileOpen(false)}
-                      className="mt-3 w-full h-9 rounded-lg border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#1A0E2E] hover:border-[#7C3AED] flex items-center justify-center gap-2 text-xs font-mono font-bold text-slate-800 dark:text-[#F8FAFC] transition shadow-xs"
-                    >
-                      <Settings size={14} className="text-[#7C3AED] dark:text-[#A78BFA]" />
-                      <span>Profil &amp; Pengaturan</span>
-                    </Link>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <Link
+                        href="/profile"
+                        onClick={() => setMobileOpen(false)}
+                        className="h-9 rounded-lg border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#1A0E2E] hover:border-[#7C3AED] flex items-center justify-center gap-1.5 text-xs font-mono font-bold text-slate-800 dark:text-[#F8FAFC] transition shadow-xs"
+                      >
+                        <Settings size={13} className="text-[#7C3AED] dark:text-[#A78BFA]" />
+                        <span>Profil</span>
+                      </Link>
+                      <Link
+                        href="/profile?tab=quests"
+                        onClick={() => setMobileOpen(false)}
+                        className="h-9 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1.5 text-xs font-mono font-bold transition shadow-xs"
+                      >
+                        <span>🪙</span>
+                        <span>Misi &amp; HC</span>
+                      </Link>
+                    </div>
                   </div>
                 ) : (
                   <div className="p-3.5 rounded-xl border border-slate-200 dark:border-[#2E1E45] bg-slate-50 dark:bg-[#130921]">

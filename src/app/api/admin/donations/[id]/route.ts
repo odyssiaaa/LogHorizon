@@ -2,6 +2,7 @@ import { DonationStatus } from "@prisma/client";
 import { requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { notifyDonationDecision, sendDiscordNotice } from "@/lib/discord-webhook";
+import { mutateHorizonCoinsInTransaction } from "@/lib/horizon-coin";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -57,12 +58,37 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         },
       });
 
+      // Credit Horizon Coins if top-up or donation
+      const coinsToCredit =
+        existing.coinAmount ||
+        (existing.isCoinTopup
+          ? existing.amount >= 100_000
+            ? 1200
+            : existing.amount >= 50_000
+            ? 550
+            : Math.floor(existing.amount / 100)
+          : existing.amount >= 100_000
+          ? 1200
+          : existing.amount >= 50_000
+          ? 550
+          : Math.floor(existing.amount / 100));
+
+      if (coinsToCredit > 0) {
+        await mutateHorizonCoinsInTransaction(
+          tx,
+          existing.user.id,
+          coinsToCredit,
+          "TOPUP_QRIS",
+          `Top-Up QRIS (${coinsToCredit.toLocaleString("id-ID")} HC) disetujui Admin`
+        );
+      }
+
       await tx.notification.create({
         data: {
           userId: existing.user.id,
           type: "SYSTEM",
-          message: `Selamat! Donasi kamu sebesar Rp ${existing.amount.toLocaleString("id-ID")} telah DISETUJUI oleh Admin. Role & benefit telah aktif!`,
-          link: "/donate",
+          message: `Selamat! Pembayaran QRIS kamu sebesar Rp ${existing.amount.toLocaleString("id-ID")} telah DISETUJUI oleh Admin. +${coinsToCredit.toLocaleString("id-ID")} Horizon Coins (🪙 HC) telah masuk ke saldomu!`,
+          link: "/profile",
         },
       });
     } else if (isRejected && existing.user) {

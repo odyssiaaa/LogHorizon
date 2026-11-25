@@ -41,6 +41,10 @@ export async function POST(request: Request) {
   const senderName = sanitizePlainText(typeof data.senderName === "string" ? data.senderName.trim() : "");
   const notes = sanitizePlainText(typeof data.notes === "string" ? data.notes.trim() : "");
   const proofUrl = typeof data.proofUrl === "string" ? data.proofUrl.trim() : "";
+  const isCoinTopup = Boolean(data.isCoinTopup);
+  const coinAmount = isCoinTopup
+    ? (Number(data.coinAmount) || (amount >= 100_000 ? 1200 : amount >= 50_000 ? 550 : Math.floor(amount / 100)))
+    : null;
   if (proofUrl && !isValidSafeImage(proofUrl)) {
     return jsonError("Format bukti transfer tidak valid atau melebihi batas ukuran 2 MB.", 400);
   }
@@ -73,8 +77,10 @@ export async function POST(request: Request) {
       amount,
       status: DonationStatus.PENDING,
       senderName,
-      notes: notes || `Donasi ${tierLabel}`,
+      notes: notes || (isCoinTopup ? `Top-Up ${coinAmount} Horizon Coins (🪙 HC)` : `Donasi ${tierLabel}`),
       proofUrl: proofUrl || null,
+      isCoinTopup,
+      coinAmount,
       gatewayRef: `qris-${randomUUID()}`,
     },
     include: {

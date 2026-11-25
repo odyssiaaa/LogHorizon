@@ -41,6 +41,7 @@ export async function GET(req: Request) {
         role: true,
         xp: true,
         level: true,
+        horizonCoins: true,
         dailyGachaTickets: true,
         badges: true,
         isVerifiedSeller: true,

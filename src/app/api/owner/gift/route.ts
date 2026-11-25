@@ -6,6 +6,7 @@ import { sendDiscordChannelMessage, getBaseAppUrl, DiscordEmbed } from "@/lib/di
 import { createNotification } from "@/lib/notifications";
 import { CosmeticType } from "@prisma/client";
 import { getLevelProgressFromXp, getMinimumXpForLevel } from "@/lib/level-system";
+import { mutateHorizonCoins } from "@/lib/horizon-coin";
 
 export const instant = false;
 
@@ -109,6 +110,21 @@ export async function POST(req: Request) {
       auditActionTitle = `🎟️ Injeksi Tiket Royal Gacha (+${ticketVal})`;
       auditDetails = `Total Tiket Gacha sekarang: ${newTickets}`;
       notificationMessage = `👑 Emperor mengirimkan ${ticketVal} Tiket Royal Gacha langsung ke inventaris Anda!`;
+    } else if (action === "ADD_COINS") {
+      const coinVal = Number(amount) || 0;
+      const coinRes = await mutateHorizonCoins(target.id, coinVal, "EMPEROR_GIFT", `👑 Anugerah Emperor (+${coinVal.toLocaleString("id-ID")} HC)`);
+      auditActionTitle = `🪙 Injeksi Horizon Coins (+${coinVal.toLocaleString("id-ID")} HC)`;
+      auditDetails = `Suntik ${coinVal.toLocaleString("id-ID")} HC ke @${target.username} (Saldo Baru: ${coinRes.newBalance.toLocaleString("id-ID")} HC)`;
+      notificationMessage = `👑 Emperor menganugerahi Anda +${coinVal.toLocaleString("id-ID")} Horizon Coins (🪙 HC)! Saldo Anda sekarang: ${coinRes.newBalance.toLocaleString("id-ID")} HC.`;
+    } else if (action === "SET_COINS") {
+      const coinVal = Math.max(0, Number(amount) || 0);
+      await prisma.user.update({
+        where: { id: target.id },
+        data: { horizonCoins: coinVal },
+      });
+      auditActionTitle = `🪙 Penetapan Saldo Horizon Coins (${coinVal.toLocaleString("id-ID")} HC)`;
+      auditDetails = `Saldo HC ditetapkan ke ${coinVal.toLocaleString("id-ID")} HC`;
+      notificationMessage = `👑 Emperor menetapkan saldo Horizon Coins Anda menjadi ${coinVal.toLocaleString("id-ID")} HC!`;
     } else if (action === "GIVE_ARMORY_ITEM") {
       if (itemId === "UNLOCK_ALL") {
         // Unlock all items from ARMORY_ITEMS

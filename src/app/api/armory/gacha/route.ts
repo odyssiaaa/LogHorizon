@@ -6,6 +6,7 @@ import { sendDiscordChannelMessage, DiscordEmbed } from "@/lib/discord-bot-sende
 import { createNotification } from "@/lib/notifications";
 import { randomInt } from "crypto";
 import { calculateProgressiveLevelUp, getLevelProgressFromXp } from "@/lib/level-system";
+import { mutateHorizonCoinsInTransaction } from "@/lib/horizon-coin";
 
 export type GachaRarity = "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
 
@@ -16,6 +17,7 @@ export interface GachaDrop {
   rarity: GachaRarity;
   type:
     | "XP"
+    | "HORIZON_COIN"
     | "FREE_TICKET"
     | "TEMP_TITLE"
     | "PERM_TITLE"
@@ -25,6 +27,7 @@ export interface GachaDrop {
     | "SPONSOR_VOUCHER"
     | "JACKPOT";
   amountXp?: number;
+  amountCoins?: number;
   bonusTickets?: number;
   tempTitleValue?: string;
   cosmeticId?: string;
@@ -44,6 +47,16 @@ export interface GachaDrop {
 // ========================================================
 
 const COMMON_DROPS: GachaDrop[] = [
+  {
+    id: "drop_hc_50",
+    name: "🪙 Kantong Horizon Coins (+50 HC)",
+    description: "Mata uang resmi kerajaan LogHorizon untuk belanja di Armory dan Papan Kontrak.",
+    rarity: "COMMON",
+    type: "HORIZON_COIN",
+    amountCoins: 50,
+    icon: "🪙",
+    glowColor: "#EAB308",
+  },
   {
     id: "drop_xp_coin_75",
     name: "💰 Kantong Koin Perunggu (+75 XP)",
@@ -77,6 +90,16 @@ const COMMON_DROPS: GachaDrop[] = [
 ];
 
 const RARE_DROPS: GachaDrop[] = [
+  {
+    id: "drop_hc_150",
+    name: "💎 Peti Kristal Horizon Coins (+150 HC)",
+    description: "Timbunan koin virtual berharga tinggi untuk petualang aktif.",
+    rarity: "RARE",
+    type: "HORIZON_COIN",
+    amountCoins: 150,
+    icon: "💎",
+    glowColor: "#06B6D4",
+  },
   {
     id: "drop_xp_treasure_250",
     name: "🎁 Peti Harta Kerajaan (+250 XP)",
@@ -204,6 +227,16 @@ const LEGENDARY_DROPS: GachaDrop[] = [
     glowColor: "#F59E0B",
   },
   {
+    id: "drop_hc_jackpot_1000",
+    name: "👑 JACKPOT HORIZON COINS (+1.000 HC)",
+    description: "Perbendaharaan Kaisar Kerajaan! 1.000 Horizon Coins instan masuk ke saldomu!",
+    rarity: "LEGENDARY",
+    type: "HORIZON_COIN",
+    amountCoins: 1000,
+    icon: "👑",
+    glowColor: "#F59E0B",
+  },
+  {
     id: "drop_jackpot_1500_tickets",
     name: "👑 JACKPOT KERAJAAN (+1.500 XP + 2 Tiket Gacha)",
     description: "Harta karun tertinggi perbendaharaan LogHorizon! 1.500 XP + 2 Tiket Pemanggilan Gratis!",
@@ -235,6 +268,7 @@ export async function GET() {
       isLoggedIn: false,
       dailyGachaTickets: 0,
       xp: 0,
+      horizonCoins: 0,
       gachaPityCounter: 0,
     });
   }
@@ -245,6 +279,7 @@ export async function GET() {
       id: true,
       username: true,
       xp: true,
+      horizonCoins: true,
       dailyGachaTickets: true,
       gachaPityCounter: true,
       tempTitle: true,
@@ -309,6 +344,7 @@ export async function POST(req: Request) {
           avatar: true,
           xp: true,
           level: true,
+          horizonCoins: true,
           dailyGachaTickets: true,
           gachaPityCounter: true,
           tempTitle: true,
@@ -323,11 +359,32 @@ export async function POST(req: Request) {
       if (!dbUser) throw new Error("USER_NOT_FOUND");
 
       const availableTickets = dbUser.dailyGachaTickets ?? 0;
+      const coinCost = isMulti ? 450 : 100;
+      const paymentMethod = String(body.paymentMethod || (availableTickets >= pullCount ? "TICKET" : "COIN")).toUpperCase();
       let usedTickets = 0;
+      let usedCoins = 0;
       let usedXp = 0;
 
-      if (availableTickets >= pullCount) {
+      if (paymentMethod === "TICKET" || (!body.paymentMethod && availableTickets >= pullCount)) {
+        if (availableTickets < pullCount) {
+          throw new Error(`INSUFFICIENT_TICKETS:${pullCount}:${availableTickets}`);
+        }
         usedTickets = pullCount;
+      } else if (paymentMethod === "COIN") {
+        if ((dbUser.horizonCoins || 0) < coinCost) {
+          throw new Error(`INSUFFICIENT_COINS:${coinCost}:${dbUser.horizonCoins || 0}`);
+        }
+        usedCoins = coinCost;
+        const deductResult = await mutateHorizonCoinsInTransaction(
+          tx,
+          dbUser.id,
+          -coinCost,
+          "GACHA_SUMMON",
+          `Summon Royal Gacha (${pullCount}x) (-${coinCost} HC)`
+        );
+        if (!deductResult.success) {
+          throw new Error(deductResult.error || "INSUFFICIENT_COINS");
+        }
       } else {
         if (dbUser.xp < xpCost) {
           throw new Error(`INSUFFICIENT_FUNDS:${xpCost}:${dbUser.xp}`);
@@ -338,6 +395,7 @@ export async function POST(req: Request) {
       let currentPity = dbUser.gachaPityCounter ?? 0;
       const drops: GachaDrop[] = [];
       let totalXpGained = 0;
+      let totalCoinsGained = 0;
       let totalBonusTickets = 0;
       let highestRarity: GachaRarity = "COMMON";
       let wonLegendary = false;
@@ -497,6 +555,8 @@ export async function POST(req: Request) {
               })
               .catch(() => null);
           }
+        } else if (dropResult.type === "HORIZON_COIN") {
+          if (dropResult.amountCoins) totalCoinsGained += dropResult.amountCoins;
         } else if (dropResult.type === "JACKPOT") {
           if (dropResult.amountXp) totalXpGained += dropResult.amountXp;
           if (dropResult.bonusTickets) totalBonusTickets += dropResult.bonusTickets;
@@ -528,6 +588,19 @@ export async function POST(req: Request) {
         drops.push(dropResult);
       }
 
+      // Process Horizon Coins gain if any drop yielded coins
+      let latestCoins = (dbUser.horizonCoins || 0) - usedCoins;
+      if (totalCoinsGained > 0) {
+        const creditResult = await mutateHorizonCoinsInTransaction(
+          tx,
+          dbUser.id,
+          totalCoinsGained,
+          "GACHA_SUMMON",
+          `Hadiah Drop Royal Gacha (+${totalCoinsGained} HC)`
+        );
+        latestCoins = creditResult.newBalance;
+      }
+
       // Calculate final XP and Level progression
       const finalXp = Math.max(0, (dbUser.xp || 0) - usedXp + totalXpGained);
       const { level: finalLevel } = getLevelProgressFromXp(finalXp);
@@ -556,11 +629,16 @@ export async function POST(req: Request) {
       });
 
       return {
-        updatedUser,
+        updatedUser: {
+          ...updatedUser,
+          horizonCoins: latestCoins,
+        },
         drops,
         usedTickets,
+        usedCoins,
         usedXp,
         totalXpGained,
+        totalCoinsGained,
         totalBonusTickets,
         wonLegendary,
         highestRarity,
@@ -601,18 +679,29 @@ export async function POST(req: Request) {
       );
     }
 
+    const bonusCoinsText = result.totalCoinsGained > 0 ? ` & +${result.totalCoinsGained.toLocaleString("id-ID")} HC` : "";
     return NextResponse.json({
       success: true,
-      message: `Berhasil memanggil ${pullCount}x Royal Gacha! (+${result.totalXpGained} XP${bonusTicketText})`,
+      message: `Berhasil memanggil ${pullCount}x Royal Gacha! (+${result.totalXpGained} XP${bonusTicketText}${bonusCoinsText})`,
       drops: result.drops,
       user: result.updatedUser,
       usedTickets: result.usedTickets,
+      usedCoins: result.usedCoins,
       usedXp: result.usedXp,
       totalXpGained: result.totalXpGained,
+      totalCoinsGained: result.totalCoinsGained,
       totalBonusTickets: result.totalBonusTickets,
       wonLegendary: result.wonLegendary,
     });
   } catch (error: any) {
+    if (error?.message?.startsWith("INSUFFICIENT_COINS")) {
+      const parts = error.message.split(":");
+      return jsonError(`Saldo Horizon Coins tidak mencukupi! Kamu butuh ${parts[1]} HC (saat ini ${parts[2]} HC). Silakan Top-Up atau gunakan opsi lain!`, 400);
+    }
+    if (error?.message?.startsWith("INSUFFICIENT_TICKETS")) {
+      const parts = error.message.split(":");
+      return jsonError(`Tiket Royal Gacha tidak mencukupi! Kamu butuh ${parts[1]} tiket (saat ini ${parts[2]} tiket).`, 400);
+    }
     if (error?.message?.startsWith("INSUFFICIENT_FUNDS")) {
       const parts = error.message.split(":");
       return jsonError(`XP tidak mencukupi! Kamu butuh ${parts[1]} XP (saat ini ${parts[2]} XP).`, 400);

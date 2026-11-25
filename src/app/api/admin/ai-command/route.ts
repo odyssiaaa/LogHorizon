@@ -10,6 +10,7 @@ import { generateTemplateBracket, shuffleArray, advanceMatchWinner, updateMatchS
 import { DonationStatus, EscrowStatus, LfgStatus, PostCategory, Prisma, Role, TournamentStatus, CosmeticType } from "@prisma/client";
 import { ARMORY_ITEMS } from "@/lib/armory-catalog";
 import { getLevelProgressFromXp, getMinimumXpForLevel } from "@/lib/level-system";
+import { mutateHorizonCoinsInTransaction } from "@/lib/horizon-coin";
 
 const GEMINI_MODELS = [
   "gemini-3.5-flash-lite",
@@ -422,6 +423,7 @@ const GEMINI_TOOLS = [
           properties: {
             username: { type: "STRING", description: "Username target yang akan diberi hadiah (contoh: 'alexa' atau '@odyssia')" },
             tickets: { type: "NUMBER", description: "Jumlah tiket Royal Gacha yang ditambahkan (contoh: 1, 5, 10, 50)" },
+            coins: { type: "NUMBER", description: "Jumlah Horizon Coins (🪙 HC) yang ditambahkan (contoh: 100, 500, 1200)" },
             xp: { type: "NUMBER", description: "Jumlah XP guild yang ditambahkan (contoh: 500, 2000, 50000)" },
             level: { type: "NUMBER", description: "Level guild target yang langsung ditetapkan (contoh: 10, 50)" },
             badge: { type: "STRING", description: "Nama gelar kasta bangsawan (contoh: 'Noble Patron', 'High Merchant', 'Knight')" },
@@ -2211,6 +2213,13 @@ async function executeToolAction(
       const newTickets = (targetUser.dailyGachaTickets || 0) + args.tickets;
       updates.dailyGachaTickets = newTickets;
       detailsList.push(`+${args.tickets} Tiket Royal Gacha (Total: ${newTickets})`);
+    }
+
+    // Horizon Coins
+    if (typeof args.coins === "number" && args.coins > 0) {
+      const newCoins = (targetUser.horizonCoins || 0) + args.coins;
+      updates.horizonCoins = newCoins;
+      detailsList.push(`+${args.coins.toLocaleString()} Horizon Coins (Total: ${newCoins.toLocaleString()} HC)`);
     }
 
     // XP & Level

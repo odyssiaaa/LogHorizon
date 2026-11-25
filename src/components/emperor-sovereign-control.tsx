@@ -49,6 +49,7 @@ interface TargetUserProfile {
   role: string;
   xp: number;
   level: number;
+  horizonCoins?: number;
   dailyGachaTickets: number;
   badges: string[];
   isVerifiedSeller: boolean;
@@ -85,6 +86,7 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
   const [customXp, setCustomXp] = useState<number>(5000);
   const [customLevel, setCustomLevel] = useState<number>(10);
   const [customTickets, setCustomTickets] = useState<number>(10);
+  const [customCoins, setCustomCoins] = useState<number>(500);
   const [customStreak, setCustomStreak] = useState<number>(7);
   const [selectedArmoryItem, setSelectedArmoryItem] = useState<string>(ARMORY_ITEMS[0]?.id || "");
   const [customBadge, setCustomBadge] = useState<string>("Noble Patron");
@@ -112,7 +114,7 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
   const [newCode, setNewCode] = useState("");
   const [newTitle, setNewTitle] = useState("Diskon 20% Top-Up & Jasa OdyssiaVault");
   const [newSponsorName, setNewSponsorName] = useState("OdyssiaVault");
-  const [newRewardType, setNewRewardType] = useState<"SPONSOR_DISCOUNT" | "GACHA_TICKETS" | "XP" | "VIP_TRIAL_DAYS">("SPONSOR_DISCOUNT");
+  const [newRewardType, setNewRewardType] = useState<"SPONSOR_DISCOUNT" | "GACHA_TICKETS" | "XP" | "VIP_TRIAL_DAYS" | "HORIZON_COINS">("SPONSOR_DISCOUNT");
   const [newRewardValue, setNewRewardValue] = useState<number>(20);
   const [newSponsorUrl, setNewSponsorUrl] = useState("http://odyssiavault.kiospremium.site/");
   const [newMaxUses, setNewMaxUses] = useState<number>(20);
@@ -322,7 +324,7 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
     category: "SPONSOR_VOUCHER" | "GUILD_REWARD";
     sponsorName: string;
     title: string;
-    rewardType: "SPONSOR_DISCOUNT" | "GACHA_TICKETS" | "XP" | "VIP_TRIAL_DAYS";
+    rewardType: "SPONSOR_DISCOUNT" | "GACHA_TICKETS" | "XP" | "VIP_TRIAL_DAYS" | "HORIZON_COINS";
     rewardValue: number;
     maxUses: number;
     includeInGachaPool: boolean;
@@ -600,7 +602,7 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                             )}
                           </div>
                           <div className="text-[10px] text-gray-400 truncate">
-                            Lv. {usr.level} • {usr.xp.toLocaleString()} XP • {usr.dailyGachaTickets} Tiket
+                            Lv. {usr.level} • {usr.xp.toLocaleString()} XP • 🪙 {(usr.horizonCoins ?? 0).toLocaleString()} HC • {usr.dailyGachaTickets} Tiket
                           </div>
                         </div>
                         {isSelected && <Check className="w-4 h-4 text-amber-400 shrink-0" />}
@@ -660,11 +662,17 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                         )}
                       </div>
 
-                      {/* 4 Kotak Statistik Simetris */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+                      {/* 5 Kotak Statistik Simetris */}
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-2">
                         <div className="p-2.5 rounded-xl bg-black/40 border border-purple-500/20 text-center">
                           <span className="text-[10px] text-gray-400 block font-medium">Total XP Guild</span>
                           <span className="text-xs sm:text-sm font-bold text-amber-300">{selectedUser.xp.toLocaleString()}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-black/40 border border-amber-500/30 text-center">
+                          <span className="text-[10px] text-gray-400 block font-medium">Saldo Horizon Coins</span>
+                          <span className="text-xs sm:text-sm font-bold text-amber-400">
+                            🪙 {(selectedUser.horizonCoins ?? 0).toLocaleString()} HC
+                          </span>
                         </div>
                         <div className="p-2.5 rounded-xl bg-black/40 border border-purple-500/20 text-center">
                           <span className="text-[10px] text-gray-400 block font-medium">Tiket Gacha</span>
@@ -1031,6 +1039,68 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                 </div>
               </div>
             </div>
+
+            {/* 5. SUNTIK & TETAPKAN SALDO HORIZON COINS (🪙 HC) */}
+            <div className="p-5 sm:p-6 rounded-2xl border border-amber-500/40 bg-[#120824]/90 space-y-4 flex flex-col justify-between shadow-lg md:col-span-2">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-bold text-amber-300">
+                  <span className="text-base">🪙</span>
+                  Suntik &amp; Tetapkan Saldo Horizon Coins (HC)
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Tambahkan atau sesuaikan saldo Horizon Coins (🪙 HC) petualang untuk misi, gacha, maupun belanja armory.
+                </p>
+
+                {/* Coin Presets */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+                  {[100, 500, 1200, 5000].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      disabled={loadingAction || !selectedUser}
+                      onClick={() => executeGiftAction({ action: "ADD_COINS", amount: val })}
+                      className="h-10 px-3 rounded-xl text-xs font-bold border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/25 transition-all disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <span>🪙</span>
+                      <span>+{val.toLocaleString("id-ID")} HC</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom Coins */}
+                <div className="flex flex-col sm:flex-row items-center gap-2 mt-3">
+                  <div className="relative flex-1 w-full">
+                    <span className="absolute left-3.5 top-3 text-sm pointer-events-none">🪙</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={customCoins}
+                      onChange={(e) => setCustomCoins(Number(e.target.value))}
+                      placeholder="Nominal custom Horizon Coins..."
+                      className="w-full h-11 pl-9 pr-3.5 rounded-xl border border-amber-500/30 bg-[#1A0E30] text-xs text-white focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      disabled={loadingAction || !selectedUser}
+                      onClick={() => executeGiftAction({ action: "ADD_COINS", amount: customCoins })}
+                      className="flex-1 sm:flex-none h-11 px-4 rounded-xl text-xs font-bold bg-amber-500 text-black hover:bg-amber-400 transition-all disabled:opacity-50 whitespace-nowrap shadow-md shadow-amber-500/20 cursor-pointer"
+                    >
+                      Suntik Koin (+)
+                    </button>
+                    <button
+                      type="button"
+                      disabled={loadingAction || !selectedUser}
+                      onClick={() => executeGiftAction({ action: "SET_COINS", coins: customCoins })}
+                      className="flex-1 sm:flex-none h-11 px-4 rounded-xl text-xs font-bold border border-amber-500/40 bg-amber-500/20 text-amber-200 hover:bg-amber-500/30 transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer"
+                    >
+                      Tetapkan Saldo (=)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1271,6 +1341,24 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                 >
                   ✨ Bonus XP 2.000 (BONUSXP)
                 </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyPreset({
+                      code: "HC100FREE",
+                      category: "GUILD_REWARD",
+                      sponsorName: "LogHorizon",
+                      title: "Bonus +100 Horizon Coins (HC)",
+                      rewardType: "HORIZON_COINS",
+                      rewardValue: 100,
+                      maxUses: 100,
+                      includeInGachaPool: false,
+                    })
+                  }
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold border border-amber-500/40 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20 transition-all"
+                >
+                  🪙 100 Horizon Coins (HC100FREE)
+                </button>
               </div>
             </div>
           </div>
@@ -1406,6 +1494,7 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                       onChange={(e) => setNewRewardType(e.target.value as any)}
                       className="w-full px-3 py-2 rounded-xl border border-amber-500/30 bg-[#1A0E30] text-xs text-white"
                     >
+                      <option value="HORIZON_COINS">🪙 Horizon Coins (HC)</option>
                       <option value="GACHA_TICKETS">Tiket Gacha</option>
                       <option value="XP">Bonus XP</option>
                       <option value="VIP_TRIAL_DAYS">Hari Trial VIP</option>
@@ -1533,7 +1622,7 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                             </div>
                             <h4 className="text-xs font-bold text-white mt-1 line-clamp-1">{code.title}</h4>
                             <span className="text-[10px] text-gray-400 block">
-                              Hadiah: {code.rewardType} ({code.rewardValue})
+                              Hadiah: {code.rewardType === "HORIZON_COINS" ? `🪙 +${code.rewardValue.toLocaleString()} HC` : `${code.rewardType} (${code.rewardValue})`}
                             </span>
                           </div>
 
@@ -1728,6 +1817,7 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                       </>
                     ) : (
                       <>
+                        <option value="HORIZON_COINS">🪙 Horizon Coins (HC)</option>
                         <option value="GACHA_TICKETS">Tiket Gacha</option>
                         <option value="XP">Bonus XP</option>
                         <option value="VIP_TRIAL_DAYS">Hari Trial VIP</option>

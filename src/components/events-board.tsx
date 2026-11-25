@@ -65,6 +65,7 @@ import { exportTournamentToCsv, exportTournamentToJson } from "@/lib/tournament-
 import { useLiveSync } from "@/hooks/use-live-sync";
 import { GuildPartyDirectory } from "@/components/guild-party-directory";
 import { openLoginModal } from "@/components/login-modal";
+import { QuestBoard } from "@/components/quest-board";
 
 type Participant = {
   id: string;
@@ -206,7 +207,7 @@ export function EventsBoard() {
   const searchParams = useSearchParams();
   const viewParam = searchParams?.get("view");
 
-  const [activeTab, setActiveTab] = useState<"all" | "mabar" | "turnamen" | "party">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "mabar" | "turnamen" | "party" | "quests">("all");
   const [tournamentSubTab, setTournamentSubTab] = useState<"active" | "history">("active");
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [lfgPosts, setLfgPosts] = useState<LfgPost[]>([]);
@@ -249,6 +250,7 @@ export function EventsBoard() {
     if (viewParam === "mabar") setActiveTab("mabar");
     else if (viewParam === "turnamen") setActiveTab("turnamen");
     else if (viewParam === "party") setActiveTab("party");
+    else if (viewParam === "quests") setActiveTab("quests");
     else setActiveTab("all");
   }, [viewParam]);
 
@@ -1412,32 +1414,51 @@ export function EventsBoard() {
             <Users size={14} />
             <span>Party Skuad (Guild Party)</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("quests")}
+            className={`px-4 py-2.5 rounded-none text-xs font-mono font-bold uppercase tracking-wider transition-all whitespace-nowrap flex items-center gap-2 shrink-0 border cursor-pointer ${
+              activeTab === "quests"
+                ? "bg-amber-500 text-black border-amber-400 font-extrabold shadow-md shadow-amber-500/20"
+                : "bg-white dark:bg-[#1A0E2E] text-amber-600 dark:text-amber-400 border-amber-500/30 hover:border-amber-500"
+            }`}
+          >
+            <span className="text-sm">🪙</span>
+            <span>Kontrak Misi Petualang (HC)</span>
+          </button>
         </div>
       </DraggableScrollRow>
 
       {activeTab === "party" && <GuildPartyDirectory />}
+      {activeTab === "quests" && (
+        <div className="mt-4 mb-12">
+          <QuestBoard initialTab="player" />
+        </div>
+      )}
 
       {/* QUICK SEARCH BAR */}
-      <div className="flex items-center gap-3 px-3.5 h-11 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] focus-within:border-[#7C3AED] transition-colors mb-6 shadow-sm dark:shadow-none" role="search">
-        <Search size={16} className="shrink-0 text-slate-400 dark:text-[#A78BFA] pointer-events-none" />
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Cari turnamen, tim, game, atau ajakan mabar…"
-          aria-label="Cari turnamen dan jadwal party"
-          className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#A78BFA]/50 p-0 font-sans"
-        />
-        {search && (
-          <button
-            type="button"
-            onClick={() => setSearch("")}
-            className="shrink-0 text-[#A78BFA] hover:text-[#F8FAFC] font-mono text-xs uppercase"
-          >
-            <X size={15} />
-          </button>
-        )}
-      </div>
+      {activeTab !== "party" && activeTab !== "quests" && (
+        <div className="flex items-center gap-3 px-3.5 h-11 rounded-none border border-slate-200 dark:border-[#2E1E45] bg-white dark:bg-[#130921] focus-within:border-[#7C3AED] transition-colors mb-6 shadow-sm dark:shadow-none" role="search">
+          <Search size={16} className="shrink-0 text-slate-400 dark:text-[#A78BFA] pointer-events-none" />
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Cari turnamen, tim, game, atau ajakan mabar…"
+            aria-label="Cari turnamen dan jadwal party"
+            className="w-full bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs sm:text-sm text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#A78BFA]/50 p-0 font-sans"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="shrink-0 text-[#A78BFA] hover:text-[#F8FAFC] font-mono text-xs uppercase"
+            >
+              <X size={15} />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 1. SEKSI TURNAMEN RESMI & BAGAN INTERAKTIF */}

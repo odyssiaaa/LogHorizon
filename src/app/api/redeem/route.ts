@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendDiscordChannelMessage, DiscordEmbed, getBaseAppUrl } from "@/lib/discord-bot";
 import { createNotification } from "@/lib/notifications";
 import { calculateProgressiveLevelUp, getLevelProgressFromXp } from "@/lib/level-system";
+import { mutateHorizonCoinsInTransaction } from "@/lib/horizon-coin";
 
 export const instant = false;
 
@@ -125,6 +126,16 @@ export async function POST(req: Request) {
           data: { trialType: "VIP_PREMIUM", trialExpiresAt: expiry, trialGrantedBy: "Redeem Code" },
         });
         rewardText = `Akses VIP Premium selama ${days} Hari`;
+      } else if (codeRecord.rewardType === "HORIZON_COINS") {
+        const addedCoins = codeRecord.rewardValue;
+        await mutateHorizonCoinsInTransaction(
+          tx,
+          user.id,
+          addedCoins,
+          "REDEEM_CODE",
+          `Klaim Kode Redeem "${codeRecord.code}" (+${addedCoins.toLocaleString("id-ID")} HC)`
+        );
+        rewardText = `+${addedCoins.toLocaleString("id-ID")} Horizon Coins (🪙 HC)`;
       } else if (codeRecord.rewardType === "SPONSOR_DISCOUNT") {
         rewardText = `Voucher Diskon ${codeRecord.rewardValue}% ${codeRecord.sponsorName || "OdyssiaVault"}`;
       }
