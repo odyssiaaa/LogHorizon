@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { ARMORY_ITEMS, ArmoryItem } from "@/lib/armory-catalog";
 import { DiscordAvatar } from "@/components/discord-avatar";
+import { getLevelProgressFromXp, getMinimumXpForLevel } from "@/lib/level-system";
 
 interface EmperorControlProps {
   currentUsername?: string | null;
@@ -753,26 +754,44 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                     Suntik XP
                   </button>
                 </div>
+                {customXp > 0 && selectedUser && (
+                  <div className="mt-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 font-mono flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      Suntik +{customXp.toLocaleString("id-ID")} XP ➔ Total {((selectedUser.xp || 0) + customXp).toLocaleString("id-ID")} XP (Otomatis Lv. {getLevelProgressFromXp((selectedUser.xp || 0) + customXp).level})
+                    </span>
+                  </div>
+                )}
 
                 {/* Direct Set Level */}
-                <div className="flex items-center gap-2 pt-3 mt-3 border-t border-white/5">
-                  <input
-                    type="number"
-                    min="1"
-                    max="999"
-                    value={customLevel}
-                    onChange={(e) => setCustomLevel(Number(e.target.value))}
-                    placeholder="Tetapkan Level (1-999)..."
-                    className="flex-1 h-11 px-3.5 rounded-xl border border-purple-500/30 bg-[#1A0E30] text-xs text-white focus:outline-none focus:border-purple-400"
-                  />
-                  <button
-                    type="button"
-                    disabled={loadingAction || !selectedUser}
-                    onClick={() => executeGiftAction({ action: "SET_LEVEL", level: customLevel })}
-                    className="h-11 px-4 rounded-xl text-xs font-bold border border-purple-500/50 bg-purple-500/20 text-purple-200 hover:bg-purple-500/30 transition-all disabled:opacity-50 whitespace-nowrap shrink-0"
-                  >
-                    Set Level
-                  </button>
+                <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="999"
+                      value={customLevel}
+                      onChange={(e) => setCustomLevel(Number(e.target.value))}
+                      placeholder="Tetapkan Level (1-999)..."
+                      className="flex-1 h-11 px-3.5 rounded-xl border border-purple-500/30 bg-[#1A0E30] text-xs text-white focus:outline-none focus:border-purple-400"
+                    />
+                    <button
+                      type="button"
+                      disabled={loadingAction || !selectedUser}
+                      onClick={() => executeGiftAction({ action: "SET_LEVEL", level: customLevel })}
+                      className="h-11 px-4 rounded-xl text-xs font-bold border border-purple-500/50 bg-purple-500/20 text-purple-200 hover:bg-purple-500/30 transition-all disabled:opacity-50 whitespace-nowrap shrink-0"
+                    >
+                      Set Level
+                    </button>
+                  </div>
+                  {customLevel > 0 && (
+                    <div className="px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[11px] text-purple-300 font-mono flex items-center gap-1.5">
+                      <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>
+                        Set Level {customLevel} = otomatis set XP ke {getMinimumXpForLevel(customLevel).toLocaleString("id-ID")} XP
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

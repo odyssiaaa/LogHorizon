@@ -5,7 +5,7 @@ import { ARMORY_ITEMS } from "@/lib/armory-catalog";
 import { sendDiscordChannelMessage, DiscordEmbed } from "@/lib/discord-bot-sender";
 import { createNotification } from "@/lib/notifications";
 import { randomInt } from "crypto";
-import { calculateProgressiveLevelUp } from "@/lib/level-system";
+import { calculateProgressiveLevelUp, getLevelProgressFromXp } from "@/lib/level-system";
 
 export type GachaRarity = "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
 
@@ -529,10 +529,8 @@ export async function POST(req: Request) {
       }
 
       // Calculate final XP and Level progression
-      const baseInLevelXp = Math.max(0, dbUser.xp - usedXp);
-      const progress = calculateProgressiveLevelUp(dbUser.level, baseInLevelXp, totalXpGained);
-      const finalXp = progress.newInLevelXp;
-      const finalLevel = progress.newLevel;
+      const finalXp = Math.max(0, (dbUser.xp || 0) - usedXp + totalXpGained);
+      const { level: finalLevel } = getLevelProgressFromXp(finalXp);
 
       const finalTickets = Math.max(0, availableTickets - usedTickets + totalBonusTickets);
 

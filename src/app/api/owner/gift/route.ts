@@ -5,6 +5,7 @@ import { ARMORY_ITEMS } from "@/lib/armory-catalog";
 import { sendDiscordChannelMessage, getBaseAppUrl, DiscordEmbed } from "@/lib/discord-bot";
 import { createNotification } from "@/lib/notifications";
 import { CosmeticType } from "@prisma/client";
+import { getLevelProgressFromXp, getMinimumXpForLevel } from "@/lib/level-system";
 
 export const instant = false;
 
@@ -62,20 +63,31 @@ export async function POST(req: Request) {
     if (action === "ADD_XP") {
       const xpVal = Number(amount) || 0;
       const newXp = Math.max(0, (target.xp || 0) + xpVal);
-      const newLevel = Math.max(1, Math.floor(Math.sqrt(newXp / 100)) + 1);
+      const { level: newLevel } = getLevelProgressFromXp(newXp);
 
       await prisma.user.update({
         where: { id: target.id },
         data: { xp: newXp, level: newLevel },
       });
 
-      auditActionTitle = `🎁 Suntik XP Guild (+${xpVal.toLocaleString()} XP)`;
-      auditDetails = `XP baru: ${newXp.toLocaleString()} (Level ${newLevel})`;
-      notificationMessage = `👑 Emperor menganugerahi Anda +${xpVal.toLocaleString()} XP! Level Anda sekarang Level ${newLevel}.`;
+      auditActionTitle = `🎁 Suntik XP Guild (+${xpVal.toLocaleString("id-ID")} XP)`;
+      auditDetails = `XP baru: ${newXp.toLocaleString("id-ID")} XP (Level ${newLevel})`;
+      notificationMessage = `👑 Emperor menganugerahi Anda +${xpVal.toLocaleString("id-ID")} XP! Level Anda sekarang Level ${newLevel}.`;
+    } else if (action === "SET_XP") {
+      const xpVal = Math.max(0, Number(amount) || 0);
+      const { level: newLevel } = getLevelProgressFromXp(xpVal);
+
+      await prisma.user.update({
+        where: { id: target.id },
+        data: { xp: xpVal, level: newLevel },
+      });
+
+      auditActionTitle = `👑 Penetapan Total XP Guild (${xpVal.toLocaleString("id-ID")} XP)`;
+      auditDetails = `XP baru: ${xpVal.toLocaleString("id-ID")} XP (Level ${newLevel})`;
+      notificationMessage = `👑 Emperor menetapkan total XP Anda menjadi ${xpVal.toLocaleString("id-ID")} XP (Level ${newLevel})!`;
     } else if (action === "SET_LEVEL") {
       const lvlVal = Math.max(1, Math.min(999, Number(level) || 1));
-      const minXpForLevel = Math.pow(lvlVal - 1, 2) * 100;
-      const newXp = Math.max(target.xp || 0, minXpForLevel);
+      const newXp = getMinimumXpForLevel(lvlVal);
 
       await prisma.user.update({
         where: { id: target.id },
@@ -83,8 +95,8 @@ export async function POST(req: Request) {
       });
 
       auditActionTitle = `👑 Penetapan Langsung Level Guild (${lvlVal})`;
-      auditDetails = `Level ditetapkan ke ${lvlVal} (XP: ${newXp.toLocaleString()})`;
-      notificationMessage = `👑 Emperor secara langsung menetapkan tingkat kehormatan Anda ke Level ${lvlVal}!`;
+      auditDetails = `Level ditetapkan ke ${lvlVal} (Total XP otomatis disesuaikan ke ${newXp.toLocaleString("id-ID")} XP)`;
+      notificationMessage = `👑 Emperor secara langsung menetapkan tingkat kehormatan Anda ke Level ${lvlVal} (Total XP: ${newXp.toLocaleString("id-ID")})!`;
     } else if (action === "ADD_GACHA_TICKETS") {
       const ticketVal = Number(amount) || 1;
       const newTickets = Math.max(0, (target.dailyGachaTickets || 0) + ticketVal);

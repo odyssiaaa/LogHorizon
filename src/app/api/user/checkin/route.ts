@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { jsonError } from "@/lib/http";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { getLevelProgressFromXp } from "@/lib/level-system";
 
 function getWibDateKey(date: Date): { key: string; midnightUtc: number } {
   // WIB is UTC+7
@@ -101,12 +102,8 @@ export async function POST() {
     }
 
     // Calculate level progression (+15 XP)
-    let newLevel = user.level;
-    let remainingXp = user.xp + 15;
-    while (remainingXp >= newLevel * 100) {
-      remainingXp -= newLevel * 100;
-      newLevel += 1;
-    }
+    const newXp = (user.xp || 0) + 15;
+    const { level: newLevel } = getLevelProgressFromXp(newXp);
 
     const badges = new Set(user.badges);
     if (newStreak >= 7) badges.add("Streak 7 Hari");
@@ -116,7 +113,7 @@ export async function POST() {
     const updatedUser = await tx.user.update({
       where: { id: userId },
       data: {
-        xp: remainingXp,
+        xp: newXp,
         level: newLevel,
         badges: [...badges],
         lastCheckInAt: now,

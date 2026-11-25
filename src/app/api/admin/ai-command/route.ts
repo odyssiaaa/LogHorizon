@@ -9,6 +9,7 @@ import { notifyVerifiedSellerAudit } from "@/lib/verified-seller";
 import { generateTemplateBracket, shuffleArray, advanceMatchWinner, updateMatchStatus, TournamentMatch, TournamentTeam, TournamentLossReason } from "@/lib/tournament";
 import { DonationStatus, EscrowStatus, LfgStatus, PostCategory, Prisma, Role, TournamentStatus, CosmeticType } from "@prisma/client";
 import { ARMORY_ITEMS } from "@/lib/armory-catalog";
+import { getLevelProgressFromXp, getMinimumXpForLevel } from "@/lib/level-system";
 
 const GEMINI_MODELS = [
   "gemini-3.5-flash-lite",
@@ -1587,7 +1588,7 @@ async function executeToolAction(
     };
 
     const nextXp = Math.max(0, targetUser.xp + xpDelta);
-    const nextLevel = Math.max(1, Math.floor(nextXp / 1000) + 1);
+    const nextLevel = getLevelProgressFromXp(nextXp).level;
 
     const updatedUser = await prisma.user.update({
       where: { id: targetUser.id },
@@ -2215,16 +2216,16 @@ async function executeToolAction(
     // XP & Level
     if (typeof args.xp === "number" && args.xp > 0) {
       const newXp = (targetUser.xp || 0) + args.xp;
-      const newLevel = Math.max(1, Math.floor(Math.sqrt(newXp / 100)) + 1);
+      const { level: newLevel } = getLevelProgressFromXp(newXp);
       updates.xp = newXp;
       updates.level = newLevel;
       detailsList.push(`+${args.xp.toLocaleString()} XP (Total: ${newXp.toLocaleString()} XP, Lv. ${newLevel})`);
     } else if (typeof args.level === "number" && args.level > 0) {
       const lvl = Math.min(999, Math.floor(args.level));
-      const minXp = Math.pow(lvl - 1, 2) * 100;
+      const newXp = getMinimumXpForLevel(lvl);
       updates.level = lvl;
-      updates.xp = Math.max(targetUser.xp || 0, minXp);
-      detailsList.push(`Tingkat Guild ditetapkan ke Lv. ${lvl}`);
+      updates.xp = newXp;
+      detailsList.push(`Tingkat Guild ditetapkan ke Lv. ${lvl} (Total XP otomatis disesuaikan ke ${newXp.toLocaleString()} XP)`);
     }
 
     // Badge / Caste

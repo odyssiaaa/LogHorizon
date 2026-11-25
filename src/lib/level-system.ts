@@ -1,137 +1,125 @@
 /**
- * Sistem Level & Kurva XP Progresif LogHorizon (Progressive RPG Leveling Curve)
+ * Sistem Level & Kurva XP Progresif LogHorizon (Single Source of Truth)
  *
- * Rumus Progresif (Tanpa Batas Mentok):
- * - Level 1 ➔ 2: Butuh 100 XP (cepat & ramah bagi pemula).
- * - Kebutuhan XP untuk naik ke level berikutnya bertambah secara progresif:
- *   xpNeededForNextLevel(level) = Math.round(100 * Math.pow(level, 1.35))
- *
- * Contoh Skala:
- * - Lv. 1 ➔ 2: 100 XP
- * - Lv. 2 ➔ 3: ~255 XP
- * - Lv. 5 ➔ 6: ~880 XP
- * - Lv. 10 ➔ 11: ~2.240 XP
- * - Lv. 25 ➔ 26: ~7.700 XP
- * - Lv. 50+: puluhan ribu XP!
+ * Kurva RPG Progresif Dua Arah:
+ * - Rumus XP per Tingkat (xpForSingleLevel(lvl)):
+ *   Untuk naik dari lvl ke lvl + 1, dibutuhkan Math.round(100 * Math.pow(lvl, 1.35)) XP
+ *   - Lv. 1 ➔ 2: 100 XP (Total 100 XP)
+ *   - Lv. 2 ➔ 3: 255 XP (Total 355 XP)
+ *   - Lv. 3 ➔ 4: 441 XP (Total 796 XP)
+ *   - Lv. 4 ➔ 5: 650 XP (Total 1.446 XP)
+ *   - Lv. 5 ➔ 6: 879 XP (Total 2.325 XP)
+ *   - Lv. 10 ➔ 11: 2.239 XP (Total 10.366 XP)
+ *   - Lv. 25 ➔ 26: 7.704 XP (Total ~67.000 XP)
+ *   - Lv. 50+: puluhan ribu XP!
  */
 
 export interface LevelProgress {
   level: number;
+  totalXp: number;
+  xpMinForCurrentLevel: number;
+  xpForNextLevel: number;
   currentLevelXp: number;
   nextLevelXp: number;
   progressPercent: number;
 }
 
 /**
- * Menghitung kebutuhan XP untuk naik dari `level` saat ini ke `level + 1`.
+ * Rumus XP per Tingkat: Kebutuhan XP untuk naik dari `lvl` ke `lvl + 1`.
  */
-export function xpNeededForNextLevel(level: number): number {
-  const safeLevel = Math.max(1, Math.floor(Number(level) || 1));
+export function xpForSingleLevel(lvl: number): number {
+  const safeLevel = Math.max(1, Math.floor(Number(lvl) || 1));
   return Math.round(100 * Math.pow(safeLevel, 1.35));
 }
 
+// Alias untuk kompatibilitas pemanggil lama
+export const xpNeededForNextLevel = xpForSingleLevel;
+
 /**
- * Menghitung Level dan Progress Bar XP secara seragam.
- * Mendukung masukan total lifetime XP maupun pasangan (level, inLevelXp).
- *
- * @param xp Total XP yang dimiliki (atau in-level XP jika currentLevel diberikan)
- * @param currentLevel Level saat ini (opsional, jika data DB menyimpan in-level XP)
+ * Fungsi 2: Level ➔ Total XP Minimum Kumulatif (Level ➔ XP)
+ * Menghitung jumlah Total XP minimum yang tepat untuk mencapai `targetLevel`.
+ * Misal jika targetLevel = 10, mengembalikan total akumulasi XP yang dibutuhkan dari Level 1 ke Level 10.
  */
-export function calculateLevelFromXp(xp: number, currentLevel?: number): LevelProgress {
-  const safeXp = Math.max(0, Math.floor(Number(xp) || 0));
-
-  if (typeof currentLevel === "number" && currentLevel >= 1) {
-    const level = Math.floor(currentLevel);
-    const nextLevelXp = xpNeededForNextLevel(level);
-    const currentLevelXp = Math.min(nextLevelXp, safeXp);
-    const progressPercent = Math.min(
-      100,
-      Math.max(0, Math.round((currentLevelXp / nextLevelXp) * 100))
-    );
-    return {
-      level,
-      currentLevelXp,
-      nextLevelXp,
-      progressPercent,
-    };
+export function getMinimumXpForLevel(targetLevel: number): number {
+  const safeTarget = Math.max(1, Math.floor(Number(targetLevel) || 1));
+  let totalMinXp = 0;
+  for (let lvl = 1; lvl < safeTarget; lvl++) {
+    totalMinXp += xpForSingleLevel(lvl);
   }
+  return totalMinXp;
+}
 
-  // Jika dihitung dari total kumulatif XP dari Level 1
+/**
+ * Fungsi 1: Total XP ➔ Level & Progres Dua Arah (XP ➔ Level)
+ * Menghitung Level asli, ambang minimum XP level tersebut, target XP level berikutnya, serta progressPercent.
+ */
+export function getLevelProgressFromXp(totalXp: number): LevelProgress {
+  const safeTotalXp = Math.max(0, Math.floor(Number(totalXp) || 0));
+
   let level = 1;
-  let remainingXp = safeXp;
+  let xpMinForCurrentLevel = 0;
+  let remainingXp = safeTotalXp;
 
   while (true) {
-    const needed = xpNeededForNextLevel(level);
+    const needed = xpForSingleLevel(level);
     if (remainingXp >= needed) {
       remainingXp -= needed;
+      xpMinForCurrentLevel += needed;
       level += 1;
     } else {
       break;
     }
   }
 
-  const nextLevelXp = xpNeededForNextLevel(level);
+  const xpForNextLevel = xpForSingleLevel(level);
   const currentLevelXp = remainingXp;
   const progressPercent = Math.min(
     100,
-    Math.max(0, Math.round((currentLevelXp / nextLevelXp) * 100))
+    Math.max(0, Math.round((currentLevelXp / xpForNextLevel) * 100))
   );
 
   return {
     level,
+    totalXp: safeTotalXp,
+    xpMinForCurrentLevel,
+    xpForNextLevel,
     currentLevelXp,
-    nextLevelXp,
+    nextLevelXp: xpForNextLevel,
     progressPercent,
   };
 }
 
 /**
- * Helper untuk mendapatkan progres level saat ini dari (level, xpInLevel)
+ * Helper kompatibilitas: Mengembalikan LevelProgress dari XP total (atau in-level)
  */
-export function getLevelProgress(level: number, xpInLevel: number): LevelProgress {
-  return calculateLevelFromXp(xpInLevel, level);
+export function calculateLevelFromXp(xp: number, currentLevel?: number): LevelProgress {
+  return getLevelProgressFromXp(xp);
 }
 
 /**
- * Menghitung kenaikan level progresif ketika pengguna mendapatkan tambahan XP.
- * Dipakai saat transaksi pemberian XP (absen harian, forum, quest, redeem, gacha).
+ * Helper kompatibilitas: Mengembalikan LevelProgress dari (level, xp)
+ */
+export function getLevelProgress(level: number, xp: number): LevelProgress {
+  return getLevelProgressFromXp(xp);
+}
+
+/**
+ * Helper untuk menghitung perolehan level ketika mendapatkan tambahan XP baru.
  */
 export function calculateProgressiveLevelUp(
   currentLevel: number,
-  currentInLevelXp: number,
+  currentXp: number,
   addedXp: number
-): {
-  newLevel: number;
-  newInLevelXp: number;
-  levelsGained: number;
-  nextLevelXp: number;
-  progressPercent: number;
-} {
-  let level = Math.max(1, Math.floor(Number(currentLevel) || 1));
-  let remainingXp = Math.max(0, Math.floor(Number(currentInLevelXp) || 0)) + Math.max(0, Math.floor(Number(addedXp) || 0));
-  const startLevel = level;
-
-  while (true) {
-    const needed = xpNeededForNextLevel(level);
-    if (remainingXp >= needed) {
-      remainingXp -= needed;
-      level += 1;
-    } else {
-      break;
-    }
-  }
-
-  const nextLevelXp = xpNeededForNextLevel(level);
-  const progressPercent = Math.min(
-    100,
-    Math.max(0, Math.round((remainingXp / nextLevelXp) * 100))
-  );
+) {
+  const newTotalXp = Math.max(0, Math.floor(Number(currentXp) || 0)) + Math.max(0, Math.floor(Number(addedXp) || 0));
+  const progress = getLevelProgressFromXp(newTotalXp);
+  const startLevel = Math.max(1, Math.floor(Number(currentLevel) || 1));
 
   return {
-    newLevel: level,
-    newInLevelXp: remainingXp,
-    levelsGained: level - startLevel,
-    nextLevelXp,
-    progressPercent,
+    ...progress,
+    newLevel: progress.level,
+    newTotalXp,
+    newInLevelXp: progress.currentLevelXp,
+    levelsGained: Math.max(0, progress.level - startLevel),
   };
 }

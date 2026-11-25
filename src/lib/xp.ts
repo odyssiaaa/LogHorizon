@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { calculateProgressiveLevelUp } from "@/lib/level-system";
+import { getLevelProgressFromXp } from "@/lib/level-system";
 
 function validateAmount(amount: number) {
   if (!Number.isSafeInteger(amount) || amount <= 0 || amount > 1_000_000) {
@@ -16,7 +16,8 @@ export async function addXpInTransaction(tx: Prisma.TransactionClient, userId: s
   });
   if (!user) return null;
 
-  const { newLevel, newInLevelXp } = calculateProgressiveLevelUp(user.level, user.xp, amount);
+  const newXp = (user.xp || 0) + amount;
+  const { level: newLevel } = getLevelProgressFromXp(newXp);
 
   const badges = new Set(user.badges);
   if (newLevel >= 10) badges.add("Veteran");
@@ -24,7 +25,7 @@ export async function addXpInTransaction(tx: Prisma.TransactionClient, userId: s
 
   return tx.user.update({
     where: { id: userId },
-    data: { xp: newInLevelXp, level: newLevel, badges: [...badges] },
+    data: { xp: newXp, level: newLevel, badges: [...badges] },
   });
 }
 
