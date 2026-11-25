@@ -1266,7 +1266,7 @@ export function Navbar() {
         <button
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-24 md:bottom-20 left-3.5 z-40 lg:hidden size-11 rounded-full bg-[#11091D]/90 dark:bg-[#11091D]/90 bg-white/90 backdrop-blur-md border-2 border-[#7C3AED] shadow-xl text-[#7C3AED] dark:text-[#A78BFA] hover:bg-[#7C3AED] hover:text-white flex items-center justify-center transition-all active:scale-90 animate-in fade-in zoom-in-75 duration-200 cursor-pointer"
+          className="fixed bottom-24 md:bottom-20 left-3.5 z-40 pointer-events-auto lg:hidden size-11 rounded-full bg-[#11091D]/90 dark:bg-[#11091D]/90 bg-white/90 backdrop-blur-md border-2 border-[#7C3AED] shadow-xl text-[#7C3AED] dark:text-[#A78BFA] hover:bg-[#7C3AED] hover:text-white flex items-center justify-center transition-all active:scale-90 animate-in fade-in zoom-in-75 duration-200 cursor-pointer"
           aria-label="Kembali ke atas layar"
           title="Kembali ke atas layar"
         >
@@ -1279,14 +1279,14 @@ export function Navbar() {
       {/* ===================================================================== */}
       <nav
         aria-label="Navigasi Bawah Layar Mobile"
-        className="fixed bottom-3 inset-x-3 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[480px] z-40 lg:hidden bg-[#11091D]/95 dark:bg-[#11091D]/95 bg-white/95 backdrop-blur-md border border-[#7C3AED]/40 shadow-[0_8px_30px_rgba(0,0,0,0.45)] rounded-2xl px-2 py-1.5 transition-all select-none"
+        className="fixed bottom-3 inset-x-3 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[480px] z-40 pointer-events-auto lg:hidden bg-[#11091D]/95 dark:bg-[#11091D]/95 bg-white/95 backdrop-blur-md border border-[#7C3AED]/40 shadow-[0_8px_30px_rgba(0,0,0,0.45)] rounded-2xl px-2 py-1.5 transition-all select-none"
       >
         <div className="grid grid-cols-5 items-center text-center gap-1">
           {/* 1. Home */}
           <Link
             href="/"
             onClick={() => setMobileOpen(false)}
-            className={`flex flex-col items-center justify-center min-h-[44px] py-1 px-1 rounded-xl transition-colors ${
+            className={`flex-1 min-h-[48px] flex flex-col items-center justify-center touch-manipulation py-1 px-1 rounded-xl transition-colors ${
               isHomeActive
                 ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -1300,7 +1300,7 @@ export function Navbar() {
           <Link
             href="/forum"
             onClick={() => setMobileOpen(false)}
-            className={`flex flex-col items-center justify-center min-h-[44px] py-1 px-1 rounded-xl transition-colors ${
+            className={`flex-1 min-h-[48px] flex flex-col items-center justify-center touch-manipulation py-1 px-1 rounded-xl transition-colors ${
               pathname.startsWith("/forum")
                 ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -1312,9 +1312,9 @@ export function Navbar() {
 
           {/* 3. Arena (Tombol Tengah Menonjol Beraksen Ungu) */}
           <Link
-            href="/events"
+            href="/events?view=turnamen"
             onClick={() => setMobileOpen(false)}
-            className="flex flex-col items-center justify-center -mt-3.5"
+            className="flex-1 min-h-[48px] flex flex-col items-center justify-center touch-manipulation -mt-3.5"
             aria-label="Buka Arena Turnamen & Mabar"
           >
             <div className={`size-12 rounded-xl flex items-center justify-center shadow-lg border transition-transform active:scale-95 ${
@@ -1331,7 +1331,7 @@ export function Navbar() {
           <Link
             href="/marketplace"
             onClick={() => setMobileOpen(false)}
-            className={`flex flex-col items-center justify-center min-h-[44px] py-1 px-1 rounded-xl transition-colors ${
+            className={`flex-1 min-h-[48px] flex flex-col items-center justify-center touch-manipulation py-1 px-1 rounded-xl transition-colors ${
               isMarketplaceActive
                 ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -1345,7 +1345,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="flex flex-col items-center justify-center min-h-[44px] py-1 px-1 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors relative"
+            className="flex-1 min-h-[48px] flex flex-col items-center justify-center touch-manipulation py-1 px-1 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors relative cursor-pointer"
             aria-label="Buka Menu Lengkap & Profil"
           >
             {user ? (

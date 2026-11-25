@@ -153,9 +153,12 @@ export function TournamentCardCountdownBadge({
   eventDate?: string | Date;
   status: string;
 }) {
-  const [now, setNow] = useState(Date.now());
+  const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState(0);
 
   useEffect(() => {
+    setMounted(true);
+    setNow(Date.now());
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
@@ -164,6 +167,14 @@ export function TournamentCardCountdownBadge({
     return (
       <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
         ● SELESAI
+      </span>
+    );
+  }
+
+  if (!mounted || !now) {
+    return (
+      <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold uppercase bg-purple-500/10 text-purple-400 border border-purple-500/20">
+        ⏳ Jadwal Turnamen
       </span>
     );
   }
@@ -192,7 +203,7 @@ export function TournamentCardCountdownBadge({
 export function EventsBoard() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
-  const viewParam = searchParams.get("view");
+  const viewParam = searchParams?.get("view");
 
   const [activeTab, setActiveTab] = useState<"all" | "mabar" | "turnamen" | "party">("all");
   const [tournamentSubTab, setTournamentSubTab] = useState<"active" | "history">("active");
@@ -459,8 +470,8 @@ export function EventsBoard() {
     ])
       .then(([events, parties]) => {
         if (!active) return;
-        setTournaments(events);
-        setLfgPosts(parties);
+        setTournaments(Array.isArray(events) ? events : []);
+        setLfgPosts(Array.isArray(parties) ? parties : []);
         setError("");
       })
       .catch((reason: unknown) => {
@@ -1234,18 +1245,31 @@ export function EventsBoard() {
     setChatInput("");
   }
 
-  const normalizedSearch = search.trim().toLocaleLowerCase();
-  const visibleTournaments = tournaments.filter((tournament) =>
-    [
+  const normalizedSearch = (search || "").trim().toLocaleLowerCase();
+  const visibleTournaments = (Array.isArray(tournaments) ? tournaments : []).filter((tournament) => {
+    if (!tournament) return false;
+    const teamNames = Array.isArray(tournament.teams)
+      ? tournament.teams.map((t: any) => (typeof t === "string" ? t : t?.teamName || "")).filter(Boolean)
+      : [];
+    const participantNames = Array.isArray(tournament.participants)
+      ? tournament.participants.map((p) => p?.teamName || "").filter(Boolean)
+      : [];
+    const leaderNames = Array.isArray(tournament.participants)
+      ? tournament.participants.map((p) => p?.leader?.username || p?.leader?.name || "").filter(Boolean)
+      : [];
+
+    const searchTargets = [
       tournament.title || "",
-      tournament.game,
-      tournament.status,
+      tournament.game || "",
+      tournament.status || "",
       tournament.prizePool || "",
-      ...(tournament.teams ? tournament.teams.map((t) => t.teamName) : []),
-      ...tournament.participants.map((p) => p.teamName),
-      ...tournament.participants.map((p) => p.leader.username ?? ""),
-    ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch))
-  );
+      ...teamNames,
+      ...participantNames,
+      ...leaderNames,
+    ];
+
+    return searchTargets.some((value) => typeof value === "string" && value.toLocaleLowerCase().includes(normalizedSearch));
+  });
 
   const TOURNAMENT_STATUS_OPTIONS = [
     { id: "ALL", label: "Semua" },
@@ -1265,6 +1289,7 @@ export function EventsBoard() {
   ] as const;
 
   const directoryTournaments = visibleTournaments.filter((tournament) => {
+    if (!tournament) return false;
     // Status filter
     if (tournamentStatusFilter === "OPEN" && tournament.status !== "OPEN" && tournament.status !== "REGISTRATION") {
       return false;
@@ -1278,7 +1303,7 @@ export function EventsBoard() {
 
     // Game filter
     if (tournamentGameFilter !== "ALL") {
-      const g = tournament.game.toLowerCase();
+      const g = (tournament.game || "").toLowerCase();
       const target = tournamentGameFilter.toLowerCase();
       const match = g.includes(target) ||
         (target.includes("counter-strike") && (g.includes("cs") || g.includes("counter")));
@@ -1288,24 +1313,31 @@ export function EventsBoard() {
     return true;
   });
 
-  const activeTournaments = visibleTournaments.filter((t) => t.status !== "COMPLETED");
+  const activeTournaments = visibleTournaments.filter((t) => t?.status !== "COMPLETED");
   const historyTournaments = visibleTournaments
-    .filter((t) => t.status === "COMPLETED")
+    .filter((t) => t?.status === "COMPLETED")
     .sort((a, b) => {
-      const timeA = new Date(a.completedAt || a.eventDate).getTime();
-      const timeB = new Date(b.completedAt || b.eventDate).getTime();
+      const timeA = new Date(a?.completedAt || a?.eventDate || 0).getTime() || 0;
+      const timeB = new Date(b?.completedAt || b?.eventDate || 0).getTime() || 0;
       return timeB - timeA;
     });
 
-  const visibleLfgPosts = lfgPosts.filter((post) => {
-    const matchesSearch = [
-      post.game,
-      post.description,
-      post.author.username ?? "",
-      ...post.joins.map((join) => join.username ?? ""),
-    ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch));
+  const visibleLfgPosts = (Array.isArray(lfgPosts) ? lfgPosts : []).filter((post) => {
+    if (!post) return false;
+    const authorName = post.author?.username || post.author?.inGameName || "";
+    const joinNames = Array.isArray(post.joins)
+      ? post.joins.map((join) => (typeof join === "string" ? join : join?.username || "")).filter(Boolean)
+      : [];
 
-    const matchesGame = filterGame === "ALL" || post.game.toLowerCase().includes(filterGame.toLowerCase());
+    const searchTargets = [
+      post.game || "",
+      post.description || "",
+      authorName,
+      ...joinNames,
+    ];
+
+    const matchesSearch = searchTargets.some((value) => typeof value === "string" && value.toLocaleLowerCase().includes(normalizedSearch));
+    const matchesGame = filterGame === "ALL" || (post.game || "").toLowerCase().includes(filterGame.toLowerCase());
     return matchesSearch && matchesGame;
   });
 
@@ -1536,22 +1568,30 @@ export function EventsBoard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                 {directoryTournaments.map((tournament) => {
-                  const registeredTeamsCount = tournament.participants
-                    ? tournament.participants.filter((p: any) => p.paymentStatus !== "REJECTED" && p.status !== "REJECTED").length
-                    : (tournament.teams?.filter((t: any) => {
+                  const registeredTeamsCount = Array.isArray(tournament.participants)
+                    ? tournament.participants.filter((p: any) => p?.paymentStatus !== "REJECTED" && p?.status !== "REJECTED").length
+                    : (Array.isArray(tournament.teams) ? tournament.teams.filter((t: any) => {
+                        if (!t) return false;
                         if (typeof t === "string") return !t.startsWith("Slot ") && !t.startsWith("Tim ") && t !== "TBD" && t !== "BYE";
                         return t?.status !== "REJECTED" && t?.paymentStatus !== "REJECTED" && t?.teamName !== "TBD" && t?.teamName !== "BYE" && !t?.teamName?.startsWith("Slot ") && !t?.teamName?.startsWith("Tim ");
-                      }).length || 0);
+                      }).length : 0);
                   const isRegistrationOpen = tournament.status === "OPEN" || tournament.status === "REGISTRATION";
                   const eventDateStr = tournament.eventDate
-                    ? new Date(tournament.eventDate).toLocaleString("id-ID", {
-                        day: "numeric",
-                        month: "numeric",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        timeZone: "Asia/Jakarta",
-                      }) + " WIB"
+                    ? (() => {
+                        try {
+                          const d = new Date(tournament.eventDate);
+                          return isNaN(d.getTime()) ? "Jadwal Segera Diumumkan" : d.toLocaleString("id-ID", {
+                            day: "numeric",
+                            month: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            timeZone: "Asia/Jakarta",
+                          }) + " WIB";
+                        } catch {
+                          return "Jadwal Segera Diumumkan";
+                        }
+                      })()
                     : "Jadwal Segera Diumumkan";
                   const podium = extractTournamentPodium(tournament);
 
@@ -1632,7 +1672,7 @@ export function EventsBoard() {
                               BIAYA DAFTAR
                             </span>
                             <span className={`text-sm sm:text-base font-display font-extrabold truncate block mt-0.5 ${tournament.isFreeEntry || !tournament.entryFee ? "text-emerald-500 dark:text-emerald-400" : "text-[#7C3AED] dark:text-purple-300"}`}>
-                              {tournament.isFreeEntry || !tournament.entryFee ? "GRATIS" : `Rp ${tournament.entryFee.toLocaleString("id-ID")}`}
+                              {tournament.isFreeEntry || !tournament.entryFee ? "GRATIS" : `Rp ${(Number(tournament.entryFee) || 0).toLocaleString("id-ID")}`}
                             </span>
                           </div>
                         </div>
@@ -1946,8 +1986,9 @@ export function EventsBoard() {
             )}
 
             {visibleLfgPosts.map((post) => {
-              const currentFilled = 1 + post.joins.length;
-              const isFull = currentFilled >= post.maxSlots;
+              const currentFilled = 1 + (Array.isArray(post.joins) ? post.joins.length : 0);
+              const maxSlots = Math.max(1, Number(post.maxSlots) || 1);
+              const isFull = currentFilled >= maxSlots;
 
               return (
                 <article
@@ -1963,7 +2004,7 @@ export function EventsBoard() {
                           {post.game}
                         </span>
                         <span className="px-2 py-0.5 rounded-none text-[10px] font-mono font-bold bg-[#7C3AED]/15 text-[#7C3AED] dark:text-[#A78BFA] border border-[#7C3AED]/30 whitespace-nowrap shrink-0">
-                          {currentFilled}/{post.maxSlots} SLOT
+                          {currentFilled}/{maxSlots} SLOT
                         </span>
                       </div>
                       <span className="text-[11px] font-mono text-slate-600 dark:text-[#A78BFA] flex items-center gap-1 whitespace-nowrap shrink-0">
@@ -1975,7 +2016,7 @@ export function EventsBoard() {
                     <div className="flex items-center gap-1.5 my-2.5">
                       <span className="text-[9px] font-mono text-slate-500 dark:text-[#A78BFA] uppercase tracking-wider">Slot:</span>
                       <div className="flex items-center gap-1">
-                        {Array.from({ length: post.maxSlots }).map((_, idx) => (
+                        {Array.from({ length: maxSlots }).map((_, idx) => (
                           <span
                             key={idx}
                             className={`w-3.5 h-3.5 rounded-none border ${
@@ -1995,15 +2036,15 @@ export function EventsBoard() {
 
                     <div className="text-xs text-slate-600 dark:text-[#A78BFA] font-mono space-y-1 mb-4">
                       <p>
-                        Host: <strong className="text-slate-900 dark:text-[#F8FAFC]">{post.author.username ?? "Gamer"}</strong>
-                        {(post.author.username?.toLowerCase() === ".odyssia" || post.author.username?.toLowerCase() === "odyssia") && (
+                        Host: <strong className="text-slate-900 dark:text-[#F8FAFC]">{post.author?.username ?? "Gamer"}</strong>
+                        {(post.author?.username?.toLowerCase() === ".odyssia" || post.author?.username?.toLowerCase() === "odyssia") && (
                           <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/30 ml-1">👑 Emperor</span>
                         )}
-                        {post.author.inGameName && ` (IGN: ${post.author.inGameName})`}
+                        {post.author?.inGameName && ` (IGN: ${post.author.inGameName})`}
                       </p>
-                      {post.joins.length > 0 && (
+                      {Array.isArray(post.joins) && post.joins.length > 0 && (
                         <p className="text-[11px] text-slate-500 dark:text-[#A78BFA]/80">
-                          Party: {post.joins.map((j) => j.username ?? "Gamer").join(", ")}
+                          Party: {post.joins.map((j) => (typeof j === "string" ? j : j?.username ?? "Gamer")).join(", ")}
                         </p>
                       )}
                     </div>

@@ -441,14 +441,14 @@ export function GuildPartyDirectory() {
                   className="p-2.5 rounded-xl border border-[#2A1B42] bg-[#11071F] flex items-center gap-2 text-xs"
                 >
                   <DiscordAvatar
-                    src={m.user.avatar}
-                    username={m.user.username}
+                    src={m.user?.avatar}
+                    username={m.user?.username ?? "Member"}
                     size={28}
-                    frameId={m.user.equippedAvatarFrame}
+                    frameId={m.user?.equippedAvatarFrame}
                   />
                   <div className="min-w-0 flex-1">
-                    <Link href={`/u/${m.user.username}`} className="font-bold text-gray-200 hover:text-purple-400 hover:underline truncate block">
-                      {m.user.username}
+                    <Link href={`/u/${m.user?.username ?? ""}`} className="font-bold text-gray-200 hover:text-purple-400 hover:underline truncate block">
+                      {m.user?.username ?? "Member"}
                     </Link>
                     <p className="text-[10px] text-purple-400 font-mono truncate">
                       {m.inGameNickname || "IGN Belum diisi"}
@@ -916,13 +916,13 @@ export function GuildPartyDirectory() {
                     >
                       <div className="flex items-center gap-2.5">
                         <DiscordAvatar
-                          src={req.user.avatar}
-                          username={req.user.username}
+                          src={req.user?.avatar}
+                          username={req.user?.username ?? "Member"}
                           size={30}
-                          frameId={req.user.equippedAvatarFrame}
+                          frameId={req.user?.equippedAvatarFrame}
                         />
                         <div>
-                          <p className="font-bold text-white">{req.user.username}</p>
+                          <p className="font-bold text-white">{req.user?.username ?? "Member"}</p>
                           <p className="text-[11px] text-gray-400">{req.message || "Ingin bergabung"}</p>
                         </div>
                       </div>
@@ -967,15 +967,15 @@ export function GuildPartyDirectory() {
                     >
                       <div className="flex items-center gap-3">
                         <DiscordAvatar
-                          src={m.user.avatar}
-                          username={m.user.username}
+                          src={m.user?.avatar}
+                          username={m.user?.username ?? "Member"}
                           size={36}
-                          frameId={m.user.equippedAvatarFrame}
+                          frameId={m.user?.equippedAvatarFrame}
                         />
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <Link href={`/u/${m.user.username}`} className="font-bold text-white hover:text-purple-400 hover:underline text-sm">
-                              {m.user.username}
+                            <Link href={`/u/${m.user?.username ?? ""}`} className="font-bold text-white hover:text-purple-400 hover:underline text-sm">
+                              {m.user?.username ?? "Member"}
                             </Link>
                             <span className="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 text-[10px] font-mono">
                               {m.role}

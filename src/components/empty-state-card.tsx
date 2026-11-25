@@ -61,7 +61,22 @@ export function EmptyStateCard({
     );
   };
 
-  const isLucideIcon = typeof IconOrNode === "function";
+  const renderIcon = () => {
+    if (!IconOrNode) {
+      return <Sparkles size={26} strokeWidth={1.75} />;
+    }
+    if (React.isValidElement(IconOrNode)) {
+      return IconOrNode;
+    }
+    if (
+      typeof IconOrNode === "function" ||
+      (typeof IconOrNode === "object" && IconOrNode !== null && ("render" in IconOrNode || "$$typeof" in IconOrNode))
+    ) {
+      const Component = IconOrNode as React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+      return <Component size={26} strokeWidth={1.75} />;
+    }
+    return <Sparkles size={26} strokeWidth={1.75} />;
+  };
 
   return (
     <div
@@ -70,15 +85,7 @@ export function EmptyStateCard({
       {/* Icon Capsule with Neon Glow */}
       <div className="relative mb-4">
         <div className="w-14 h-14 rounded-2xl bg-[#7C3AED]/15 border border-[#7C3AED]/30 flex items-center justify-center text-[#A78BFA] shadow-inner shadow-purple-500/10">
-          {IconOrNode ? (
-            isLucideIcon ? (
-              React.createElement(IconOrNode as LucideIcon, { size: 26, strokeWidth: 1.75 })
-            ) : (
-              (IconOrNode as ReactNode)
-            )
-          ) : (
-            <Sparkles size={26} strokeWidth={1.75} />
-          )}
+          {renderIcon()}
         </div>
       </div>
 

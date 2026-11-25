@@ -60,8 +60,8 @@ export async function GET() {
       author: post.author,
       isOwner: post.authorId === viewer?.id,
       canManage: post.authorId === viewer?.id || viewer?.role === "ADMIN" || viewer?.role === "MODERATOR",
-      joinedByViewer: post.joins.some((join) => join.userId === viewer?.id),
-      joins: post.joins.map((join) => ({ username: join.user.username })),
+      joinedByViewer: (post.joins || []).some((join) => join.userId === viewer?.id),
+      joins: (post.joins || []).map((join) => ({ username: join.user?.username ?? "Gamer" })),
     }))
   );
 }

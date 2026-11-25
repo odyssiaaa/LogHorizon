@@ -445,11 +445,11 @@ export function HorizonChatWidget() {
               }
             : undefined
         }
-        className={`fixed z-[45] touch-none select-none scale-75 opacity-90 sm:scale-100 sm:opacity-100 ${
+        className={`fixed z-[45] pointer-events-none touch-none select-none scale-75 opacity-90 sm:scale-100 sm:opacity-100 ${
           !position ? "bottom-24 right-3 sm:bottom-6 sm:right-5" : ""
         }`}
       >
-        <div className="relative flex flex-col items-center">
+        <div className="relative flex flex-col items-center pointer-events-none">
           {/* 1. Interactive Greeting Speech Bubble (STABIL & TERPISAH: Bebas dari animasi lompat/drag ksatria) */}
           {showBubble && !isOpen && !isDragging && (
             <div
@@ -459,7 +459,7 @@ export function HorizonChatWidget() {
                 setIsOpen(true);
                 setShowBubble(false);
               }}
-              className="absolute -top-16 right-0 sm:right-auto sm:-left-36 w-52 sm:w-60 p-2.5 rounded-xl bg-white dark:bg-[#1A0F2E] border-2 border-[#7C3AED] shadow-2xl text-slate-800 dark:text-slate-100 text-xs font-semibold flex items-start gap-1.5 cursor-pointer z-40 select-none transition-all"
+              className="absolute -top-16 right-0 sm:right-auto sm:-left-36 w-52 sm:w-60 p-2.5 rounded-xl bg-white dark:bg-[#1A0F2E] border-2 border-[#7C3AED] shadow-2xl text-slate-800 dark:text-slate-100 text-xs font-semibold flex items-start gap-1.5 cursor-pointer z-40 select-none transition-all pointer-events-auto"
             >
               <span className="flex-1 text-[11px] leading-tight">
                 👋 Bingung mulai dari mana? <span className="text-[#7C3AED] dark:text-[#A78BFA] underline font-bold">Klik aku</span> untuk panduan cepat!
@@ -468,7 +468,7 @@ export function HorizonChatWidget() {
                 type="button"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={dismissBubble}
-                className="w-7 h-7 -mr-1 -mt-1 rounded-md text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center shrink-0 cursor-pointer z-30 transition-colors"
+                className="w-7 h-7 -mr-1 -mt-1 rounded-md text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center shrink-0 cursor-pointer z-30 transition-colors pointer-events-auto"
                 title="Tutup Balon Sapaan"
                 aria-label="Tutup Balon Sapaan"
               >
@@ -492,7 +492,7 @@ export function HorizonChatWidget() {
                 ? "translateY(0px) rotate(0deg) scale(1)"
                 : undefined,
             }}
-            className={`relative group cursor-grab active:cursor-grabbing flex flex-col items-center ${
+            className={`relative group cursor-grab active:cursor-grabbing flex flex-col items-center pointer-events-auto ${
               isDragging
                 ? "cursor-grabbing drop-shadow-[0_0_25px_rgba(157,78,221,0.7)]"
                 : isBouncing
@@ -547,7 +547,7 @@ export function HorizonChatWidget() {
           role="dialog"
           aria-label="Jendela Chat Satpam Horizon"
           style={getPopupStyle()}
-          className={`fixed z-[50] rounded-xl border-2 border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 inset-x-3 top-16 bottom-24 w-auto h-auto max-h-[75vh] sm:inset-auto sm:bottom-24 sm:right-5 sm:w-[390px] sm:h-[540px] sm:max-h-[540px] ${
+          className={`fixed z-[50] pointer-events-auto rounded-xl border-2 border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#11091D] shadow-2xl flex flex-col overflow-hidden transition-all duration-200 inset-x-3 top-16 bottom-24 w-auto h-auto max-h-[75vh] sm:inset-auto sm:bottom-24 sm:right-5 sm:w-[390px] sm:h-[540px] sm:max-h-[540px] ${
             !position ? "sm:bottom-24 sm:right-5" : ""
           }`}
         >
