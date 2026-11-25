@@ -506,7 +506,7 @@ export function SettingsDashboard() {
   const isOwner = isGuildOwner(session?.user || profile);
 
   return (
-    <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 min-w-0 overflow-x-hidden">
+    <main className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 min-w-0 overflow-x-hidden animate-fade-in-up">
       {/* Page Title & Sub-tabs Header */}
       <div className="mb-6">
         <p className="text-xs font-bold text-[#9D4EDD] uppercase tracking-wider mb-1">LOGHORIZON / CITADEL</p>

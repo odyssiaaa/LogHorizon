@@ -1526,7 +1526,7 @@ export function AdminDashboard({
   );
 
   return (
-    <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 overflow-x-hidden">
+    <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 overflow-x-hidden animate-fade-in-up">
       <div>
         <Link href="/" className="back-link inline-flex items-center gap-1.5 text-xs font-bold text-[#9D4EDD] mb-4">
           <ArrowLeft size={15} /> Kembali ke situs

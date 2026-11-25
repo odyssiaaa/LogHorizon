@@ -106,7 +106,7 @@ export function HomepagePodiumShowcase({
         </div>
 
         {/* 2-Column Balanced Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
           {/* ========================================================================= */}
           {/* KOLOM KIRI: TOP 3 PETUALANG & TOP GUILD PARTY */}
           {/* ========================================================================= */}

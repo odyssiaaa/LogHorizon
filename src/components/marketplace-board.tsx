@@ -338,7 +338,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
   }
 
   return (
-    <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 overflow-x-hidden">
+    <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-12 overflow-x-hidden animate-fade-in-up">
       <div>
         <div className="market-heading flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 border-b border-slate-200 dark:border-[#2E1E45] pb-6">
           <div className="text-left">

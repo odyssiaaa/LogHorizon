@@ -331,7 +331,7 @@ export default async function Home() {
   const discordInviteUrl = config?.discordInviteUrl || "https://discord.gg/aJvbVyTxNb";
 
   return (
-    <main className="w-full max-w-full overflow-x-hidden bg-[#F8FAFC] dark:bg-[#09040F] text-[#0F172A] dark:text-[#F8FAFC] transition-colors duration-300">
+    <main className="w-full max-w-full overflow-x-hidden bg-[#F8FAFC] dark:bg-[#09040F] text-[#0F172A] dark:text-[#F8FAFC] transition-colors duration-300 animate-fade-in-up">
       {/* ===================================================================== */}
       {/* HERO SECTION (Terstruktur, Lega, Simetris)                             */}
       {/* ===================================================================== */}
@@ -350,10 +350,10 @@ export default async function Home() {
 
               {/* Headline & Sub-headline */}
               <div className="space-y-2">
-                <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-[#F8FAFC] uppercase leading-none select-none">
+                <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-[#F8FAFC] uppercase leading-none select-none">
                   LOG<span className="text-[#7C3AED] dark:text-[#A78BFA]">HORIZON</span>
                 </h1>
-                <p className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-tight leading-snug">
+                <p className="font-display text-xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-tight leading-snug">
                   FIND YOUR PARTY.<br />
                   <span className="text-[#7C3AED] dark:text-[#A78BFA]">BEYOND THE HORIZON.</span>
                 </p>
@@ -368,14 +368,14 @@ export default async function Home() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <Link
                   href="/events?view=turnamen"
-                  className="px-6 py-3.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-sans font-bold text-sm inline-flex items-center justify-center gap-2 border border-[#7C3AED] transition-colors shadow-lg hover:shadow-purple-500/25"
+                  className="min-h-[44px] px-6 py-3 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-sans font-bold text-sm inline-flex items-center justify-center gap-2 border border-[#7C3AED] transition-colors shadow-lg hover:shadow-purple-500/25 active:scale-[0.98] transition-transform"
                 >
                   <Trophy size={17} className="text-[#FDE68A]" />
                   <span>Jelajahi Turnamen</span>
                 </Link>
                 <Link
                   href="/events?view=mabar"
-                  className="px-6 py-3.5 rounded-none bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:bg-slate-50 dark:hover:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] font-sans font-semibold text-sm inline-flex items-center justify-center gap-2 transition-colors shadow-sm dark:shadow-none"
+                  className="min-h-[44px] px-6 py-3 rounded-none bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:bg-slate-50 dark:hover:bg-[#1A0E2E] text-slate-800 dark:text-[#F8FAFC] font-sans font-semibold text-sm inline-flex items-center justify-center gap-2 transition-colors shadow-sm dark:shadow-none active:scale-[0.98] transition-transform"
                 >
                   <Gamepad2 size={17} className="text-[#7C3AED]" />
                   <span>Cari Teman Mabar</span>
@@ -587,7 +587,7 @@ export default async function Home() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* BLOK 1: TURNAMEN TERDEKAT / SEDANG BERLANGSUNG */}
             <div className="p-5 bg-white dark:bg-[#130921] border border-slate-200 dark:border-[#2E1E45] rounded-none shadow-sm flex flex-col justify-between space-y-4 text-left">
               <div className="space-y-3">

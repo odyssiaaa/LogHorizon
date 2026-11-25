@@ -12,7 +12,7 @@ export const instant = false;
 
 export default function RulesPage() {
   return (
-    <main className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
+    <main className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full animate-fade-in-up">
       {/* Breadcrumb Navigation */}
       <div className="flex items-center justify-between mb-6">
         <Link

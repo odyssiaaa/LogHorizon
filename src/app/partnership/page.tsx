@@ -52,7 +52,7 @@ export default async function PartnershipPage() {
   const discordInviteUrl = siteConfig?.discordInviteUrl || "https://discord.gg/aJvbVyTxNb";
 
   return (
-    <main className="w-full max-w-full overflow-x-hidden bg-[#F8FAFC] dark:bg-[#09040F] text-[#0F172A] dark:text-[#F8FAFC] transition-colors duration-300">
+    <main className="w-full max-w-full overflow-x-hidden bg-[#F8FAFC] dark:bg-[#09040F] text-[#0F172A] dark:text-[#F8FAFC] transition-colors duration-300 animate-fade-in-up">
       {/* BREADCRUMB */}
       <div className="border-b border-slate-200 dark:border-[#2E1E45] bg-white/50 dark:bg-[#0E061A]/50 backdrop-blur-sm sticky top-0 z-30">
         <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 py-3 flex items-center justify-between text-xs font-mono">

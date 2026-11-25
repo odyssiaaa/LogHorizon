@@ -2318,5 +2318,86 @@ body {
   animation: fade-in 0.2s ease-out forwards;
 }
 
+/* ========================================================================= */
+/* STUDIO-GRADE MINIMALIST GPU-ACCELERATED MICRO-INTERACTIONS                */
+/* ========================================================================= */
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.05) 25%, rgba(124, 58, 237, 0.15) 37%, rgba(124, 58, 237, 0.05) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.dark .skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(167, 139, 250, 0.08) 37%, rgba(255, 255, 255, 0.03) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* Tactile button feedback */
+.btn-tactile,
+button:not(:disabled):not([aria-disabled="true"]):active,
+a[role="button"]:active {
+  transform: scale(0.98);
+  transition-duration: 150ms !important;
+}
+
+/* Interactive subtle card elevation */
+.card-interactive,
+.hover-lift {
+  transition: transform 200ms ease-out, border-color 200ms ease-out, box-shadow 200ms ease-out;
+  will-change: transform;
+}
+
+.card-interactive:hover,
+.hover-lift:hover {
+  transform: translate3d(0, -2px, 0);
+  border-color: rgba(139, 92, 246, 0.7) !important;
+  box-shadow: 0 8px 30px rgba(124, 58, 237, 0.12);
+}
+
+/* Reduced motion compliance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card-interactive:hover,
+  .hover-lift:hover,
+  .btn-tactile:active {
+    transform: none !important;
+  }
+}
+
+
 
 

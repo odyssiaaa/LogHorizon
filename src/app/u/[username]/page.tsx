@@ -225,7 +225,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
   ];
 
   return (
-    <main className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full overflow-x-hidden">
+    <main className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full overflow-x-hidden animate-fade-in-up">
       {/* Back Button */}
       <div className="flex items-center justify-between mb-6">
         <Link

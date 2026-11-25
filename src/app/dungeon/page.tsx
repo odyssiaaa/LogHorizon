@@ -13,7 +13,7 @@ export const instant = false;
 
 export default function DungeonPage() {
   return (
-    <main className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full min-w-0">
+    <main className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full min-w-0 animate-fade-in-up">
       {/* Breadcrumb Navigation */}
       <div className="flex items-center justify-between mb-6">
         <Link
