@@ -11,7 +11,7 @@ export function ReferralTracker() {
 
   useEffect(() => {
     // 1. Simpan ref dari query parameter URL jika ada
-    const refParam = searchParams.get("ref");
+    const refParam = searchParams?.get("ref");
     if (refParam && typeof window !== "undefined") {
       try {
         localStorage.setItem("loghorizon_ref_code", refParam.trim());

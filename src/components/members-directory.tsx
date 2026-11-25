@@ -49,11 +49,11 @@ export function MembersDirectory() {
   const { data: session } = useSession();
   const currentUserId = session?.user?.id;
 
-  const initialQuery = searchParams.get("q") || "";
-  const initialGame = searchParams.get("game") || "";
-  const initialRole = searchParams.get("role") || "";
-  const initialSort = searchParams.get("sort") || "active";
-  const initialPage = parseInt(searchParams.get("page") || "1", 10);
+  const initialQuery = searchParams?.get("q") || "";
+  const initialGame = searchParams?.get("game") || "";
+  const initialRole = searchParams?.get("role") || "";
+  const initialSort = searchParams?.get("sort") || "active";
+  const initialPage = parseInt(searchParams?.get("page") || "1", 10);
 
   const [query, setQuery] = useState(initialQuery);
   const [selectedGame, setSelectedGame] = useState(initialGame);

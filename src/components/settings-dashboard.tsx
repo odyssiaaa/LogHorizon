@@ -166,7 +166,7 @@ function getCasteBadge(role?: string, username?: string, discordId?: string, isP
 export function SettingsDashboard() {
   const { data: session, status, update } = useSession();
   const searchParams = useSearchParams();
-  const tabParam = searchParams.get("tab");
+  const tabParam = searchParams?.get("tab") ?? null;
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -196,15 +196,14 @@ export function SettingsDashboard() {
   const fetchLinkedAccounts = useCallback(async () => {
     try {
       const res = await fetch("/api/user/linked-accounts");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.accounts) {
-          setLinkedAccounts({
-            discord: data.accounts.discord || { connected: false, id: null, username: null },
-            google: data.accounts.google || { connected: false, emailMasked: null },
-            totalConnected: data.totalConnected || 0,
-          });
-        }
+      if (!res.ok) return;
+      const data = await res.json().catch(() => null);
+      if (data?.success && data?.accounts) {
+        setLinkedAccounts({
+          discord: data.accounts.discord || { connected: false, id: null, username: null },
+          google: data.accounts.google || { connected: false, emailMasked: null },
+          totalConnected: Number(data.totalConnected) || 0,
+        });
       }
     } catch {
       // Background silent fallback
@@ -495,7 +494,11 @@ export function SettingsDashboard() {
   const nobility = getEuropeanNobilityRank(xpProgress.level);
   const isOwner = isGuildOwner(session?.user || profile);
 
-  const activeDiscordId = profile?.discordId || linkedAccounts.discord.id || (session?.user as { discordId?: string })?.discordId;
+  const activeDiscordId =
+    profile?.discordId ||
+    linkedAccounts?.discord?.id ||
+    (session?.user as { discordId?: string })?.discordId ||
+    null;
   const { presence: discordPresence } = useDiscordPresence(activeDiscordId);
 
   return (
@@ -988,41 +991,46 @@ export function SettingsDashboard() {
               </p>
             </div>
 
-            {profile?.recentActivity && profile.recentActivity.length > 0 ? (
+            {Array.isArray(profile?.recentActivity) && profile.recentActivity.length > 0 ? (
               <div className="divide-y divide-[#2A1B42] -mx-2 sm:mx-0">
-                {profile.recentActivity.map((act) => (
-                  <div key={act.id} className="py-3 px-2 sm:px-3 flex items-start justify-between gap-3 min-w-0">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded font-black uppercase shrink-0 ${
-                            act.type === "TOURNAMENT"
-                              ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                              : act.type === "ESCROW"
-                              ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-                              : "bg-purple-500/15 text-purple-300 border border-purple-500/30"
-                          }`}
-                        >
-                          {act.type}
-                        </span>
-                        <Link
-                          href={act.href}
-                          className="text-xs sm:text-sm font-bold text-white hover:text-purple-300 transition-colors break-words min-w-0"
-                        >
-                          {act.title}
-                        </Link>
+                {profile.recentActivity.map((act) => {
+                  const actDate = act?.createdAt ? new Date(act.createdAt) : null;
+                  const dateDisplay = actDate && !isNaN(actDate.getTime()) ? actDate.toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  }) : "-";
+
+                  return (
+                    <div key={act.id} className="py-3 px-2 sm:px-3 flex items-start justify-between gap-3 min-w-0">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded font-black uppercase shrink-0 ${
+                              act.type === "TOURNAMENT"
+                                ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                                : act.type === "ESCROW"
+                                ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                                : "bg-purple-500/15 text-purple-300 border border-purple-500/30"
+                            }`}
+                          >
+                            {act.type}
+                          </span>
+                          <Link
+                            href={act.href}
+                            className="text-xs sm:text-sm font-bold text-white hover:text-purple-300 transition-colors break-words min-w-0"
+                          >
+                            {act.title}
+                          </Link>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1 break-words">{act.detail}</p>
                       </div>
-                      <p className="text-xs text-gray-400 mt-1 break-words">{act.detail}</p>
+                      <span className="text-[11px] text-gray-500 font-mono whitespace-nowrap shrink-0 mt-0.5">
+                        {dateDisplay}
+                      </span>
                     </div>
-                    <span className="text-[11px] text-gray-500 font-mono whitespace-nowrap shrink-0 mt-0.5">
-                      {new Date(act.createdAt).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="py-8 text-center text-xs text-gray-500">
@@ -1059,7 +1067,7 @@ export function SettingsDashboard() {
             </div>
 
             {/* Status Banners */}
-            {searchParams.get("bind") === "success" && (
+            {searchParams?.get("bind") === "success" && (
               <div className="p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-xs flex items-center justify-between gap-3 animate-in fade-in">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
@@ -1071,14 +1079,14 @@ export function SettingsDashboard() {
               </div>
             )}
 
-            {searchParams.get("error") && (
+            {Boolean(searchParams?.get("error")) && (
               <div className="p-3.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 text-xs flex items-center justify-between gap-3 animate-in fade-in">
                 <div className="flex items-center gap-2">
                   <AlertTriangle size={16} className="text-rose-400 shrink-0" />
                   <span className="font-semibold">
-                    {searchParams.get("error") === "AccountAlreadyLinked"
+                    {searchParams?.get("error") === "AccountAlreadyLinked"
                       ? "Akun Discord/Google ini sudah terhubung ke pengguna lain. Satu akun login hanya dapat dipakai oleh satu profil."
-                      : searchParams.get("error") === "UnauthorizedBinding"
+                      : searchParams?.get("error") === "UnauthorizedBinding"
                         ? "Tindakan tautan akun tidak diizinkan demi integritas dan keamanan server."
                         : "Terjadi kendala saat menautkan akun."}
                   </span>
@@ -1106,7 +1114,7 @@ export function SettingsDashboard() {
                         <span className="text-[11px] text-gray-400">Sinkronisasi role guild &amp; kasta</span>
                       </div>
                     </div>
-                    {linkedAccounts.discord.connected ? (
+                    {linkedAccounts?.discord?.connected ? (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                         <CheckCircle2 size={11} />
                         <span>Terhubung</span>
@@ -1118,10 +1126,10 @@ export function SettingsDashboard() {
                     )}
                   </div>
 
-                  {linkedAccounts.discord.connected ? (
+                  {linkedAccounts?.discord?.connected ? (
                     <div className="text-[11px] font-mono text-gray-300 bg-[#120B1E] p-2.5 rounded-lg border border-[#2A1B42]">
                       <p className="text-gray-400 text-[10px]">ID DISCORD:</p>
-                      <p className="truncate text-white font-bold">{linkedAccounts.discord.id || profile?.discordId || "Terkoneksi"}</p>
+                      <p className="truncate text-white font-bold">{linkedAccounts?.discord?.id || profile?.discordId || "Terkoneksi"}</p>
                     </div>
                   ) : (
                     <p className="text-xs text-gray-400">
@@ -1131,7 +1139,7 @@ export function SettingsDashboard() {
                 </div>
 
                 <div className="pt-2 border-t border-[#2A1B42]/60 flex items-center justify-between gap-2">
-                  {linkedAccounts.discord.connected ? (
+                  {linkedAccounts?.discord?.connected ? (
                     <>
                       <button
                         type="button"
@@ -1145,13 +1153,13 @@ export function SettingsDashboard() {
                       <button
                         type="button"
                         onClick={() => handleUnlink("discord")}
-                        disabled={linkedAccounts.totalConnected <= 1 || unlinkingProvider === "discord"}
+                        disabled={(linkedAccounts?.totalConnected ?? 0) <= 1 || unlinkingProvider === "discord"}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
-                          linkedAccounts.totalConnected <= 1
+                          (linkedAccounts?.totalConnected ?? 0) <= 1
                             ? "opacity-40 border-gray-700 bg-gray-800/40 text-gray-400 cursor-not-allowed"
                             : "border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300"
                         }`}
-                        title={linkedAccounts.totalConnected <= 1 ? "Tautkan Google terlebih dahulu sebelum melepas Discord" : "Putuskan tautan Discord"}
+                        title={(linkedAccounts?.totalConnected ?? 0) <= 1 ? "Tautkan Google terlebih dahulu sebelum melepas Discord" : "Putuskan tautan Discord"}
                       >
                         <Unlink size={12} />
                         <span>{unlinkingProvider === "discord" ? "Melepas…" : "Putuskan Tautan"}</span>
@@ -1168,7 +1176,7 @@ export function SettingsDashboard() {
                     </button>
                   )}
                 </div>
-                {linkedAccounts.discord.connected && linkedAccounts.totalConnected <= 1 && (
+                {Boolean(linkedAccounts?.discord?.connected && (linkedAccounts?.totalConnected ?? 0) <= 1) && (
                   <p className="text-[10px] text-amber-400/90 -mt-1 flex items-center gap-1">
                     <Lock size={10} />
                     Tautkan Google dulu jika ingin melepas akun Discord.
@@ -1194,7 +1202,7 @@ export function SettingsDashboard() {
                         <span className="text-[11px] text-gray-400">Login cadangan 1-klik aman</span>
                       </div>
                     </div>
-                    {linkedAccounts.google.connected ? (
+                    {linkedAccounts?.google?.connected ? (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                         <CheckCircle2 size={11} />
                         <span>Terhubung</span>
@@ -1206,10 +1214,10 @@ export function SettingsDashboard() {
                     )}
                   </div>
 
-                  {linkedAccounts.google.connected ? (
+                  {linkedAccounts?.google?.connected ? (
                     <div className="text-[11px] font-mono text-gray-300 bg-[#120B1E] p-2.5 rounded-lg border border-[#2A1B42]">
                       <p className="text-gray-400 text-[10px]">EMAIL TERSAMAR:</p>
-                      <p className="truncate text-white font-bold">{linkedAccounts.google.emailMasked || "Terkoneksi"}</p>
+                      <p className="truncate text-white font-bold">{linkedAccounts?.google?.emailMasked || "Terkoneksi"}</p>
                     </div>
                   ) : (
                     <p className="text-xs text-gray-400">
@@ -1219,17 +1227,17 @@ export function SettingsDashboard() {
                 </div>
 
                 <div className="pt-2 border-t border-[#2A1B42]/60 flex items-center justify-end gap-2">
-                  {linkedAccounts.google.connected ? (
+                  {linkedAccounts?.google?.connected ? (
                     <button
                       type="button"
                       onClick={() => handleUnlink("google")}
-                      disabled={linkedAccounts.totalConnected <= 1 || unlinkingProvider === "google"}
+                      disabled={(linkedAccounts?.totalConnected ?? 0) <= 1 || unlinkingProvider === "google"}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
-                        linkedAccounts.totalConnected <= 1
+                        (linkedAccounts?.totalConnected ?? 0) <= 1
                           ? "opacity-40 border-gray-700 bg-gray-800/40 text-gray-400 cursor-not-allowed"
                           : "border-rose-500/40 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300"
                       }`}
-                      title={linkedAccounts.totalConnected <= 1 ? "Tautkan Discord terlebih dahulu sebelum melepas Google" : "Putuskan tautan Google"}
+                      title={(linkedAccounts?.totalConnected ?? 0) <= 1 ? "Tautkan Discord terlebih dahulu sebelum melepas Google" : "Putuskan tautan Google"}
                     >
                       <Unlink size={12} />
                       <span>{unlinkingProvider === "google" ? "Melepas…" : "Putuskan Tautan"}</span>
@@ -1245,7 +1253,7 @@ export function SettingsDashboard() {
                     </button>
                   )}
                 </div>
-                {linkedAccounts.google.connected && linkedAccounts.totalConnected <= 1 && (
+                {Boolean(linkedAccounts?.google?.connected && (linkedAccounts?.totalConnected ?? 0) <= 1) && (
                   <p className="text-[10px] text-amber-400/90 -mt-1 flex items-center gap-1">
                     <Lock size={10} />
                     Tautkan Discord dulu jika ingin melepas akun Google.
@@ -1634,30 +1642,34 @@ export function SettingsDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#2A1B42]">
-                  {listings.map((listing) => {
-                    const statusVal = listingStatus(listing.marketData);
+                  {(Array.isArray(listings) ? listings : []).map((listing) => {
+                    const statusVal = listingStatus(listing?.marketData);
+                    const categoryLabel = typeof listing?.category === "string" ? listing.category.replaceAll("_", " ") : "Lapak";
+                    const createdDate = listing?.createdAt ? new Date(listing.createdAt) : null;
+                    const formattedDate = createdDate && !isNaN(createdDate.getTime()) ? createdDate.toLocaleDateString("id-ID") : "-";
+
                     return (
-                      <tr key={listing.id} className="hover:bg-purple-950/20">
+                      <tr key={listing?.id || Math.random()} className="hover:bg-purple-950/20">
                         <td className="py-3 px-3">
                           <Link
-                            href={statusVal ? "/marketplace" : `/forum/${listing.id}`}
+                            href={statusVal ? "/marketplace" : `/forum/${listing?.id || ""}`}
                             className="font-bold text-white hover:text-purple-300 block truncate max-w-xs"
                           >
-                            {listing.title}
+                            {listing?.title || "Lapak Tanpa Judul"}
                           </Link>
                           <span className="text-[10px] text-gray-500 uppercase">
-                            {listing.category.replaceAll("_", " ")}
+                            {categoryLabel}
                           </span>
                         </td>
                         <td className="py-3 px-3 text-gray-400 whitespace-nowrap">
-                          {new Date(listing.createdAt).toLocaleDateString("id-ID")}
+                          {formattedDate}
                         </td>
                         <td className="py-3 px-3 whitespace-nowrap">
                           {statusVal ? (
                             <select
-                              aria-label={`Status ${listing.title}`}
+                              aria-label={`Status ${listing?.title || "Lapak"}`}
                               value={statusVal === "IN_ESCROW" ? "AVAILABLE" : statusVal}
-                              disabled={statusVal === "IN_ESCROW" || savingStatus === listing.id}
+                              disabled={statusVal === "IN_ESCROW" || savingStatus === listing?.id}
                               onChange={(e) =>
                                 void changeListingStatus(listing, e.target.value as "AVAILABLE" | "SOLD")
                               }
@@ -1673,7 +1685,7 @@ export function SettingsDashboard() {
                       </tr>
                     );
                   })}
-                  {!listings.length && (
+                  {(!listings || listings.length === 0) && (
                     <tr>
                       <td colSpan={3} className="py-6 text-center text-gray-500">
                         Belum ada postingan lapak marketplace.

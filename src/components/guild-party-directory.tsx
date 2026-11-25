@@ -117,7 +117,7 @@ export function GuildPartyDirectory() {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const invitePartyId = searchParams.get("invite");
+  const invitePartyId = searchParams?.get("invite") ?? null;
 
   const [parties, setParties] = useState<GuildParty[]>([]);
   const [myPartyData, setMyPartyData] = useState<{
