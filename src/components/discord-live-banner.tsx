@@ -6,8 +6,9 @@ import { MessageSquare, Users, ExternalLink, Zap } from "lucide-react";
 
 interface DiscordWidgetData {
   serverName: string;
-  onlineCount: number;
-  totalMembers: number;
+  onlineCount: number | null;
+  totalMembers: number | null;
+  hasVerifiedStats?: boolean;
   inviteUrl: string;
   activeMembers: Array<{
     id: string;
@@ -49,8 +50,14 @@ export function DiscordLiveBanner({
     void loadWidget();
   }, []);
 
-  const onlineCount = data?.onlineCount ?? 75;
-  const totalMembers = data?.totalMembers ?? 1250;
+  const onlineCount = data?.onlineCount;
+  const totalMembers = data?.totalMembers;
+  const hasValidCounts =
+    typeof totalMembers === "number" &&
+    totalMembers > 0 &&
+    totalMembers !== 1250 &&
+    typeof onlineCount === "number" &&
+    onlineCount >= 0;
   const inviteUrl = data?.inviteUrl || fallbackInviteUrl;
   const activeMembers = data?.activeMembers || [];
 
@@ -70,11 +77,13 @@ export function DiscordLiveBanner({
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
               </span>
               <span className="text-xs font-mono font-bold text-emerald-400">
-                {onlineCount.toLocaleString("id-ID")} Member Online Sekarang
+                {hasValidCounts ? `${onlineCount?.toLocaleString("id-ID")} Member Online Sekarang` : "🟢 Voice & Chat Discord Aktif 24/7"}
               </span>
             </div>
             <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              Komunitas discord mabar 24 jam • {totalMembers.toLocaleString("id-ID")} Anggota
+              {hasValidCounts
+                ? `Komunitas discord mabar 24 jam • ${totalMembers?.toLocaleString("id-ID")} Anggota`
+                : "Komunitas discord mabar & koordinasi game 24 jam"}
             </p>
           </div>
         </div>
@@ -107,13 +116,21 @@ export function DiscordLiveBanner({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
             </span>
-            <span className="font-bold text-emerald-400">
-              🟢 {onlineCount.toLocaleString("id-ID")} Member Online Sekarang
-            </span>
-            <span className="text-slate-400">•</span>
-            <span className="text-purple-300 font-bold">
-              {totalMembers.toLocaleString("id-ID")} Total Anggota
-            </span>
+            {hasValidCounts ? (
+              <>
+                <span className="font-bold text-emerald-400">
+                  🟢 {onlineCount?.toLocaleString("id-ID")} Member Online Sekarang
+                </span>
+                <span className="text-slate-400">•</span>
+                <span className="text-purple-300 font-bold">
+                  {totalMembers?.toLocaleString("id-ID")} Total Anggota
+                </span>
+              </>
+            ) : (
+              <span className="font-bold text-emerald-400">
+                🟢 Voice &amp; Chat Discord Aktif 24/7
+              </span>
+            )}
           </div>
 
           <h3 className="font-display text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">

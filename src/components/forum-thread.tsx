@@ -487,9 +487,7 @@ export function ForumThread({ id }: { id: string }) {
                 {isSatpamBot ? "Satpam Horizon" : (item.author.username ?? "Gamer")}
               </strong>
               {item.author.partyMembership?.party?.tag && (
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40 whitespace-nowrap">
-                  [{item.author.partyMembership.party.tag}]
-                </span>
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40 whitespace-nowrap">[{item.author.partyMembership.party.tag.trim()}]</span>
               )}
               {item.author.equippedCustomTitle && getCustomTitleBadge(item.author.equippedCustomTitle) && (
                 <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 whitespace-nowrap">
@@ -674,9 +672,7 @@ export function ForumThread({ id }: { id: string }) {
                 <DiscordAvatar src={thread.author.avatar} username={thread.author.username} size={20} frameId={thread.author.equippedAvatarFrame} />
                 <span>oleh <Link href={`/u/${thread.author.username ?? "user"}`} className={`hover:underline ${(thread.author.isPremium || thread.author.username === ".odyssia") ? "premium-username" : "font-semibold text-slate-900 dark:text-[#F8FAFC]"}`}>{thread.author.username ?? "Gamer"}</Link>
                   {thread.author.partyMembership?.party?.tag && (
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40 ml-1.5">
-                      [{thread.author.partyMembership.party.tag}]
-                    </span>
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40 ml-1.5">[{thread.author.partyMembership.party.tag.trim()}]</span>
                   )}
                   {thread.author.equippedCustomTitle && getCustomTitleBadge(thread.author.equippedCustomTitle) && (
                     <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 ml-1.5">

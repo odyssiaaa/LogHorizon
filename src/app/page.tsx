@@ -7,6 +7,7 @@ import { StarterGuideCard } from "@/components/starter-guide-card";
 import { DailyQuestsWidget } from "@/components/daily-quests-widget";
 import { HomepagePodiumShowcase } from "@/components/homepage-podium-showcase";
 import { DiscordLiveBanner } from "@/components/discord-live-banner";
+import { HomepageJoinCta } from "@/components/homepage-join-cta";
 import { PriceDisplay } from "@/context/locale-context";
 import {
   ArrowUpRight,
@@ -1142,15 +1143,7 @@ export default async function Home() {
                 Gabung sekarang bersama {totalMembers} petualang lintas platform PC, konsol, dan mobile.
               </p>
             </div>
-            <a
-              className="px-6 py-3.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-sans font-bold text-sm inline-flex items-center justify-center gap-2 border border-[#7C3AED] transition-colors whitespace-nowrap self-stretch sm:self-auto shadow-sm"
-              href={discordInviteUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span>Connect Discord</span>
-              <ArrowUpRight size={17} />
-            </a>
+            <HomepageJoinCta />
           </div>
         </div>
       </section>

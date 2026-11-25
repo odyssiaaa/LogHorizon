@@ -280,7 +280,7 @@ export function PublicProfileClient({
                     }}
                     title={`Squad Party: ${partyMembership.party.name} (${partyMembership.role})`}
                   >
-                    [{partyMembership.party.tag}] {partyMembership.party.name}
+                    [{partyMembership.party.tag.trim()}] {partyMembership.party.name}
                   </Link>
                 )}
 

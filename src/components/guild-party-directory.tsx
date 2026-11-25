@@ -378,7 +378,7 @@ export function GuildPartyDirectory() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-lg font-black text-white">{myPartyData.party.name}</h3>
                   <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-xs font-mono font-bold border border-purple-500/30">
-                    [{myPartyData.party.tag}]
+                    [{myPartyData.party.tag.trim()}]
                   </span>
                   <span className="px-2 py-0.5 rounded bg-zinc-800 text-gray-300 text-xs font-mono">
                     🎮 {myPartyData.party.primaryGame}
@@ -545,7 +545,7 @@ export function GuildPartyDirectory() {
                             {party.name}
                           </h4>
                           <div className="flex items-center gap-1.5 text-xs text-gray-400 font-mono">
-                            <span className="text-purple-400 font-bold">[{party.tag}]</span>
+                            <span className="text-purple-400 font-bold">[{party.tag.trim()}]</span>
                             <span>•</span>
                             <span className="truncate">{party.primaryGame}</span>
                           </div>
@@ -652,7 +652,7 @@ export function GuildPartyDirectory() {
                       </div>
                       <div>
                         <span className="font-bold text-white block">{p.name}</span>
-                        <span className="text-[10px] font-mono text-purple-400">[{p.tag}]</span>
+                        <span className="text-[10px] font-mono text-purple-400">[{p.tag.trim()}]</span>
                       </div>
                     </div>
                   </td>
@@ -830,7 +830,7 @@ export function GuildPartyDirectory() {
                 </div>
                 <div>
                   <h3 className="text-base font-black text-white">{showJoinModal.name}</h3>
-                  <p className="text-[11px] font-mono text-purple-400">[{showJoinModal.tag}]</p>
+                  <p className="text-[11px] font-mono text-purple-400">[{showJoinModal.tag.trim()}]</p>
                 </div>
               </div>
               <button
@@ -889,7 +889,7 @@ export function GuildPartyDirectory() {
                   <span>Pengaturan &amp; Roster Party</span>
                 </h3>
                 <p className="text-xs text-gray-400 font-mono">
-                  [{myPartyData.party.tag}] {myPartyData.party.name}
+                  [{myPartyData.party.tag.trim()}] {myPartyData.party.name}
                 </p>
               </div>
               <button

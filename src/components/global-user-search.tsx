@@ -276,7 +276,7 @@ export function GlobalUserSearch({
                                 border: `1px solid ${user.party.emblemColor || "#7C3AED"}50`,
                               }}
                             >
-                              [{user.party.tag}]
+                              [{user.party.tag.trim()}]
                             </span>
                           )}
                           <span className="font-bold text-xs text-slate-900 dark:text-white truncate group-hover:text-[#7C3AED] dark:group-hover:text-[#A78BFA] transition-colors">

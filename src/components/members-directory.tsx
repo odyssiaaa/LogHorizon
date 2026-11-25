@@ -388,7 +388,7 @@ export function MembersDirectory() {
                             }}
                             title={`Squad Party: ${member.party.name}`}
                           >
-                            [{member.party.tag}]
+                            [{member.party.tag.trim()}]
                           </span>
                         )}
 

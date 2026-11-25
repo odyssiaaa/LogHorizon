@@ -182,9 +182,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                             {member.username ?? "Gamer"}
                           </Link>
                           {member.partyTag && (
-                            <span className="px-1.5 py-0.2 text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                              [{member.partyTag}]
-                            </span>
+                            <span className="px-1.5 py-0.2 text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">[{member.partyTag.trim()}]</span>
                           )}
                         </div>
                         <p className="text-[11px] font-mono text-slate-500 dark:text-[#A78BFA] truncate">
@@ -247,9 +245,7 @@ export function LeaderboardTable({ members, benefactors }: { members: Leaderboar
                               {member.username ?? "Gamer"}
                             </Link>
                             {member.partyTag && (
-                              <span className="px-1.5 py-0.2 text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                                [{member.partyTag}]
-                              </span>
+                              <span className="px-1.5 py-0.2 text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">[{member.partyTag.trim()}]</span>
                             )}
                           </div>
                         </td>

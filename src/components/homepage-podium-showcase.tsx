@@ -173,9 +173,7 @@ export function HomepagePodiumShowcase({
                               @{adv.username ?? "Gamer"}
                             </Link>
                             {partyTag && (
-                              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-[#7C3AED]/20 text-purple-300 border border-[#7C3AED]/40">
-                                [{partyTag}]
-                              </span>
+                              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-[#7C3AED]/20 text-purple-300 border border-[#7C3AED]/40">[{partyTag.trim()}]</span>
                             )}
                           </div>
 
@@ -229,7 +227,7 @@ export function HomepagePodiumShowcase({
                       >
                         <div className="min-w-0 pr-2">
                           <span className="font-bold text-slate-900 dark:text-white block truncate">
-                            {party.name} <span className="text-purple-400 font-mono">[{party.tag}]</span>
+                            {party.name} <span className="text-purple-400 font-mono">[{party.tag.trim()}]</span>
                           </span>
                           <span className="text-[10px] font-mono text-slate-500 dark:text-gray-400 truncate block">
                             {party.primaryGame} • {party.membersCount} Anggota

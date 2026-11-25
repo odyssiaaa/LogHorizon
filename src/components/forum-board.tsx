@@ -527,9 +527,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                           {post.author.username ?? "Gamer"}
                         </Link>
                         {post.author.partyMembership?.party?.tag && (
-                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40 shrink-0">
-                            [{post.author.partyMembership.party.tag}]
-                          </span>
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40 shrink-0">[{post.author.partyMembership.party.tag.trim()}]</span>
                         )}
                         {post.author.equippedCustomTitle && getCustomTitleBadge(post.author.equippedCustomTitle) && (
                           <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 shrink-0">

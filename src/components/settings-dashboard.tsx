@@ -661,9 +661,7 @@ export function SettingsDashboard() {
                         {profile?.username ?? session.user.name ?? "Petualang"}
                       </h2>
                       {profile?.partyMembership?.party?.tag && (
-                        <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-mono font-bold">
-                          [{profile.partyMembership.party.tag}]
-                        </span>
+                        <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-mono font-bold">[{profile.partyMembership.party.tag.trim()}]</span>
                       )}
                       {profile?.equippedCustomTitle && getCustomTitleBadge(profile.equippedCustomTitle) && (
                         <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-mono font-bold">
@@ -879,7 +877,7 @@ export function SettingsDashboard() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-bold text-white">
                       {profile?.partyMembership?.party
-                        ? `[${profile.partyMembership.party.tag}] ${profile.partyMembership.party.name}`
+                        ? `[${profile.partyMembership.party.tag.trim()}] ${profile.partyMembership.party.name}`
                         : "Party Skuad Guild"}
                     </h3>
                     {profile?.partyMembership && (

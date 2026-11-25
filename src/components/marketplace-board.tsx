@@ -483,9 +483,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                               {seller.username ?? "Gamer"}
                             </Link>
                             {seller.partyMembership?.party?.tag && (
-                              <span className="text-[9px] font-mono font-bold px-1 py-0.2 bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                                [{seller.partyMembership.party.tag}]
-                              </span>
+                              <span className="text-[9px] font-mono font-bold px-1 py-0.2 bg-purple-500/20 text-purple-300 border border-purple-500/30">[{seller.partyMembership.party.tag.trim()}]</span>
                             )}
                           </div>
 
@@ -821,9 +819,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                         {post.author.username ?? "Gamer"}
                       </Link>
                       {post.author.partyMembership?.party?.tag && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                          [{post.author.partyMembership.party.tag}]
-                        </span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40">[{post.author.partyMembership.party.tag.trim()}]</span>
                       )}
                       {(post.author.username?.toLowerCase() === ".odyssia" || post.author.username?.toLowerCase() === "odyssia") ? (
                         <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-none bg-amber-500/10 text-amber-600 dark:text-[#F59E0B] border border-amber-500/30">

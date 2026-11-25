@@ -109,7 +109,7 @@ export default async function LeaderboardPage() {
       isPremium: m.isPremium,
       equippedAvatarFrame: m.equippedAvatarFrame,
       equippedCustomTitle: m.equippedCustomTitle,
-      partyTag: m.partyMembership?.party?.tag ?? null,
+      partyTag: m.partyMembership?.party?.tag ? m.partyMembership.party.tag.trim() : null,
     };
   });
 

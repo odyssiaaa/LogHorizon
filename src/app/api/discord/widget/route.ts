@@ -4,8 +4,9 @@ import { prisma } from "@/lib/prisma";
 interface DiscordWidgetCache {
   data: {
     serverName: string;
-    onlineCount: number;
-    totalMembers: number;
+    onlineCount: number | null;
+    totalMembers: number | null;
+    hasVerifiedStats: boolean;
     inviteUrl: string;
     activeMembers: Array<{
       id: string;
@@ -49,8 +50,9 @@ export async function GET(request: Request) {
     const inviteCode = inviteCodeMatch ? inviteCodeMatch[1] : "aJvbVyTxNb";
 
     let serverName = "LogHorizon Multi-Game Guild";
-    let onlineCount = 120;
-    let totalMembers = 1500;
+    let onlineCount: number | null = null;
+    let totalMembers: number | null = null;
+    let hasVerifiedStats = false;
     const activeMembers: Array<{
       id: string;
       username: string;
@@ -73,10 +75,11 @@ export async function GET(request: Request) {
       if (inviteRes && inviteRes.ok) {
         const inviteJson = await inviteRes.json().catch(() => null);
         if (inviteJson) {
-          if (typeof inviteJson.approximate_member_count === "number") {
+          if (typeof inviteJson.approximate_member_count === "number" && inviteJson.approximate_member_count > 0) {
             totalMembers = inviteJson.approximate_member_count;
+            hasVerifiedStats = true;
           }
-          if (typeof inviteJson.approximate_presence_count === "number") {
+          if (typeof inviteJson.approximate_presence_count === "number" && inviteJson.approximate_presence_count >= 0) {
             onlineCount = inviteJson.approximate_presence_count;
           }
           if (inviteJson.guild?.name) {
@@ -140,8 +143,9 @@ export async function GET(request: Request) {
 
     const responseData = {
       serverName,
-      onlineCount: Math.max(onlineCount, 15),
-      totalMembers: Math.max(totalMembers, 100),
+      onlineCount,
+      totalMembers,
+      hasVerifiedStats,
       inviteUrl,
       activeMembers,
       cachedAt: now,
@@ -161,8 +165,9 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         serverName: "LogHorizon Multi-Game Guild",
-        onlineCount: 45,
-        totalMembers: 1250,
+        onlineCount: null,
+        totalMembers: null,
+        hasVerifiedStats: false,
         inviteUrl: "https://discord.gg/aJvbVyTxNb",
         activeMembers: [],
         cachedAt: now,
