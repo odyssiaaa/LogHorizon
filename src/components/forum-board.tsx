@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { createRealtimeClient, type SealedLiveQuery } from "@neon/realtime/client";
 import { ArrowUp, Coins, Flag, Loader2, MessageCircle, Pin, Plus, Search, Trash2, X } from "lucide-react";
@@ -854,6 +855,23 @@ function ThreadModal({
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !saving) {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose, saving]);
+
   function handleAddOption() {
     if (pollOptions.length < 5) {
       setPollOptions([...pollOptions, ""]);
@@ -915,9 +933,11 @@ function ThreadModal({
     }
   }
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="modal-backdrop fixed inset-0 z-50 bg-slate-900/60 dark:bg-[#09040F]/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+      className="modal-backdrop fixed inset-0 z-[100] bg-slate-900/60 dark:bg-[#09040F]/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -1052,6 +1072,7 @@ function ThreadModal({
           </button>
         </form>
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }

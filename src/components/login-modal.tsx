@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, ShieldCheck } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { signIn } from "next-auth/react";
@@ -15,8 +16,13 @@ export function openLoginModal(callbackUrl?: string) {
 export function LoginModal() {
   const { t } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [callbackUrl, setCallbackUrl] = useState<string | undefined>(undefined);
   const [loadingProvider, setLoadingProvider] = useState<"discord" | "google" | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleOpen = (e: Event) => {
@@ -29,6 +35,25 @@ export function LoginModal() {
     return () => window.removeEventListener("open-login-modal", handleOpen);
   }, []);
 
+  // Lock background scroll when open & handle Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !loadingProvider) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, loadingProvider]);
+
   const handleSignIn = async (provider: "discord" | "google") => {
     try {
       setLoadingProvider(provider);
@@ -38,10 +63,12 @@ export function LoginModal() {
     }
   };
 
-  return (
+  if (!mounted || typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           {/* Backdrop Gelap Anti-Tembus */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -152,6 +179,7 @@ export function LoginModal() {
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { ArrowDownUp, Award, Filter, Flag, Loader2, MessageSquare, Plus, Search, Shield, ShieldCheck, ShoppingBag, Star, Trash2, X } from "lucide-react";
 import { isPublicMarketData } from "@/lib/market-data";
@@ -1094,6 +1095,23 @@ function MarketModal({ canPin, onClose, onCreated }: { canPin: boolean; onClose:
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !saving) {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose, saving]);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -1122,33 +1140,46 @@ function MarketModal({ canPin, onClose, onCreated }: { canPin: boolean; onClose:
     finally { setSaving(false); }
   }
 
-  return <div className="modal-backdrop fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="modal-card market-modal bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl shadow-2xl w-[calc(100vw-1.5rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto my-auto p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="market-modal-title"><button className="modal-close" onClick={onClose} aria-label="Tutup"><X size={19} /></button><p className="section-kicker">PASANG LAPAK</p><h2 id="market-modal-title">Buat Lapak Baru</h2><form className="stack-form" onSubmit={submit}>
-    <label>Judul Lapak<input required maxLength={180} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Contoh: Akun Genshin AR 60" /></label>
-    <div className="form-grid-two"><label>Tipe Transaksi<select value={type} onChange={(event) => setType(event.target.value as "WTS" | "WTB")}><option value="WTS">WTS · Saya menjual</option><option value="WTB">WTB · Saya mencari</option></select></label><label>Nama Game<input required value={game} onChange={(event) => setGame(event.target.value)} placeholder="Nama game" /></label></div>
-    <div className="form-grid-two">
-      <label>Harga (Rupiah)<input required type="number" min="0" step="1" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="250000" /></label>
-      <div className="flex flex-col justify-end">
-        <p className="text-xs text-purple-400 bg-purple-950/20 border border-purple-500/30 rounded p-2.5">
-          🛡️ <strong>Kontak Otomatis Discord:</strong> Pembeli akan diarahkan langsung ke profil Discord resmi akun Anda saat menghubungi penjual.
-        </p>
-      </div>
-    </div>
-    <label>Deskripsi<textarea required maxLength={10000} rows={4} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Jelaskan detail barang dan ketentuan transaksi…" /></label>
-    {canPin && <label className="form-checkbox"><input type="checkbox" checked={isPinned} onChange={(event) => setIsPinned(event.target.checked)} /> Sematkan lapak (Premium, maks. 3)</label>}
-    
-    <div>
-      <ImageUploader
-        multiple
-        maxFiles={3}
-        values={images}
-        onMultiChange={setImages}
-        label="Foto Barang / Akun (1-3 Foto Langsung dari Galeri HP/PC)"
-        description="Pilih 1 sampai 3 foto dari galeri HP atau komputer. Otomatis dikompresi (< 100 KB)."
-      />
-    </div>
+  if (typeof document === "undefined") return null;
 
-    {error && <p className="form-error" role="alert">{error}</p>}<button className="button button-primary" disabled={saving}>{saving ? "Menerbitkan…" : "Terbitkan Lapak"}</button>
-  </form></section></div>;
+  return createPortal(
+    <div className="modal-backdrop fixed inset-0 z-[100] bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="modal-card market-modal bg-white dark:bg-[#11091D] border border-slate-200 dark:border-[#2A1B42] rounded-xl shadow-2xl w-[calc(100vw-1.5rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto my-auto p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="market-modal-title">
+        <button className="modal-close" onClick={onClose} aria-label="Tutup"><X size={19} /></button>
+        <p className="section-kicker">PASANG LAPAK</p>
+        <h2 id="market-modal-title">Buat Lapak Baru</h2>
+        <form className="stack-form" onSubmit={submit}>
+          <label>Judul Lapak<input required maxLength={180} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Contoh: Akun Genshin AR 60" /></label>
+          <div className="form-grid-two"><label>Tipe Transaksi<select value={type} onChange={(event) => setType(event.target.value as "WTS" | "WTB")}><option value="WTS">WTS · Saya menjual</option><option value="WTB">WTB · Saya mencari</option></select></label><label>Nama Game<input required value={game} onChange={(event) => setGame(event.target.value)} placeholder="Nama game" /></label></div>
+          <div className="form-grid-two">
+            <label>Harga (Rupiah)<input required type="number" min="0" step="1" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="250000" /></label>
+            <div className="flex flex-col justify-end">
+              <p className="text-xs text-purple-400 bg-purple-950/20 border border-purple-500/30 rounded p-2.5">
+                🛡️ <strong>Kontak Otomatis Discord:</strong> Pembeli akan diarahkan langsung ke profil Discord resmi akun Anda saat menghubungi penjual.
+              </p>
+            </div>
+          </div>
+          <label>Deskripsi<textarea required maxLength={10000} rows={4} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Jelaskan detail barang dan ketentuan transaksi…" /></label>
+          {canPin && <label className="form-checkbox"><input type="checkbox" checked={isPinned} onChange={(event) => setIsPinned(event.target.checked)} /> Sematkan lapak (Premium, maks. 3)</label>}
+          
+          <div>
+            <ImageUploader
+              multiple
+              maxFiles={3}
+              values={images}
+              onMultiChange={setImages}
+              label="Foto Barang / Akun (1-3 Foto Langsung dari Galeri HP/PC)"
+              description="Pilih 1 sampai 3 foto dari galeri HP atau komputer. Otomatis dikompresi (< 100 KB)."
+            />
+          </div>
+
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <button className="button button-primary" disabled={saving}>{saving ? "Menerbitkan…" : "Terbitkan Lapak"}</button>
+        </form>
+      </section>
+    </div>,
+    document.body
+  );
 }
 
 function MarketImage({ src, alt }: { src: string | null | undefined; alt: string }) {

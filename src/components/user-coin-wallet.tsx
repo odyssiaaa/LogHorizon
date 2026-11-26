@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import {
   Coins,
@@ -64,6 +65,31 @@ export function UserCoinWallet({ initialBalance = 0, onNavigateTab }: UserCoinWa
   const [proofUrl, setProofUrl] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [topupFeedback, setTopupFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock background scroll when modal is open and support ESC key
+  useEffect(() => {
+    if (!showTopupModal) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !submitting) {
+        setShowTopupModal(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showTopupModal, submitting]);
 
   useEffect(() => {
     setBalance(initialBalance);
@@ -319,9 +345,9 @@ export function UserCoinWallet({ initialBalance = 0, onNavigateTab }: UserCoinWa
       </section>
 
       {/* TOP-UP QRIS HORIZON COIN MODAL */}
-      {showTopupModal && (
+      {showTopupModal && mounted && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget && !submitting) setShowTopupModal(false);
           }}
@@ -523,7 +549,8 @@ export function UserCoinWallet({ initialBalance = 0, onNavigateTab }: UserCoinWa
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

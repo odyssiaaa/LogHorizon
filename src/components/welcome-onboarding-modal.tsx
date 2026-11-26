@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSession, signIn } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Shield, Sparkles, X, Compass, ExternalLink } from "lucide-react";
@@ -70,13 +71,30 @@ export function WelcomeOnboardingModal() {
     void signIn("google");
   }
 
-  if (!mounted) return null;
+  // Lock background scroll when open & handle Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
-  return (
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleDismiss();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  if (!mounted || typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="welcome-modal-title"
@@ -176,6 +194,7 @@ export function WelcomeOnboardingModal() {
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

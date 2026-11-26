@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Download,
   Smartphone,
@@ -30,9 +31,33 @@ export function openPwaInstallModal() {
 export function PwaInstallModal() {
   const { t } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [installSuccess, setInstallSuccess] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock background scroll when open & handle Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     // Check if already in standalone PWA mode
@@ -75,10 +100,12 @@ export function PwaInstallModal() {
     }
   };
 
-  return (
+  if (!mounted || typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 select-none">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 select-none">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -307,6 +334,7 @@ export function PwaInstallModal() {
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

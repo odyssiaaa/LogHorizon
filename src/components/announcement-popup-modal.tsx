@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Megaphone, X, ExternalLink, Check, Clock } from "lucide-react";
 
@@ -204,6 +205,18 @@ function ModalAnnouncementRenderer({ content }: { content: string }) {
 export function AnnouncementPopupModal() {
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  const handleDismiss = useCallback(() => {
+    if (announcement) {
+      localStorage.setItem(`loghorizon_seen_announcement_${announcement.id}`, "true");
+    }
+    setIsOpen(false);
+  }, [announcement]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     fetch("/api/announcements")
@@ -228,29 +241,45 @@ export function AnnouncementPopupModal() {
       .catch(() => {});
   }, []);
 
-  function handleDismiss() {
-    if (announcement) {
-      localStorage.setItem(`loghorizon_seen_announcement_${announcement.id}`, "true");
-    }
-    setIsOpen(false);
-  }
+  // Lock background scroll when modal is open and handle Escape key
+  useEffect(() => {
+    if (!isOpen) return;
 
-  if (!isOpen || !announcement) return null;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleDismiss();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, handleDismiss]);
+
+  if (!mounted || !isOpen || !announcement || typeof document === "undefined") return null;
 
   const actionLinks = extractActionLinks(announcement.content);
   const primaryCta = actionLinks[0];
   const authorName = announcement.author?.username || ".odyssia";
   const timeFormatted = formatWib(announcement.createdAt);
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleDismiss();
+      }}
     >
-      <div className="w-full max-w-xl max-h-[85vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#11091D] border-2 border-[#7C3AED]/50 text-slate-900 dark:text-white shadow-2xl p-6 sm:p-7 relative z-50 text-left space-y-5 animate-in zoom-in-95 duration-200">
-        {/* Top Header */}
-        <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-200 dark:border-[#2A1B42]">
+      <div className="w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden rounded-2xl bg-white dark:bg-[#11091D] border-2 border-[#7C3AED]/50 text-slate-900 dark:text-white shadow-2xl p-6 sm:p-7 relative z-50 text-left animate-in zoom-in-95 duration-200">
+        {/* Top Header - Fixed at Top */}
+        <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-200 dark:border-[#2A1B42] shrink-0">
           <div className="flex items-center gap-2.5">
             <span className="p-2 rounded-lg bg-[#7C3AED]/15 dark:bg-[#7C3AED]/20 text-[#7C3AED] dark:text-[#A78BFA] shrink-0">
               <Megaphone size={18} className="animate-pulse" />
@@ -269,26 +298,26 @@ export function AnnouncementPopupModal() {
             type="button"
             onClick={handleDismiss}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1A0E2E] transition cursor-pointer shrink-0"
-            title="Tutup Pengumuman"
+            title="Tutup Pengumuman (Esc)"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Title */}
-        <div className="space-y-1">
+        {/* Title - Fixed Header Subtitle */}
+        <div className="pt-3 pb-2 shrink-0">
           <h3 className="text-lg sm:text-xl font-black uppercase text-slate-900 dark:text-white tracking-tight leading-snug">
             {announcement.title}
           </h3>
         </div>
 
-        {/* Content Box */}
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#0A0512] border border-slate-200 dark:border-[#2A1B42] text-xs sm:text-sm leading-relaxed max-h-[45vh] overflow-y-auto">
+        {/* Content Box - Scrollable Body */}
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#0A0512] border border-slate-200 dark:border-[#2A1B42] text-xs sm:text-sm leading-relaxed overflow-y-auto flex-1 my-2">
           <ModalAnnouncementRenderer content={announcement.content} />
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+        {/* Action Buttons - Fixed at Bottom */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-[#2A1B42] shrink-0">
           {primaryCta ? (
             <Link
               href={primaryCta.url}
@@ -314,6 +343,7 @@ export function AnnouncementPopupModal() {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
