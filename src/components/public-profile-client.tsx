@@ -37,6 +37,7 @@ import { getEuropeanNobilityRank } from "@/lib/nobility-ranks";
 import { getLevelProgress } from "@/lib/level-system";
 import { useDiscordPresence } from "@/hooks/use-discord-presence";
 import { TipModal } from "@/components/tip-modal";
+import { openLoginModal } from "@/components/login-modal";
 
 export type PublicProfileProps = {
   user: {
@@ -333,10 +334,10 @@ export function PublicProfileClient({
 
                 {(user.tipsReceivedTotal ?? 0) > 0 && (
                   <span
-                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-xs"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-xs"
                     title={`Menerima total ${user.tipsReceivedTotal} HC apresiasi dari anggota guild.`}
                   >
-                    <span>🪙</span>
+                    <Coins size={13} className="text-amber-500 shrink-0" />
                     <span>+{(user.tipsReceivedTotal ?? 0).toLocaleString("id-ID")} HC Apresiasi</span>
                   </span>
                 )}
@@ -416,24 +417,24 @@ export function PublicProfileClient({
                   type="button"
                   onClick={() => {
                     if (!currentUserId) {
-                      router.push("/api/auth/signin");
+                      openLoginModal();
                       return;
                     }
                     setShowTipModal(true);
                   }}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-300 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap cursor-pointer"
-                  title={`Beri tip apresiasi Horizon Coin untuk @${user.username}`}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-300 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap cursor-pointer active:scale-[0.98]"
+                  title={`Kirim tip apresiasi Horizon Coin untuk @${user.username}`}
                 >
-                  <span>🪙</span>
-                  <span>Beri Tip Apresiasi</span>
+                  <Coins size={15} className="text-amber-500 shrink-0" />
+                  <span>Kirim Tip (HC)</span>
                 </button>
 
                 <Link
                   href={`/messages?to=${user.id}`}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-[#7C3AED]/20 shrink-0 whitespace-nowrap"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-[#7C3AED]/20 shrink-0 whitespace-nowrap active:scale-[0.98]"
                 >
                   <MessageSquare size={15} />
-                  <span>Kirim Pesan (PM)</span>
+                  <span>Kirim Pesan</span>
                 </Link>
 
                 <button

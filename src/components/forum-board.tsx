@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { createRealtimeClient, type SealedLiveQuery } from "@neon/realtime/client";
-import { ArrowUp, Flag, Loader2, MessageCircle, Pin, Plus, Search, Trash2, X } from "lucide-react";
+import { ArrowUp, Coins, Flag, Loader2, MessageCircle, Pin, Plus, Search, Trash2, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -19,7 +19,6 @@ import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown"
 import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 import { MentionHashtagInput } from "@/components/mention-hashtag-input";
 import { getCustomTitleBadge } from "@/lib/armory-catalog";
-import { TipModal } from "@/components/tip-modal";
 
 type Category = "GENERAL_CHAT" | "PROMOTION" | "FEEDBACK";
 type ForumLiveRow = { id: string };
@@ -53,11 +52,6 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
   const [loginAction, setLoginAction] = useState("");
   const [reportId, setReportId] = useState<string | null>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
-  const [tipTarget, setTipTarget] = useState<{
-    targetUser: { id: string; username: string | null; avatar?: string | null };
-    postId?: string;
-    contextTitle?: string;
-  } | null>(null);
   const [liveState, setLiveState] = useState<LiveState>("live");
   const [liveError, setLiveError] = useState("");
   const { data: session, status } = useSession();
@@ -551,7 +545,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                         <span>{new Date(post.createdAt).toLocaleDateString("id-ID")}</span>
                         {(post.tipsTotal ?? 0) > 0 && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
-                            🪙 +{post.tipsTotal} HC Apresiasi
+                            <Coins size={11} className="text-amber-500 shrink-0" /> +{post.tipsTotal} HC Apresiasi
                           </span>
                         )}
                       </div>
@@ -629,8 +623,8 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                       );
                     })()}
 
-                    {/* Baris Aksi Bawah: Like & Dislike Horizontal + Diskusi, Share, Laporkan & Moderasi */}
-                    <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 mt-2 border-t border-slate-200 dark:border-[#2A1B42]">
+                    {/* Baris Aksi Bawah: 1. Reactions (kiri), 2. Diskusi, 3. Share, 4. Menu Titik Tiga (⋮) */}
+                    <div className="flex items-center justify-between gap-2.5 pt-3 mt-2 border-t border-slate-200 dark:border-[#2A1B42]">
                       <PostReactions
                         postId={post.id}
                         likes={post.likes}
@@ -648,87 +642,64 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                         }
                       />
 
-                      <div className="flex items-center gap-2 sm:gap-2.5 text-xs font-mono text-slate-500 dark:text-[#A78BFA] flex-wrap">
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono text-slate-500 dark:text-[#A78BFA]">
                         <Link
                           href={`/forum/${post.id}`}
-                          className="h-8 px-2.5 rounded-md border border-slate-200 dark:border-[#2A1B42] bg-slate-50 dark:bg-[#1A0E2E]/60 hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:border-[#7C3AED]/40 inline-flex items-center gap-1.5 transition-colors font-bold"
+                          className="h-8 px-2.5 rounded-md border border-slate-200 dark:border-[#2A1B42] bg-slate-50 dark:bg-[#1A0E2E]/60 hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:border-[#7C3AED]/40 inline-flex items-center gap-1.5 transition-colors font-bold text-xs"
+                          title="Buka ruang diskusi thread"
                         >
-                          <MessageCircle size={13} />
+                          <MessageCircle size={14} className="text-[#7C3AED] dark:text-[#A78BFA]" />
                           <span>Diskusi</span>
                         </Link>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!user) {
-                              setLoginAction("memberi tip apresiasi");
-                              return;
-                            }
-                            setTipTarget({
-                              targetUser: {
-                                id: post.author.id,
-                                username: post.author.username,
-                                avatar: post.author.avatar,
-                              },
-                              postId: post.id,
-                              contextTitle: post.title,
-                            });
-                          }}
-                          className="h-8 px-2.5 rounded-md border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-300 inline-flex items-center gap-1.5 transition-colors font-bold text-xs cursor-pointer"
-                          title="Kirim Tip Horizon Coin"
-                        >
-                          <span>🪙</span>
-                          <span className="hidden sm:inline">Kirim Tip</span>
-                          <span className="sm:hidden">Tip</span>
-                        </button>
+
                         <ShareButton
                           url={`/forum/${post.id}`}
                           title={`[Forum] ${post.title}`}
                           text={`Cek diskusi di Forum LogHorizon: ${post.title}`}
-                          label="Share"
+                          label="Bagikan"
                           variant="ghost"
                           className="h-8 px-2.5 text-xs rounded-md border border-slate-200 dark:border-[#2A1B42] bg-slate-50 dark:bg-[#1A0E2E]/60 hover:border-[#7C3AED]/40"
                         />
-                        <button
-                          type="button"
-                          className="h-8 px-2 rounded-md hover:text-rose-400 inline-flex items-center gap-1 text-slate-400 dark:text-[#A78BFA]/70 transition-colors cursor-pointer"
-                          onClick={() => handleReportPost(post.id)}
-                          title="Laporkan postingan"
-                        >
-                          <Flag size={12} />
-                          <span className="hidden sm:inline">Laporkan</span>
-                        </button>
 
-                        {/* Tombol Hapus Pemilik Thread Biasa */}
-                        {user && !(user.role === "ADMIN" || user.role === "MODERATOR") && (user.id === post.author.id || user.username === post.author.username) && (
-                          <button
-                            type="button"
-                            className="h-8 px-2 rounded-md text-rose-400 hover:text-rose-300 inline-flex items-center gap-1 text-xs font-mono transition-colors cursor-pointer"
-                            onClick={() => void handleDeletePost(post.id)}
-                            title="Hapus postingan saya"
-                          >
-                            <Trash2 size={12} />
-                            <span className="hidden sm:inline">Hapus</span>
-                          </button>
-                        )}
-
-                        {/* Menu Moderasi Staf (Admin & Moderator) */}
-                        {(user?.role === "ADMIN" || user?.role === "MODERATOR") && (
-                          <StaffCardModerationMenu
-                            actions={[
-                              {
-                                label: post.isPinned ? "Lepas Sematan (Unpin)" : "Sematkan Thread (Pin)",
-                                icon: <Pin size={13} />,
-                                onClick: () => handleTogglePin(post.id, post.isPinned),
-                              },
-                              {
-                                label: "Hapus Paksa Thread",
-                                icon: <Trash2 size={13} />,
-                                danger: true,
-                                onClick: () => handleDeletePost(post.id),
-                              },
-                            ]}
-                          />
-                        )}
+                        {/* Menu Titik Tiga (⋮) untuk Laporkan & Moderasi */}
+                        <StaffCardModerationMenu
+                          label=""
+                          title="Opsi Diskusi"
+                          openDirection="up"
+                          actions={[
+                            {
+                              label: "Laporkan Diskusi",
+                              icon: <Flag size={13} />,
+                              danger: true,
+                              onClick: () => handleReportPost(post.id),
+                            },
+                            ...(user && !(user.role === "ADMIN" || user.role === "MODERATOR") && (user.id === post.author.id || user.username === post.author.username)
+                              ? [
+                                  {
+                                    label: "Hapus Postingan Saya",
+                                    icon: <Trash2 size={13} />,
+                                    danger: true,
+                                    onClick: () => void handleDeletePost(post.id),
+                                  },
+                                ]
+                              : []),
+                            ...((user?.role === "ADMIN" || user?.role === "MODERATOR")
+                              ? [
+                                  {
+                                    label: post.isPinned ? "Lepas Sematan (Unpin)" : "Sematkan Thread (Pin)",
+                                    icon: <Pin size={13} />,
+                                    onClick: () => handleTogglePin(post.id, post.isPinned),
+                                  },
+                                  {
+                                    label: "Hapus Paksa Thread",
+                                    icon: <Trash2 size={13} />,
+                                    danger: true,
+                                    onClick: () => handleDeletePost(post.id),
+                                  },
+                                ]
+                              : []),
+                          ]}
+                        />
                       </div>
                     </div>
                   </motion.article>
@@ -858,26 +829,6 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
           </div>
         </div>
       )}
-
-      {/* Modal Kirim Tip Apresiasi Horizon Coin */}
-      <TipModal
-        isOpen={!!tipTarget}
-        onClose={() => setTipTarget(null)}
-        targetUser={tipTarget?.targetUser ?? null}
-        postId={tipTarget?.postId}
-        contextTitle={tipTarget?.contextTitle}
-        onSuccess={(amount) => {
-          if (tipTarget?.postId) {
-            setPosts((prev) =>
-              prev.map((p) =>
-                p.id === tipTarget.postId
-                  ? { ...p, tipsTotal: (p.tipsTotal ?? 0) + amount }
-                  : p
-              )
-            );
-          }
-        }}
-      />
     </main>
   );
 }

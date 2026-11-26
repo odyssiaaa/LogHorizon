@@ -18,6 +18,7 @@ export function StaffCardModerationMenu({
   label = "Moderasi",
   openDirection = "up",
   showHeader = false,
+  title = "Opsi",
 }: {
   actions: StaffActionItem[];
   className?: string;
@@ -25,6 +26,7 @@ export function StaffCardModerationMenu({
   label?: string;
   openDirection?: "up" | "down";
   showHeader?: boolean;
+  title?: string;
 }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -42,7 +44,7 @@ export function StaffCardModerationMenu({
   if (!actions.length) return null;
 
   // Bersihkan karakter titik ganda '⋮' jika ada di label agar tidak dobel dengan ikon MoreVertical
-  const displayLabel = label.replace(/^⋮\s*/, "");
+  const displayLabel = label ? label.replace(/^⋮\s*/, "").trim() : "";
   const hasCustomIcon = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(displayLabel);
 
   return (
@@ -56,12 +58,15 @@ export function StaffCardModerationMenu({
         }}
         className={
           buttonClassName ||
-          "h-7 px-2 rounded-lg font-mono text-[11px] font-bold inline-flex items-center gap-1 border border-[#7C3AED]/40 bg-purple-500/10 hover:bg-[#7C3AED]/25 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-xs shrink-0 whitespace-nowrap"
+          (displayLabel
+            ? "h-7 px-2 rounded-lg font-mono text-[11px] font-bold inline-flex items-center gap-1 border border-[#7C3AED]/40 bg-purple-500/10 hover:bg-[#7C3AED]/25 text-[#7C3AED] dark:text-[#A78BFA] transition-all cursor-pointer shadow-xs shrink-0 whitespace-nowrap"
+            : "size-8 rounded-md border border-slate-200 dark:border-[#2A1B42] bg-slate-50 dark:bg-[#1A0E2E]/60 text-slate-500 dark:text-[#A78BFA] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:border-[#7C3AED]/40 flex items-center justify-center transition-all cursor-pointer shrink-0")
         }
-        title="Opsi Moderasi Staf (Admin & Moderator)"
+        title={title}
+        aria-label={title}
       >
-        {!hasCustomIcon && <MoreVertical size={13} className="shrink-0" />}
-        <span>{displayLabel}</span>
+        {!hasCustomIcon && <MoreVertical size={14} className="shrink-0" />}
+        {displayLabel ? <span>{displayLabel}</span> : null}
       </button>
 
       {open && (

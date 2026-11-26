@@ -879,13 +879,16 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                   disabled={contactLoading === post.id || status === "loading"}
                   onClick={() => void revealContact(post.id)}
                 >
-                  {contactLoading === post.id
-                    ? "MEMUAT KONTAK…"
-                    : status === "loading"
-                      ? "MEMERIKSA AKUN…"
-                      : user
-                        ? "💬 HUBUNGI PENJUAL"
-                        : "Login untuk Lihat Kontak"}
+                  <MessageSquare size={14} className="shrink-0 text-[#7C3AED] dark:text-[#A78BFA]" />
+                  <span>
+                    {contactLoading === post.id
+                      ? "Memuat Kontak…"
+                      : status === "loading"
+                        ? "Memeriksa Akun…"
+                        : user
+                          ? (market.type === "WTB" ? "💬 Chat Pembeli" : "💬 Chat Penjual")
+                          : "Login untuk Chat Penjual"}
+                  </span>
                 </button>
               )}
 
@@ -901,7 +904,7 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                         onClick={() => setActiveEscrowModalId(transaction.id)}
                       >
                         <ShieldCheck size={14} />
-                        <span>RUANG REKBER 3-PIHAK</span>
+                        <span>🛡️ RUANG REKBER AKTIF</span>
                       </button>
                     ))
                   ) : market.status === "AVAILABLE" && user?.id !== post.authorId ? (
@@ -912,13 +915,13 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                       onClick={() => void startEscrow(post.id)}
                     >
                       <ShieldCheck size={14} />
-                      <span>{escrowLoading === post.id ? "Memproses…" : "🛡️ RUANG REKBER 3-PIHAK"}</span>
+                      <span>{escrowLoading === post.id ? "Memproses…" : "🛡️ Beli Aman via Rekber"}</span>
                     </button>
                   ) : null}
                 </div>
               )}
 
-              {/* Baris 3: Baris Utilitas Seragam di Paling Bawah (Bagikan, PM/Report, Moderasi) */}
+              {/* Baris 3: Baris Utilitas Seragam di Paling Bawah (Bagikan, Laporkan, Moderasi) */}
               <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-[#2E1E45]/80 font-mono text-xs overflow-visible">
                 <div className="flex items-center gap-2 flex-wrap">
                   <ShareButton
@@ -929,24 +932,14 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
                     variant="outline"
                     className="h-7 px-2 text-[11px]"
                   />
-                  {user?.id !== post.authorId && (
-                    <Link
-                      href={`/messages?user=${post.authorId}`}
-                      className="h-7 px-2 rounded-none font-mono text-[11px] font-semibold uppercase tracking-wider bg-slate-100 dark:bg-[#1A0E2E] text-slate-700 dark:text-[#A78BFA] border border-slate-200 dark:border-[#2E1E45] hover:border-[#7C3AED] hover:text-slate-900 dark:hover:text-[#F8FAFC] inline-flex items-center gap-1 transition"
-                      title="Kirim Pesan Langsung (PM) ke Penjual"
-                    >
-                      <MessageSquare size={12} />
-                      <span>PM</span>
-                    </Link>
-                  )}
                   <button
                     type="button"
-                    className="h-7 px-1.5 text-xs font-mono text-slate-500 dark:text-[#A78BFA] hover:text-rose-500 inline-flex items-center gap-1 transition cursor-pointer"
+                    className="h-7 px-2 text-[11px] font-mono text-slate-500 dark:text-[#A78BFA] hover:text-rose-500 inline-flex items-center gap-1 transition cursor-pointer"
                     onClick={() => void report(post.id)}
                     title="Laporkan Lapak"
                   >
-                    <Flag size={13} />
-                    <span>Report</span>
+                    <Flag size={12} />
+                    <span>Laporkan</span>
                   </button>
                 </div>
 

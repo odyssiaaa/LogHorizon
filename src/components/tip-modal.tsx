@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { X, Sparkles, Send, CheckCircle2, AlertCircle, Heart } from "lucide-react";
+import { X, Sparkles, Send, CheckCircle2, AlertCircle, Heart, Coins } from "lucide-react";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { openLoginModal } from "@/components/login-modal";
 import Link from "next/link";
@@ -142,13 +142,14 @@ export function TipModal({
 
         {successData ? (
           <div className="py-6 text-center space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="w-16 h-16 mx-auto rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-3xl shadow-lg shadow-amber-500/20">
-              🪙
+            <div className="w-16 h-16 mx-auto rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-amber-400 shadow-lg shadow-amber-500/20">
+              <Coins size={32} />
             </div>
             <div>
               <h3 className="text-lg font-black text-white">Apresiasi Terkirim!</h3>
-              <p className="text-xs text-amber-300 font-mono mt-1">
-                +{successData.amount} HC berhasil dikirimkan kepada @{targetName}
+              <p className="text-xs text-amber-300 font-mono mt-1 flex items-center justify-center gap-1">
+                <Coins size={13} className="text-amber-400" />
+                <span>+{successData.amount} HC berhasil dikirimkan kepada @{targetName}</span>
               </p>
             </div>
             <p className="text-xs text-gray-300 max-w-xs mx-auto">
@@ -174,7 +175,9 @@ export function TipModal({
               </div>
               <h3 className="text-lg font-black text-white mt-1 flex items-center gap-2">
                 <span>Kirim Tip</span>
-                <span className="text-amber-400 font-mono">Horizon Coin (🪙 HC)</span>
+                <span className="text-amber-400 font-mono inline-flex items-center gap-1">
+                  <Coins size={16} /> Horizon Coin (HC)
+                </span>
               </h3>
             </div>
 
@@ -197,7 +200,9 @@ export function TipModal({
               {myCoins !== null && (
                 <div className="text-right shrink-0">
                   <p className="text-[10px] text-gray-400 font-mono">Saldo Anda</p>
-                  <p className="text-xs font-bold text-amber-400 font-mono">🪙 {myCoins.toLocaleString("id-ID")} HC</p>
+                  <p className="text-xs font-bold text-amber-400 font-mono inline-flex items-center gap-1 justify-end">
+                    <Coins size={12} /> {myCoins.toLocaleString("id-ID")} HC
+                  </p>
                 </div>
               )}
             </div>
@@ -205,13 +210,16 @@ export function TipModal({
             {isSelf && (
               <div className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs flex items-center gap-2">
                 <AlertCircle size={15} className="shrink-0 text-rose-400" />
-                <span>Anda tidak dapat mengirim tip apresiasi ke postingan milik sendiri.</span>
+                <span>Anda tidak dapat mengirim tip apresiasi ke akun milik sendiri.</span>
               </div>
             )}
 
             {/* Nominal Presets */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-gray-300 font-mono">Pilih Nominal Tip (🪙 HC):</label>
+              <label className="block text-xs font-bold text-gray-300 font-mono inline-flex items-center gap-1">
+                <span>Pilih Nominal Tip (HC):</span>
+                <Coins size={12} className="text-amber-400" />
+              </label>
               <div className="grid grid-cols-4 gap-2">
                 {PRESET_AMOUNTS.map((val) => {
                   const isSelected = selectedAmount === val;

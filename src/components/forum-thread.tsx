@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, Flag, MessageCircle, Pin, Send, Trash2, X } from "lucide-react";
+import { ArrowLeft, Coins, Flag, MessageCircle, Pin, Send, Trash2, X } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { LoginPrompt, ReportDialog } from "@/components/interaction-dialogs";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -15,7 +15,7 @@ import { MentionHashtagInput, type MentionUser } from "@/components/mention-hash
 import { getActiveTempTitle } from "@/lib/caste";
 import { ForumPollWidget, type PollData } from "@/components/forum-poll-widget";
 import { getCustomTitleBadge } from "@/lib/armory-catalog";
-import { TipModal } from "@/components/tip-modal";
+import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown";
 
 type CommentRecord = {
   id: string;
@@ -101,12 +101,6 @@ export function ForumThread({ id }: { id: string }) {
   const [loginAction, setLoginAction] = useState("");
   const [reportOpen, setReportOpen] = useState(false);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
-  const [tipTarget, setTipTarget] = useState<{
-    targetUser: { id: string; username: string | null; avatar?: string | null };
-    postId?: string;
-    commentId?: string;
-    contextTitle?: string;
-  } | null>(null);
   const { data: session } = useSession();
   const user = session?.user;
 
@@ -511,8 +505,9 @@ export function ForumThread({ id }: { id: string }) {
                 </span>
               )}
               {(item.tipsTotal ?? 0) > 0 && (
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap">
-                  🪙 +{item.tipsTotal} HC
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap">
+                  <Coins size={11} className="text-amber-500 shrink-0" />
+                  <span>+{item.tipsTotal} HC</span>
                 </span>
               )}
               <span className="text-slate-400 dark:text-[#A78BFA]/40 text-[10px]">•</span>
@@ -526,40 +521,18 @@ export function ForumThread({ id }: { id: string }) {
 
             {/* Action Bar */}
             {!user?.isBanned && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-3 whitespace-nowrap">
+              <div className="mt-2.5 flex items-center gap-3 whitespace-nowrap">
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1.5 text-[11px] font-mono text-[#7C3AED] dark:text-[#A78BFA] hover:text-[#6D28D9] dark:hover:text-[#F8FAFC] uppercase tracking-wider transition-colors"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-mono text-[#7C3AED] dark:text-[#A78BFA] hover:text-[#6D28D9] dark:hover:text-[#F8FAFC] uppercase tracking-wider transition-colors cursor-pointer"
                   onClick={() => handleStartReply(item)}
                 >
                   <MessageCircle size={13} /> {isSatpamBot ? "Balas Satpam AI" : "Balas"}
                 </button>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 text-[11px] font-mono text-amber-500 hover:text-amber-400 transition-colors cursor-pointer"
-                  onClick={() => {
-                    if (!user) {
-                      setLoginAction("memberi tip apresiasi");
-                      return;
-                    }
-                    setTipTarget({
-                      targetUser: {
-                        id: item.author.id || item.authorId || "",
-                        username: item.author.username,
-                        avatar: item.author.avatar,
-                      },
-                      commentId: item.id,
-                      contextTitle: `Komentar oleh @${item.author.username ?? "Gamer"}`,
-                    });
-                  }}
-                  title="Beri Tip Komentar"
-                >
-                  <span>🪙</span> Tip
-                </button>
                 {canDeleteComment && (
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 text-[11px] font-mono text-rose-500 hover:text-rose-400 transition-colors"
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-rose-500 hover:text-rose-400 transition-colors cursor-pointer"
                     onClick={() => void deleteComment(item.id)}
                     title="Hapus komentar"
                   >
@@ -697,7 +670,8 @@ export function ForumThread({ id }: { id: string }) {
               <span>{new Date(thread.createdAt).toLocaleString("id-ID")}</span>
               {(thread.tipsTotal ?? 0) > 0 && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 ml-1.5 shrink-0">
-                  🪙 +{thread.tipsTotal} HC Apresiasi
+                  <Coins size={11} className="text-amber-500 shrink-0" />
+                  <span>+{thread.tipsTotal} HC Apresiasi</span>
                 </span>
               )}
             </div>
@@ -714,7 +688,7 @@ export function ForumThread({ id }: { id: string }) {
             <div className="thread-body break-words leading-relaxed text-sm sm:text-base my-5 text-slate-800 dark:text-[#F8FAFC]/90 font-sans">
               <FormattedPostContent text={thread.content} onImageClick={setLightboxImg} />
             </div>
-            <div className="thread-actions flex flex-wrap items-center justify-between gap-3 pt-3.5 border-t border-slate-200 dark:border-[#2E1E45]">
+            <div className="thread-actions flex items-center justify-between gap-3 pt-3.5 border-t border-slate-200 dark:border-[#2E1E45]">
               <PostReactions
                 postId={thread.id}
                 likes={thread.likes}
@@ -723,30 +697,7 @@ export function ForumThread({ id }: { id: string }) {
                 onLoginRequired={() => setLoginAction("memberi reaksi")}
               />
 
-              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                <button
-                  type="button"
-                  className="h-8 px-2.5 rounded-md border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-300 inline-flex items-center gap-1.5 transition-colors font-bold text-xs cursor-pointer"
-                  onClick={() => {
-                    if (!user) {
-                      setLoginAction("memberi tip apresiasi");
-                      return;
-                    }
-                    setTipTarget({
-                      targetUser: {
-                        id: thread.author.id || thread.authorId || "",
-                        username: thread.author.username,
-                        avatar: thread.author.avatar,
-                      },
-                      postId: thread.id,
-                      contextTitle: thread.title,
-                    });
-                  }}
-                  title="Beri Tip Pembuat Thread"
-                >
-                  <span>🪙</span>
-                  <span>Kirim Tip</span>
-                </button>
+              <div className="flex items-center gap-2 sm:gap-2.5">
                 <ShareButton
                   url={`/forum/${thread.id}`}
                   title={thread.title}
@@ -755,32 +706,38 @@ export function ForumThread({ id }: { id: string }) {
                   variant="outline"
                   className="h-8 px-2.5 text-xs rounded-md border border-slate-200 dark:border-[#2A1B42]"
                 />
-                <button
-                  type="button"
-                  className="text-xs font-mono text-slate-500 dark:text-[#A78BFA] hover:text-rose-400 inline-flex items-center gap-1.5 h-8 px-2 cursor-pointer transition-colors"
-                  onClick={reportPost}
-                >
-                  <Flag size={14} /> Report
-                </button>
-                {user && (user.role === "ADMIN" || user.role === "MODERATOR") && (
-                  <button
-                    type="button"
-                    className={`text-xs font-mono inline-flex items-center gap-1.5 h-8 px-2 cursor-pointer transition-colors ${thread.isPinned ? "text-[#7C3AED] dark:text-[#A78BFA] font-bold" : "text-slate-500 dark:text-[#A78BFA]/70 hover:text-slate-900 dark:hover:text-[#F8FAFC]"}`}
-                    onClick={() => void togglePin()}
-                    title={thread.isPinned ? "Lepas Pin" : "Pin Thread"}
-                  >
-                    <Pin size={14} /> {thread.isPinned ? "Lepas Pin" : "Pin Thread"}
-                  </button>
-                )}
-                {user && (user.role === "ADMIN" || user.role === "MODERATOR" || user.username === ".odyssia" || user.id === thread.author?.id || user.id === thread.authorId || user.username === thread.author?.username) && (
-                  <button
-                    type="button"
-                    className="text-xs font-mono text-rose-500 hover:text-rose-400 inline-flex items-center gap-1.5 h-8 px-2 cursor-pointer transition-colors"
-                    onClick={() => void deleteThread()}
-                  >
-                    <Trash2 size={14} /> Hapus
-                  </button>
-                )}
+                <StaffCardModerationMenu
+                  label=""
+                  title="Opsi Diskusi"
+                  openDirection="down"
+                  actions={[
+                    {
+                      label: "Laporkan Diskusi",
+                      icon: <Flag size={13} />,
+                      danger: true,
+                      onClick: reportPost,
+                    },
+                    ...(user && (user.role === "ADMIN" || user.role === "MODERATOR")
+                      ? [
+                          {
+                            label: thread.isPinned ? "Lepas Sematan (Unpin)" : "Sematkan Thread (Pin)",
+                            icon: <Pin size={13} />,
+                            onClick: () => void togglePin(),
+                          },
+                        ]
+                      : []),
+                    ...(user && (user.role === "ADMIN" || user.role === "MODERATOR" || user.username === ".odyssia" || user.id === thread.author?.id || user.id === thread.authorId || user.username === thread.author?.username)
+                      ? [
+                          {
+                            label: "Hapus Diskusi Thread",
+                            icon: <Trash2 size={13} />,
+                            danger: true,
+                            onClick: () => void deleteThread(),
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
               </div>
             </div>
           </article>
@@ -925,36 +882,6 @@ export function ForumThread({ id }: { id: string }) {
           </div>
         </div>
       )}
-
-      {/* Modal Kirim Tip Apresiasi */}
-      <TipModal
-        isOpen={!!tipTarget}
-        onClose={() => setTipTarget(null)}
-        targetUser={tipTarget?.targetUser ?? null}
-        postId={tipTarget?.postId}
-        commentId={tipTarget?.commentId}
-        contextTitle={tipTarget?.contextTitle}
-        onSuccess={(amount) => {
-          if (tipTarget?.commentId) {
-            setThread((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    comments: prev.comments.map((c) =>
-                      c.id === tipTarget.commentId
-                        ? { ...c, tipsTotal: (c.tipsTotal ?? 0) + amount }
-                        : c
-                    ),
-                  }
-                : null
-            );
-          } else if (tipTarget?.postId) {
-            setThread((prev) =>
-              prev ? { ...prev, tipsTotal: (prev.tipsTotal ?? 0) + amount } : null
-            );
-          }
-        }}
-      />
     </main>
   );
 }
