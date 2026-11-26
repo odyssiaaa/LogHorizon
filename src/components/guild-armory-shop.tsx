@@ -20,6 +20,7 @@ import {
   type ArmoryItem,
   getAvatarFrameClasses,
   getCustomTitleBadge,
+  getCustomTitleStyle,
 } from "@/lib/armory-catalog";
 
 type ArmoryUser = {
@@ -167,14 +168,14 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
 
   const filteredItems = ARMORY_ITEMS.filter((item) => item.type === activeTab);
 
-  // Preview properties
+  // Live Interactive Preview Properties: selecting ANY item immediately previews it on user's avatar
   const previewFrame =
-    activeTab === "AVATAR_FRAME" && selectedItem
+    selectedItem?.type === "AVATAR_FRAME"
       ? selectedItem.id
       : userData?.equippedAvatarFrame;
 
   const previewTitle =
-    activeTab === "CUSTOM_TITLE" && selectedItem
+    selectedItem?.type === "CUSTOM_TITLE"
       ? selectedItem.id
       : userData?.equippedCustomTitle;
 
@@ -280,7 +281,7 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
             </Link>
           </div>
 
-          {/* Items Grid */}
+          {/* Items Grid with Tiered Luxury Styling (Rare -> Mythic) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredItems.map((item) => {
               const isOwned = isOwner || ownedItemIds.includes(item.id);
@@ -291,24 +292,40 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
               const isSelected = selectedItem?.id === item.id;
               const isProcessing = processingId === item.id;
               const canAfford = isOwner || (userData?.xp ?? 0) >= item.priceXp;
+              const tier = item.tier ?? "RARE";
+
+              // Tiered Card Container Styles
+              const tierStyles =
+                tier === "MYTHIC"
+                  ? "border-amber-400/60 bg-gradient-to-br from-[#290B38] via-[#1B0826] to-[#2E1805] hover:border-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.3),0_0_15px_rgba(168,85,247,0.2)]"
+                  : tier === "LEGENDARY"
+                  ? "border-amber-500/40 bg-[#1C1306]/90 hover:border-amber-400/70 shadow-[0_0_20px_rgba(245,158,11,0.2)]"
+                  : tier === "EPIC"
+                  ? "border-purple-500/35 bg-[#160B29]/90 hover:border-purple-400/60 shadow-[0_0_16px_rgba(168,85,247,0.2)]"
+                  : "border-sky-500/30 bg-[#0B1528]/90 hover:border-sky-400/50 shadow-[0_0_12px_rgba(14,165,233,0.15)]";
 
               return (
                 <div
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
-                  className={`p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between gap-3 ${
+                  className={`p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between gap-3 group ${
                     isSelected
-                      ? "border-purple-500 bg-[#1D0F33] ring-1 ring-purple-500"
+                      ? "ring-2 ring-amber-400 border-amber-300 scale-[1.01]"
                       : isEquipped
-                      ? "border-emerald-500/50 bg-[#140C24]"
-                      : "border-[#2A1B42] bg-[#120822] hover:border-purple-500/50 hover:bg-[#180C2C]"
+                      ? "border-emerald-500/60 bg-[#140C24] ring-1 ring-emerald-500/30"
+                      : tierStyles
                   }`}
                 >
-                  <div className="space-y-2">
+                  {/* Cosmic Aurora Shimmer for Mythic Tier */}
+                  {tier === "MYTHIC" && (
+                    <div className="absolute -top-12 -right-12 w-36 h-36 bg-gradient-to-br from-amber-500/20 via-purple-500/25 to-pink-500/10 rounded-full blur-2xl pointer-events-none group-hover:scale-125 transition-transform duration-700" />
+                  )}
+
+                  <div className="space-y-2 relative z-10">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <div
-                          className="w-3.5 h-3.5 rounded-full shrink-0"
+                          className="w-3.5 h-3.5 rounded-full shrink-0 shadow-sm"
                           style={{ backgroundColor: item.previewColor }}
                         />
                         <h4 className="font-bold text-white text-sm sm:text-base leading-snug">
@@ -316,70 +333,95 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
                         </h4>
                       </div>
 
-                      {isEquipped ? (
-                        <span className="shrink-0 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
-                          <Check size={10} /> Terpasang
+                      {/* Tier Badges */}
+                      {tier === "MYTHIC" ? (
+                        <span className="shrink-0 px-2 py-0.5 rounded text-[9px] font-mono font-extrabold bg-gradient-to-r from-amber-500/30 via-rose-500/30 to-purple-500/30 text-amber-300 border border-amber-400/60 shadow-[0_0_10px_rgba(245,158,11,0.5)] animate-pulse">
+                          🔥 MYTHIC PRESTIGE
                         </span>
-                      ) : isOwned ? (
-                        <span className="shrink-0 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-mono font-bold">
-                          {isOwner ? "👑 Milik Owner" : "Dimiliki"}
+                      ) : tier === "LEGENDARY" ? (
+                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          🟨 LEGENDARY
+                        </span>
+                      ) : tier === "EPIC" ? (
+                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                          🟪 EPIC
                         </span>
                       ) : (
-                        <span className="shrink-0 font-mono font-bold text-xs text-purple-300">
-                          {item.priceXp} XP
+                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                          🟦 RARE
                         </span>
                       )}
                     </div>
 
-                    <p className="text-xs text-gray-400 leading-relaxed">
+                    <p className="text-xs text-gray-300 leading-relaxed">
                       {item.description}
                     </p>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="pt-2 border-t border-[#2A1B42]/80 flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-mono text-gray-500">
-                      {isSelected ? "Pratinjau Aktif" : "Klik untuk pratinjau"}
-                    </span>
+                  {/* Status & Price Row */}
+                  <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-2 relative z-10">
+                    <div className="flex items-center gap-2">
+                      {isEquipped ? (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
+                          <Check size={10} /> Terpasang
+                        </span>
+                      ) : isOwned ? (
+                        <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-mono font-bold">
+                          {isOwner ? "👑 Milik Owner" : "Dimiliki"}
+                        </span>
+                      ) : (
+                        <span className="font-mono font-bold text-xs text-amber-300 flex items-center gap-1">
+                          <Zap size={11} className="text-amber-400" />
+                          <span>{item.priceXp.toLocaleString("id-ID")} XP</span>
+                        </span>
+                      )}
 
-                    {isOwned ? (
-                      <button
-                        type="button"
-                        disabled={isProcessing}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleToggleEquip(item, isEquipped);
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                          isEquipped
-                            ? "bg-zinc-800 text-gray-300 hover:bg-zinc-700"
-                            : "bg-emerald-600 hover:bg-emerald-500 text-white"
-                        }`}
-                      >
-                        {isProcessing
-                          ? "Memproses..."
-                          : isEquipped
-                          ? "Lepas"
-                          : "Pasang"}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={isProcessing || !canAfford}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleBuy(item);
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                          canAfford
-                            ? "bg-purple-600 hover:bg-purple-500 text-white shadow-md shadow-purple-600/20"
-                            : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                        }`}
-                      >
-                        <Zap size={13} />
-                        <span>{isProcessing ? "Menukar..." : `Tukar (${item.priceXp} XP)`}</span>
-                      </button>
-                    )}
+                      <span className="text-[10px] font-mono text-gray-400 hidden sm:inline">
+                        {isSelected ? "• Pratinjau Aktif" : ""}
+                      </span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div>
+                      {isOwned ? (
+                        <button
+                          type="button"
+                          disabled={isProcessing}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleToggleEquip(item, isEquipped);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            isEquipped
+                              ? "bg-zinc-800 text-gray-300 hover:bg-zinc-700"
+                              : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20"
+                          }`}
+                        >
+                          {isProcessing
+                            ? "Memproses..."
+                            : isEquipped
+                            ? "Lepas"
+                            : "Pasang"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isProcessing || !canAfford}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleBuy(item);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                            canAfford
+                              ? "bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-500 hover:to-amber-500 text-white shadow-md shadow-purple-600/30"
+                              : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                          }`}
+                        >
+                          <Zap size={13} />
+                          <span>{isProcessing ? "Menukar..." : `Tukar (${item.priceXp.toLocaleString("id-ID")} XP)`}</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -389,52 +431,56 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
 
         {/* Right 1 Col: Live Interactive Avatar Preview */}
         <div className="space-y-4">
-          <div className="p-5 rounded-2xl border border-[#2A1B42] bg-[#120822] shadow-xl space-y-5 sticky top-20">
+          <div className="p-5 rounded-2xl border border-purple-500/30 bg-gradient-to-b from-[#180B2C] to-[#100720] shadow-2xl space-y-5 sticky top-20">
             <div>
-              <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-purple-400">
-                PRATINJAU LANGSUNG
+              <p className="text-[11px] font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <Sparkles size={12} /> PRATINJAU LANGSUNG
               </p>
-              <h3 className="text-base font-bold text-white">Tampilan Profilmu</h3>
+              <h3 className="text-base font-bold text-white">Tampilan Profil Petualang</h3>
             </div>
 
             {/* Avatar & Badges Showcase */}
-            <div className="p-6 rounded-xl border border-purple-500/20 bg-gradient-to-b from-[#1E0F36] to-[#120822] text-center space-y-3">
-              <div className="relative inline-block mx-auto">
+            <div className="p-6 rounded-xl border border-purple-500/30 bg-gradient-to-b from-[#220F3D] via-[#160B29] to-[#0E061A] text-center space-y-4 shadow-inner relative overflow-hidden">
+              <div className="relative inline-block mx-auto py-2">
                 <DiscordAvatar
                   src={userData?.avatar ?? null}
                   username={userData?.username ?? "Gamer"}
-                  size={84}
+                  size={88}
                   className="rounded-full mx-auto"
                   frameId={previewFrame}
                 />
               </div>
 
-              <div>
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-center gap-1.5 flex-wrap">
                   <h4 className="font-extrabold text-white text-base">
                     {userData?.username ?? "Petualang LogHorizon"}
                   </h4>
                   {previewTitle && getCustomTitleBadge(previewTitle) && (
-                    <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                    <span
+                      className={`text-[11px] font-mono px-2.5 py-0.5 rounded-md transition-all ${getCustomTitleStyle(
+                        previewTitle
+                      )}`}
+                    >
                       {getCustomTitleBadge(previewTitle)}
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-purple-300 font-mono mt-1">
+                <p className="text-xs text-purple-300 font-mono">
                   Level {userData?.level ?? 1} • {userData?.xp ?? 0} XP
                 </p>
               </div>
 
               {/* Sample Forum Post Card Simulation */}
-              <div className="mt-4 p-3 rounded-lg border border-[#2A1B42] bg-[#0E061A] text-left text-xs space-y-1.5">
-                <span className="text-[10px] font-mono text-gray-500 uppercase block">
+              <div className="mt-4 p-3 rounded-lg border border-purple-500/20 bg-[#0E061A]/90 text-left text-xs space-y-2">
+                <span className="text-[10px] font-mono text-gray-400 uppercase block font-semibold">
                   Simulasi Kartu Forum / Leaderboard:
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <DiscordAvatar
                     src={userData?.avatar ?? null}
                     username={userData?.username ?? "Gamer"}
-                    size={24}
+                    size={28}
                     frameId={previewFrame}
                   />
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -442,7 +488,11 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
                       {userData?.username ?? "Gamer"}
                     </span>
                     {previewTitle && getCustomTitleBadge(previewTitle) && (
-                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                      <span
+                        className={`text-[9px] font-mono px-1.5 py-0.5 rounded transition-all ${getCustomTitleStyle(
+                          previewTitle
+                        )}`}
+                      >
                         {getCustomTitleBadge(previewTitle)}
                       </span>
                     )}
@@ -452,14 +502,17 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
             </div>
 
             {selectedItem && (
-              <div className="p-3.5 rounded-xl border border-purple-500/30 bg-purple-950/20 space-y-2 text-xs">
+              <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-950/20 space-y-2 text-xs">
                 <p className="font-bold text-white flex items-center justify-between">
-                  <span>{selectedItem.name}</span>
-                  <span className="font-mono text-purple-300">
-                    {ownedItemIds.includes(selectedItem.id) ? "Sudah Dimiliki" : `${selectedItem.priceXp} XP`}
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles size={12} className="text-amber-400" />
+                    <span>{selectedItem.name}</span>
+                  </span>
+                  <span className="font-mono text-amber-300 font-bold">
+                    {ownedItemIds.includes(selectedItem.id) || isOwner ? "Dimiliki" : `${selectedItem.priceXp.toLocaleString("id-ID")} XP`}
                   </span>
                 </p>
-                <p className="text-gray-400 text-[11px]">{selectedItem.description}</p>
+                <p className="text-gray-300 text-[11px] leading-relaxed">{selectedItem.description}</p>
               </div>
             )}
           </div>

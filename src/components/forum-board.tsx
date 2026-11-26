@@ -18,7 +18,7 @@ import { useLiveSync } from "@/hooks/use-live-sync";
 import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown";
 import { DraggableScrollRow } from "@/components/draggable-scroll-row";
 import { MentionHashtagInput } from "@/components/mention-hashtag-input";
-import { getCustomTitleBadge } from "@/lib/armory-catalog";
+import { getCustomTitleBadge, getCustomTitleStyle } from "@/lib/armory-catalog";
 
 type Category = "GENERAL_CHAT" | "PROMOTION" | "FEEDBACK";
 type ForumLiveRow = { id: string };
@@ -524,7 +524,7 @@ export function ForumBoard({ realtimeUrl }: { realtimeUrl: string }) {
                           <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40 shrink-0">[{post.author.partyMembership.party.tag.trim()}]</span>
                         )}
                         {post.author.equippedCustomTitle && getCustomTitleBadge(post.author.equippedCustomTitle) && (
-                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 shrink-0">
+                          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-none shrink-0 transition-all ${getCustomTitleStyle(post.author.equippedCustomTitle)}`}>
                             {getCustomTitleBadge(post.author.equippedCustomTitle)}
                           </span>
                         )}

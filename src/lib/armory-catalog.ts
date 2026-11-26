@@ -1,4 +1,5 @@
 export type CosmeticItemType = "AVATAR_FRAME" | "CUSTOM_TITLE";
+export type ArmoryTier = "RARE" | "EPIC" | "LEGENDARY" | "MYTHIC";
 
 export interface ArmoryItem {
   id: string;
@@ -7,6 +8,7 @@ export interface ArmoryItem {
   type: CosmeticItemType;
   priceXp: number;
   previewColor: string;
+  tier?: ArmoryTier;
   badgeText?: string;
   frameClasses?: string;
   discordEffectType?:
@@ -17,92 +19,112 @@ export interface ArmoryItem {
     | "frost_monarch"
     | "emerald_spirit"
     | "celestial_astral"
-    | "thunder_sovereign";
+    | "thunder_sovereign"
+    | "seraphim_divinity";
 }
 
 export const ARMORY_ITEMS: ArmoryItem[] = [
   // ==========================================
-  // 8 DISCORD-STYLE ANIMATED AVATAR FRAMES
+  // 9 DISCORD-STYLE ANIMATED AVATAR FRAMES (TIER RARE -> MYTHIC)
   // ==========================================
   {
     id: "frame_royal_purple",
     name: "🔮 Royal Arcane Vortex",
-    description: "Cincin energi sihir ungu kerajaan berputar anggun dengan taburan partikel bintang bercahaya ala Discord Avatar Decoration.",
+    description: "Cincin garis energi ungu neon berputar halus dengan pendar cahaya magis lembut dan bintang berkilau ala Discord Avatar Decoration.",
     type: "AVATAR_FRAME",
     priceXp: 500,
     previewColor: "#A855F7",
+    tier: "RARE",
     frameClasses: "ring-2 ring-purple-500 shadow-[0_0_16px_rgba(168,85,247,0.85)]",
     discordEffectType: "arcane_vortex",
   },
   {
     id: "frame_cyber_pulse",
     name: "⚡ Cyber Valkyrie Halo",
-    description: "Sepasang sayap hologram cyan-ungu berdenyut futuristik di kedua sisi avatar dengan garis laser neon sci-fi.",
+    description: "Lingkaran ganda hologram cyan-ungu futuristik dengan sayap sirkuit mini berdenyut di sisi kiri-kanan dan visor sci-fi.",
     type: "AVATAR_FRAME",
     priceXp: 800,
     previewColor: "#06B6D4",
+    tier: "RARE",
     frameClasses: "ring-2 ring-cyan-400 shadow-[0_0_16px_rgba(6,182,212,0.9)]",
     discordEffectType: "cyber_valkyrie",
   },
   {
     id: "frame_frost_monarch",
     name: "❄️ Frost Monarch Ring",
-    description: "Mahkota kristal es kutub utara berputar dingin dengan kristal salju abadi dan aura pembeku waktu.",
+    description: "Mahkota kristal es tajam mengelilingi avatar dengan partikel kristal salju abadi yang berputar anggun dan aura dingin membeku.",
     type: "AVATAR_FRAME",
     priceXp: 900,
     previewColor: "#38BDF8",
+    tier: "EPIC",
     frameClasses: "ring-2 ring-sky-400 shadow-[0_0_18px_rgba(56,189,248,0.9)]",
     discordEffectType: "frost_monarch",
   },
   {
     id: "frame_emerald_spirit",
     name: "🌿 Emerald Forest Spirit",
-    description: "Sulur daun zamrud magis hutan purba dengan kelopak bercahaya dan spora hijau mistis yang berkedip lembut.",
+    description: "Sulur daun emas-zamrud hidup dari hutan purba dengan titik cahaya kunang-kunang mistis melayang dan spora alam berkedip.",
     type: "AVATAR_FRAME",
     priceXp: 1000,
     previewColor: "#10B981",
+    tier: "EPIC",
     frameClasses: "ring-2 ring-emerald-400 shadow-[0_0_18px_rgba(16,185,129,0.9)]",
     discordEffectType: "emerald_spirit",
   },
   {
     id: "frame_crimson_dragon",
     name: "🐉 Crimson Dragon Crest",
-    description: "Tanduk naga purba megah dan kobaran api merah membara yang menyelimuti seluruh tepi lingkaran avatar.",
+    description: "Tanduk naga merah menyala perkasa dengan cincin bara api berputar dan lidah api membara berselimut pendar crimson garang.",
     type: "AVATAR_FRAME",
     priceXp: 1200,
     previewColor: "#EF4444",
+    tier: "EPIC",
     frameClasses: "ring-2 ring-rose-500 shadow-[0_0_18px_rgba(239,68,68,0.9)]",
     discordEffectType: "crimson_dragon",
   },
   {
     id: "frame_celestial_astral",
     name: "🌌 Celestial Astral Orbit",
-    description: "Orbit galaksi kosmik bertahtakan gugusan bintang galaksi dalam perputaran rasi bintang legendaris.",
+    description: "Dua cincin orbit planet & rasi bintang berputar berlawanan arah dengan planet mikro dan kilau cahaya galaksi ungu-emas.",
     type: "AVATAR_FRAME",
     priceXp: 1600,
     previewColor: "#818CF8",
+    tier: "LEGENDARY",
     frameClasses: "ring-2 ring-indigo-400 shadow-[0_0_20px_rgba(129,140,248,0.9)]",
     discordEffectType: "celestial_astral",
   },
   {
     id: "frame_thunder_sovereign",
     name: "⚡ Thunder Sovereign Aura",
-    description: "Kilatan petir emas-kuning menyambar di sekeliling avatar dengan lonjakan plasma listrik bertenaga dewa.",
+    description: "Cincin petir biru-emas bertegangan tinggi dengan sambaran kilat bercabang dinamis dan lonjakan plasma listrik dewata.",
     type: "AVATAR_FRAME",
     priceXp: 2000,
     previewColor: "#EAB308",
+    tier: "LEGENDARY",
     frameClasses: "ring-2 ring-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.95)]",
     discordEffectType: "thunder_sovereign",
   },
   {
     id: "frame_golden_sovereign",
     name: "👑 Golden Sovereign Wings",
-    description: "Mahkota emas murni bertahtakan batu permata agung dengan sayap cahaya keemasan yang beranimasi kilau gemilang.",
+    description: "Mahkota raja emas murni bertatahkan permata merah di puncak avatar, diapit sepasang sayap emas berlapis mengepak lembut dan kilau cahaya agung.",
     type: "AVATAR_FRAME",
     priceXp: 2500,
     previewColor: "#F59E0B",
-    frameClasses: "ring-[3px] ring-amber-400 shadow-[0_0_22px_rgba(245,158,11,0.95)]",
+    tier: "MYTHIC",
+    frameClasses: "ring-[3px] ring-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.95)]",
     discordEffectType: "golden_sovereign",
+  },
+  {
+    id: "frame_seraphim_divinity",
+    name: "🔥 Seraphim Eternal Divinity",
+    description: "Bingkai mahakarya tertinggi dengan 6 sayap cahaya kosmik ungu-emas megah, lingkaran rune magis berputar berlapis, bintang jatuh, dan pendar aura mythic paling prestisius!",
+    type: "AVATAR_FRAME",
+    priceXp: 5000,
+    previewColor: "#F59E0B",
+    tier: "MYTHIC",
+    frameClasses: "ring-[3.5px] ring-amber-400 shadow-[0_0_30px_rgba(245,158,11,1),0_0_20px_rgba(168,85,247,0.85)]",
+    discordEffectType: "seraphim_divinity",
   },
 
   // ==========================================
@@ -115,6 +137,7 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     type: "CUSTOM_TITLE",
     priceXp: 300,
     previewColor: "#10B981",
+    tier: "RARE",
     badgeText: "🧪 Royal Alchemist",
   },
   {
@@ -124,6 +147,7 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     type: "CUSTOM_TITLE",
     priceXp: 450,
     previewColor: "#8B5CF6",
+    tier: "RARE",
     badgeText: "🗡️ Shadow Assassin",
   },
   {
@@ -133,6 +157,7 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     type: "CUSTOM_TITLE",
     priceXp: 500,
     previewColor: "#64748B",
+    tier: "RARE",
     badgeText: "🛡️ Iron Vanguard",
   },
   {
@@ -142,6 +167,7 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     type: "CUSTOM_TITLE",
     priceXp: 600,
     previewColor: "#F59E0B",
+    tier: "EPIC",
     badgeText: "⚖️ Master Merchant",
   },
   {
@@ -151,6 +177,7 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     type: "CUSTOM_TITLE",
     priceXp: 750,
     previewColor: "#10B981",
+    tier: "EPIC",
     badgeText: "🏹 Grand Ranger",
   },
   {
@@ -160,24 +187,27 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     type: "CUSTOM_TITLE",
     priceXp: 900,
     previewColor: "#3B82F6",
+    tier: "EPIC",
     badgeText: "📖 Arcane Sage",
   },
   {
     id: "title_dragon_slayer",
     name: "🐉 Dragon Slayer",
-    description: "Penakluk binatang purba dan naga legendaris pemegang kehormatan tertinggi ksatria.",
+    description: "Penakluk binatang purba dan naga legendaris pemegang kehormatan tertinggi ksatria dengan aura api merah membara.",
     type: "CUSTOM_TITLE",
     priceXp: 1200,
     previewColor: "#EF4444",
+    tier: "LEGENDARY",
     badgeText: "🐉 Dragon Slayer",
   },
   {
     id: "title_mythic_chronicle",
     name: "🌟 Mythic Chronicle",
-    description: "Sang pencatat sejarah abadi pencapaian legenda terbesar seluruh kerajaan LogHorizon.",
+    description: "Sang pencatat sejarah abadi pencapaian legenda terbesar seluruh kerajaan LogHorizon dengan pendar emas-pelangi berkilau.",
     type: "CUSTOM_TITLE",
-    priceXp: 1500,
-    previewColor: "#EC4899",
+    priceXp: 2500,
+    previewColor: "#F59E0B",
+    tier: "MYTHIC",
     badgeText: "🌟 Mythic Chronicle",
   },
 
@@ -189,6 +219,7 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     type: "CUSTOM_TITLE",
     priceXp: 400,
     previewColor: "#3B82F6",
+    tier: "RARE",
     badgeText: "⚔️ Vanguard",
   },
   {
@@ -198,6 +229,7 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     type: "CUSTOM_TITLE",
     priceXp: 600,
     previewColor: "#10B981",
+    tier: "RARE",
     badgeText: "🏹 Shadow Sniper",
   },
   {
@@ -207,6 +239,7 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     type: "CUSTOM_TITLE",
     priceXp: 750,
     previewColor: "#F97316",
+    tier: "EPIC",
     badgeText: "🔥 MVP Hunter",
   },
   {
@@ -216,6 +249,7 @@ export const ARMORY_ITEMS: ArmoryItem[] = [
     type: "CUSTOM_TITLE",
     priceXp: 1200,
     previewColor: "#EC4899",
+    tier: "LEGENDARY",
     badgeText: "💎 High Roller",
   },
 ];
@@ -229,7 +263,13 @@ export function getArmoryItem(id: string): ArmoryItem | undefined {
   if (id === "frame_emerald_spirit_crest") return ARMORY_ITEMS.find((i) => i.id === "frame_emerald_spirit");
   if (id === "frame_celestial_astral_orbit") return ARMORY_ITEMS.find((i) => i.id === "frame_celestial_astral");
   if (id === "frame_thunder_sovereign_aura") return ARMORY_ITEMS.find((i) => i.id === "frame_thunder_sovereign");
+  if (id === "frame_seraphim_eternal_divinity") return ARMORY_ITEMS.find((i) => i.id === "frame_seraphim_divinity");
   return ARMORY_ITEMS.find((item) => item.id === id);
+}
+
+export function getArmoryItemTier(id: string): ArmoryTier {
+  const item = getArmoryItem(id);
+  return item?.tier ?? "RARE";
 }
 
 export function getAvatarFrameEffectType(
@@ -250,4 +290,35 @@ export function getCustomTitleBadge(titleId?: string | null): string | null {
   if (!titleId) return null;
   const item = getArmoryItem(titleId);
   return item?.badgeText ?? null;
+}
+
+/**
+ * Returns tailored CSS styling based on title luxury tier:
+ * - Mythic: animated rainbow-gold shimmer gradient text & glow
+ * - Legendary: fiery dragon red-orange gradient text & glow
+ * - Epic: illuminated gemstone text & border
+ * - Rare: clean refined badge
+ */
+export function getCustomTitleStyle(titleId?: string | null): string {
+  if (!titleId) return "";
+  const item = getArmoryItem(titleId);
+  const tier = item?.tier ?? "RARE";
+
+  if (titleId === "title_mythic_chronicle" || tier === "MYTHIC") {
+    return "bg-gradient-to-r from-amber-500/20 via-pink-500/20 to-purple-500/20 text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-300 to-amber-200 font-extrabold border border-amber-400/50 shadow-[0_0_12px_rgba(245,158,11,0.45)]";
+  }
+
+  if (titleId === "title_dragon_slayer") {
+    return "bg-gradient-to-r from-rose-950/80 via-red-900/60 to-orange-950/80 text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-300 to-amber-400 font-extrabold border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.35)]";
+  }
+
+  if (tier === "LEGENDARY") {
+    return "bg-gradient-to-r from-amber-950/80 to-purple-950/80 text-amber-300 border border-amber-500/40 font-bold shadow-[0_0_8px_rgba(245,158,11,0.3)]";
+  }
+
+  if (tier === "EPIC") {
+    return "bg-purple-950/60 text-purple-300 border border-purple-500/40 font-bold";
+  }
+
+  return "bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-bold";
 }

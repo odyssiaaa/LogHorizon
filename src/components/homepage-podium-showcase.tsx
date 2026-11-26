@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Trophy, Crown, Medal, Swords, Users, ExternalLink, Sparkles, ChevronRight } from "lucide-react";
 import { DiscordAvatar } from "@/components/discord-avatar";
 import { getCasteTitle, getCasteBadgeStyle } from "@/lib/caste-hierarchy";
-import { getCustomTitleBadge } from "@/lib/armory-catalog";
+import { getCustomTitleBadge, getCustomTitleStyle } from "@/lib/armory-catalog";
 
 interface TopAdventurer {
   id: string;
@@ -182,7 +182,7 @@ export function HomepagePodiumShowcase({
                               {casteTitle}
                             </span>
                             {customTitleBadge && (
-                              <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                              <span className={`text-[10px] px-2 py-0.5 rounded font-mono transition-all ${getCustomTitleStyle(adv.equippedCustomTitle)}`}>
                                 {customTitleBadge}
                               </span>
                             )}

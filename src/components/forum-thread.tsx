@@ -14,7 +14,7 @@ import { useLiveSync } from "@/hooks/use-live-sync";
 import { MentionHashtagInput, type MentionUser } from "@/components/mention-hashtag-input";
 import { getActiveTempTitle } from "@/lib/caste";
 import { ForumPollWidget, type PollData } from "@/components/forum-poll-widget";
-import { getCustomTitleBadge } from "@/lib/armory-catalog";
+import { getCustomTitleBadge, getCustomTitleStyle } from "@/lib/armory-catalog";
 import { StaffCardModerationMenu } from "@/components/staff-moderation-dropdown";
 
 type CommentRecord = {
@@ -484,7 +484,7 @@ export function ForumThread({ id }: { id: string }) {
                 <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40 whitespace-nowrap">[{item.author.partyMembership.party.tag.trim()}]</span>
               )}
               {item.author.equippedCustomTitle && getCustomTitleBadge(item.author.equippedCustomTitle) && (
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 whitespace-nowrap">
+                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-none whitespace-nowrap transition-all ${getCustomTitleStyle(item.author.equippedCustomTitle)}`}>
                   {getCustomTitleBadge(item.author.equippedCustomTitle)}
                 </span>
               )}
@@ -648,7 +648,7 @@ export function ForumThread({ id }: { id: string }) {
                     <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-purple-500/20 text-purple-300 border border-purple-500/40 ml-1.5">[{thread.author.partyMembership.party.tag.trim()}]</span>
                   )}
                   {thread.author.equippedCustomTitle && getCustomTitleBadge(thread.author.equippedCustomTitle) && (
-                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-none bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 ml-1.5">
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-none ml-1.5 transition-all ${getCustomTitleStyle(thread.author.equippedCustomTitle)}`}>
                       {getCustomTitleBadge(thread.author.equippedCustomTitle)}
                     </span>
                   )}

@@ -399,26 +399,32 @@ export function MarketplaceBoard({ realtimeUrl }: { realtimeUrl: string }) {
           </span>
         </div>
 
-        {/* GUILD ARMORY SHOP BANNER */}
-        <div className="mb-6 p-4 rounded-none border border-purple-500/30 bg-purple-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-none bg-purple-500/20 text-[#A78BFA] flex items-center justify-center shrink-0">
-              <ShoppingBag size={18} />
+        {/* GUILD ARMORY SHOP BANNER WITH TIER PREVIEWS */}
+        <div className="mb-6 p-4 rounded-xl border border-amber-500/30 bg-gradient-to-r from-[#1E0B36] via-[#16082B] to-[#1F1306] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left shadow-lg shadow-purple-950/20 relative overflow-hidden">
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-purple-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+              <ShoppingBag size={20} />
             </div>
             <div>
-              <p className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                🛡️ GUILD ARMORY SHOP // KOSMETIK PROFIL
-              </p>
-              <p className="text-[11px] text-gray-300">
-                Tukarkan XP aktivitasmu dengan Bingkai Avatar bercahaya dan Gelar Kustom eksklusif.
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                  🛡️ GUILD ARMORY SHOP // KOSMETIK PROFIL
+                </p>
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-extrabold bg-amber-500/25 text-amber-300 border border-amber-500/40">
+                  🔥 TIER RARE ➔ MYTHIC
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-300 mt-0.5">
+                Koleksi 9 Bingkai Avatar Discord Ber-Efek (termasuk <span className="text-amber-300 font-bold">Seraphim Divinity 6 Sayap</span>) &amp; Gelar Job Petualang legendaris!
               </p>
             </div>
           </div>
           <Link
             href="/profile?tab=armory"
-            className="px-3.5 py-1.5 rounded-none bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-mono text-xs font-bold uppercase tracking-wider shrink-0 self-start sm:self-auto transition-colors"
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-500 hover:to-amber-500 text-white font-mono text-xs font-bold uppercase tracking-wider shrink-0 self-start sm:self-auto transition-all shadow-md shadow-purple-600/30 flex items-center gap-1.5 relative z-10"
           >
-            Kunjungi Toko Armory &rarr;
+            <span>Kunjungi Toko Armory</span>
+            <span>&rarr;</span>
           </Link>
         </div>
 
