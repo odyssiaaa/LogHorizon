@@ -131,6 +131,8 @@ type DonationRecord = {
   senderName?: string | null;
   notes?: string | null;
   proofUrl?: string | null;
+  coinAmount?: number | null;
+  isCoinTopup?: boolean;
   gatewayRef?: string | null;
   createdAt: string;
   user?: { id: string; username: string | null; avatar: string | null; badges?: string[] };
@@ -1282,8 +1284,8 @@ export function AdminDashboard({
       );
       setNotice(
         newStatus === "APPROVED"
-          ? "Donasi berhasil diverifikasi (ACC)! Role & lencana donor otomatis diaktifkan."
-          : "Donasi ditolak."
+          ? "Pembayaran berhasil diverifikasi (ACC)! Saldo Horizon Coins (HC) dan role donor otomatis diaktifkan."
+          : "Pengajuan pembayaran donasi/top-up ditolak."
       );
       loadDashboard();
     } catch (reason) {
@@ -2208,7 +2210,7 @@ export function AdminDashboard({
                                 className="px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition disabled:opacity-50 flex items-center gap-1.5"
                               >
                                 <Check size={14} />
-                                <span>ACC Donasi</span>
+                                <span>{d.isCoinTopup ? "ACC Top-Up" : "ACC Donasi"}</span>
                               </button>
                               <button
                                 type="button"
@@ -4079,7 +4081,7 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                             onClick={() => void verifyDonation(item.id, "APPROVED")}
                             className="h-9 px-3 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-md flex items-center justify-center gap-1 shadow-sm transition disabled:opacity-50"
                           >
-                            <span>✅ ACC</span>
+                            <span>{item.isCoinTopup ? "✅ ACC Top-Up" : "✅ ACC Donasi"}</span>
                           </button>
                           <button
                             type="button"
@@ -4158,7 +4160,7 @@ Agenda Guild: Turnamen MLBB & Valorant internal setiap akhir bulan, mabar bareng
                                   onClick={() => void verifyDonation(item.id, "APPROVED")}
                                   className="px-2.5 py-1 rounded text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 hover:bg-emerald-500/25"
                                 >
-                                  ACC / Verifikasi
+                                  {item.isCoinTopup ? "ACC Top-Up" : "ACC Donasi"}
                                 </button>
                                 <button
                                   type="button"

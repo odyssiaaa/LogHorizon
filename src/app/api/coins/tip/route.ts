@@ -91,16 +91,27 @@ export async function POST(req: Request) {
       );
 
       // Update statistik total tip yang pernah dikirim / diterima
-      await Promise.all([
-        tx.user.update({
+      const updatedSender = await tx.user.update({
+        where: { id: sender.id },
+        data: { tipsSentTotal: { increment: amount } },
+        select: { tipsSentTotal: true, badges: true },
+      });
+
+      await tx.user.update({
+        where: { id: targetUser.id },
+        data: { tipsReceivedTotal: { increment: amount } },
+      });
+
+      // Otomatis berikan badge "💛 Dermawan Guild" jika total tip >= 250 HC
+      if (
+        (updatedSender.tipsSentTotal ?? 0) >= 250 &&
+        !updatedSender.badges.includes("💛 Dermawan Guild")
+      ) {
+        await tx.user.update({
           where: { id: sender.id },
-          data: { tipsSentTotal: { increment: amount } },
-        }),
-        tx.user.update({
-          where: { id: targetUser.id },
-          data: { tipsReceivedTotal: { increment: amount } },
-        }),
-      ]);
+          data: { badges: [...updatedSender.badges, "💛 Dermawan Guild"] },
+        });
+      }
 
       // Jika tipping dikaitkan dengan thread Forum spesifik, update tipsTotal post
       if (postId) {

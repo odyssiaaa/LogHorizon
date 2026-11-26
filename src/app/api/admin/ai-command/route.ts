@@ -711,7 +711,7 @@ PANDUAN PEMILIHAN TOOLS:
 19. Kirim Broadcast Pengumuman ➡️ "broadcastAnnouncement" (Tentukan targetPlatform: 'WEB_ONLY' jika Admin minta hanya website/beranda, 'DISCORD_ONLY' jika minta hanya ke Discord, atau 'BOTH' jika keduanya. Tentukan targetChannel: 'announcements' [#📢・announcements], 'giveaway' [#🎁・events-giveaway], 'info_live' [#📡・info-live], 'partnership' [#🤝・partnership], 'lfg' [#🎮・gaming-lounge], 'mod_logs' [#🛡️・mod-logs], atau 'auto' sesuai konteks isi pengumuman. Catatan: Broadcast akan selalu menghasilkan draf preview terlebih dahulu untuk dikonfirmasi Admin).
 20. Jika pertanyaan informasi biasa (analisis stats, tanya jadwal, status turnamen), jawablah secara ringkas, sopan, dan taktis tanpa memanggil tool.
 21. [HAK PREOGATIF MUTLAK KAISAR / EMPEROR .ODYSSIA]:
-    - Injeksi Tiket Gacha, XP, Level, Kasta, Verified Seller, atau Buka Seluruh Armory ➡️ "sovereignGiftInjector" (Contoh: "Kasih 10 tiket gacha dan 2000 XP ke @username", "Buka semua armory untuk @username", "Kasih verified seller dan Noble Patron ke @username").
+    - Injeksi Horizon Coins (HC), Tiket Gacha, XP, Level, Kasta, Verified Seller, atau Buka Seluruh Armory ➡️ "sovereignGiftInjector" (Contoh: "Topup 1200 HC dan 3 tiket gacha ke @username", "Suntik 575 HC ke @username", "Kasih 10 tiket gacha dan 2000 XP ke @username", "Buka semua armory untuk @username", "Kasih verified seller dan Noble Patron ke @username").
     - Sakelar Fitur Live (Gacha, Armory, Marketplace, Dungeon, dll) ➡️ "toggleFeatureSwitch" (Contoh: "Sembunyikan fitur dungeon sementara", "Aktifkan kembali fitur gacha").
     - Terbitkan Kode Redeem & Voucher Sponsor ➡️ "createRedeemOrVoucherCode" (Contoh: "Buatkan voucher OdyssiaVault kode ODYSSIA15 diskon 15% untuk 20 orang dan masukkan ke gacha", "Buat kode redeem MABAR50 hadiah 2 tiket gacha untuk 50 orang").
     - Aktifkan/Matikan/Hapus Voucher Sponsor ➡️ "toggleRedeemCodeStatus" (Contoh: "Nonaktifkan voucher ODYSSIA15", "Hapus kode MABAR50").
@@ -2220,6 +2220,14 @@ async function executeToolAction(
       const newCoins = (targetUser.horizonCoins || 0) + args.coins;
       updates.horizonCoins = newCoins;
       detailsList.push(`+${args.coins.toLocaleString()} Horizon Coins (Total: ${newCoins.toLocaleString()} HC)`);
+      await prisma.coinTransaction.create({
+        data: {
+          userId: targetUser.id,
+          amount: args.coins,
+          type: "EMPEROR_GIFT",
+          description: `Suntikan Hadiah Kaisar (.odyssia AI Command: +${args.coins.toLocaleString("id-ID")} HC)`,
+        },
+      }).catch(() => null);
     }
 
     // XP & Level

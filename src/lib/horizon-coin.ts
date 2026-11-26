@@ -54,7 +54,7 @@ export const HORIZON_COIN_PACKAGES: CoinPackage[] = [
     id: "guild_vault",
     coins: 575,
     price: 50000,
-    name: "💎 Guild Vault (575 HC)",
+    name: "🔮 Guild Vault (575 HC)",
     bonusText: "Bonus +75 HC (Cukup 5x Multi Summon)",
     popular: true,
   },
@@ -69,8 +69,8 @@ export const HORIZON_COIN_PACKAGES: CoinPackage[] = [
     id: "emperor_mythic",
     coins: 3150,
     price: 250000,
-    name: "🔥 Emperor's Mythic Stash (3.150 HC)",
-    bonusText: "Bonus +650 HC (Sultan Pack • Ekstra 26%)",
+    name: "🔥 Emperor Mythic Pack (3.150 HC)",
+    bonusText: "Bonus +650 HC (Sultan Edition • Ekstra 26%)",
   },
 ];
 
