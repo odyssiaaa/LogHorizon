@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
+  Coins,
 } from "lucide-react";
 import { readApiResponse } from "@/lib/api-response";
 import { DiscordAvatar } from "@/components/discord-avatar";
@@ -28,6 +29,7 @@ type ArmoryUser = {
   username: string | null;
   avatar: string | null;
   xp: number;
+  horizonCoins?: number;
   level: number;
   equippedAvatarFrame: string | null;
   equippedCustomTitle: string | null;
@@ -40,6 +42,7 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
   const [ownedItemIds, setOwnedItemIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"AVATAR_FRAME" | "CUSTOM_TITLE">("AVATAR_FRAME");
+  const [paymentCurrency, setPaymentCurrency] = useState<"COIN" | "XP">("COIN");
   const [selectedItem, setSelectedItem] = useState<ArmoryItem | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -77,14 +80,27 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
     void fetchArmory();
   }, []);
 
-  async function handleBuy(item: ArmoryItem) {
+  async function handleBuy(item: ArmoryItem, method: "COIN" | "XP" = paymentCurrency) {
     if (!userData) return;
-    if (userData.xp < item.priceXp) {
-      setFeedback({
-        message: `XP tidak mencukupi! Kamu butuh ${item.priceXp} XP (saat ini ${userData.xp} XP).`,
-        type: "error",
-      });
-      return;
+    const priceCoins = item.priceCoins ?? Math.max(50, Math.round(item.priceXp / 5));
+
+    if (method === "COIN") {
+      const userCoins = userData.horizonCoins ?? 0;
+      if (userCoins < priceCoins) {
+        setFeedback({
+          message: `Saldo Horizon Coins tidak mencukupi! Kamu butuh ${priceCoins.toLocaleString("id-ID")} HC (saat ini ${userCoins.toLocaleString("id-ID")} HC). Selesaikan Misi Harian atau lakukan Top-Up QRIS!`,
+          type: "error",
+        });
+        return;
+      }
+    } else {
+      if (userData.xp < item.priceXp) {
+        setFeedback({
+          message: `XP tidak mencukupi! Kamu butuh ${item.priceXp.toLocaleString("id-ID")} XP (saat ini ${userData.xp.toLocaleString("id-ID")} XP).`,
+          type: "error",
+        });
+        return;
+      }
     }
 
     setProcessingId(item.id);
@@ -94,12 +110,12 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
       const res = await fetch("/api/armory/buy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId: item.id }),
+        body: JSON.stringify({ itemId: item.id, paymentMethod: method }),
       });
       const data = await readApiResponse<{
         success: boolean;
         message: string;
-        user: { xp: number; equippedAvatarFrame: string | null; equippedCustomTitle: string | null };
+        user: { xp: number; horizonCoins?: number; equippedAvatarFrame: string | null; equippedCustomTitle: string | null };
       }>(res, "Gagal membeli item");
 
       setOwnedItemIds((prev) => [...prev, item.id]);
@@ -108,6 +124,7 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
           ? {
               ...prev,
               xp: data.user.xp,
+              horizonCoins: data.user.horizonCoins !== undefined ? data.user.horizonCoins : prev.horizonCoins,
               equippedAvatarFrame: data.user.equippedAvatarFrame,
               equippedCustomTitle: data.user.equippedCustomTitle,
             }
@@ -201,25 +218,48 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
             </p>
           </div>
 
-          {/* User XP Badge */}
-          <div className="shrink-0 p-4 rounded-xl border border-[#2A1B42] bg-[#1A0E2E]/80 backdrop-blur-md flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-[#A78BFA] flex items-center justify-center font-black">
-              <Zap size={22} className="text-purple-400" />
+          {/* User Balances: HC & XP */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="shrink-0 p-3.5 rounded-xl border border-amber-500/30 bg-[#1A0E2E]/80 backdrop-blur-md flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl font-black">
+                🪙
+              </div>
+              <div>
+                <p className="text-[10px] font-mono text-gray-400 uppercase">
+                  {isOwner ? "Hak Istimewa Owner" : "Saldo Horizon Coins"}
+                </p>
+                {isOwner ? (
+                  <p className="text-xs sm:text-sm font-black text-amber-400 font-mono flex items-center gap-1">
+                    👑 Saldo Unlimited
+                  </p>
+                ) : (
+                  <p className="text-lg sm:text-xl font-black text-amber-300 font-mono">
+                    {userData ? (userData.horizonCoins ?? 0).toLocaleString("id-ID") : 0}{" "}
+                    <span className="text-xs text-amber-500 font-bold">HC</span>
+                  </p>
+                )}
+              </div>
             </div>
-            <div>
-              <p className="text-[11px] font-mono text-gray-400 uppercase">
-                {isOwner ? "Hak Istimewa Owner" : "Saldo XP Kamu"}
-              </p>
-              {isOwner ? (
-                <p className="text-sm sm:text-base font-black text-amber-400 font-mono flex items-center gap-1.5">
-                  👑 Akses Penuh Emperor (Milik Owner • 0 XP)
+
+            <div className="shrink-0 p-3.5 rounded-xl border border-[#2A1B42] bg-[#1A0E2E]/80 backdrop-blur-md flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-[#A78BFA] flex items-center justify-center font-black">
+                <Zap size={20} className="text-purple-400" />
+              </div>
+              <div>
+                <p className="text-[10px] font-mono text-gray-400 uppercase">
+                  {isOwner ? "Hak Istimewa Owner" : "Saldo XP Kamu"}
                 </p>
-              ) : (
-                <p className="text-xl sm:text-2xl font-black text-white font-mono">
-                  {userData ? userData.xp.toLocaleString("id-ID") : 0}{" "}
-                  <span className="text-xs text-purple-400 font-bold">XP</span>
-                </p>
-              )}
+                {isOwner ? (
+                  <p className="text-xs sm:text-sm font-black text-purple-300 font-mono flex items-center gap-1">
+                    👑 Level 99+
+                  </p>
+                ) : (
+                  <p className="text-lg sm:text-xl font-black text-white font-mono">
+                    {userData ? userData.xp.toLocaleString("id-ID") : 0}{" "}
+                    <span className="text-xs text-purple-400 font-bold">XP</span>
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -291,7 +331,9 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
                   : userData?.equippedCustomTitle === item.id;
               const isSelected = selectedItem?.id === item.id;
               const isProcessing = processingId === item.id;
-              const canAfford = isOwner || (userData?.xp ?? 0) >= item.priceXp;
+              const itemCoins = item.priceCoins ?? Math.max(50, Math.round(item.priceXp / 5));
+              const canAffordCoins = isOwner || (userData?.horizonCoins ?? 0) >= itemCoins;
+              const canAffordXp = isOwner || (userData?.xp ?? 0) >= item.priceXp;
               const tier = item.tier ?? "RARE";
 
               // Tiered Card Container Styles
@@ -359,30 +401,43 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
                   </div>
 
                   {/* Status & Price Row */}
-                  <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-2 relative z-10">
-                    <div className="flex items-center gap-2">
-                      {isEquipped ? (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
-                          <Check size={10} /> Terpasang
-                        </span>
-                      ) : isOwned ? (
-                        <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-mono font-bold">
-                          {isOwner ? "👑 Milik Owner" : "Dimiliki"}
-                        </span>
-                      ) : (
-                        <span className="font-mono font-bold text-xs text-amber-300 flex items-center gap-1">
-                          <Zap size={11} className="text-amber-400" />
-                          <span>{item.priceXp.toLocaleString("id-ID")} XP</span>
-                        </span>
-                      )}
+                  <div className="pt-2.5 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 relative z-10">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {isEquipped ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1">
+                            <Check size={10} /> Terpasang
+                          </span>
+                        ) : isOwned ? (
+                          <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-mono font-bold">
+                            {isOwner ? "👑 Milik Owner" : "Dimiliki"}
+                          </span>
+                        ) : (
+                          <div className="flex items-baseline gap-1.5 flex-wrap">
+                            <span className="font-mono font-black text-xs sm:text-sm text-amber-400 flex items-center gap-1">
+                              <span>🪙</span>
+                              <span>{itemCoins.toLocaleString("id-ID")} HC</span>
+                            </span>
+                            <span className="text-[10px] font-mono text-gray-400">
+                              (atau {item.priceXp.toLocaleString("id-ID")} XP)
+                            </span>
+                          </div>
+                        )}
 
-                      <span className="text-[10px] font-mono text-gray-400 hidden sm:inline">
-                        {isSelected ? "• Pratinjau Aktif" : ""}
-                      </span>
+                        <span className="text-[10px] font-mono text-gray-400 hidden sm:inline">
+                          {isSelected ? "• Pratinjau Aktif" : ""}
+                        </span>
+                      </div>
+
+                      {!isOwned && (
+                        <p className="text-[10px] font-mono text-gray-400">
+                          {itemCoins.toLocaleString("id-ID")} HC • setara Rp {(itemCoins * 100).toLocaleString("id-ID")} atau {Math.max(1, Math.round(itemCoins / 38))} hari Misi
+                        </p>
+                      )}
                     </div>
 
                     {/* Action Buttons */}
-                    <div>
+                    <div className="shrink-0 flex items-center gap-1.5">
                       {isOwned ? (
                         <button
                           type="button"
@@ -404,22 +459,42 @@ export function GuildArmoryShop({ onEquipChange }: { onEquipChange?: () => void 
                             : "Pasang"}
                         </button>
                       ) : (
-                        <button
-                          type="button"
-                          disabled={isProcessing || !canAfford}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void handleBuy(item);
-                          }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                            canAfford
-                              ? "bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-500 hover:to-amber-500 text-white shadow-md shadow-purple-600/30"
-                              : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                          }`}
-                        >
-                          <Zap size={13} />
-                          <span>{isProcessing ? "Menukar..." : `Tukar (${item.priceXp.toLocaleString("id-ID")} XP)`}</span>
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            disabled={isProcessing || !canAffordCoins}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleBuy(item, "COIN");
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                              canAffordCoins
+                                ? "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black shadow-md shadow-amber-500/25"
+                                : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                            }`}
+                            title={`Beli dengan ${itemCoins} Horizon Coins`}
+                          >
+                            <span>🪙</span>
+                            <span>{isProcessing ? "Menukar..." : `Beli (${itemCoins} HC)`}</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isProcessing || !canAffordXp}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleBuy(item, "XP");
+                            }}
+                            className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
+                              canAffordXp
+                                ? "border-purple-500/40 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300"
+                                : "border-white/5 bg-zinc-900 text-zinc-600 cursor-not-allowed"
+                            }`}
+                            title={`Tukar dengan ${item.priceXp} XP`}
+                          >
+                            <Zap size={11} />
+                            <span>XP</span>
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>

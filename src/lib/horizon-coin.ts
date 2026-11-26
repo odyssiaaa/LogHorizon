@@ -16,6 +16,16 @@ export type CoinTransactionType =
   | "TIP_SENT"
   | "TIP_RECEIVED";
 
+export type { TopupPackage } from "@/lib/coin-economy";
+export {
+  COIN_RATE_IDR,
+  TOPUP_PACKAGES,
+  coinsToIdr,
+  idrToCoins,
+  getTopupPackage,
+  calculateCoinsForAmount,
+} from "@/lib/coin-economy";
+
 export interface CoinPackage {
   id: string;
   coins: number;
@@ -27,26 +37,40 @@ export interface CoinPackage {
 
 export const HORIZON_COIN_PACKAGES: CoinPackage[] = [
   {
-    id: "pouch_100",
+    id: "starter",
     coins: 100,
     price: 10000,
-    name: "🪙 Kantong Koin Guild (100 HC)",
-    bonusText: "Setara 1x Royal Gacha",
+    name: "🪙 Starter Pouch (100 HC)",
+    bonusText: "Tanpa bonus • Coba 1x Gacha",
   },
   {
-    id: "chest_550",
-    coins: 550,
+    id: "adventurer",
+    coins: 275,
+    price: 25000,
+    name: "⚔️ Adventurer Chest (275 HC)",
+    bonusText: "Bonus +25 HC (Ekstra 10%)",
+  },
+  {
+    id: "guild_vault",
+    coins: 575,
     price: 50000,
-    name: "💎 Peti Kristal Koin (550 HC)",
-    bonusText: "Bonus +50 HC (Cukup 5x Multi Summon)",
+    name: "💎 Guild Vault (575 HC)",
+    bonusText: "Bonus +75 HC (Cukup 5x Multi Summon)",
     popular: true,
   },
   {
-    id: "treasury_1200",
+    id: "sovereign",
     coins: 1200,
     price: 100000,
-    name: "👑 Perbendaharaan Kerajaan (1.200 HC)",
-    bonusText: "Bonus +200 HC (Hemat Terbesar)",
+    name: "👑 Sovereign Treasury (1.200 HC)",
+    bonusText: "Bonus +200 HC (Nilai Terbaik)",
+  },
+  {
+    id: "emperor_mythic",
+    coins: 3150,
+    price: 250000,
+    name: "🔥 Emperor's Mythic Stash (3.150 HC)",
+    bonusText: "Bonus +650 HC (Sultan Pack • Ekstra 26%)",
   },
 ];
 

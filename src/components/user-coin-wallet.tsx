@@ -1,7 +1,26 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Coins, Plus, Target, Sparkles, RefreshCw, ArrowUpRight, ArrowDownLeft, Clock } from "lucide-react";
+import Image from "next/image";
+import {
+  Coins,
+  Plus,
+  Target,
+  Sparkles,
+  RefreshCw,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Clock,
+  X,
+  QrCode,
+  CheckCircle2,
+  AlertCircle,
+  Zap,
+} from "lucide-react";
+import { TOPUP_PACKAGES, type TopupPackage } from "@/lib/coin-economy";
+import { PriceDisplay } from "@/context/locale-context";
+import { ImageUploader } from "@/components/ui/image-uploader";
+import { readApiResponse } from "@/lib/api-response";
 
 export interface CoinTransactionItem {
   id: string;
@@ -37,6 +56,15 @@ export function UserCoinWallet({ initialBalance = 0, onNavigateTab }: UserCoinWa
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
+  // Top-Up QRIS Modal State
+  const [showTopupModal, setShowTopupModal] = useState<boolean>(false);
+  const [selectedPackage, setSelectedPackage] = useState<TopupPackage>(TOPUP_PACKAGES[2]); // Guild Vault (575 HC)
+  const [senderName, setSenderName] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
+  const [proofUrl, setProofUrl] = useState<string>("");
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [topupFeedback, setTopupFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
   useEffect(() => {
     setBalance(initialBalance);
   }, [initialBalance]);
@@ -67,6 +95,50 @@ export function UserCoinWallet({ initialBalance = 0, onNavigateTab }: UserCoinWa
   useEffect(() => {
     void loadTransactions();
   }, [loadTransactions]);
+
+  async function handleTopupSubmit() {
+    if (!senderName.trim()) {
+      setTopupFeedback({ message: "Nama pengirim / pemilik rekening wajib diisi.", type: "error" });
+      return;
+    }
+
+    setSubmitting(true);
+    setTopupFeedback(null);
+
+    try {
+      const res = await fetch("/api/donate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: selectedPackage.priceIdr,
+          packageId: selectedPackage.id,
+          coinAmount: selectedPackage.totalCoins,
+          isCoinTopup: true,
+          senderName: senderName.trim(),
+          notes: notes.trim(),
+          proofUrl: proofUrl.trim(),
+        }),
+      });
+
+      const data = await readApiResponse<{ notice: string }>(res, "Gagal mengirim konfirmasi Top-Up.");
+      setTopupFeedback({
+        message:
+          data.notice ||
+          `Konfirmasi Top-Up ${selectedPackage.name} (${selectedPackage.totalCoins} HC) berhasil dikirim! Admin akan segera memverifikasi mutasi.`,
+        type: "success",
+      });
+      setSenderName("");
+      setNotes("");
+      setProofUrl("");
+    } catch (err) {
+      setTopupFeedback({
+        message: err instanceof Error ? err.message : "Gagal mengirim konfirmasi Top-Up.",
+        type: "error",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -111,7 +183,10 @@ export function UserCoinWallet({ initialBalance = 0, onNavigateTab }: UserCoinWa
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => onNavigateTab?.("quests")}
+              onClick={() => {
+                setShowTopupModal(true);
+                setTopupFeedback(null);
+              }}
               className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition-all shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Plus size={14} className="stroke-[3]" />
@@ -136,6 +211,18 @@ export function UserCoinWallet({ initialBalance = 0, onNavigateTab }: UserCoinWa
           </div>
         </div>
       </section>
+
+      {/* Kurs Resmi Strip */}
+      <div className="p-3.5 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-[#140A24] to-purple-950/20 text-xs font-mono text-gray-300 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+        <div className="flex items-center gap-2 text-amber-400 font-bold">
+          <span className="text-sm">🪙</span>
+          <span>Kurs Resmi: 1 HC = Rp 100 • 100 HC = Rp 10.000</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-gray-300">
+          <span>Nilai Saldomu:</span>
+          <PriceDisplay amountIdr={balance * 100} className="font-bold text-emerald-400 font-mono" />
+        </div>
+      </div>
 
       {/* Bagian Riwayat 10 Mutasi Terakhir */}
       <section className="p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-[#2A1B42] bg-white dark:bg-[#120B1E]/80 backdrop-blur-md">
@@ -230,6 +317,214 @@ export function UserCoinWallet({ initialBalance = 0, onNavigateTab }: UserCoinWa
           </div>
         )}
       </section>
+
+      {/* TOP-UP QRIS HORIZON COIN MODAL */}
+      {showTopupModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !submitting) setShowTopupModal(false);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-[#11091D] border border-amber-500/30 rounded-2xl p-5 sm:p-7 w-[calc(100vw-1.5rem)] sm:max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl relative my-auto text-left space-y-5"
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Close Button */}
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => setShowTopupModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition p-1 rounded-lg"
+              aria-label="Tutup"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Header */}
+            <div>
+              <p className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles size={14} /> TOP-UP HORIZON COINS (🪙 HC)
+              </p>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono tracking-tight mt-1">
+                Pilih Paket Koin Guild
+              </h3>
+              <p className="text-xs text-gray-400 font-mono mt-0.5">
+                Kurs Resmi: 1 HC = Rp 100 • 100 HC = Rp 10.000 (Otomatis terkonversi)
+              </p>
+            </div>
+
+            {/* Top-up Feedback */}
+            {topupFeedback && (
+              <div
+                className={`p-3.5 rounded-xl border text-xs font-mono flex items-center gap-2 ${
+                  topupFeedback.type === "success"
+                    ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-300"
+                    : "bg-red-950/40 border-red-500/40 text-red-300"
+                }`}
+              >
+                {topupFeedback.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                <span>{topupFeedback.message}</span>
+              </div>
+            )}
+
+            {/* 5 Package Options */}
+            <div className="space-y-2">
+              <label className="text-xs font-mono font-bold text-gray-300 uppercase">
+                Pilih Salah Satu Dari 5 Paket Resmi:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {TOPUP_PACKAGES.map((pkg) => {
+                  const isSelected = selectedPackage.id === pkg.id;
+                  return (
+                    <button
+                      key={pkg.id}
+                      type="button"
+                      onClick={() => setSelectedPackage(pkg)}
+                      className={`p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer ${
+                        isSelected
+                          ? "border-amber-400 bg-amber-500/15 ring-2 ring-amber-400/50 shadow-md shadow-amber-500/10"
+                          : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] hover:border-amber-500/40"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-lg">{pkg.icon}</span>
+                        {pkg.badge && (
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-black border ${
+                              pkg.badgeColor || "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                            }`}
+                          >
+                            {pkg.badge}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-1.5">
+                        <h4 className="font-bold text-xs text-slate-900 dark:text-white leading-tight">
+                          {pkg.name}
+                        </h4>
+                        <div className="flex items-baseline gap-1 mt-0.5">
+                          <span className="text-sm font-black font-mono text-amber-400">
+                            {pkg.totalCoins.toLocaleString("id-ID")} HC
+                          </span>
+                          {pkg.bonusCoins > 0 && (
+                            <span className="text-[10px] font-mono text-emerald-400">
+                              (+{pkg.bonusCoins} Bonus)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-2 pt-1.5 border-t border-black/10 dark:border-white/10 flex items-center justify-between text-[11px] font-mono">
+                        <PriceDisplay amountIdr={pkg.priceIdr} className="font-bold text-emerald-500 dark:text-emerald-400" />
+                        <span className="text-gray-400 text-[10px]">
+                          Rp {pkg.priceIdr.toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* QRIS Oficial Section */}
+            <div className="bg-slate-50 dark:bg-[#1A0E2E] border border-amber-500/30 rounded-xl p-4 text-center flex flex-col items-center">
+              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-amber-400 mb-2 uppercase">
+                <QrCode size={16} /> QRIS RESMI GUILD LOGHORIZON
+              </div>
+              <div className="relative w-44 h-56 sm:w-52 sm:h-64 rounded-xl overflow-hidden shadow-md bg-white border border-slate-200 dark:border-[#2E1E45]">
+                <Image
+                  src="/qris-guild.png"
+                  alt="QRIS Resmi Guild LogHorizon"
+                  fill
+                  sizes="(max-width: 640px) 176px, 208px"
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <p className="text-[11px] font-mono text-slate-700 dark:text-gray-300 mt-2">
+                NMID: <strong className="text-amber-400">ID1025450776899</strong> (odyssiavault)
+              </p>
+              <p className="text-[10px] font-mono text-gray-400">
+                Mendukung semua Bank (BCA, Mandiri, BRI) &amp; E-Wallet (GoPay, OVO, Dana, ShopeePay)
+              </p>
+            </div>
+
+            {/* Form Confirmation */}
+            <div className="space-y-3 font-mono text-xs text-left">
+              <div>
+                <label className="block font-bold text-gray-300 mb-1">
+                  Nama Pengirim / Pemilik Rekening Transfer <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={100}
+                  value={senderName}
+                  onChange={(e) => setSenderName(e.target.value)}
+                  placeholder="Contoh: Budi Santoso / Akun Dana"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1A0E2E] text-white focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-300 mb-1">
+                  ID Transaksi / Catatan Transfer (Opsional)
+                </label>
+                <input
+                  type="text"
+                  maxLength={150}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="No. Ref / Catatan transfer"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1A0E2E] text-white focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div>
+                <ImageUploader
+                  value={proofUrl}
+                  onChange={setProofUrl}
+                  label="Bukti Struk Transfer / Screenshot QRIS (Opsional)"
+                  description="Pilih foto langsung dari galeri HP atau PC. Otomatis dikompresi ringan."
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-2 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => setShowTopupModal(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-mono font-bold text-gray-400 hover:text-white hover:bg-white/5 transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => void handleTopupSubmit()}
+                className="px-5 py-2.5 rounded-xl font-mono text-xs font-bold bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/25 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {submitting ? (
+                  <>
+                    <RefreshCw size={13} className="animate-spin" />
+                    <span>Mengirim...</span>
+                  </>
+                ) : (
+                  <>
+                    <Coins size={14} />
+                    <span>Konfirmasi Transfer (Rp {selectedPackage.priceIdr.toLocaleString("id-ID")})</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

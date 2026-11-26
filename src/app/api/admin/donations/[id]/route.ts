@@ -3,6 +3,7 @@ import { requireStaff } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { notifyDonationDecision, sendDiscordNotice } from "@/lib/discord-webhook";
 import { mutateHorizonCoinsInTransaction } from "@/lib/horizon-coin";
+import { calculateCoinsForAmount } from "@/lib/coin-economy";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -59,19 +60,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       });
 
       // Credit Horizon Coins if top-up or donation
-      const coinsToCredit =
-        existing.coinAmount ||
-        (existing.isCoinTopup
-          ? existing.amount >= 100_000
-            ? 1200
-            : existing.amount >= 50_000
-            ? 550
-            : Math.floor(existing.amount / 100)
-          : existing.amount >= 100_000
-          ? 1200
-          : existing.amount >= 50_000
-          ? 550
-          : Math.floor(existing.amount / 100));
+      const coinCalc = calculateCoinsForAmount(existing.amount);
+      const coinsToCredit = existing.coinAmount || coinCalc.totalCoins;
 
       if (coinsToCredit > 0) {
         await mutateHorizonCoinsInTransaction(
@@ -96,7 +86,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         data: {
           userId: existing.user.id,
           type: "SYSTEM",
-          message: `Konfirmasi donasi sebesar Rp ${existing.amount.toLocaleString("id-ID")} tidak dapat diverifikasi (Ditolak). Silakan hubungi Admin jika ada kekeliruan bukti transfer.`,
+          message: `Konfirmasi donasi/top-up sebesar Rp ${existing.amount.toLocaleString("id-ID")} tidak dapat diverifikasi (Ditolak). Silakan hubungi Admin jika ada kekeliruan bukti transfer.`,
           link: "/donate",
         },
       });
@@ -105,13 +95,24 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return donation;
   });
 
+  const finalCalc = calculateCoinsForAmount(existing.amount);
+  const finalCoins = existing.coinAmount || finalCalc.totalCoins;
+
   void notifyDonationDecision({
     adminName: access.user.username ?? "Admin",
     senderName: existing.senderName ?? "Donatur",
     username: existing.user?.username ?? "Gamer",
     amount: existing.amount,
     isApproved,
-    tierLabel: existing.amount >= 100_000 ? "Noble Patron (Tier 03)" : existing.amount >= 50_000 ? "High Merchant (Tier 02)" : "Knight (Tier 01)",
+    tierLabel: existing.isCoinTopup
+      ? `Top-Up (+${finalCoins.toLocaleString("id-ID")} HC)`
+      : existing.amount >= 100_000
+      ? "Noble Patron (Tier 03)"
+      : existing.amount >= 50_000
+      ? "High Merchant (Tier 02)"
+      : "Knight (Tier 01)",
+    isCoinTopup: existing.isCoinTopup,
+    coinAmount: finalCoins,
   });
 
   return Response.json(updated);

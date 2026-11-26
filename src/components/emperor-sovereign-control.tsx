@@ -1052,8 +1052,8 @@ export function EmperorSovereignControl({ currentUsername }: EmperorControlProps
                 </p>
 
                 {/* Coin Presets */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
-                  {[100, 500, 1200, 5000].map((val) => (
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
+                  {[100, 275, 575, 1200, 3150].map((val) => (
                     <button
                       key={val}
                       type="button"

@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     return jsonError("Item kosmetik tidak ditemukan dalam katalog Armory.", 404);
   }
 
-  const priceCoins = Math.max(50, Math.round(catalogItem.priceXp / 5));
+  const priceCoins = catalogItem.priceCoins ?? Math.max(50, Math.round(catalogItem.priceXp / 5));
 
   const isOwner = isGuildOwner(user);
   if (isOwner) {
@@ -152,13 +152,16 @@ export async function POST(request: Request) {
     void createNotification({
       userId: user.id,
       type: "SYSTEM",
-      message: `🎉 Pembelian berhasil! "${catalogItem.name}" seharga ${catalogItem.priceXp} XP telah ditambahkan dan dipasang pada profilmu!`,
+      message:
+        paymentMethod === "COIN"
+          ? `🎉 Pembelian berhasil! "${catalogItem.name}" seharga ${priceCoins.toLocaleString("id-ID")} HC telah ditambahkan dan dipasang pada profilmu!`
+          : `🎉 Pembelian berhasil! "${catalogItem.name}" seharga ${catalogItem.priceXp.toLocaleString("id-ID")} XP telah ditambahkan dan dipasang pada profilmu!`,
       link: "/profile",
     });
 
     return Response.json({
       success: true,
-      message: `Berhasil membeli dan memasang ${catalogItem.name}!`,
+      message: `Berhasil membeli dan memasang ${catalogItem.name} (${paymentMethod === "COIN" ? `${priceCoins.toLocaleString("id-ID")} HC` : `${catalogItem.priceXp.toLocaleString("id-ID")} XP`})!`,
       item: catalogItem,
       user: result,
     });

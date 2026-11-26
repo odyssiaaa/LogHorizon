@@ -91,12 +91,12 @@ const COMMON_DROPS: GachaDrop[] = [
 
 const RARE_DROPS: GachaDrop[] = [
   {
-    id: "drop_hc_150",
-    name: "💎 Peti Kristal Horizon Coins (+150 HC)",
+    id: "drop_hc_120",
+    name: "💎 Peti Kristal Horizon Coins (+120 HC)",
     description: "Timbunan koin virtual berharga tinggi untuk petualang aktif.",
     rarity: "RARE",
     type: "HORIZON_COIN",
-    amountCoins: 150,
+    amountCoins: 120,
     icon: "💎",
     glowColor: "#06B6D4",
   },
@@ -143,6 +143,16 @@ const RARE_DROPS: GachaDrop[] = [
 ];
 
 const EPIC_DROPS: GachaDrop[] = [
+  {
+    id: "drop_hc_300",
+    name: "🪙 Pundi Emas Horizon Coins (+300 HC)",
+    description: "Pundi emas kerajaan berlimpah koin untuk memperkuat perbekalan ekspedisi.",
+    rarity: "EPIC",
+    type: "HORIZON_COIN",
+    amountCoins: 300,
+    icon: "🪙",
+    glowColor: "#A855F7",
+  },
   {
     id: "drop_title_shadow_assassin",
     name: "🗡️ Gelar Permanen: Shadow Assassin",
@@ -227,12 +237,12 @@ const LEGENDARY_DROPS: GachaDrop[] = [
     glowColor: "#F59E0B",
   },
   {
-    id: "drop_hc_jackpot_1000",
-    name: "👑 JACKPOT HORIZON COINS (+1.000 HC)",
-    description: "Perbendaharaan Kaisar Kerajaan! 1.000 Horizon Coins instan masuk ke saldomu!",
+    id: "drop_hc_jackpot_1500",
+    name: "👑 JACKPOT HORIZON COINS (+1.500 HC)",
+    description: "Perbendaharaan Tertinggi Kaisar Kerajaan! 1.500 Horizon Coins instan masuk ke saldomu!",
     rarity: "LEGENDARY",
     type: "HORIZON_COIN",
-    amountCoins: 1000,
+    amountCoins: 1500,
     icon: "👑",
     glowColor: "#F59E0B",
   },
@@ -537,10 +547,13 @@ export async function POST(req: Request) {
             // DUPLICATE DETECTED!
             const duplicateXp =
               dropResult.rarity === "LEGENDARY" ? 1200 : dropResult.rarity === "EPIC" ? 450 : 200;
+            const duplicateCoins =
+              dropResult.rarity === "LEGENDARY" ? 300 : dropResult.rarity === "EPIC" ? 120 : 50;
             dropResult.isDuplicate = true;
             dropResult.convertedXp = duplicateXp;
             totalXpGained += duplicateXp;
-            dropResult.description = `${dropResult.description} (Item permanen sudah dimiliki. Otomatis dikonversi menjadi +${duplicateXp.toLocaleString("id-ID")} Bonus XP!)`;
+            totalCoinsGained += duplicateCoins;
+            dropResult.description = `${dropResult.description} (Item permanen sudah dimiliki. Otomatis dikonversi menjadi +${duplicateCoins} HC & +${duplicateXp.toLocaleString("id-ID")} Bonus XP!)`;
           } else if (dropResult.cosmeticId) {
             // First time getting this item: add to owned set and create record
             ownedCosmeticIds.add(dropResult.cosmeticId);

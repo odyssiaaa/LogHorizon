@@ -4,6 +4,7 @@ import { activeUser, jsonError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { notifyDonationQueue, sendDiscordNotice } from "@/lib/discord-webhook";
 import { sanitizePlainText, isValidSafeImage } from "@/lib/sanitize";
+import { getTopupPackage, calculateCoinsForAmount } from "@/lib/coin-economy";
 
 export async function GET() {
   const [total, config, envGoal] = await Promise.all([
@@ -37,14 +38,25 @@ export async function POST(request: Request) {
 
   const payload: unknown = await request.json();
   const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
-  const amount = Number(data.amount);
+  const rawAmount = Number(data.amount);
   const senderName = sanitizePlainText(typeof data.senderName === "string" ? data.senderName.trim() : "");
   const notes = sanitizePlainText(typeof data.notes === "string" ? data.notes.trim() : "");
   const proofUrl = typeof data.proofUrl === "string" ? data.proofUrl.trim() : "";
-  const isCoinTopup = Boolean(data.isCoinTopup);
-  const coinAmount = isCoinTopup
-    ? (Number(data.coinAmount) || (amount >= 100_000 ? 1200 : amount >= 50_000 ? 550 : Math.floor(amount / 100)))
-    : null;
+  const packageId = typeof data.packageId === "string" ? data.packageId.trim() : undefined;
+  const pkg = packageId ? getTopupPackage(packageId) : undefined;
+  const isCoinTopup = Boolean(data.isCoinTopup || pkg);
+
+  const amount = pkg ? pkg.priceIdr : rawAmount;
+  let coinAmount: number | null = null;
+  if (isCoinTopup) {
+    if (pkg) {
+      coinAmount = pkg.totalCoins;
+    } else {
+      const calc = calculateCoinsForAmount(amount);
+      coinAmount = Number(data.coinAmount) || calc.totalCoins;
+    }
+  }
+
   if (proofUrl && !isValidSafeImage(proofUrl)) {
     return jsonError("Format bukti transfer tidak valid atau melebihi batas ukuran 2 MB.", 400);
   }
@@ -58,18 +70,28 @@ export async function POST(request: Request) {
 
   // Tentukan tier secara otomatis berdasarkan nominal
   let tier = "ADVENTURER_SUPPORT";
-  let tierLabel = "Tier 01 - Adventurer Support (Knight)";
-  if (amount >= 100_000) {
-    tier = "GUILD_BENEFACTOR";
-    tierLabel = "Tier 03 - Guild Benefactor (Noble Patron)";
-  } else if (amount >= 50_000) {
-    tier = "ELITE_PARTY_MEMBER";
-    tierLabel = "Tier 02 - Elite Party Member (High Merchant)";
+  let tierLabel = isCoinTopup && pkg
+    ? `Top-Up Paket ${pkg.name} (${pkg.totalCoins.toLocaleString("id-ID")} HC)`
+    : "Tier 01 - Adventurer Support (Knight)";
+  if (!isCoinTopup) {
+    if (amount >= 100_000) {
+      tier = "GUILD_BENEFACTOR";
+      tierLabel = "Tier 03 - Guild Benefactor (Noble Patron)";
+    } else if (amount >= 50_000) {
+      tier = "ELITE_PARTY_MEMBER";
+      tierLabel = "Tier 02 - Elite Party Member (High Merchant)";
+    }
   }
 
   if (!senderName || senderName.length > 100) {
     return jsonError("Nama pengirim transfer / pemilik rekening wajib diisi (maksimal 100 karakter).", 400);
   }
+
+  const defaultNote = isCoinTopup
+    ? pkg
+      ? `Top-Up Paket ${pkg.name}: ${pkg.baseCoins.toLocaleString("id-ID")} HC + Bonus ${pkg.bonusCoins.toLocaleString("id-ID")} HC = Total ${pkg.totalCoins.toLocaleString("id-ID")} HC`
+      : `Top-Up ${coinAmount?.toLocaleString("id-ID")} Horizon Coins (🪙 HC)`
+    : `Donasi ${tierLabel}`;
 
   const donation = await prisma.donation.create({
     data: {
@@ -77,7 +99,7 @@ export async function POST(request: Request) {
       amount,
       status: DonationStatus.PENDING,
       senderName,
-      notes: notes || (isCoinTopup ? `Top-Up ${coinAmount} Horizon Coins (🪙 HC)` : `Donasi ${tierLabel}`),
+      notes: notes || defaultNote,
       proofUrl: proofUrl || null,
       isCoinTopup,
       coinAmount,

@@ -767,21 +767,42 @@ export async function notifyDonationDecision(data: {
   amount: number;
   isApproved: boolean;
   tierLabel?: string;
+  isCoinTopup?: boolean;
+  coinAmount?: number;
+  packageName?: string;
 }): Promise<void> {
   const isAcc = data.isApproved;
+  const isCoin = Boolean(data.isCoinTopup || data.coinAmount);
   const embed: DiscordEmbed = {
-    title: isAcc ? "✅ DONASI QRIS DI-ACC OLEH ADMIN" : "❌ DONASI QRIS DITOLAK OLEH ADMIN",
+    title: isAcc
+      ? isCoin
+        ? "🪙 TOP-UP HORIZON COINS DI-ACC ADMIN"
+        : "✅ DONASI QRIS DI-ACC OLEH ADMIN"
+      : isCoin
+      ? "❌ TOP-UP HORIZON COINS DITOLAK"
+      : "❌ DONASI QRIS DITOLAK OLEH ADMIN",
     description: isAcc
-      ? `Donasi sebesar **Rp ${data.amount.toLocaleString("id-ID")}** telah diverifikasi dan disetujui. Badge kasta role guild otomatis aktif di profil petualang.`
-      : `Pengajuan bukti transfer donasi sebesar **Rp ${data.amount.toLocaleString("id-ID")}** ditolak oleh staf.`,
-    color: isAcc ? 0x10b981 : 0xef4444,
+      ? isCoin
+        ? `Top-Up QRIS sebesar **Rp ${data.amount.toLocaleString("id-ID")}** diverifikasi sukses. **+${(data.coinAmount || 0).toLocaleString("id-ID")} Horizon Coins (🪙 HC)** otomatis disuntikkan ke saldo petualang!`
+        : `Donasi sebesar **Rp ${data.amount.toLocaleString("id-ID")}** telah diverifikasi dan disetujui. Badge kasta role guild otomatis aktif di profil petualang.`
+      : `Pengajuan bukti transfer sebesar **Rp ${data.amount.toLocaleString("id-ID")}** ditolak oleh staf.`,
+    color: isAcc ? (isCoin ? 0xf59e0b : 0x10b981) : 0xef4444,
     fields: [
       { name: "🛡️ Admin Pengeksekusi", value: `@${data.adminName}`, inline: true },
-      { name: "👤 Donatur (Pengirim)", value: `${data.senderName} (@${data.username})`, inline: true },
-      { name: "💵 Nominal", value: `Rp ${data.amount.toLocaleString("id-ID")}`, inline: true },
-      { name: "🎖️ Status Akhir", value: isAcc ? `DISETUJUI (${data.tierLabel || "Role Aktif"})` : "DITOLAK (Bukti Tidak Sesuai)", inline: false },
+      { name: "👤 Petualang (Pengirim)", value: `${data.senderName} (@${data.username})`, inline: true },
+      { name: "💵 Nominal Transfer", value: `Rp ${data.amount.toLocaleString("id-ID")}`, inline: true },
+      ...(isCoin && data.coinAmount
+        ? [{ name: "🪙 Horizon Coins Masuk", value: `**+${data.coinAmount.toLocaleString("id-ID")} HC**`, inline: true }]
+        : []),
+      {
+        name: "🎖️ Status Akhir",
+        value: isAcc
+          ? `DISETUJUI (${data.tierLabel || (isCoin ? "Saldo Terkredit" : "Role Aktif")})`
+          : "DITOLAK (Bukti Tidak Sesuai)",
+        inline: false,
+      },
     ],
-    footer: { text: "LogHorizon Treasury Audit • #mod-logs" },
+    footer: { text: "LogHorizon Treasury Audit • #mod-logs (Channel 1547552557868777552)" },
     timestamp: new Date().toISOString(),
   };
 
