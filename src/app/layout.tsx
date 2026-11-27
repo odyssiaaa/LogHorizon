@@ -80,6 +80,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             __html: `(function(){try{var t=localStorage.getItem('loghorizon-theme');if(t==='light'){document.documentElement.classList.remove('dark');}else{document.documentElement.classList.add('dark');}}catch(e){}})()`,
           }}
         />
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4220010323383493"
+          crossOrigin="anonymous"
+        />
       </head>
       <body className="min-h-full w-full max-w-full overflow-x-hidden flex flex-col bg-[#F8FAFC] dark:bg-[#08040E] text-[#0F172A] dark:text-[#F8FAFC] font-sans antialiased selection:bg-[#7C3AED] selection:text-white transition-colors duration-300">
         <Providers>
